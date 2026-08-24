@@ -6,8 +6,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // The API lives on 5174; proxying keeps the frontend origin-free.
-      '/api': 'http://localhost:5174',
+      // 127.0.0.1, never "localhost": the API binds IPv4 only, while localhost
+      // resolves to ::1 first — anything squatting IPv6 answers silently in its
+      // place, and the failure then looks like a routing bug that isn't there.
+      '/api': 'http://127.0.0.1:5174',
     },
   },
 });

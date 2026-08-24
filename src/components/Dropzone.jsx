@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react';
 
-export default function Dropzone({ onFile }) {
+export default function Dropzone({ onFile, accept = 'image/*', title, hint }) {
   const [over, setOver] = useState(false);
   const input = useRef(null);
 
-  function take(fileList) {
-    const f = [...(fileList || [])].find((f) => f.type.startsWith('image/'));
+  function take(list) {
+    const f = [...(list || [])].find(
+      (f) => f.type.startsWith('image/') || /\.svg$/i.test(f.name),
+    );
     if (f) onFile(f);
   }
 
@@ -25,16 +27,13 @@ export default function Dropzone({ onFile }) {
         take(e.dataTransfer.files);
       }}
     >
-      <div className="aperture" />
-      <h2>Trascina un'immagine</h2>
-      <p>
-        PNG, JPG, WebP. Resta tutto su questa macchina — nessun file lascia il
-        tuo disco.
-      </p>
+      <span className="rule" />
+      <h2>{title}</h2>
+      <p>{hint}</p>
       <input
         ref={input}
         type="file"
-        accept="image/*"
+        accept={accept}
         hidden
         onChange={(e) => take(e.target.files)}
       />

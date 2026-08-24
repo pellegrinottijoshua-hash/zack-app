@@ -1,6 +1,7 @@
-node_modules/
+.DS_Store
 dist/
-tmp/
+library/
+node_modules/
 py/.venv/
 py/uv.lock
-.DS_Store
+tmp/
