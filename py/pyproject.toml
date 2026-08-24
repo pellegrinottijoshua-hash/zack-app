@@ -1,0 +1,10 @@
+[project]
+name = "jayl-studio-py"
+version = "0.1.0"
+description = "Local image jobs (background removal) for jayl-studio-lab"
+requires-python = ">=3.11"
+dependencies = [
+    "rembg[cli]>=2.0.81",
+    "onnxruntime>=1.29.0",
+    "pillow>=12.0.0",
+]
