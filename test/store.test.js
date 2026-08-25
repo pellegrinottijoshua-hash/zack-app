@@ -145,3 +145,113 @@ test('makeFolder normalizza il nome come gli asset', () => {
   assert.equal(f.name, 'Le-Mie-Cose');
   assert.equal(f.parentId, null);
 });
+
+// ─── organizzazione: colori, icone, note, derivazione ───────────────────────
+import {
+  FOLDER_COLORS,
+  FOLDER_ICONS,
+  isFolderColor,
+  isFolderIcon,
+  cleanNote,
+  lineage,
+  derivedFrom,
+  smartCollections,
+} from '../src/store/model.js';
+
+test('colori e icone sono un insieme CHIUSO', () => {
+  // Le etichette libere sembrano flessibili e diventano ingestibili: dopo tre
+  // mesi si hanno «brand», «Brand» e «branding» e non se ne usa nessuna.
+  assert.ok(FOLDER_COLORS.length >= 3 && FOLDER_COLORS.length <= 8, 'pochi, o non si riconoscono');
+  assert.ok(FOLDER_ICONS.length >= 4 && FOLDER_ICONS.length <= 12);
+  assert.equal(isFolderColor('#C4A35A'), true);
+  assert.equal(isFolderColor('#ff0000'), false, 'un colore fuori palette non entra');
+  assert.equal(isFolderIcon('stella'), true);
+  assert.equal(isFolderIcon('inventata'), false);
+});
+
+test('i colori delle cartelle restano dentro la palette JAYL', () => {
+  const ammessi = ['#C4A35A', '#8A8A85', '#F5F0E8', '#6E6E6A', '#3D3D3A'];
+  for (const c of FOLDER_COLORS) {
+    assert.ok(ammessi.includes(c), `${c} è fuori dal marchio`);
+  }
+});
+
+test('una cartella con colore o icona inventati torna al predefinito', () => {
+  const f = makeFolder({ name: 'x', color: '#ff0000', icon: 'inventata', rand: fixedRand, now: fixedNow });
+  assert.equal(f.color, FOLDER_COLORS[0]);
+  assert.equal(f.icon, FOLDER_ICONS[0]);
+});
+
+test('una cartella porta colore, icona e nota', () => {
+  const f = makeFolder({
+    name: 'Magliette',
+    color: '#8A8A85',
+    icon: 'maglietta',
+    note: '  Le  cose   dell estate  ',
+    rand: fixedRand,
+    now: fixedNow,
+  });
+  assert.equal(f.color, '#8A8A85');
+  assert.equal(f.icon, 'maglietta');
+  assert.equal(f.note, 'Le cose dell estate', 'la nota viene ripulita');
+});
+
+test('una nota non può essere infinita', () => {
+  const lunga = cleanNote('x'.repeat(1000));
+  assert.ok(lunga.length <= 280, `una nota di ${lunga.length} caratteri non è una nota`);
+  assert.equal(cleanNote(null), '');
+});
+
+test('un asset nasce con nota vuota, non preferito e senza origine', () => {
+  const a = makeAsset({ name: 'x', kind: 'png', bytes: 1, rand: fixedRand, now: fixedNow });
+  assert.equal(a.note, '');
+  assert.equal(a.starred, false);
+  assert.equal(a.fromId, null);
+});
+
+test('un asset ricorda da quale lavoro deriva', () => {
+  const a = makeAsset({ name: 'x', kind: 'png', bytes: 1, meta: { fromId: 'abc' }, rand: fixedRand, now: fixedNow });
+  assert.equal(a.fromId, 'abc');
+});
+
+const catena = [
+  { id: 'a', fromId: null, name: 'foto' },
+  { id: 'b', fromId: 'a', name: 'scontornato' },
+  { id: 'c', fromId: 'b', name: 'vettoriale' },
+  { id: 'd', fromId: 'b', name: 'stampa' },
+];
+
+test('la derivazione risale dalla radice al lavoro', () => {
+  assert.deepEqual(lineage(catena, 'c').map((a) => a.name), ['foto', 'scontornato', 'vettoriale']);
+  assert.deepEqual(lineage(catena, 'a').map((a) => a.name), ['foto']);
+});
+
+test('la derivazione non si impianta su dati con un anello', () => {
+  const rotto = [
+    { id: 'x', fromId: 'y' },
+    { id: 'y', fromId: 'x' },
+  ];
+  const c = lineage(rotto, 'x');
+  assert.ok(c.length <= 2, `la catena non deve crescere all'infinito: ${c.length}`);
+});
+
+test('derivedFrom elenca i figli diretti', () => {
+  assert.deepEqual(derivedFrom(catena, 'b').map((a) => a.name), ['vettoriale', 'stampa']);
+  assert.deepEqual(derivedFrom(catena, 'c'), []);
+});
+
+test('le raccolte pronte contano quello che serve davvero', () => {
+  const now = Date.parse('2026-08-25T12:00:00Z');
+  const recente = new Date(now - 2 * 86400000).toISOString();
+  const vecchio = new Date(now - 40 * 86400000).toISOString();
+  const items = [
+    { id: '1', createdAt: recente, starred: true, moodboardIds: ['m'] },
+    { id: '2', createdAt: vecchio, starred: false, moodboardIds: [] },
+    { id: '3', createdAt: recente, starred: false, moodboardIds: [] },
+  ];
+  const c = smartCollections(items, now);
+  const byId = Object.fromEntries(c.map((x) => [x.id, x.count]));
+  assert.equal(byId.recenti, 2);
+  assert.equal(byId.preferiti, 1);
+  assert.equal(byId.riferimenti, 1);
+});

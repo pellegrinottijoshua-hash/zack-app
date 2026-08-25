@@ -1,6 +1,27 @@
 import { useEffect, useState } from 'react';
 import { t } from '../i18n/index.js';
 import AssetActions from './AssetActions.jsx';
+import { FOLDER_ICONS } from '../store/model.js';
+
+/** Icone disegnate a mano: sono otto, pesano nulla e restano coerenti. */
+const ICON_PATHS = {
+  cartella: 'M3 6h6l2 2h10v11H3z',
+  maglietta: 'M8 4l-4 3 2 3 2-1v10h8V9l2 1 2-3-4-3-2 2h-4z',
+  personaggio: 'M12 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5 20a7 7 0 0 1 14 0',
+  stella: 'M12 3l2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z',
+  fuoco: 'M12 3s5 4.5 5 9a5 5 0 0 1-10 0c0-2 1-3.5 1-3.5S9 11 11 11c1.5 0 1-4 1-8z',
+  occhio: 'M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z',
+  tag: 'M3 12l9-9h8v8l-9 9zM16.5 7a1 1 0 1 0 0 .01',
+  cerchio: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z',
+};
+
+function FolderIcon({ name }) {
+  return (
+    <svg viewBox="0 0 24 24" className="folder-icon" aria-hidden="true">
+      <path d={ICON_PATHS[name] || ICON_PATHS.cartella} />
+    </svg>
+  );
+}
 
 const size = (n) => {
   if (n >= 1048576) return `${(n / 1048576).toFixed(1)} MB`;
@@ -107,6 +128,21 @@ export default function Library({ store, open, onToggle, onOpenInEditor, onDownl
                 {t('library.all')}
               </button>
 
+              {store.collections
+                .filter((c) => c.count > 0)
+                .map((c) => (
+                  <button
+                    key={c.id}
+                    className="chip smart"
+                    aria-pressed={f.collection === c.id}
+                    onClick={() =>
+                      set({ collection: f.collection === c.id ? null : c.id })
+                    }
+                  >
+                    {t(c.labelKey)} <b>{c.count}</b>
+                  </button>
+                ))}
+
               {store.folders.map((folder) => (
                 <button
                   key={folder.id}
@@ -115,8 +151,10 @@ export default function Library({ store, open, onToggle, onOpenInEditor, onDownl
                   onDoubleClick={() => store.deleteFolder(folder.id)}
                   title={t('library.folder.help')}
                   onClick={() => set({ folderId: f.folderId === folder.id ? undefined : folder.id, moodboardId: undefined })}
+                  style={{ '--tinta': folder.color }}
                 >
-                  ▸ {folder.name}
+                  <FolderIcon name={folder.icon} />
+                  {folder.name}
                 </button>
               ))}
 
@@ -200,6 +238,14 @@ export default function Library({ store, open, onToggle, onOpenInEditor, onDownl
                       {item.name}
                       <br />
                       {size(item.bytes)}
+                      {(() => {
+                        const chain = store.lineageOf(item.id);
+                        return chain.length > 1 ? (
+                          <span className="lineage" title={chain.map((a) => a.name).join(' → ')}>
+                            {t('library.lineage')} {chain[chain.length - 2].name}
+                          </span>
+                        ) : null;
+                      })()}
                       {item.tags.length > 0 && (
                         <span className="tags">
                           {item.tags.map((tg) => (
@@ -230,6 +276,15 @@ export default function Library({ store, open, onToggle, onOpenInEditor, onDownl
                         />
                       </form>
                     ) : null}
+
+                    <button
+                      className="star"
+                      aria-pressed={Boolean(item.starred)}
+                      title={item.starred ? t('library.unstar') : t('library.star')}
+                      onClick={() => store.toggleStar(item.id)}
+                    >
+                      ★
+                    </button>
 
                     <div className="acts">
                       <button onClick={() => download(item)}>{t('control.download.label')}</button>

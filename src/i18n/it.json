@@ -139,7 +139,17 @@
       "help": "Clicca per vedere solo i lavori di questa moodboard. Doppio clic la elimina; i lavori restano."
     },
     "localWarning": "Tutto è salvato in questo browser, sul tuo computer. Svuotare i dati del sito cancella l'archivio: scarica tutto ogni tanto.",
-    "unsupported": "Questo browser non sa conservare i file in locale. I lavori si possono ancora creare e scaricare, ma non restano in archivio."
+    "unsupported": "Questo browser non sa conservare i file in locale. I lavori si possono ancora creare e scaricare, ma non restano in archivio.",
+    "smart": {
+      "recent": "Ultimi 7 giorni",
+      "starred": "Preferiti",
+      "references": "Usati come riferimento"
+    },
+    "note": "Nota…",
+    "star": "Preferito",
+    "unstar": "Togli dai preferiti",
+    "lineage": "Viene da",
+    "folderLook": "Aspetto"
   },
   "status": {
     "file": "file",
@@ -365,5 +375,51 @@
     "tooBig": "Questa immagine è già grande: l'ingrandimento serve su file piccoli, sotto i 512 pixel di lato.",
     "estimate": "Circa {sec} secondi",
     "working": "Sto ricostruendo il dettaglio…"
+  },
+  "batch": {
+    "title": "In blocco",
+    "none": "nessun file",
+    "count": "{n} file",
+    "help": "Applica le stesse operazioni a tutti i file insieme. È quello che rende utili gli strumenti quando i file sono quaranta e non uno.",
+    "pick": "Scegli i file",
+    "clear": "Svuota",
+    "start": "Avvia su {n} file",
+    "stop": "Ferma",
+    "progress": "{done} di {total}",
+    "eta": "circa {sec} s",
+    "doneMsg": "Fatti {done} su {total}",
+    "failed": "{n} non riusciti"
+  },
+  "sound": {
+    "record": "Registra",
+    "again": "Registra di nuovo",
+    "stop": "Ferma",
+    "save": "Salva nei lavori",
+    "heard": "Ho sentito {n} colpi, a circa {bpm} al minuto.",
+    "micDenied": "Non riesco ad accedere al microfono. Devi darne il permesso al browser: di solito compare un avviso vicino alla barra dell'indirizzo.",
+    "giant": {
+      "label": "Gigante",
+      "hint": "fai «tum tum» con la bocca"
+    },
+    "wind": {
+      "label": "Vento",
+      "hint": "fai «uuuuu» a bocca stretta"
+    },
+    "engine": {
+      "label": "Motore",
+      "hint": "fai «brrrrr» con le labbra"
+    },
+    "metal": {
+      "label": "Metallo",
+      "hint": "fai «tin» o «tac» secco"
+    },
+    "monster": {
+      "label": "Mostro",
+      "hint": "ringhia o fai «grrr»"
+    },
+    "radio": {
+      "label": "Radio",
+      "hint": "parla normalmente"
+    }
   }
 }

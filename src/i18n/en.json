@@ -139,7 +139,17 @@
       "help": "Click to see only this moodboard's work. Double-click deletes it; the work stays."
     },
     "localWarning": "Everything is saved in this browser, on your computer. Clearing the site's data wipes the archive: download everything now and then.",
-    "unsupported": "This browser cannot keep files locally. You can still create and download work, but it won't stay in the archive."
+    "unsupported": "This browser cannot keep files locally. You can still create and download work, but it won't stay in the archive.",
+    "smart": {
+      "recent": "Last 7 days",
+      "starred": "Starred",
+      "references": "Used as reference"
+    },
+    "note": "Note…",
+    "star": "Star",
+    "unstar": "Remove star",
+    "lineage": "Comes from",
+    "folderLook": "Look"
   },
   "status": {
     "file": "file",
@@ -365,5 +375,51 @@
     "tooBig": "This image is already large: enlarging is for small files, under 512 pixels a side.",
     "estimate": "About {sec} seconds",
     "working": "Rebuilding detail…"
+  },
+  "batch": {
+    "title": "In bulk",
+    "none": "no files",
+    "count": "{n} files",
+    "help": "Applies the same operations to every file at once. It's what makes the tools useful when there are forty files and not one.",
+    "pick": "Choose files",
+    "clear": "Clear",
+    "start": "Run on {n} files",
+    "stop": "Stop",
+    "progress": "{done} of {total}",
+    "eta": "about {sec} s",
+    "doneMsg": "Done {done} of {total}",
+    "failed": "{n} failed"
+  },
+  "sound": {
+    "record": "Record",
+    "again": "Record again",
+    "stop": "Stop",
+    "save": "Save to your work",
+    "heard": "I heard {n} hits, about {bpm} a minute.",
+    "micDenied": "I can't reach the microphone. You need to allow it in the browser: the prompt usually appears near the address bar.",
+    "giant": {
+      "label": "Giant",
+      "hint": "go «thump thump» with your mouth"
+    },
+    "wind": {
+      "label": "Wind",
+      "hint": "go «oooooh» with tight lips"
+    },
+    "engine": {
+      "label": "Engine",
+      "hint": "go «brrrrr» with your lips"
+    },
+    "metal": {
+      "label": "Metal",
+      "hint": "make a sharp «tink» or «tack»"
+    },
+    "monster": {
+      "label": "Monster",
+      "hint": "growl, or go «grrr»"
+    },
+    "radio": {
+      "label": "Radio",
+      "hint": "just talk normally"
+    }
   }
 }

@@ -13,6 +13,10 @@ import { resolveShortcut } from './engine/shortcuts.js';
 import { useLibrary } from './hooks/useLibrary.js';
 import ToolRail from './components/ToolRail.jsx';
 import MaskBrush from './components/MaskBrush.jsx';
+import BatchPanel from './components/BatchPanel.jsx';
+import SoundLab from './components/SoundLab.jsx';
+import { useSound } from './hooks/useSound.js';
+import { useBatch } from './hooks/useBatch.js';
 import { SCALES, canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { getService, firstReady } from './services.js';
 import { bundleAll } from './store/bundle.js';
@@ -72,6 +76,11 @@ export default function App() {
   // si usano generando.
   const [references, setReferences] = useState([]);
   const [brushOpen, setBrushOpen] = useState(false);
+  const [batchFiles, setBatchFiles] = useState([]);
+  // Da quale lavoro in libreria viene il file aperto: serve a registrare la
+  // provenienza, che è ciò che rende ritrovabile un file di cui non si
+  // ricorda il nome.
+  const [sourceAssetId, setSourceAssetId] = useState(null);
   // Cambia a ogni azione sull'editor per far rileggere al pannello la
   // posizione della selezione, che la libreria muta fuori da React.
   const [editorTick, setEditorTick] = useState(0);
@@ -95,6 +104,30 @@ export default function App() {
       offHelp();
     };
   }, []);
+
+  const sound = useSound();
+
+  const batch = useBatch({
+    engine,
+    library,
+    model: s.model || engine.defaultModelId,
+  });
+
+  /** Sceglie più file in una volta: è il gesto che apre il lavoro in blocco. */
+  function pickBatchFiles() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.onchange = () => {
+      const list = [...(input.files || [])].filter((f) => f.type.startsWith('image/'));
+      if (list.length) {
+        setBatchFiles(list);
+        batch.clear();
+      }
+    };
+    input.click();
+  }
 
   // Scorciatoie da tastiera: attive solo nell'editor, e mai mentre si scrive.
   // La decisione su quale azione eseguire sta in una funzione pura testata a
@@ -153,6 +186,8 @@ export default function App() {
     setResult(null);
     setFile(f);
     setBeforeUrl(own(f));
+    // Un file trascinato da fuori non ha un'origine in libreria.
+    setSourceAssetId(null);
 
     // An SVG dropped anywhere belongs in the editor.
     if (/\.svg$/i.test(f.name)) {
@@ -191,7 +226,7 @@ export default function App() {
         await library.save(blob, {
           name: `${file.name.replace(/\.[^.]+$/, '')}-scontornato`,
           kind: 'png',
-          meta: { op: 'remove-bg', model: s.model },
+          meta: { fromId: sourceAssetId, op: 'remove-bg', model: s.model },
         });
       } else {
         // Anche il tracciato gira nel browser: VTracer in WebAssembly, 140 KB.
@@ -203,7 +238,7 @@ export default function App() {
         await library.save(blob, {
           name: `${file.name.replace(/\.[^.]+$/, '')}-vettoriale`,
           kind: 'svg',
-          meta: { op: 'vectorize', preset: s.tracePreset, paths: meta.paths },
+          meta: { fromId: sourceAssetId, op: 'vectorize', preset: s.tracePreset, paths: meta.paths },
         });
       }
     } catch (e) {
@@ -255,7 +290,7 @@ export default function App() {
       await library.save(blob, {
         name: `${source.name.replace(/\.[^.]+$/, '')}-${s.preset}`,
         kind: 'png',
-        meta: { op: 'export', preset: s.preset, background: s.background },
+        meta: { fromId: sourceAssetId, op: 'export', preset: s.preset, background: s.background },
       });
       setNotice(
         `${meta.canvas.w}×${meta.canvas.h}${meta.upscaleLimited ? ` — ${t('result.tooSmall')}` : ''}`,
@@ -276,7 +311,7 @@ export default function App() {
       const work = await library.save(new Blob([svg], { type: 'image/svg+xml' }), {
         name: (file?.name || 'disegno').replace(/\.[^.]+$/, ''),
         kind: 'svg',
-        meta: { op: 'editor' },
+        meta: { fromId: sourceAssetId, op: 'editor' },
       });
       setNotice(work.file);
     } catch (e) {
@@ -349,7 +384,7 @@ export default function App() {
       await library.save(blob, {
         name: `${(file?.name || 'immagine').replace(/\.[^.]+$/, '')}-ingrandita`,
         kind: 'png',
-        meta: { op: 'upscale', scale: 'x4' },
+        meta: { fromId: sourceAssetId, op: 'upscale', scale: 'x4' },
       });
     } catch (e) {
       console.error(e);
@@ -383,6 +418,7 @@ export default function App() {
       setResult(null);
       setFile(asFile);
       setBeforeUrl(own(asFile));
+      setSourceAssetId(item.id);
       setTool(kind === 'cutout' ? 'scontorna' : 'vettorializza');
     } catch (e) {
       console.error(e);
@@ -467,7 +503,20 @@ export default function App() {
           {error && <div className="alert">{error}</div>}
           {notice && !error && <div className="alert">{notice}</div>}
 
-          {isEditor ? (
+          {tool === 'suono' ? (
+            <SoundLab
+              sound={sound}
+              onSave={async (blob, recipe) => {
+                setNotice(null);
+                await library.save(blob, {
+                  name: `suono-${recipe.id}`,
+                  kind: 'wav',
+                  meta: { op: 'sound', recipe: recipe.id },
+                });
+                setNotice(t('sound.save'));
+              }}
+            />
+          ) : isEditor ? (
             <SvgEditor
               ref={editorRef}
               onSelection={setSelCount}
@@ -483,7 +532,7 @@ export default function App() {
                 await library.save(blob, {
                   name: `${(file?.name || 'immagine').replace(/\.[^.]+$/, '')}-corretto`,
                   kind: 'png',
-                  meta: { op: 'brush' },
+                  meta: { fromId: sourceAssetId, op: 'brush' },
                 });
               }}
             />
@@ -542,6 +591,16 @@ export default function App() {
                   </button>
                 </div>
               )}
+
+              <BatchPanel
+                files={batchFiles}
+                batch={batch}
+                onPickFiles={pickBatchFiles}
+                onClearFiles={() => {
+                  setBatchFiles([]);
+                  batch.clear();
+                }}
+              />
 
               <div className="field">
                 <span className="label">

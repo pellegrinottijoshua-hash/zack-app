@@ -52,12 +52,13 @@ export const SERVICES = [
     price: 0.21,
   },
   {
+    // Il laboratorio dei suoni sta fra i GRATUITI: non genera niente, filtra
+    // la voce registrata. Nessun modello, nessun costo, nessuna attesa.
     id: 'suono',
-    group: GROUP_PAID,
+    group: GROUP_LOCAL,
     key: 'tool.sound',
     icon: 'wave',
-    ready: false,
-    price: 0.04,
+    ready: true,
   },
 ];
 

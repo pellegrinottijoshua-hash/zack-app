@@ -8,7 +8,7 @@
  */
 
 /** Un asset non è un file: è l'originale più tutto ciò che ne è derivato. */
-export const KINDS = ['png', 'svg'];
+export const KINDS = ['png', 'svg', 'wav'];
 
 export function newId(rand = Math.random) {
   // Abbastanza corto da leggersi in un nome di file, abbastanza lungo da non
@@ -61,16 +61,34 @@ export function makeAsset({ name, kind, bytes, meta = {}, folderId = null, now =
     tags: [],
     moodboardIds: [],
     createdAt: new Date(now()).toISOString(),
+    note: '',
+    starred: false,
+    // Da quale lavoro deriva questo: la catena di provenienza è ciò che rende
+    // ritrovabile un file di cui non si ricorda il nome.
+    fromId: meta.fromId ?? null,
     meta,
     file: `${safeName(name).replace(/\.[^.]+$/, '')}-${id}.${kind}`,
   };
 }
 
-export function makeFolder({ name, parentId = null, now = Date.now, rand = Math.random }) {
+export function makeFolder({
+  name,
+  parentId = null,
+  color = FOLDER_COLORS[0],
+  icon = FOLDER_ICONS[0],
+  note = '',
+  now = Date.now,
+  rand = Math.random,
+}) {
   return {
     id: newId(rand),
     name: safeName(name),
     parentId,
+    // Un colore o un'icona fuori insieme tornano al valore predefinito invece
+    // di entrare nei dati: è così che un insieme chiuso resta chiuso.
+    color: isFolderColor(color) ? color : FOLDER_COLORS[0],
+    icon: isFolderIcon(icon) ? icon : FOLDER_ICONS[0],
+    note: cleanNote(note),
     createdAt: new Date(now()).toISOString(),
   };
 }
@@ -87,6 +105,46 @@ export function makeMoodboard({ name, note = '', palette = [], now = Date.now, r
 
 export function isHex(c) {
   return typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c);
+}
+
+/**
+ * Colori e icone per le cartelle.
+ *
+ * Un insieme CHIUSO, di proposito. Le etichette libere sembrano flessibili e
+ * diventano ingestibili: dopo tre mesi si hanno «brand», «Brand» e «branding»
+ * e non se ne usa nessuna. Pochi colori riconoscibili funzionano perché sono
+ * pochi.
+ *
+ * I colori escono dalla palette JAYL più due neutri, così una cartella non può
+ * introdurre un colore fuori marchio.
+ */
+export const FOLDER_COLORS = ['#C4A35A', '#8A8A85', '#F5F0E8', '#6E6E6A', '#3D3D3A'];
+
+export const FOLDER_ICONS = [
+  'cartella',
+  'maglietta',
+  'personaggio',
+  'stella',
+  'fuoco',
+  'occhio',
+  'tag',
+  'cerchio',
+];
+
+export function isFolderColor(c) {
+  return FOLDER_COLORS.includes(c);
+}
+
+export function isFolderIcon(i) {
+  return FOLDER_ICONS.includes(i);
+}
+
+/** Una nota libera, ma non infinita: una nota di mille righe non è una nota. */
+export function cleanNote(note) {
+  return String(note ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 280);
 }
 
 /** Una cartella non può finire dentro se stessa o dentro un suo discendente. */
@@ -138,6 +196,45 @@ export function allTags(assets) {
   return [...counts.entries()]
     .map(([tag, count]) => ({ tag, count }))
     .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+}
+
+/**
+ * La catena di derivazione di un lavoro, dalla radice a lui.
+ * Si ferma su un anello: dati incoerenti non devono impiantare l'interfaccia.
+ */
+export function lineage(assets, id) {
+  const chain = [];
+  const seen = new Set();
+  let cur = assets.find((a) => a.id === id);
+  while (cur && !seen.has(cur.id)) {
+    chain.unshift(cur);
+    seen.add(cur.id);
+    cur = cur.fromId ? assets.find((a) => a.id === cur.fromId) : null;
+  }
+  return chain;
+}
+
+/** I lavori nati da questo. */
+export function derivedFrom(assets, id) {
+  return assets.filter((a) => a.fromId === id);
+}
+
+/** Le raccolte pronte: quasi sempre si cerca qualcosa di recente. */
+export function smartCollections(assets, now = Date.now()) {
+  const week = now - 7 * 24 * 60 * 60 * 1000;
+  return [
+    {
+      id: 'recenti',
+      labelKey: 'library.smart.recent',
+      match: (a) => Date.parse(a.createdAt) >= week,
+    },
+    { id: 'preferiti', labelKey: 'library.smart.starred', match: (a) => a.starred === true },
+    {
+      id: 'riferimenti',
+      labelKey: 'library.smart.references',
+      match: (a) => (a.moodboardIds || []).length > 0,
+    },
+  ].map((c) => ({ ...c, count: assets.filter(c.match).length }));
 }
 
 /** Normalizza un tag: minuscolo, senza spazi doppi, mai vuoto. */
