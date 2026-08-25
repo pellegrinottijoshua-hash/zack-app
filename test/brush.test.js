@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   stamp,
+  colorsFrom,
   stroke,
   maskFromRgba,
   applyMask,
@@ -121,4 +122,50 @@ test('changedPixels conta davvero le differenze', () => {
   b[0] = 0;
   b[5] = 1;
   assert.equal(changedPixels(a, b), 2);
+});
+
+test('recuperare su un ritaglio, da solo, ridipinge nero', () => {
+  // È il difetto che questa funzione esiste per risolvere. Il canvas
+  // premoltiplica: un pixel portato a alfa 0 perde il colore sul posto, e nel
+  // ritaglio quel colore non esiste più da nessuna parte.
+  const count = 2;
+  const ritaglio = new Uint8ClampedArray([0, 0, 0, 0, 40, 80, 220, 255]);
+  const soloRitaglio = colorsFrom(null, ritaglio, count);
+  const mask = maskFromRgba(soloRitaglio, count);
+  mask[0] = 255; // «Recupera» sul primo pixel
+  applyMask(soloRitaglio, mask, count);
+  assert.deepEqual([...soloRitaglio.slice(0, 4)], [0, 0, 0, 255], 'nero opaco: il difetto');
+});
+
+test('coi colori della sorgente il recupero riporta il colore vero', () => {
+  const count = 2;
+  const sorgente = new Uint8ClampedArray([220, 40, 40, 255, 40, 80, 220, 255]);
+  const ritaglio = new Uint8ClampedArray([0, 0, 0, 0, 40, 80, 220, 255]);
+  const livello = colorsFrom(sorgente, ritaglio, count);
+
+  // L'alfa resta quella del ritaglio: il soggetto non cambia.
+  assert.deepEqual([...livello.slice(0, 4)], [220, 40, 40, 0]);
+
+  const mask = maskFromRgba(livello, count);
+  mask[0] = 255;
+  applyMask(livello, mask, count);
+  assert.deepEqual([...livello.slice(0, 4)], [220, 40, 40, 255], 'deve tornare rosso, non nero');
+});
+
+test('dentro il soggetto sorgente e ritaglio coincidono: non si perde nulla', () => {
+  const sorgente = new Uint8ClampedArray([40, 80, 220, 255]);
+  const ritaglio = new Uint8ClampedArray([40, 80, 220, 255]);
+  assert.deepEqual([...colorsFrom(sorgente, ritaglio, 1)], [40, 80, 220, 255]);
+});
+
+test('una sorgente di dimensione diversa non corrompe il ritaglio', () => {
+  // Dopo un ritaglio o un ingrandimento le due immagini non combaciano più:
+  // meglio un recupero limitato che pixel presi dal posto sbagliato.
+  const ritaglio = new Uint8ClampedArray([10, 20, 30, 255]);
+  const sbagliata = new Uint8ClampedArray(8);
+  assert.deepEqual([...colorsFrom(sbagliata, ritaglio, 1)], [10, 20, 30, 255]);
+});
+
+test('colorsFrom rifiuta un conteggio incoerente invece di leggere a vuoto', () => {
+  assert.throws(() => colorsFrom(null, new Uint8ClampedArray(4), 5), /non combaciano/);
 });

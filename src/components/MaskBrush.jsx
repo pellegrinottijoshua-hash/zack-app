@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
-import { stroke, maskFromRgba, applyMask, changedPixels, ERASE, RESTORE } from '../engine/brush.js';
+import {
+  stroke,
+  maskFromRgba,
+  applyMask,
+  colorsFrom,
+  changedPixels,
+  ERASE,
+  RESTORE,
+} from '../engine/brush.js';
 
 const SIZES = [10, 25, 60, 120];
 const MAX_UNDO = 12;
@@ -14,7 +22,25 @@ const MAX_UNDO = 12;
  *
  * Funziona a mouse e a dito: su un telefono il pennello è l'unico modo
  * praticabile di rifinire un ritaglio.
+ *
+ * **Serve il file di partenza, non solo il ritaglio.** Il canvas premoltiplica
+ * i colori per l'opacità: ciò che è stato portato a trasparente ha perso il
+ * colore sul posto, e recuperarlo dal solo ritaglio ridipinge nero. I colori
+ * vivi stanno soltanto nella sorgente.
  */
+/** I pixel di un'immagine, senza riscalarla: una scala sbagliata qui
+ *  sposterebbe i colori di posto. */
+async function toPixels(blob) {
+  const bmp = await createImageBitmap(blob);
+  const c = document.createElement('canvas');
+  c.width = bmp.width;
+  c.height = bmp.height;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(bmp, 0, 0);
+  bmp.close?.();
+  return { w: c.width, h: c.height, data: ctx.getImageData(0, 0, c.width, c.height).data };
+}
+
 export default function MaskBrush({ source, cutout, onChange, onDone }) {
   const canvasRef = useRef(null);
   const stateRef = useRef(null);
@@ -22,26 +48,37 @@ export default function MaskBrush({ source, cutout, onChange, onDone }) {
   const [size, setSize] = useState(25);
   const [dirty, setDirty] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
+  // Vero quando la sorgente non è utilizzabile: il recupero funziona ancora
+  // dove il colore è sopravvissuto, ma va detto prima, non scoperto dipingendo.
+  const [limited, setLimited] = useState(false);
 
   // Prepara i pixel una volta: il colore non cambia mai, solo l'alfa.
   useEffect(() => {
     let alive = true;
     (async () => {
-      const bmp = await createImageBitmap(cutout);
+      const cut = await toPixels(cutout);
       if (!alive) return;
-      const c = document.createElement('canvas');
-      c.width = bmp.width;
-      c.height = bmp.height;
-      const ctx = c.getContext('2d', { willReadFrequently: true });
-      ctx.drawImage(bmp, 0, 0);
-      bmp.close?.();
 
-      const img = ctx.getImageData(0, 0, c.width, c.height);
+      // La sorgente può mancare, essere un vettore, o avere un'altra
+      // dimensione dopo un ritaglio o un ingrandimento. In tutti questi casi
+      // si continua con quello che c'è invece di fermarsi.
+      let src = null;
+      try {
+        src = source ? await toPixels(source) : null;
+      } catch (e) {
+        console.error(e);
+      }
+      if (!alive) return;
+
+      const count = cut.w * cut.h;
+      const usable = src && src.w === cut.w && src.h === cut.h;
+      setLimited(!usable);
+
       stateRef.current = {
-        w: c.width,
-        h: c.height,
-        rgba: img.data,
-        mask: maskFromRgba(img.data, c.width * c.height),
+        w: cut.w,
+        h: cut.h,
+        rgba: colorsFrom(usable ? src.data : null, cut.data, count),
+        mask: maskFromRgba(cut.data, count),
         undo: [],
         last: null,
       };
@@ -52,7 +89,7 @@ export default function MaskBrush({ source, cutout, onChange, onDone }) {
     };
     // Si prepara una volta per ogni ritaglio ricevuto.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cutout]);
+  }, [cutout, source]);
 
   const paint = useCallback(() => {
     const s = stateRef.current;
@@ -165,6 +202,8 @@ export default function MaskBrush({ source, cutout, onChange, onDone }) {
           {t('brush.apply')}
         </button>
       </div>
+
+      {limited && mode === 'restore' && <p className="verdict" data-level="attenzione">{t('brush.limited')}</p>}
 
       <div className="brush-stage">
         <canvas

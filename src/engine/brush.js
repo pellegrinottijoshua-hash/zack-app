@@ -102,3 +102,41 @@ export function changedPixels(before, after) {
   for (let i = 0; i < before.length; i++) if (before[i] !== after[i]) n++;
   return n;
 }
+
+/**
+ * I colori con cui «Recupera» ridipinge.
+ *
+ * **Il ritaglio non contiene più i colori che ha tolto.** Il canvas moltiplica
+ * i colori per l'opacità: un pixel portato ad alfa 0 esce come `0,0,0,0` già
+ * al momento in cui viene scritto, prima ancora del PNG. Verificato il
+ * 2026-08-25 — non è una perdita del formato, è come funziona la tela.
+ *
+ * La conseguenza è che recuperare l'alfa su un ritaglio, da solo, ridipinge
+ * NERO. L'unico posto dove quei colori esistono ancora è il file di partenza.
+ *
+ * Qui si compone il livello su cui lavorare: **i colori dalla sorgente, l'alfa
+ * dal ritaglio.** Dentro il soggetto i due coincidono, quindi non si perde
+ * nulla; fuori, si ritrova ciò che era stato cancellato.
+ *
+ * @returns {Uint8ClampedArray} RGBA pronto per il pennello
+ */
+export function colorsFrom(sourceRgba, cutoutRgba, pixelCount) {
+  if (cutoutRgba.length !== pixelCount * 4) {
+    throw new Error('Ritaglio e conteggio pixel non combaciano');
+  }
+  // Senza una sorgente utilizzabile si lavora con ciò che c'è: il recupero
+  // resterà limitato, ma il pennello continua a funzionare.
+  if (!sourceRgba || sourceRgba.length !== pixelCount * 4) {
+    return new Uint8ClampedArray(cutoutRgba);
+  }
+
+  const out = new Uint8ClampedArray(pixelCount * 4);
+  for (let i = 0; i < pixelCount; i++) {
+    const k = i * 4;
+    out[k] = sourceRgba[k];
+    out[k + 1] = sourceRgba[k + 1];
+    out[k + 2] = sourceRgba[k + 2];
+    out[k + 3] = cutoutRgba[k + 3];
+  }
+  return out;
+}
