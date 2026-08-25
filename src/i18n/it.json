@@ -1,0 +1,66 @@
+{
+  "app": {
+    "name": "JAYL STUDIO",
+    "payoff": "Art finds a way.",
+    "tagline": "Prepara i tuoi asset. Sul tuo computer, senza mandare niente in giro."
+  },
+  "tool": {
+    "cutout": { "label": "Scontorna", "help": "Toglie lo sfondo e lascia solo il soggetto, su trasparenza." },
+    "vector": { "label": "Vettorializza", "help": "Trasforma i pixel in forme che puoi ingrandire quanto vuoi senza sgranare." },
+    "editor": { "label": "Editor SVG", "help": "Apre e modifica file vettoriali: sposta, colora, aggiungi testo e forme." }
+  },
+  "drop": {
+    "title": "Trascina qui un'immagine",
+    "hint": "PNG, JPG o WebP, anche file di stampa grandi. Non lascia questo computer.",
+    "vectorTitle": "Trascina un'immagine da vettorializzare",
+    "vectorHint": "Funziona meglio con colori piatti, loghi e disegni al tratto che con le fotografie."
+  },
+  "control": {
+    "quality": { "label": "Qualità", "help": "Più alta significa bordi più precisi ma qualche secondo in più di attesa." },
+    "language": { "label": "Lingua", "help": "Cambia la lingua di tutta l'interfaccia, subito." },
+    "background": { "label": "Sfondo", "help": "Il colore dietro alla grafica nel file esportato. Trasparente lascia il buco." },
+    "format": { "label": "Formato", "help": "La misura del file finale. Scegli quello del posto dove lo userai." },
+    "download": { "label": "Scarica", "help": "Salva il file finito nella cartella dei download." },
+    "reset": { "label": "Ricomincia", "help": "Svuota il piano di lavoro e torna alla schermata iniziale." }
+  },
+  "engine": {
+    "tier": {
+      "fast": { "name": "Rapido", "note": "meno preciso, funziona ovunque" },
+      "quality": { "name": "Qualità", "note": "bordi più puliti" },
+      "anime": { "name": "Illustrazioni", "note": "disegni e line art" }
+    },
+    "download": {
+      "title": "Preparo lo strumento",
+      "body": "Sto scaricando il motore di ritaglio. Succede una volta sola: dalla prossima volta parte subito.",
+      "progress": "{pct}%"
+    },
+    "slow": {
+      "title": "Il tuo browser sta usando la modalità lenta",
+      "body": "Non supporta l'accelerazione grafica, quindi ogni ritaglio richiede qualche secondo in più ed è meno preciso sui bordi sottili. Con Chrome o Edge aggiornati andrebbe circa tre volte più veloce.",
+      "action": "Va bene così"
+    },
+    "phase": {
+      "loading": "Preparo il motore…",
+      "running": "Sto guardando l'immagine…",
+      "compositing": "Ritaglio il soggetto…"
+    },
+    "working": "Sto lavorando…",
+    "error": {
+      "title": "Non sono riuscito a ritagliare questa immagine",
+      "body": "Riprova, oppure prova con un'immagine diversa. Se succede ancora, il file potrebbe essere rovinato."
+    }
+  },
+  "result": {
+    "before": "originale",
+    "after": "ritagliato",
+    "compare": "Trascina la linea per confrontare prima e dopo",
+    "tooSmall": "Questa grafica è più piccola dell'area di stampa. L'ho centrata invece di ingrandirla: ingrandita si vedrebbe sgranata sul tessuto."
+  },
+  "library": {
+    "title": "Lavori",
+    "empty": "Ancora niente. Ogni cosa che crei finisce qui.",
+    "downloadAll": { "label": "Scarica tutto", "help": "Mette tutti i tuoi lavori in un unico file zip da salvare." },
+    "delete": { "label": "Elimina", "help": "Cancella questo lavoro. Non si può annullare." },
+    "open": { "label": "Apri", "help": "Riapre questo file vettoriale nell'editor per modificarlo." }
+  }
+}
