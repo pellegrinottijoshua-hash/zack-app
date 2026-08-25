@@ -181,7 +181,8 @@
       "help": "Rewrites the file more compactly without changing how it looks."
     },
     "nothing": "nothing selected",
-    "selected": "{n} selected"
+    "selected": "{n} selected",
+    "failed": "The vector editor didn't start. Reload the page; if it keeps happening, your browser may be too old."
   },
   "action": {
     "export": {
@@ -216,5 +217,87 @@
       "title": "I found no shapes to trace",
       "body": "The subject has too little contrast with the background. Try «Flat colours», or remove the background first."
     }
+  },
+  "tools": {
+    "select": {
+      "label": "Select",
+      "help": "Pick and move elements. This is the tool you start from."
+    },
+    "nodes": {
+      "label": "Nodes",
+      "help": "Edit a path's points and their handles to reshape it."
+    },
+    "pen": {
+      "label": "Pen",
+      "help": "Draw paths point by point: click for a corner, drag for a curve."
+    },
+    "pencil": {
+      "label": "Pencil",
+      "help": "Draw freehand; the path follows your mouse movement."
+    },
+    "line": {
+      "label": "Line",
+      "help": "Draw a straight segment between two points."
+    },
+    "rect": {
+      "label": "Rectangle",
+      "help": "Draw a rectangle by dragging from one corner to the other."
+    },
+    "ellipse": {
+      "label": "Ellipse",
+      "help": "Draw a circle or an ellipse by dragging."
+    },
+    "text": {
+      "label": "Text",
+      "help": "Click on the canvas and type. The text stays editable."
+    }
+  },
+  "nodes": {
+    "title": "Nodes and handles",
+    "help": "Select a path and turn node editing on: you can move the points and bend the curves by pulling the handles.",
+    "toggle": "Edit nodes",
+    "add": "Add node",
+    "remove": "Remove node",
+    "curve": "Make curved",
+    "straight": "Make straight",
+    "handles": "Handles",
+    "symmetric": "symmetric",
+    "free": "free",
+    "close": "Close path",
+    "smooth": "Smooth"
+  },
+  "transform": {
+    "title": "Position and size",
+    "w": "W",
+    "h": "H",
+    "rotation": "Rotation",
+    "help": "Exact values instead of dragging by eye. The arrows nudge one pixel at a time."
+  },
+  "align": {
+    "title": "Align",
+    "help": "Needs at least two elements selected. It aligns them to each other, not to the canvas.",
+    "left": "Left",
+    "centerX": "Centre horizontally",
+    "right": "Right",
+    "top": "Top",
+    "centerY": "Centre vertically",
+    "bottom": "Bottom",
+    "short": {
+      "left": "⇤",
+      "centerX": "⇔",
+      "right": "⇥",
+      "top": "⇡",
+      "centerY": "⇕",
+      "bottom": "⇣"
+    }
+  },
+  "appearance": {
+    "strokeWidth": "Thickness",
+    "opacity": "Opacity",
+    "help": "Thickness is in pixels. Opacity runs from 0 (invisible) to 1 (solid)."
+  },
+  "arrange": {
+    "title": "Arrange",
+    "duplicate": "Duplicate"
   }
 }

@@ -8,6 +8,7 @@ import EngineBanner from './components/EngineBanner.jsx';
 import LanguageSwitch from './components/LanguageSwitch.jsx';
 import HelpToggle from './components/HelpToggle.jsx';
 import Onboarding, { hasSeenOnboarding } from './components/Onboarding.jsx';
+import VectorTools from './components/VectorTools.jsx';
 import { useEngine } from './hooks/useEngine.js';
 import { t, setLang, detectLang, onLangChange } from './i18n/index.js';
 import { onHelpChange, isHelpOn } from './i18n/help.js';
@@ -57,6 +58,10 @@ export default function App() {
 
   const editorRef = useRef(null);
   const [selCount, setSelCount] = useState(0);
+  const [nodeMode, setNodeMode] = useState(false);
+  // Cambia a ogni azione sull'editor per far rileggere al pannello la
+  // posizione della selezione, che la libreria muta fuori da React.
+  const [editorTick, setEditorTick] = useState(0);
 
   // ─── motore nel browser ────────────────────────────────────────────────
   const engine = useEngine();
@@ -363,96 +368,16 @@ export default function App() {
         <aside className="rail">
           {isEditor ? (
             <>
-              <div className="field">
-                <span className="label">
-                  <span>{t('editor.edit')}</span>
-                  <b>{selCount ? t('editor.selected', { n: selCount }) : t('editor.nothing')}</b>
-                </span>
-                <div className="row">
-                  <button className="btn ghost small" onClick={() => editorRef.current?.undo()}>
-                    {t('editor.undo.label')}
-                  </button>
-                  <button className="btn ghost small" onClick={() => editorRef.current?.redo()}>
-                    {t('editor.redo.label')}
-                  </button>
-                </div>
-                <div className="row">
-                  <button className="btn ghost small" onClick={() => editorRef.current?.group()}>
-                    {t('editor.group.label')}
-                  </button>
-                  <button className="btn ghost small" onClick={() => editorRef.current?.ungroup()}>
-                    {t('editor.ungroup.label')}
-                  </button>
-                </div>
-                <div className="row">
-                  <button className="btn ghost small" onClick={() => editorRef.current?.toFront()}>
-                    {t('editor.front.label')}
-                  </button>
-                  <button className="btn ghost small" onClick={() => editorRef.current?.toBack()}>
-                    {t('editor.back.label')}
-                  </button>
-                </div>
-                <button className="btn ghost small" onClick={() => editorRef.current?.del()}>
-                  {t('editor.remove.label')}
-                </button>
-              </div>
-
-              <div className="field">
-                <span className="label">
-                  <span>{t('editor.fill')}</span>
-                  <b>JAYL</b>
-                </span>
-                <div className="swatches">
-                  {PALETTE.map((c) => (
-                    <button
-                      key={`f-${c}`}
-                      title={`Riempi ${c}`}
-                      style={{
-                        background:
-                          c === 'none'
-                            ? 'repeating-linear-gradient(45deg,#222 0 4px,#333 4px 8px)'
-                            : c,
-                      }}
-                      onClick={() => editorRef.current?.paint('fill', c)}
-                    />
-                  ))}
-                </div>
-                <span className="label">
-                  <span>{t('editor.stroke')}</span>
-                </span>
-                <div className="swatches">
-                  {PALETTE.map((c) => (
-                    <button
-                      key={`s-${c}`}
-                      title={`Contorna ${c}`}
-                      style={{
-                        background:
-                          c === 'none'
-                            ? 'repeating-linear-gradient(45deg,#222 0 4px,#333 4px 8px)'
-                            : c,
-                      }}
-                      onClick={() => editorRef.current?.paint('stroke', c)}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="field">
-                <span className="label">
-                  <span>{t('editor.zoom')}</span>
-                </span>
-                <div className="row">
-                  {[0.5, 1, 2].map((z) => (
-                    <button
-                      key={z}
-                      className="btn ghost small"
-                      onClick={() => editorRef.current?.zoom(z)}
-                    >
-                      {z * 100}%
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <VectorTools
+                editor={editorRef}
+                selCount={selCount}
+                nodeMode={nodeMode}
+                tick={editorTick}
+                onNodeMode={(on) => {
+                  setNodeMode(on);
+                  editorRef.current?.nodeMode(on);
+                }}
+              />
 
               <button className="btn ghost" onClick={cleanFromEditor}>
                 {t('editor.clean.label')}
