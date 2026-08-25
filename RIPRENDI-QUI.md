@@ -3,7 +3,7 @@
 Documento di passaggio. Serve ad aprire una chat nuova e ripartire senza
 ricostruire il contesto. Se leggi solo una cosa, leggi la sezione 2.
 
-- **Repo:** `~/jayl-studio` — ramo `main`, 59 commit, **216 test verdi**
+- **Repo:** `~/jayl-studio` — ramo `main`, 62 commit, **221 test verdi**
 - **Data di questo passaggio:** 25 agosto 2026
 - **Il resto:** [README.md](README.md) descrive il prodotto per intero;
   `docs/superpowers/specs/` contiene i due disegni approvati.
@@ -138,6 +138,7 @@ Ognuna è costata tempo. Non ripercorrerle.
 | **`sharp.joinChannel`** | restituisce 3 canali in silenzio e la maschera sparisce. Si interlaccia RGBA a mano. |
 | **`npm test` e `library/`** | il teardown cancellava i lavori veri. Ora richiede `JAYL_CRAFT_LIBRARY` e si rifiuta di partire senza. |
 | **`Math.max(...array)`** | esplode lo stack sopra ~100k elementi. |
+| **Canvas e alfa 0** | il canvas premoltiplica: un pixel portato a trasparente perde il colore **sul posto**, prima ancora del PNG. Recuperare l'alfa da un ritaglio, da solo, ridipinge nero. Il pennello ha bisogno della sorgente. |
 | **Rasterizzare un SVG piccolo** | l'antialiasing diventa «bordi sfumati» e genera avvisi inventati. Minimo 1200px, e sui vettori il controllo dei bordi non si fa. |
 
 ---

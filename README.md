@@ -29,6 +29,11 @@ Lo scontorno include la **correzione a mano col pennello** — l'automatico
 sbaglia sempre in qualche punto — e un **ingrandimento con super-risoluzione**
 che ricostruisce il dettaglio invece di interpolare.
 
+Il pennello ha bisogno del **file di partenza**, non solo del ritaglio: il
+canvas premoltiplica i colori per l'opacità, quindi un pixel portato a
+trasparente perde il colore sul posto e recuperarlo dal solo ritaglio
+ridipingerebbe nero. I colori vivi stanno soltanto nella sorgente.
+
 I tre a consumo non ci sono ancora: la barra li mostra marcati «presto», perché
 nascondere metà del prodotto non aiuta nessuno a capire cosa sia.
 
@@ -123,6 +128,11 @@ qualcosa di finito, e **un file rotto non ferma gli altri trentanove**.
 
 La stima del tempo viene dai lavori già conclusi in questa sessione, non da
 una costante: la stessa operazione dura diversamente su macchine diverse.
+
+A fine corsa i ritagli restano in fila, con la scacchiera sotto: quello che ha
+perso il soggetto si vede a colpo d'occhio, e un clic ci apre sopra il
+pennello. Il blocco conserva **anche i file di partenza**, perché senza
+originale «Recupera» non ha colori da riportare.
 
 ## Il laboratorio dei suoni
 
@@ -288,7 +298,7 @@ docs/superpowers/  spec e piani
 npm test
 ```
 
-Duecentosedici test. Coprono il vincolo di licenza, le funzioni pure del motore, la
+Duecentoventuno test. Coprono il vincolo di licenza, le funzioni pure del motore, la
 parità con il backend (IoU ≥ 0,98, differenza alfa media ≤ 2/255) e la
 completezza delle due lingue.
 
