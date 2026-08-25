@@ -86,3 +86,35 @@ test('applyMaskToRgba rifiuta lunghezze incoerenti invece di corrompere', () => 
   const rgba = new Uint8ClampedArray(8);
   assert.throws(() => applyMaskToRgba(rgba, new Uint8ClampedArray(5), 2), /non combacia/);
 });
+
+// ─── capacità (Task 4) ──────────────────────────────────────────────────────
+import { pickTier, defaultModelFor, modelsFor, detectWebGpu } from '../src/engine/capabilities.js';
+
+test('senza WebGPU si scende al livello compatibilità', () => {
+  assert.equal(pickTier(true), 'accelerato');
+  assert.equal(pickTier(false), 'compatibilita');
+});
+
+test('ogni livello ha un modello predefinito coerente', () => {
+  assert.equal(defaultModelFor('accelerato').id, 'isnet-general-use');
+  assert.equal(defaultModelFor('compatibilita').id, 'u2net');
+  // Il livello lento non deve mai proporre un modello a 1024px: durante la
+  // sonda del 2026-08-25 ha bloccato il tab per minuti.
+  assert.ok(defaultModelFor('compatibilita').size <= 320);
+});
+
+test('il livello lento non offre nemmeno in elenco modelli pesanti', () => {
+  for (const m of modelsFor('compatibilita')) assert.ok(m.size <= 320, `${m.id} è troppo pesante`);
+  assert.ok(modelsFor('accelerato').length > modelsFor('compatibilita').length);
+});
+
+test('detectWebGpu è falso se l API non c è o non dà un adapter', async () => {
+  assert.equal(await detectWebGpu(undefined), false);
+  assert.equal(await detectWebGpu({ requestAdapter: async () => null }), false);
+  assert.equal(await detectWebGpu({ requestAdapter: async () => ({}) }), true);
+});
+
+test('detectWebGpu non propaga eccezioni', async () => {
+  const gpu = { requestAdapter: async () => { throw new Error('boom'); } };
+  assert.equal(await detectWebGpu(gpu), false);
+});
