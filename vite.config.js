@@ -3,6 +3,12 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  // Vite pre-ottimizza onnxruntime-web e riscrive i suoi import dinamici con
+  // `?import`, che poi restituisce 500 per i file serviti da public/.
+  // Escluderlo lascia quegli import come URL normali. Verificato il 2026-08-25:
+  // senza questa riga il motore non parte affatto.
+  optimizeDeps: { exclude: ['onnxruntime-web'] },
+  worker: { format: 'es' },
   server: {
     port: 5173,
     proxy: {

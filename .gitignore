@@ -2,6 +2,8 @@
 dist/
 library/
 node_modules/
+public/models/
+public/ort/
 py/.venv/
 py/uv.lock
 tmp/
