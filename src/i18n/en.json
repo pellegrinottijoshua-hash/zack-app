@@ -1,0 +1,117 @@
+{
+  "app": {
+    "name": "JAYL STUDIO",
+    "payoff": "Art finds a way.",
+    "tagline": "Get your assets ready. On your own machine, with nothing sent anywhere."
+  },
+  "tool": {
+    "cutout": {
+      "label": "Remove background",
+      "help": "Takes the background away and keeps only the subject, on transparency."
+    },
+    "vector": {
+      "label": "Vectorise",
+      "help": "Turns pixels into shapes you can scale as large as you like without going blurry."
+    },
+    "editor": {
+      "label": "SVG editor",
+      "help": "Opens and edits vector files: move things, recolour them, add text and shapes."
+    }
+  },
+  "drop": {
+    "title": "Drop an image here",
+    "hint": "PNG, JPG or WebP, large print files included. Nothing leaves this computer.",
+    "vectorTitle": "Drop an image to vectorise",
+    "vectorHint": "Works better with flat colours, logos and line art than with photographs."
+  },
+  "control": {
+    "quality": {
+      "label": "Quality",
+      "help": "Higher means cleaner edges but a few more seconds of waiting."
+    },
+    "language": {
+      "label": "Language",
+      "help": "Changes the language of the whole interface, straight away."
+    },
+    "background": {
+      "label": "Background",
+      "help": "The colour behind your artwork in the exported file. Transparent leaves it empty."
+    },
+    "format": {
+      "label": "Format",
+      "help": "The size of the finished file. Pick the one for wherever you will use it."
+    },
+    "download": {
+      "label": "Download",
+      "help": "Saves the finished file to your downloads folder."
+    },
+    "reset": {
+      "label": "Start over",
+      "help": "Clears the workspace and takes you back to the first screen."
+    }
+  },
+  "engine": {
+    "tier": {
+      "fast": {
+        "name": "Fast",
+        "note": "less precise, runs anywhere"
+      },
+      "quality": {
+        "name": "Quality",
+        "note": "cleaner edges"
+      },
+      "anime": {
+        "name": "Illustrations",
+        "note": "drawings and line art"
+      }
+    },
+    "download": {
+      "title": "Getting the tool ready",
+      "body": "Downloading the cutout engine. This happens once — next time it starts immediately.",
+      "progress": "{pct}%"
+    },
+    "slow": {
+      "title": "Your browser is running in slow mode",
+      "body": "It has no graphics acceleration, so every cutout takes a few seconds longer and is less precise on thin edges. An up-to-date Chrome or Edge would be about three times faster.",
+      "action": "That's fine"
+    },
+    "phase": {
+      "loading": "Getting the engine ready…",
+      "running": "Looking at your image…",
+      "compositing": "Cutting the subject out…"
+    },
+    "working": "Working on it…",
+    "error": {
+      "title": "I couldn't cut out this image",
+      "body": "Try again, or try a different image. If it keeps happening, the file may be damaged."
+    }
+  },
+  "result": {
+    "before": "original",
+    "after": "cut out",
+    "compare": "Drag the line to compare before and after",
+    "tooSmall": "This artwork is smaller than the print area. I centred it rather than blowing it up: enlarged, it would look grainy on fabric."
+  },
+  "library": {
+    "title": "Your work",
+    "empty": "Nothing yet. Everything you make lands here.",
+    "downloadAll": {
+      "label": "Download all",
+      "help": "Puts all of your work into a single zip file to save."
+    },
+    "delete": {
+      "label": "Delete",
+      "help": "Removes this piece of work. This cannot be undone."
+    },
+    "open": {
+      "label": "Open",
+      "help": "Reopens this vector file in the editor so you can change it."
+    }
+  },
+  "status": {
+    "file": "file",
+    "mode": "mode",
+    "format": "format",
+    "none": "none"
+  }
+}

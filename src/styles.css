@@ -833,3 +833,94 @@ body {
   text-transform: none;
   color: var(--grigio-scuro);
 }
+
+/* ─── banner del motore ─────────────────────────────────────────────────── */
+
+.banner {
+  padding: 12px 14px;
+  border: 1px solid var(--linea-viva);
+  border-left: 3px solid var(--oro);
+  background: var(--nero-2);
+}
+
+.banner.warn {
+  border-left-color: var(--grigio);
+}
+
+.banner strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--panna);
+}
+
+.banner p {
+  margin: 0 0 9px;
+  max-width: 62ch;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--grigio);
+}
+
+.banner .bar {
+  height: 2px;
+  background: var(--linea);
+  overflow: hidden;
+}
+
+.banner .bar span {
+  display: block;
+  height: 100%;
+  background: var(--oro);
+  transition: width 0.25s ease;
+}
+
+.banner small {
+  display: block;
+  margin-top: 6px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--grigio-scuro);
+}
+
+/* Testo di aiuto sotto un controllo: la regola di progetto dice che un
+   comando senza spiegazione non è finito, quindi serve un posto dove metterla. */
+.help {
+  margin: -2px 0 2px;
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--grigio-scuro);
+}
+
+/* ─── interruttore lingua ───────────────────────────────────────────────── */
+
+.langswitch {
+  display: flex;
+  gap: 1px;
+  border: 1px solid var(--linea);
+}
+
+.langswitch button {
+  padding: 5px 9px;
+  background: transparent;
+  border: 0;
+  color: var(--grigio-scuro);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.langswitch button:hover {
+  color: var(--panna);
+}
+
+.langswitch button[aria-pressed='true'] {
+  background: var(--oro-velo);
+  color: var(--oro);
+}

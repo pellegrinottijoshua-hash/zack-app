@@ -8,7 +8,9 @@
     "dev:api": "node server/index.js",
     "dev:web": "vite",
     "build": "vite build",
-    "test": "JAYL_CRAFT_LIBRARY=./tmp/test-library node --test test/*.test.js"
+    "test": "JAYL_CRAFT_LIBRARY=./tmp/test-library node --test test/*.test.js",
+    "postinstall": "node scripts/stage-ort.js",
+    "prebuild": "node scripts/stage-ort.js"
   },
   "dependencies": {
     "@fastify/cors": "^11.0.1",
@@ -17,6 +19,7 @@
     "@svgedit/svgcanvas": "^7.4.2",
     "archiver": "^8.0.0",
     "fastify": "^5.2.1",
+    "onnxruntime-web": "^1.29.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "sharp": "^0.35.3",
