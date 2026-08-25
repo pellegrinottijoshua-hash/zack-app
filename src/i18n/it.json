@@ -389,5 +389,37 @@
     "eta": "circa {sec} s",
     "doneMsg": "Fatti {done} su {total}",
     "failed": "{n} non riusciti"
+  },
+  "sound": {
+    "record": "Registra",
+    "again": "Registra di nuovo",
+    "stop": "Ferma",
+    "save": "Salva nei lavori",
+    "heard": "Ho sentito {n} colpi, a circa {bpm} al minuto.",
+    "micDenied": "Non riesco ad accedere al microfono. Devi darne il permesso al browser: di solito compare un avviso vicino alla barra dell'indirizzo.",
+    "giant": {
+      "label": "Gigante",
+      "hint": "fai «tum tum» con la bocca"
+    },
+    "wind": {
+      "label": "Vento",
+      "hint": "fai «uuuuu» a bocca stretta"
+    },
+    "engine": {
+      "label": "Motore",
+      "hint": "fai «brrrrr» con le labbra"
+    },
+    "metal": {
+      "label": "Metallo",
+      "hint": "fai «tin» o «tac» secco"
+    },
+    "monster": {
+      "label": "Mostro",
+      "hint": "ringhia o fai «grrr»"
+    },
+    "radio": {
+      "label": "Radio",
+      "hint": "parla normalmente"
+    }
   }
 }

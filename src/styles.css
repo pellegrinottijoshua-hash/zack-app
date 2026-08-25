@@ -1928,3 +1928,71 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ─── laboratorio dei suoni ─────────────────────────────────────────────── */
+
+.soundlab {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--linea);
+  background: var(--nero-2);
+  overflow-y: auto;
+}
+
+.sl-rec {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.rec-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--nero);
+  animation: pulse 1.1s ease-in-out infinite;
+}
+
+.sl-player,
+.sl-result audio {
+  height: 34px;
+  max-width: 320px;
+  filter: invert(1) hue-rotate(180deg) saturate(0.2);
+}
+
+.sl-recipes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 6px;
+}
+
+.sl-recipes .opt {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 11px 12px;
+}
+
+.sl-recipes .note {
+  margin-left: 0;
+  font-style: italic;
+}
+
+.sl-result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--linea);
+}
+
+.sl-result .row {
+  max-width: 220px;
+}

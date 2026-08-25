@@ -14,6 +14,8 @@ import { useLibrary } from './hooks/useLibrary.js';
 import ToolRail from './components/ToolRail.jsx';
 import MaskBrush from './components/MaskBrush.jsx';
 import BatchPanel from './components/BatchPanel.jsx';
+import SoundLab from './components/SoundLab.jsx';
+import { useSound } from './hooks/useSound.js';
 import { useBatch } from './hooks/useBatch.js';
 import { SCALES, canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { getService, firstReady } from './services.js';
@@ -102,6 +104,8 @@ export default function App() {
       offHelp();
     };
   }, []);
+
+  const sound = useSound();
 
   const batch = useBatch({
     engine,
@@ -499,7 +503,20 @@ export default function App() {
           {error && <div className="alert">{error}</div>}
           {notice && !error && <div className="alert">{notice}</div>}
 
-          {isEditor ? (
+          {tool === 'suono' ? (
+            <SoundLab
+              sound={sound}
+              onSave={async (blob, recipe) => {
+                setNotice(null);
+                await library.save(blob, {
+                  name: `suono-${recipe.id}`,
+                  kind: 'wav',
+                  meta: { op: 'sound', recipe: recipe.id },
+                });
+                setNotice(t('sound.save'));
+              }}
+            />
+          ) : isEditor ? (
             <SvgEditor
               ref={editorRef}
               onSelection={setSelCount}

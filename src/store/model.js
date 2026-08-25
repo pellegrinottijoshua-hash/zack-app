@@ -8,7 +8,7 @@
  */
 
 /** Un asset non è un file: è l'originale più tutto ciò che ne è derivato. */
-export const KINDS = ['png', 'svg'];
+export const KINDS = ['png', 'svg', 'wav'];
 
 export function newId(rand = Math.random) {
   // Abbastanza corto da leggersi in un nome di file, abbastanza lungo da non

@@ -389,5 +389,37 @@
     "eta": "about {sec} s",
     "doneMsg": "Done {done} of {total}",
     "failed": "{n} failed"
+  },
+  "sound": {
+    "record": "Record",
+    "again": "Record again",
+    "stop": "Stop",
+    "save": "Save to your work",
+    "heard": "I heard {n} hits, about {bpm} a minute.",
+    "micDenied": "I can't reach the microphone. You need to allow it in the browser: the prompt usually appears near the address bar.",
+    "giant": {
+      "label": "Giant",
+      "hint": "go «thump thump» with your mouth"
+    },
+    "wind": {
+      "label": "Wind",
+      "hint": "go «oooooh» with tight lips"
+    },
+    "engine": {
+      "label": "Engine",
+      "hint": "go «brrrrr» with your lips"
+    },
+    "metal": {
+      "label": "Metal",
+      "hint": "make a sharp «tink» or «tack»"
+    },
+    "monster": {
+      "label": "Monster",
+      "hint": "growl, or go «grrr»"
+    },
+    "radio": {
+      "label": "Radio",
+      "hint": "just talk normally"
+    }
   }
 }
