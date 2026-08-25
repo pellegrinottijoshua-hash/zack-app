@@ -264,7 +264,8 @@
     "symmetric": "simmetrici",
     "free": "liberi",
     "close": "Chiudi tracciato",
-    "smooth": "Ammorbidisci"
+    "smooth": "Ammorbidisci",
+    "needPath": "Per modificare i nodi seleziona prima un tracciato: disegnane uno con la Penna o la Matita, oppure clicca una forma già disegnata."
   },
   "transform": {
     "title": "Posizione e misura",

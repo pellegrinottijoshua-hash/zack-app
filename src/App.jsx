@@ -9,6 +9,7 @@ import LanguageSwitch from './components/LanguageSwitch.jsx';
 import HelpToggle from './components/HelpToggle.jsx';
 import Onboarding, { hasSeenOnboarding } from './components/Onboarding.jsx';
 import VectorTools from './components/VectorTools.jsx';
+import { resolveShortcut } from './engine/shortcuts.js';
 import { useEngine } from './hooks/useEngine.js';
 import { t, setLang, detectLang, onLangChange } from './i18n/index.js';
 import { onHelpChange, isHelpOn } from './i18n/help.js';
@@ -41,7 +42,15 @@ export default function App() {
   const [notice, setNotice] = useState(null);
 
   const [works, setWorks] = useState([]);
-  const [libOpen, setLibOpen] = useState(true);
+  // La striscia dei lavori parte chiusa: mangia un quinto dello schermo, e
+  // chi apre l'app vuole lavorare su un file, non sfogliare l'archivio.
+  const [libOpen, setLibOpen] = useState(() => {
+    try {
+      return localStorage.getItem('jayl.libOpen') === '1';
+    } catch {
+      return false;
+    }
+  });
   const [libPath, setLibPath] = useState('');
 
   const [s, setS] = useState({
@@ -82,6 +91,38 @@ export default function App() {
       offHelp();
     };
   }, []);
+
+  // Scorciatoie da tastiera: attive solo nell'editor, e mai mentre si scrive.
+  // La decisione su quale azione eseguire sta in una funzione pura testata a
+  // parte; qui resta solo il collegamento.
+  useEffect(() => {
+    if (tool !== 'editor') return undefined;
+    const onKey = (ev) => {
+      const action = resolveShortcut(ev);
+      if (!action) return;
+      const e = editorRef.current;
+      if (!e) return;
+      ev.preventDefault();
+
+      if (action.startsWith('tool:')) {
+        const id = action.slice(5);
+        const ok = e.setMode(id);
+        setNodeMode(ok && id === 'pathedit');
+      } else if (action.startsWith('nudge:')) {
+        const [dx, dy] = action.slice(6).split(',').map(Number);
+        e.nudge(dx, dy);
+      } else if (action === 'delete') e.del();
+      else if (action === 'duplicate') e.duplicate();
+      else if (action === 'group') e.group();
+      else if (action === 'ungroup') e.ungroup();
+      else if (action === 'undo') e.undo();
+      else if (action === 'redo') e.redo();
+
+      setEditorTick((n) => n + 1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [tool]);
 
   // Il motore decide il default: l'utente deve poter premere Scontorna senza
   // aver scelto nulla.
@@ -347,7 +388,11 @@ export default function App() {
           {notice && !error && <div className="alert">{notice}</div>}
 
           {isEditor ? (
-            <SvgEditor ref={editorRef} onSelection={setSelCount} />
+            <SvgEditor
+              ref={editorRef}
+              onSelection={setSelCount}
+              onRefuseNodes={() => setNotice(t('nodes.needPath'))}
+            />
           ) : file ? (
             <Compare
               before={beforeUrl}
@@ -461,7 +506,17 @@ export default function App() {
       <Library
         items={works}
         open={libOpen}
-        onToggle={() => setLibOpen((v) => !v)}
+        onToggle={() =>
+          setLibOpen((v) => {
+            const next = !v;
+            try {
+              localStorage.setItem('jayl.libOpen', next ? '1' : '0');
+            } catch {
+              /* la sessione corrente funziona lo stesso */
+            }
+            return next;
+          })
+        }
         onRefresh={refreshLibrary}
         onOpenInEditor={openWorkInEditor}
         path={libPath}

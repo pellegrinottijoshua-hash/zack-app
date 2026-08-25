@@ -26,11 +26,22 @@ const TOOLS = [
  * and never re-render into that container. All interaction goes through the
  * imperative handle rather than props, which keeps React out of its way.
  */
-const SvgEditor = forwardRef(function SvgEditor({ onReady, onSelection }, ref) {
+/**
+ * La modifica dei nodi opera su UN tracciato. Entrarci senza selezione manda
+ * in errore il modulo interno della libreria ("reading 'elem' of null") e da
+ * lì l'editor resta bloccato: nessun cambio di strumento funziona più.
+ */
+function canEditNodes(canvas) {
+  const els = canvas?.getSelectedElements?.().filter(Boolean) || [];
+  return els.length === 1 && els[0].tagName.toLowerCase() === 'path';
+}
+
+const SvgEditor = forwardRef(function SvgEditor({ onReady, onSelection, onRefuseNodes }, ref) {
   const hostRef = useRef(null);
   const canvasRef = useRef(null);
   const [mode, setMode] = useState('select');
   const [error, setError] = useState(null);
+  const [nodesReady, setNodesReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,7 +83,9 @@ const SvgEditor = forwardRef(function SvgEditor({ onReady, onSelection }, ref) {
         }
 
         canvas.bind?.('selected', (win, elems) => {
-          onSelection?.((elems || []).filter(Boolean).length);
+          const list = (elems || []).filter(Boolean);
+          onSelection?.(list.length);
+          setNodesReady(canEditNodes(canvas));
         });
 
         onReady?.(canvas);
@@ -90,12 +103,51 @@ const SvgEditor = forwardRef(function SvgEditor({ onReady, onSelection }, ref) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /**
+   * Un cambio di modalità non deve MAI poter bloccare l'editor: se la libreria
+   * solleva, si torna a "seleziona" invece di restare in uno stato morto.
+   */
+  const applyMode = (m) => {
+    const c = canvasRef.current;
+    if (!c) return false;
+    if (m === 'pathedit') {
+      if (!canEditNodes(c)) {
+        onRefuseNodes?.();
+        return false;
+      }
+      // `toEditMode` è ciò che consegna davvero il tracciato all'editor di
+      // nodi e ne disegna le maniglie. Esiste nel core ma NON è dichiarato nei
+      // tipi: lo chiamiamo solo se c'è, e se un domani sparisce il pulsante si
+      // disabilita invece di entrare in una modalità che non mostra nulla.
+      const toEdit = c.pathActions?.toEditMode;
+      if (typeof toEdit !== 'function') {
+        onRefuseNodes?.();
+        return false;
+      }
+    }
+    try {
+      c.setMode(m);
+      if (m === 'pathedit') {
+        c.pathActions.toEditMode(c.getSelectedElements().filter(Boolean)[0]);
+      }
+      setMode(m);
+      return true;
+    } catch (err) {
+      console.error(err);
+      try {
+        c.setMode('select');
+      } catch {
+        /* niente da fare: almeno non propaghiamo */
+      }
+      setMode('select');
+      return false;
+    }
+  };
+
   useImperativeHandle(ref, () => ({
     canvas: () => canvasRef.current,
-    setMode(m) {
-      canvasRef.current?.setMode(m);
-      setMode(m);
-    },
+    setMode: applyMode,
+    canEditNodes: () => canEditNodes(canvasRef.current),
     getSvg: () => canvasRef.current?.getSvgString() || '',
     setSvg(svg) {
       const c = canvasRef.current;
@@ -227,10 +279,7 @@ const SvgEditor = forwardRef(function SvgEditor({ onReady, onSelection }, ref) {
     // ─── nodi e maniglie ────────────────────────────────────────────────
     /** Entra o esce dalla modifica dei nodi di un tracciato. */
     nodeMode(on) {
-      const c = canvasRef.current;
-      if (!c) return;
-      c.setMode(on ? 'pathedit' : 'select');
-      setMode(on ? 'pathedit' : 'select');
+      return applyMode(on ? 'pathedit' : 'select');
     },
     addNode: () => canvasRef.current?.pathActions?.clonePathNode(),
     removeNode: () => canvasRef.current?.pathActions?.deletePathNode(),
@@ -268,12 +317,9 @@ const SvgEditor = forwardRef(function SvgEditor({ onReady, onSelection }, ref) {
             key={tool.id}
             className="tool"
             aria-pressed={mode === tool.id}
-            disabled={Boolean(error)}
+            disabled={Boolean(error) || (tool.id === 'pathedit' && !nodesReady)}
             title={t(`${tool.key}.help`)}
-            onClick={() => {
-              canvasRef.current?.setMode(tool.id);
-              setMode(tool.id);
-            }}
+            onClick={() => applyMode(tool.id)}
           >
             {t(`${tool.key}.label`)}
           </button>

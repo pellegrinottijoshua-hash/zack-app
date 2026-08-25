@@ -264,7 +264,8 @@
     "symmetric": "symmetric",
     "free": "free",
     "close": "Close path",
-    "smooth": "Smooth"
+    "smooth": "Smooth",
+    "needPath": "To edit nodes, select a path first: draw one with the Pen or Pencil, or click a shape you already drew."
   },
   "transform": {
     "title": "Position and size",
