@@ -11,6 +11,8 @@ import Onboarding, { hasSeenOnboarding } from './components/Onboarding.jsx';
 import { useEngine } from './hooks/useEngine.js';
 import { t, setLang, detectLang, onLangChange } from './i18n/index.js';
 import { onHelpChange, isHelpOn } from './i18n/help.js';
+import { renderExport } from './engine/render.js';
+import { PRESETS, BACKGROUNDS } from './engine/export.js';
 import * as api from './lib/api.js';
 
 const TOOLS = [
@@ -204,18 +206,17 @@ export default function App() {
         isVector = result.kind === 'svg';
       }
 
-      const { blob, meta } = await api.exportPreset(source, {
+      // Anche l'export gira nel browser: il flusso principale non ha piu'
+      // bisogno che il backend sia acceso.
+      const { blob, meta } = await renderExport(source, {
         preset: s.preset,
         background: s.background,
         isVector,
       });
       api.download(own(blob), `${source.name.replace(/\.[^.]+$/, '')}-${s.preset}.png`);
       setNotice(
-        `Esportato ${px(meta.canvas)}${
-          meta.upscaleLimited ? ' — sorgente troppo piccola per riempire l’area, non l’ho ingrandita.' : ''
-        }`,
+        `${meta.canvas.w}×${meta.canvas.h}${meta.upscaleLimited ? ` — ${t('result.tooSmall')}` : ''}`,
       );
-      refreshLibrary();
     } catch (e) {
       setError(e.message);
     } finally {
@@ -490,7 +491,13 @@ export default function App() {
             </>
           )}
 
-          <ExportPanel caps={caps} s={s} set={set} busy={Boolean(busy)} />
+          <ExportPanel
+            presets={PRESETS}
+            backgrounds={Object.keys(BACKGROUNDS)}
+            s={s}
+            set={set}
+            busy={Boolean(busy)}
+          />
 
           {file && !isEditor && (
             <button className="btn ghost" onClick={reset}>
