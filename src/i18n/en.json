@@ -149,7 +149,9 @@
     "star": "Star",
     "unstar": "Remove star",
     "lineage": "Comes from",
-    "folderLook": "Look"
+    "folderLook": "Look",
+    "expand": "Open large",
+    "shrink": "Shrink"
   },
   "status": {
     "file": "file",

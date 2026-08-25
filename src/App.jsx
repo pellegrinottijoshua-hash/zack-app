@@ -61,6 +61,15 @@ export default function App() {
       return false;
     }
   });
+  // Aperta in grande resta grande: chi sfoglia ottanta lavori non vuole
+  // riallargarla a ogni giro.
+  const [libBig, setLibBig] = useState(() => {
+    try {
+      return localStorage.getItem('jayl.libBig') === '1';
+    } catch {
+      return false;
+    }
+  });
 
   const [s, setS] = useState({
     // Sovrascritto appena il motore sa cosa può fare questo browser: scegliere
@@ -849,6 +858,18 @@ export default function App() {
             const next = !v;
             try {
               localStorage.setItem('jayl.libOpen', next ? '1' : '0');
+            } catch {
+              /* la sessione corrente funziona lo stesso */
+            }
+            return next;
+          })
+        }
+        big={libBig}
+        onToggleBig={() =>
+          setLibBig((v) => {
+            const next = !v;
+            try {
+              localStorage.setItem('jayl.libBig', next ? '1' : '0');
             } catch {
               /* la sessione corrente funziona lo stesso */
             }

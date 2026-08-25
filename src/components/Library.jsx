@@ -62,7 +62,7 @@ function Thumb({ item, read }) {
  * svuotare i dati del sito cancella l'archivio, e per questo l'avviso e il
  * pulsante di export completo sono in vista, non nascosti in un menu.
  */
-export default function Library({ store, open, onToggle, onOpenInEditor, onDownloadAll, onAssetAction }) {
+export default function Library({ store, open, big, onToggleBig, onToggle, onOpenInEditor, onDownloadAll, onAssetAction }) {
   const [newFolder, setNewFolder] = useState('');
   const [newBoard, setNewBoard] = useState('');
   const [tagFor, setTagFor] = useState(null);
@@ -85,7 +85,7 @@ export default function Library({ store, open, onToggle, onOpenInEditor, onDownl
   };
 
   return (
-    <section className="library" data-open={open}>
+    <section className="library" data-open={open} data-size={big ? 'grande' : 'striscia'}>
       <header className="library-head" onClick={onToggle}>
         <span className="label" style={{ letterSpacing: '0.24em' }}>
           {t('library.title')}
@@ -93,6 +93,22 @@ export default function Library({ store, open, onToggle, onOpenInEditor, onDownl
         <span className="count">{store.visible.length}</span>
         <span className="hint">{open ? '▾' : '▸'}</span>
         <span className="spacer" />
+        {/* Ottantasei lavori in una striscia alta 260 px sono irraggiungibili:
+            si scorre di lato all'infinito e i comandi restano sotto il taglio.
+            Aperta in grande, la libreria diventa una griglia che scorre in
+            basso — ed è li' che si sceglie, non mentre si lavora. */}
+        {open && (
+          <button
+            className="btn ghost small"
+            aria-pressed={big}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleBig();
+            }}
+          >
+            {big ? t('library.shrink') : t('library.expand')}
+          </button>
+        )}
         {store.assets.length > 0 && (
           <button
             className="btn small"

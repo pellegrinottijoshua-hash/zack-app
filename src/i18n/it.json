@@ -149,7 +149,9 @@
     "star": "Preferito",
     "unstar": "Togli dai preferiti",
     "lineage": "Viene da",
-    "folderLook": "Aspetto"
+    "folderLook": "Aspetto",
+    "expand": "Apri in grande",
+    "shrink": "Riduci"
   },
   "status": {
     "file": "file",

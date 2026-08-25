@@ -597,7 +597,12 @@ body {
   background: var(--nero-2);
   display: grid;
   grid-template-rows: auto 0fr;
-  transition: grid-template-rows 0.28s ease;
+  /* NIENTE transizione su grid-template-rows. Fra `0fr` e `minmax(0, 64vh)`
+     non c'è interpolazione possibile: la traccia resta congelata al valore
+     vecchio, senza errori e senza animazione — la libreria si apriva alta zero
+     pixel. È lo stesso difetto già visto su grid-template-columns nella barra
+     degli strumenti, sull'altro asse. Verificato il 2026-08-25: tolta la
+     transizione, la riga passa da 0px a 576px all'istante. */
 }
 
 /* A strip, not a second workspace: the stage must keep the room. */
@@ -2131,4 +2136,47 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ─── la libreria aperta in grande ───────────────────────────────────────
+   La striscia va bene mentre si lavora: si guarda di sfuggita e non ruba
+   spazio alla tela. Non va bene per SCEGLIERE fra ottanta lavori — di lato
+   si scorre all'infinito e i comandi di ogni lavoro restano sotto il taglio.
+   In grande diventa una griglia che scorre in basso. */
+.library[data-open='true'][data-size='grande'] {
+  grid-template-rows: auto minmax(0, 64vh);
+}
+
+.library[data-size='grande'] .strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  align-content: start;
+  gap: 12px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* Con overflow-y attivo serve anche un fondo di spazio, o l'ultima riga
+     resta incollata al bordo e sembra tagliata. */
+  padding-bottom: calc(var(--pad) * 1.5);
+}
+
+.library[data-size='grande'] .work {
+  width: auto;
+}
+
+.library[data-size='grande'] .work .thumb {
+  height: 130px;
+}
+
+/* In griglia c'è larghezza: i comandi dicono il loro nome per intero invece di
+   troncarsi a metà parola. Due per riga e non uno: in colonna i comandi erano
+   più alti della miniatura, e si vedevano metà lavori a parità di schermo. */
+.library[data-size='grande'] .work .acts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+}
+
+.library[data-size='grande'] .work .acts button {
+  font-size: 9.5px;
+  padding: 6px 2px;
 }
