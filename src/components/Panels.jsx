@@ -91,8 +91,8 @@ export function TracePanel({ caps, s, set, busy }) {
   );
 }
 
-export function ExportPanel({ caps, s, set, busy }) {
-  const groups = [...new Set(caps.presets.map((p) => p.group))];
+export function ExportPanel({ presets, backgrounds, s, set, busy }) {
+  const groups = [...new Set(presets.map((p) => p.group))];
   return (
     <div className="field">
       <span className="label">
@@ -104,7 +104,7 @@ export function ExportPanel({ caps, s, set, busy }) {
           <span className="label" style={{ letterSpacing: '0.14em' }}>
             <span>{t(`group.${g}`)}</span>
           </span>
-          {caps.presets
+          {presets
             .filter((p) => p.group === g)
             .map((p) => (
               <Choice
@@ -122,7 +122,7 @@ export function ExportPanel({ caps, s, set, busy }) {
         <span>{t('control.background.label')}</span>
       </span>
       <Help k="control.background.help" />
-      {caps.backgrounds.map((b) => (
+      {backgrounds.map((b) => (
         <Choice
           key={b}
           label={b}
