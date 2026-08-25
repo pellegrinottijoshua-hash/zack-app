@@ -112,7 +112,22 @@
       "label": "Open",
       "help": "Reopens this vector file in the editor so you can change it."
     },
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "search": "Search…",
+    "all": "All",
+    "newFolder": "+ folder",
+    "newMoodboard": "+ moodboard",
+    "newTag": "tag…",
+    "tag": "Tag",
+    "removeTag": "Remove this tag",
+    "folder": {
+      "help": "Click to filter. Double-click deletes the folder: your work stays, it just moves out of folders."
+    },
+    "moodboard": {
+      "help": "Click to see only this moodboard's work. Double-click deletes it; the work stays."
+    },
+    "localWarning": "Everything is saved in this browser, on your computer. Clearing the site's data wipes the archive: download everything now and then.",
+    "unsupported": "This browser cannot keep files locally. You can still create and download work, but it won't stay in the archive."
   },
   "status": {
     "file": "file",

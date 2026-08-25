@@ -589,7 +589,7 @@ body {
 
 /* A strip, not a second workspace: the stage must keep the room. */
 .library[data-open='true'] {
-  grid-template-rows: auto minmax(0, 218px);
+  grid-template-rows: auto minmax(0, 260px);
 }
 
 .library-head {
@@ -1166,4 +1166,144 @@ body {
   flex-direction: column;
   gap: 8px;
   padding-top: 9px;
+}
+
+/* ─── filtri della libreria ─────────────────────────────────────────────── */
+
+.lib-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  padding: 0 var(--pad) 9px;
+}
+
+.search {
+  padding: 5px 9px;
+  min-width: 150px;
+  background: var(--nero);
+  border: 1px solid var(--linea);
+  color: var(--panna);
+  font: inherit;
+  font-size: 11px;
+  outline: none;
+}
+
+.search:focus {
+  border-color: var(--oro);
+}
+
+.chip {
+  padding: 4px 9px;
+  background: transparent;
+  border: 1px solid var(--linea);
+  color: var(--grigio-scuro);
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.chip:hover {
+  color: var(--panna);
+  border-color: var(--linea-viva);
+}
+
+.chip[aria-pressed='true'] {
+  border-color: var(--oro);
+  background: var(--oro-velo);
+  color: var(--panna);
+}
+
+.chip b {
+  margin-left: 4px;
+  color: var(--grigio-scuro);
+  font-weight: 500;
+}
+
+.chip.tag {
+  font-style: italic;
+}
+
+.chip-form input {
+  width: 108px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px dashed var(--linea);
+  color: var(--panna);
+  font: inherit;
+  font-size: 10px;
+  outline: none;
+}
+
+.chip-form input:focus {
+  border-style: solid;
+  border-color: var(--oro);
+}
+
+.work .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.work .tags button {
+  padding: 1px 4px;
+  background: transparent;
+  border: 1px solid var(--linea);
+  color: var(--grigio-scuro);
+  font: inherit;
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.work .tags button:hover {
+  color: var(--oro);
+  border-color: var(--oro);
+}
+
+.tag-form input {
+  width: 100%;
+  padding: 4px 6px;
+  background: var(--nero-3);
+  border: 0;
+  border-top: 1px solid var(--linea);
+  color: var(--panna);
+  font: inherit;
+  font-size: 10px;
+  outline: none;
+}
+
+.work .boards {
+  display: flex;
+  gap: 1px;
+  border-top: 1px solid var(--linea);
+}
+
+.work .boards button {
+  flex: 1;
+  padding: 4px 0;
+  background: transparent;
+  border: 0;
+  color: var(--linea-viva);
+  font-size: 10px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.work .boards button[aria-pressed='true'] {
+  color: var(--oro);
+}
+
+.lib-note {
+  margin: 0;
+  /* Sopra la striscia e fuori dallo scorrimento: un avviso che si può
+     perdere scorrendo è un avviso che nessuno legge. */
+  padding: 0 var(--pad) 8px;
+  max-width: 90ch;
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--grigio-scuro);
 }

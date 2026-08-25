@@ -10,6 +10,8 @@ import HelpToggle from './components/HelpToggle.jsx';
 import Onboarding, { hasSeenOnboarding } from './components/Onboarding.jsx';
 import VectorTools from './components/VectorTools.jsx';
 import { resolveShortcut } from './engine/shortcuts.js';
+import { useLibrary } from './hooks/useLibrary.js';
+import { bundleAll } from './store/bundle.js';
 import { useEngine } from './hooks/useEngine.js';
 import { t, setLang, detectLang, onLangChange } from './i18n/index.js';
 import { onHelpChange, isHelpOn } from './i18n/help.js';
@@ -41,7 +43,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
 
-  const [works, setWorks] = useState([]);
+  const library = useLibrary();
   // La striscia dei lavori parte chiusa: mangia un quinto dello schermo, e
   // chi apre l'app vuole lavorare su un file, non sfogliare l'archivio.
   const [libOpen, setLibOpen] = useState(() => {
@@ -51,7 +53,6 @@ export default function App() {
       return false;
     }
   });
-  const [libPath, setLibPath] = useState('');
 
   const [s, setS] = useState({
     // Sovrascritto appena il motore sa cosa può fare questo browser: scegliere
@@ -142,28 +143,6 @@ export default function App() {
     return () => set.forEach(URL.revokeObjectURL);
   }, []);
 
-  const refreshLibrary = useCallback(async () => {
-    try {
-      const { items, path } = await api.library();
-      setWorks(items);
-      setLibPath(path);
-    } catch {
-      // A library read failure must not take the workspace down.
-    }
-  }, []);
-
-  useEffect(() => {
-    // Il backend serve solo alla libreria su disco. Se non c'è, l'app funziona
-    // lo stesso: si perde solo il salvataggio automatico dei lavori.
-    api
-      .health()
-      .then((h) => {
-        setApiState('pronta');
-        setLibPath(h.libraryPath);
-      })
-      .catch(() => setApiState('offline'));
-    refreshLibrary();
-  }, [refreshLibrary]);
 
   function onFile(f) {
     setError(null);
@@ -206,6 +185,11 @@ export default function App() {
           kind: 'png',
           meta: { strategy: 'browser', model: s.model, ms: Date.now() - started },
         });
+        await library.save(blob, {
+          name: `${file.name.replace(/\.[^.]+$/, '')}-scontornato`,
+          kind: 'png',
+          meta: { op: 'remove-bg', model: s.model },
+        });
       } else {
         // Anche il tracciato gira nel browser: VTracer in WebAssembly, 140 KB.
         setBusy(t('vector.working'));
@@ -213,8 +197,12 @@ export default function App() {
         const { svg: text, meta } = await traceToSvg(file, { preset: s.tracePreset, clean: s.clean });
         const blob = new Blob([text], { type: 'image/svg+xml' });
         setResult({ url: own(blob), blob, text, kind: 'svg', meta });
+        await library.save(blob, {
+          name: `${file.name.replace(/\.[^.]+$/, '')}-vettoriale`,
+          kind: 'svg',
+          meta: { op: 'vectorize', preset: s.tracePreset, paths: meta.paths },
+        });
       }
-      refreshLibrary();
     } catch (e) {
       // Un codice interno non è un messaggio: lo traduciamo in una frase che
       // dice cosa è successo e cosa fare. Lo stack resta in console.
@@ -261,6 +249,11 @@ export default function App() {
         isVector,
       });
       api.download(own(blob), `${source.name.replace(/\.[^.]+$/, '')}-${s.preset}.png`);
+      await library.save(blob, {
+        name: `${source.name.replace(/\.[^.]+$/, '')}-${s.preset}`,
+        kind: 'png',
+        meta: { op: 'export', preset: s.preset, background: s.background },
+      });
       setNotice(
         `${meta.canvas.w}×${meta.canvas.h}${meta.upscaleLimited ? ` — ${t('result.tooSmall')}` : ''}`,
       );
@@ -277,9 +270,12 @@ export default function App() {
     try {
       const svg = editorRef.current?.getSvg();
       if (!svg) throw new Error("L'editor è vuoto.");
-      const { work } = await api.saveSvg(svg, (file?.name || 'disegno').replace(/\.[^.]+$/, ''));
-      setNotice(`Salvato come ${work.file}`);
-      refreshLibrary();
+      const work = await library.save(new Blob([svg], { type: 'image/svg+xml' }), {
+        name: (file?.name || 'disegno').replace(/\.[^.]+$/, ''),
+        kind: 'svg',
+        meta: { op: 'editor' },
+      });
+      setNotice(work.file);
     } catch (e) {
       setError(e.message);
     }
@@ -310,12 +306,28 @@ export default function App() {
 
   async function openWorkInEditor(item) {
     try {
-      const res = await fetch(api.fileUrl(item.id));
-      const txt = await res.text();
+      const { file: f } = await library.read(item.id);
+      const txt = await f.text();
       setTool('editor');
       setTimeout(() => editorRef.current?.setSvg(txt), 120);
     } catch (e) {
-      setError(e.message);
+      console.error(e);
+      setError(t('engine.error.body'));
+    }
+  }
+
+  /** Zip di tutto l'archivio, costruito qui: nessun server coinvolto. */
+  async function downloadAll() {
+    setError(null);
+    setBusy(t('action.preparing'));
+    try {
+      const blob = await bundleAll();
+      api.download(own(blob), `jayl-studio-${new Date().toISOString().slice(0, 10)}.zip`);
+    } catch (e) {
+      console.error(e);
+      setError(e.code === 'library-empty' ? t('library.empty') : t('engine.error.body'));
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -504,7 +516,7 @@ export default function App() {
       </div>
 
       <Library
-        items={works}
+        store={library}
         open={libOpen}
         onToggle={() =>
           setLibOpen((v) => {
@@ -517,9 +529,8 @@ export default function App() {
             return next;
           })
         }
-        onRefresh={refreshLibrary}
         onOpenInEditor={openWorkInEditor}
-        path={libPath}
+        onDownloadAll={downloadAll}
       />
 
       <footer className="statusbar">
