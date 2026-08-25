@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { t } from '../i18n/index.js';
+import AssetActions from './AssetActions.jsx';
 
 const size = (n) => {
   if (n >= 1048576) return `${(n / 1048576).toFixed(1)} MB`;
@@ -40,7 +41,7 @@ function Thumb({ item, read }) {
  * svuotare i dati del sito cancella l'archivio, e per questo l'avviso e il
  * pulsante di export completo sono in vista, non nascosti in un menu.
  */
-export default function Library({ store, open, onToggle, onOpenInEditor, onDownloadAll }) {
+export default function Library({ store, open, onToggle, onOpenInEditor, onDownloadAll, onAssetAction }) {
   const [newFolder, setNewFolder] = useState('');
   const [newBoard, setNewBoard] = useState('');
   const [tagFor, setTagFor] = useState(null);
@@ -186,6 +187,13 @@ export default function Library({ store, open, onToggle, onOpenInEditor, onDownl
                 {store.visible.map((item) => (
                   <figure className="work" key={item.id}>
                     <Thumb item={item} read={store.read} />
+                    <AssetActions
+                      item={item}
+                      onCutout={(i) => onAssetAction('cutout', i)}
+                      onVector={(i) => onAssetAction('vector', i)}
+                      onEdit={onOpenInEditor}
+                      onReference={(i) => onAssetAction('reference', i)}
+                    />
                     <figcaption>
                       <span className="kind">{item.kind}</span>
                       <br />

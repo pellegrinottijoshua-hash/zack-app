@@ -16,6 +16,18 @@
     "editor": {
       "label": "Editor SVG",
       "help": "Apre e modifica file vettoriali: sposta, colora, aggiungi testo e forme."
+    },
+    "image": {
+      "label": "Immagine",
+      "help": "Genera un'immagine da una descrizione, usando i tuoi lavori come riferimento."
+    },
+    "video": {
+      "label": "Video",
+      "help": "Genera un video da una descrizione e dai tuoi riferimenti."
+    },
+    "sound": {
+      "label": "Suono",
+      "help": "Costruisci un effetto sonoro imitandolo con la voce e descrivendolo."
     }
   },
   "drop": {
@@ -315,5 +327,25 @@
   "arrange": {
     "title": "Disponi",
     "duplicate": "Duplica"
+  },
+  "rail": {
+    "title": "Servizi",
+    "local": "Sul tuo computer",
+    "paid": "A consumo",
+    "balance": "Saldo",
+    "soon": "presto"
+  },
+  "soon": {
+    "title": "Questo servizio non c'è ancora",
+    "body": "Sto costruendo la generazione. Quando sarà pronta pagherai solo quello che generi, e il prezzo sarà scritto prima di premere."
+  },
+  "actions": {
+    "title": "Cosa puoi farci",
+    "cutout": "Scontorna",
+    "vector": "Vettorializza",
+    "edit": "Modifica",
+    "reference": "Usa come riferimento",
+    "referenceHelp": "Lo mette fra i riferimenti della prossima generazione, così il soggetto resta lo stesso.",
+    "added": "Aggiunto ai riferimenti"
   }
 }
