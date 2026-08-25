@@ -4,12 +4,16 @@ import Compare from './components/Compare.jsx';
 import Library from './components/Library.jsx';
 import SvgEditor from './components/SvgEditor.jsx';
 import { RemovePanel, TracePanel, ExportPanel, MetaBlock } from './components/Panels.jsx';
+import EngineBanner from './components/EngineBanner.jsx';
+import LanguageSwitch from './components/LanguageSwitch.jsx';
+import { useEngine } from './hooks/useEngine.js';
+import { t, setLang, detectLang, onLangChange } from './i18n/index.js';
 import * as api from './lib/api.js';
 
 const TOOLS = [
-  { id: 'scontorna', label: 'Scontorna' },
-  { id: 'vettorializza', label: 'Vettorializza' },
-  { id: 'editor', label: 'Editor SVG' },
+  { id: 'scontorna', key: 'tool.cutout' },
+  { id: 'vettorializza', key: 'tool.vector' },
+  { id: 'editor', key: 'tool.editor' },
 ];
 
 const PALETTE = ['#111111', '#F5F0E8', '#FFFFFF', '#8A8A85', '#C4A35A', 'none'];
@@ -47,6 +51,18 @@ export default function App() {
 
   const editorRef = useRef(null);
   const [selCount, setSelCount] = useState(0);
+
+  // ─── motore nel browser ────────────────────────────────────────────────
+  const engine = useEngine();
+  const [bannerOpen, setBannerOpen] = useState(true);
+  const [, forceRender] = useState(0);
+
+  useEffect(() => {
+    setLang(detectLang(navigator.languages));
+    forceRender((n) => n + 1);
+    // Cambiare lingua deve ridisegnare tutto, non solo l'interruttore.
+    return onLangChange(() => forceRender((n) => n + 1));
+  }, []);
 
   // Object URLs we created and must revoke on unmount.
   const urls = useRef(new Set());
@@ -112,12 +128,17 @@ export default function App() {
     setApiState('lavora');
     try {
       if (kind === 'remove') {
-        setBusy('Scontorno in corso');
-        setBusyNote(
-          `Modello ${s.model}. Al primo utilizzo di un modello serve il download: può volerci un minuto.`,
-        );
-        const { blob, meta } = await api.removeBg(file, s);
-        setResult({ url: own(blob), blob, kind: 'png', meta });
+        // Gira nel browser: nessuna chiamata di rete, nessun costo per noi.
+        setBusy(t('engine.working'));
+        setBusyNote(null);
+        const started = Date.now();
+        const blob = await engine.cutout(file, s.model);
+        setResult({
+          url: own(blob),
+          blob,
+          kind: 'png',
+          meta: { strategy: 'browser', model: s.model, ms: Date.now() - started },
+        });
       } else {
         setBusy('Vettorializzazione in corso');
         setBusyNote('Converto i pixel in forme.');
@@ -130,7 +151,10 @@ export default function App() {
       }
       refreshLibrary();
     } catch (e) {
-      setError(e.message);
+      // Un codice interno non è un messaggio: lo traduciamo in una frase che
+      // dice cosa è successo e cosa fare. Lo stack resta in console.
+      console.error(e);
+      setError(e.code ? `${t('engine.error.title')} — ${t('engine.error.body')}` : e.message);
     } finally {
       setBusy(null);
       setBusyNote(null);
@@ -255,30 +279,36 @@ export default function App() {
     <div className="shell">
       <header className="topbar">
         <span className="wordmark">
-          JAYL <em>CRAFT</em>
+          JAYL <em>STUDIO</em>
         </span>
         <nav className="tabs" role="tablist">
-          {TOOLS.map((t) => (
+          {/* `tab`, non `t`: `t` è la funzione di traduzione e verrebbe oscurata. */}
+          {TOOLS.map((tab) => (
             <button
-              key={t.id}
+              key={tab.id}
               className="tab"
               role="tab"
-              aria-selected={tool === t.id}
-              onClick={() => setTool(t.id)}
+              aria-selected={tool === tab.id}
+              title={t(`${tab.key}.help`)}
+              onClick={() => setTool(tab.id)}
             >
-              {t.label}
+              {t(`${tab.key}.label`)}
             </button>
           ))}
         </nav>
         <span className="spacer" />
-        <span className="lamp" data-state={apiState}>
-          <i />
-          {apiState === 'lavora' ? 'al lavoro' : apiState}
-        </span>
+        <LanguageSwitch />
       </header>
 
       <div className="main">
         <section className="stage">
+          {bannerOpen && engine.ready && (
+            <EngineBanner
+              tier={engine.tier}
+              phase={engine.phase}
+              onDismiss={() => setBannerOpen(false)}
+            />
+          )}
           {error && <div className="alert">{error}</div>}
           {notice && !error && <div className="alert">{notice}</div>}
 
@@ -295,14 +325,8 @@ export default function App() {
           ) : (
             <Dropzone
               onFile={onFile}
-              title={
-                tool === 'scontorna' ? "Trascina un'immagine" : 'Trascina un raster da vettorializzare'
-              }
-              hint={
-                tool === 'scontorna'
-                  ? 'PNG, JPG, WebP — anche file di stampa da 3661×4843. Resta tutto su questa macchina.'
-                  : 'Da pixel a forme scalabili. Funziona meglio su grafiche a colori piatti, loghi e line art.'
-              }
+              title={t(tool === 'scontorna' ? 'drop.title' : 'drop.vectorTitle')}
+              hint={t(tool === 'scontorna' ? 'drop.hint' : 'drop.vectorHint')}
             />
           )}
         </section>
