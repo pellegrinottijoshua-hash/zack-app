@@ -19,7 +19,7 @@ gruppi**, e la divisione non è cosmetica:
 
 | sul tuo computer | a consumo |
 |---|---|
-| Scontorna · Vettorializza · Editor SVG | Immagine · Video · Suono |
+| Scontorna · Vettorializza · Editor SVG · **Suono** | Immagine · Video |
 | illimitati, inclusi nei 3,99 €/mese | si paga a generazione, prezzo scritto prima |
 
 Lo scontorno include la **correzione a mano col pennello** — l'automatico
@@ -111,6 +111,37 @@ sempre.
 
 Regola di progetto: **un controllo senza testo d'aiuto non è finito.**
 
+## Operazioni in blocco
+
+Non è uno strumento nuovo: è il moltiplicatore che rende utili gli altri.
+«Scontorna questi 40, esportali in 6 formati.» Si finisce un file prima di
+passare al successivo, così ci si può fermare a metà portandosi a casa
+qualcosa di finito, e **un file rotto non ferma gli altri trentanove**.
+
+La stima del tempo viene dai lavori già conclusi in questa sessione, non da
+una costante: la stessa operazione dura diversamente su macchine diverse.
+
+## Il laboratorio dei suoni
+
+**Non genera niente.** Registri la voce e la trasformi con dei filtri: è il
+mestiere dei fonici Foley da cinquant'anni, ed è per questo che sta fra i
+servizi gratuiti.
+
+| fai con la bocca | esce |
+|---|---|
+| «tum tum» | passi di gigante |
+| «uuuuu» | vento |
+| «brrrrr» | motore |
+| «tin» | metallo |
+| «grrr» | mostro |
+
+L'app estrae anche il **ritmo** dalla registrazione — quanti colpi e a che
+velocità — perché è quello che la tua voce comunica meglio di una descrizione.
+
+Il cambio di intonazione avviene per variazione di velocità, che sposta
+insieme altezza e timbro: è il vecchio trucco del nastro rallentato. Abbassare
+la sola altezza darebbe un giradischi guasto, non un gigante.
+
 ## Ingrandimento
 
 RealPLKSR (darktable-org, MIT, 28 MB), convoluzionale: i transformer sforano il
@@ -159,8 +190,12 @@ La barra dei servizi si riduce a sole icone nell'editor: la tela passa da 950 a
 Tutto vive **nel browser**: i file in OPFS, i metadati in IndexedDB. Nessun
 server, nessun account.
 
-- **Cartelle** per organizzare. Eliminarne una **non cancella i lavori**: li
-  riporta fuori dalle cartelle.
+- **Cartelle** con colore e icona, da un insieme chiuso — le etichette libere
+  diventano ingestibili. Eliminarne una **non cancella i lavori**: li riporta
+  fuori dalle cartelle.
+- **Provenienza**: ogni lavoro sa da quale deriva, e la catena si vede.
+- **Preferiti** e **raccolte pronte** (ultimi 7 giorni, preferiti, usati come
+  riferimento), che compaiono solo quando hanno qualcosa dentro.
 - **Moodboard** per raggruppare per intenzione, con una palette.
 - **Tag** e **ricerca** per ritrovare.
 - **Scarica tutto** costruisce lo zip in locale (fflate), con dentro un
@@ -209,7 +244,7 @@ docs/superpowers/  spec e piani
 npm test
 ```
 
-Centotrenta test. Coprono il vincolo di licenza, le funzioni pure del motore, la
+Centosessantasette test. Coprono il vincolo di licenza, le funzioni pure del motore, la
 parità con il backend (IoU ≥ 0,98, differenza alfa media ≤ 2/255) e la
 completezza delle due lingue.
 
