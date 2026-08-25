@@ -1,4 +1,5 @@
 import * as api from '../lib/api.js';
+import { t } from '../i18n/index.js';
 
 const KB = (n) => {
   if (n >= 1048576) return `${(n / 1048576).toFixed(1)} MB`;
@@ -15,7 +16,7 @@ export default function Library({ items, open, onToggle, onRefresh, onOpenInEdit
     <section className="library" data-open={open}>
       <header className="library-head" onClick={onToggle}>
         <span className="label" style={{ letterSpacing: '0.24em' }}>
-          Lavori
+          {t('library.title')}
         </span>
         <span className="count">{items.length}</span>
         <span className="hint">{open ? '▾' : '▸'}</span>
@@ -28,7 +29,7 @@ export default function Library({ items, open, onToggle, onRefresh, onOpenInEdit
               api.download(api.bundleUrl());
             }}
           >
-            Scarica tutto (zip)
+            {t('library.downloadAll.label')}
           </button>
         )}
         <button
@@ -38,14 +39,14 @@ export default function Library({ items, open, onToggle, onRefresh, onOpenInEdit
             onRefresh();
           }}
         >
-          Aggiorna
+          {t('library.refresh')}
         </button>
       </header>
 
       <div className="library-body">
         {items.length === 0 ? (
           <p className="empty-strip">
-            Ancora niente. Ogni risultato finisce qui e sul disco in{' '}
+            {t('library.empty')}{' '}
             <code>{path || 'library/'}</code>.
           </p>
         ) : (
@@ -67,9 +68,9 @@ export default function Library({ items, open, onToggle, onRefresh, onOpenInEdit
                   {KB(it.bytes)}
                 </figcaption>
                 <div className="acts">
-                  <button onClick={() => api.download(api.fileUrl(it.id), it.file)}>Scarica</button>
+                  <button onClick={() => api.download(api.fileUrl(it.id), it.file)}>{t('control.download.label')}</button>
                   {it.kind === 'svg' && (
-                    <button onClick={() => onOpenInEditor(it)}>Apri</button>
+                    <button onClick={() => onOpenInEditor(it)}>{t('library.open.label')}</button>
                   )}
                   <button
                     className="danger"
@@ -78,7 +79,7 @@ export default function Library({ items, open, onToggle, onRefresh, onOpenInEdit
                       onRefresh();
                     }}
                   >
-                    Elimina
+                    {t('library.delete.label')}
                   </button>
                 </div>
               </figure>

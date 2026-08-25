@@ -48,6 +48,10 @@
     "reset": {
       "label": "Ricomincia",
       "help": "Svuota il piano di lavoro e torna alla schermata iniziale."
+    },
+    "help": {
+      "label": "Spiegami",
+      "help": "Accende le spiegazioni: ogni comando ti dice cosa fa, finché non lo rispegni."
     }
   },
   "engine": {
@@ -106,12 +110,92 @@
     "open": {
       "label": "Apri",
       "help": "Riapre questo file vettoriale nell'editor per modificarlo."
-    }
+    },
+    "refresh": "Aggiorna"
   },
   "status": {
     "file": "file",
     "mode": "modalità",
     "format": "formato",
     "none": "nessuno"
+  },
+  "onboarding": {
+    "title": "Tre cose e sei operativo",
+    "step1": "Trascina un'immagine nel riquadro grande, o cliccaci sopra per sceglierla dal computer.",
+    "step2": "Premi Scontorna. Il lavoro avviene qui, sul tuo computer: nessun file viene spedito da nessuna parte.",
+    "step3": "Scegli un formato e premi Esporta. Trovi tutto anche in fondo, nella striscia dei lavori.",
+    "hint": "Se un comando non ti è chiaro, accendi «Spiegami» in alto a destra.",
+    "action": "Ho capito, cominciamo"
+  },
+  "vector": {
+    "kind": {
+      "label": "Tipo di tracciato",
+      "help": "Come interpretare l'immagine: colori piatti, sfumature o solo bianco e nero."
+    },
+    "clean": {
+      "label": "Pulisci il risultato",
+      "help": "Rimuove i punti superflui: il file pesa meno e si apre più in fretta."
+    },
+    "working": "Sto trasformando i pixel in forme…"
+  },
+  "editor": {
+    "edit": "Modifica",
+    "fill": "Riempimento",
+    "stroke": "Contorno",
+    "zoom": "Ingrandimento",
+    "undo": {
+      "label": "Annulla",
+      "help": "Torna indietro di un passo."
+    },
+    "redo": {
+      "label": "Ripeti",
+      "help": "Rifà il passo appena annullato."
+    },
+    "group": {
+      "label": "Raggruppa",
+      "help": "Unisce gli elementi scelti così si spostano insieme."
+    },
+    "ungroup": {
+      "label": "Separa",
+      "help": "Scioglie un gruppo nei suoi elementi."
+    },
+    "front": {
+      "label": "Avanti",
+      "help": "Porta la selezione davanti a tutto il resto."
+    },
+    "back": {
+      "label": "Dietro",
+      "help": "Manda la selezione dietro a tutto il resto."
+    },
+    "remove": {
+      "label": "Elimina selezione",
+      "help": "Cancella gli elementi selezionati. Annulla li riporta indietro."
+    },
+    "save": {
+      "label": "Salva nei lavori",
+      "help": "Mette il disegno fra i tuoi lavori, in fondo alla pagina."
+    },
+    "clean": {
+      "label": "Ripulisci l'SVG",
+      "help": "Riscrive il file in modo più compatto senza cambiarne l'aspetto."
+    },
+    "nothing": "niente selezionato",
+    "selected": "{n} selezionati"
+  },
+  "action": {
+    "export": {
+      "label": "Esporta e scarica",
+      "help": "Crea il file nel formato scelto e lo salva subito."
+    },
+    "preparing": "Preparo il file…"
+  },
+  "common": {
+    "on": "attivo",
+    "off": "spento"
+  },
+  "group": {
+    "stampa": "Stampa",
+    "social": "Social",
+    "web": "Web"
   }
 }
