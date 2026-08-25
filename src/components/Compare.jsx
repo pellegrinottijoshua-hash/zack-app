@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { t } from '../i18n/index.js';
 
 /**
  * Before/after wipe. With no `after` yet it simply shows the original, so the
@@ -10,20 +11,20 @@ export default function Compare({ before, after, busy, busyNote, labels }) {
 
   return (
     <div className="plate" style={{ '--split': `${hasAfter ? split : 100}%` }}>
-      {hasAfter && <img className="after" src={after} alt={labels?.[1] || 'Risultato'} />}
-      <img className={hasAfter ? 'before' : ''} src={before} alt={labels?.[0] || 'Originale'} />
+      {hasAfter && <img className="after" src={after} alt={labels?.[1] || t('result.after')} />}
+      <img className={hasAfter ? 'before' : ''} src={before} alt={labels?.[0] || t('result.before')} />
 
       {hasAfter && (
         <>
           <div className="handle" />
-          <span className="tag l">{labels?.[0] || 'originale'}</span>
-          <span className="tag r">{labels?.[1] || 'risultato'}</span>
+          <span className="tag l">{labels?.[0] || t('result.before')}</span>
+          <span className="tag r">{labels?.[1] || t('result.after')}</span>
           <input
             type="range"
             min="0"
             max="100"
             value={split}
-            aria-label="Confronta prima e dopo"
+            aria-label={t('result.compare')}
             onChange={(e) => setSplit(Number(e.target.value))}
           />
         </>

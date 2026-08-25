@@ -61,9 +61,9 @@ export function TracePanel({ caps, s, set, busy }) {
     <>
       <div className="field">
         <span className="label">
-          <span>Tipo di tracciato</span>
-          <b>vtracer</b>
+          <span>{t('vector.kind.label')}</span>
         </span>
+        <Help k="vector.kind.help" />
         {caps.tracePresets.map((p) => (
           <Choice
             key={p.id}
@@ -78,16 +78,13 @@ export function TracePanel({ caps, s, set, busy }) {
 
       <div className="field">
         <Choice
-          label="Pulisci l'SVG"
-          note={s.clean ? 'attivo' : 'spento'}
+          label={t('vector.clean.label')}
+          note={s.clean ? t('common.on') : t('common.off')}
           active={s.clean}
           disabled={busy}
           onClick={() => set({ clean: !s.clean })}
         />
-        <p className="hint">
-          Converte i pixel in forme scalabili. Su una foto genera migliaia di
-          path: per loghi e line art scegli "Bianco e nero".
-        </p>
+        <Help k="vector.clean.help" />
       </div>
 
     </>
@@ -105,7 +102,7 @@ export function ExportPanel({ caps, s, set, busy }) {
       {groups.map((g) => (
         <div className="field" key={g}>
           <span className="label" style={{ letterSpacing: '0.14em' }}>
-            <span>{g}</span>
+            <span>{t(`group.${g}`)}</span>
           </span>
           {caps.presets
             .filter((p) => p.group === g)

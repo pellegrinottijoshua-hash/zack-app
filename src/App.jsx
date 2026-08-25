@@ -158,8 +158,8 @@ export default function App() {
           meta: { strategy: 'browser', model: s.model, ms: Date.now() - started },
         });
       } else {
-        setBusy('Vettorializzazione in corso');
-        setBusyNote('Converto i pixel in forme.');
+        setBusy(t('vector.working'));
+        setBusyNote(null);
         const { text, meta } = await api.vectorize(file, {
           preset: s.tracePreset,
           clean: s.clean,
@@ -184,7 +184,7 @@ export default function App() {
   async function runExport() {
     setError(null);
     setApiState('lavora');
-    setBusy('Preparo il file');
+    setBusy(t('action.preparing'));
     try {
       let source = file;
       let isVector = false;
@@ -362,42 +362,42 @@ export default function App() {
             <>
               <div className="field">
                 <span className="label">
-                  <span>Modifica</span>
-                  <b>{selCount ? `${selCount} selezionati` : 'niente selezionato'}</b>
+                  <span>{t('editor.edit')}</span>
+                  <b>{selCount ? t('editor.selected', { n: selCount }) : t('editor.nothing')}</b>
                 </span>
                 <div className="row">
                   <button className="btn ghost small" onClick={() => editorRef.current?.undo()}>
-                    Annulla
+                    {t('editor.undo.label')}
                   </button>
                   <button className="btn ghost small" onClick={() => editorRef.current?.redo()}>
-                    Ripeti
+                    {t('editor.redo.label')}
                   </button>
                 </div>
                 <div className="row">
                   <button className="btn ghost small" onClick={() => editorRef.current?.group()}>
-                    Raggruppa
+                    {t('editor.group.label')}
                   </button>
                   <button className="btn ghost small" onClick={() => editorRef.current?.ungroup()}>
-                    Separa
+                    {t('editor.ungroup.label')}
                   </button>
                 </div>
                 <div className="row">
                   <button className="btn ghost small" onClick={() => editorRef.current?.toFront()}>
-                    Avanti
+                    {t('editor.front.label')}
                   </button>
                   <button className="btn ghost small" onClick={() => editorRef.current?.toBack()}>
-                    Dietro
+                    {t('editor.back.label')}
                   </button>
                 </div>
                 <button className="btn ghost small" onClick={() => editorRef.current?.del()}>
-                  Elimina selezione
+                  {t('editor.remove.label')}
                 </button>
               </div>
 
               <div className="field">
                 <span className="label">
-                  <span>Riempimento</span>
-                  <b>palette jayl</b>
+                  <span>{t('editor.fill')}</span>
+                  <b>JAYL</b>
                 </span>
                 <div className="swatches">
                   {PALETTE.map((c) => (
@@ -415,7 +415,7 @@ export default function App() {
                   ))}
                 </div>
                 <span className="label">
-                  <span>Contorno</span>
+                  <span>{t('editor.stroke')}</span>
                 </span>
                 <div className="swatches">
                   {PALETTE.map((c) => (
@@ -436,7 +436,7 @@ export default function App() {
 
               <div className="field">
                 <span className="label">
-                  <span>Zoom</span>
+                  <span>{t('editor.zoom')}</span>
                 </span>
                 <div className="row">
                   {[0.5, 1, 2].map((z) => (
@@ -452,7 +452,7 @@ export default function App() {
               </div>
 
               <button className="btn ghost" onClick={cleanFromEditor}>
-                Ripulisci l'SVG
+                {t('editor.clean.label')}
               </button>
             </>
           ) : tool === 'scontorna' ? (
@@ -494,7 +494,7 @@ export default function App() {
 
           {file && !isEditor && (
             <button className="btn ghost" onClick={reset}>
-              Ricomincia
+              {t('control.reset.label')}
             </button>
           )}
 
@@ -502,7 +502,7 @@ export default function App() {
           <div className="cta">
             {isEditor ? (
               <button className="btn" onClick={saveFromEditor}>
-                Salva nei lavori
+                {t('editor.save.label')}
               </button>
             ) : (
               <button
@@ -510,7 +510,7 @@ export default function App() {
                 disabled={!file || Boolean(busy)}
                 onClick={() => run(tool === 'scontorna' ? 'remove' : 'trace')}
               >
-                {tool === 'scontorna' ? 'Scontorna' : 'Vettorializza'}
+                {t(tool === 'scontorna' ? 'tool.cutout.label' : 'tool.vector.label')}
               </button>
             )}
             <button
@@ -518,7 +518,7 @@ export default function App() {
               disabled={!canExport || Boolean(busy)}
               onClick={runExport}
             >
-              Esporta e scarica
+              {t('action.export.label')}
             </button>
           </div>
         </aside>

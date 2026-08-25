@@ -110,7 +110,8 @@
     "open": {
       "label": "Open",
       "help": "Reopens this vector file in the editor so you can change it."
-    }
+    },
+    "refresh": "Refresh"
   },
   "status": {
     "file": "file",
@@ -125,5 +126,76 @@
     "step3": "Pick a format and press Export. Everything also lands in the strip of work at the bottom.",
     "hint": "If a control isn't clear, switch on «Explain» at the top right.",
     "action": "Got it, let's start"
+  },
+  "vector": {
+    "kind": {
+      "label": "Trace style",
+      "help": "How to read the image: flat colours, gradients, or black and white only."
+    },
+    "clean": {
+      "label": "Tidy the result",
+      "help": "Drops needless points: the file gets smaller and opens faster."
+    },
+    "working": "Turning pixels into shapes…"
+  },
+  "editor": {
+    "edit": "Edit",
+    "fill": "Fill",
+    "stroke": "Outline",
+    "zoom": "Zoom",
+    "undo": {
+      "label": "Undo",
+      "help": "Steps back one change."
+    },
+    "redo": {
+      "label": "Redo",
+      "help": "Reapplies the change you just undid."
+    },
+    "group": {
+      "label": "Group",
+      "help": "Joins the chosen items so they move together."
+    },
+    "ungroup": {
+      "label": "Ungroup",
+      "help": "Breaks a group back into its items."
+    },
+    "front": {
+      "label": "Bring forward",
+      "help": "Puts the selection in front of everything else."
+    },
+    "back": {
+      "label": "Send back",
+      "help": "Puts the selection behind everything else."
+    },
+    "remove": {
+      "label": "Delete selection",
+      "help": "Removes the selected items. Undo brings them straight back."
+    },
+    "save": {
+      "label": "Save to your work",
+      "help": "Adds this drawing to your work, at the bottom of the page."
+    },
+    "clean": {
+      "label": "Tidy the SVG",
+      "help": "Rewrites the file more compactly without changing how it looks."
+    },
+    "nothing": "nothing selected",
+    "selected": "{n} selected"
+  },
+  "action": {
+    "export": {
+      "label": "Export and download",
+      "help": "Builds the file in the chosen format and saves it right away."
+    },
+    "preparing": "Getting the file ready…"
+  },
+  "common": {
+    "on": "on",
+    "off": "off"
+  },
+  "group": {
+    "stampa": "Print",
+    "social": "Social",
+    "web": "Web"
   }
 }
