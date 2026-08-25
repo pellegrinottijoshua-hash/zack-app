@@ -9,7 +9,9 @@ export function Help({ k }) {
 }
 
 const BG_SWATCH = {
-  transparent: 'repeating-conic-gradient(#2a2a2a 0% 25%, #1a1a1a 0% 50%) 0 / 8px 8px',
+  // Scacchiera grigia come nel piano di lavoro: su fondo scuro una
+  // scacchiera scura non si distingue da un campione nero.
+  transparent: 'repeating-conic-gradient(#8a8a85 0% 25%, #6e6e6a 0% 50%) 0 / 8px 8px',
   nero: '#111111',
   panna: '#F5F0E8',
   bianco: '#FFFFFF',
@@ -56,7 +58,7 @@ export function RemovePanel({ models, s, set, busy }) {
   );
 }
 
-export function TracePanel({ caps, s, set, busy }) {
+export function TracePanel({ presets, s, set, busy }) {
   return (
     <>
       <div className="field">
@@ -64,11 +66,11 @@ export function TracePanel({ caps, s, set, busy }) {
           <span>{t('vector.kind.label')}</span>
         </span>
         <Help k="vector.kind.help" />
-        {caps.tracePresets.map((p) => (
+        {presets.map((p) => (
           <Choice
             key={p.id}
-            label={p.label}
-            note={p.note}
+            label={t(p.labelKey)}
+            note={t(p.noteKey)}
             active={s.tracePreset === p.id}
             disabled={busy}
             onClick={() => set({ tracePreset: p.id })}

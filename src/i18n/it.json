@@ -134,7 +134,7 @@
     },
     "clean": {
       "label": "Pulisci il risultato",
-      "help": "Rimuove i punti superflui: il file pesa meno e si apre più in fretta."
+      "help": "Alleggerisce il file: meno decimali nei tracciati e meno puntini isolati, a parità di aspetto."
     },
     "working": "Sto trasformando i pixel in forme…"
   },
@@ -197,5 +197,23 @@
     "stampa": "Stampa",
     "social": "Social",
     "web": "Web"
+  },
+  "trace": {
+    "poster": {
+      "label": "Colori piatti",
+      "note": "loghi, illustrazioni"
+    },
+    "photo": {
+      "label": "Sfumature",
+      "note": "foto e ombreggiature"
+    },
+    "bw": {
+      "label": "Bianco e nero",
+      "note": "disegni al tratto"
+    },
+    "empty": {
+      "title": "Non ho trovato nessuna forma da tracciare",
+      "body": "Il soggetto ha troppo poco contrasto con lo sfondo. Prova «Colori piatti», oppure scontorna prima l'immagine."
+    }
   }
 }

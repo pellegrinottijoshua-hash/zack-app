@@ -1,5 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+// wasm_vtracer è una build wasm-bindgen "bundler": importa il .wasm come
+// modulo ESM, cosa che Vite non gestisce da sola.
+import wasm from 'vite-plugin-wasm';
+import topLevelAwait from 'vite-plugin-top-level-await';
 
 /**
  * onnxruntime-web carica i suoi helper `.mjs` con un import dinamico calcolato a
@@ -28,7 +32,7 @@ function serveOrtAssets() {
 }
 
 export default defineConfig({
-  plugins: [react(), serveOrtAssets()],
+  plugins: [react(), serveOrtAssets(), wasm(), topLevelAwait()],
   // Impedisce a Vite di pre-ottimizzare onnxruntime-web e riscriverne gli
   // import dinamici. Verificato il 2026-08-25: senza, il motore non parte.
   optimizeDeps: { exclude: ['onnxruntime-web'] },

@@ -134,7 +134,7 @@
     },
     "clean": {
       "label": "Tidy the result",
-      "help": "Drops needless points: the file gets smaller and opens faster."
+      "help": "Makes the file lighter: fewer decimals in the paths and fewer stray specks, with the same look."
     },
     "working": "Turning pixels into shapes…"
   },
@@ -197,5 +197,23 @@
     "stampa": "Print",
     "social": "Social",
     "web": "Web"
+  },
+  "trace": {
+    "poster": {
+      "label": "Flat colours",
+      "note": "logos, illustrations"
+    },
+    "photo": {
+      "label": "Gradients",
+      "note": "photos and shading"
+    },
+    "bw": {
+      "label": "Black & white",
+      "note": "line drawings"
+    },
+    "empty": {
+      "title": "I found no shapes to trace",
+      "body": "The subject has too little contrast with the background. Try «Flat colours», or remove the background first."
+    }
   }
 }
