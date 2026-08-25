@@ -48,3 +48,41 @@ test('ogni livello ha un modello', () => {
 test('getModel rifiuta un id sconosciuto', () => {
   assert.throws(() => getModel('inesistente'), /sconosciuto/);
 });
+
+// ─── compositing (Task 2) ───────────────────────────────────────────────────
+import { normalizeMask, maskToU8, applyMaskToRgba } from '../src/engine/compose.js';
+
+test('normalizeMask riscala su 0..1 usando min e max effettivi', () => {
+  const out = normalizeMask(Float32Array.from([-2, 0, 2]));
+  assert.equal(out[0], 0);
+  assert.equal(out[1], 0.5);
+  assert.equal(out[2], 1);
+});
+
+test('normalizeMask non divide per zero su una maschera piatta', () => {
+  const out = normalizeMask(Float32Array.from([3, 3, 3]));
+  assert.ok(Number.isFinite(out[0]), 'una maschera piatta non deve produrre NaN');
+});
+
+test('maskToU8 porta la maschera su 0..255', () => {
+  const out = maskToU8(Float32Array.from([0, 0.5, 1]));
+  assert.equal(out[0], 0);
+  assert.equal(out[1], 128);
+  assert.equal(out[2], 255);
+});
+
+test('applyMaskToRgba scrive nel canale alfa e non tocca RGB', () => {
+  const rgba = Uint8ClampedArray.from([255, 255, 255, 255, 0, 0, 0, 255]);
+  const mask = Uint8ClampedArray.from([0, 200]);
+  const out = applyMaskToRgba(rgba, mask, 2);
+
+  assert.equal(out[3], 0, 'il primo pixel deve diventare trasparente');
+  assert.equal(out[7], 200, 'il secondo pixel prende il valore della maschera');
+  assert.equal(out[0], 255, 'il rosso del primo pixel non deve cambiare');
+  assert.equal(out[4], 0, 'il rosso del secondo pixel non deve cambiare');
+});
+
+test('applyMaskToRgba rifiuta lunghezze incoerenti invece di corrompere', () => {
+  const rgba = new Uint8ClampedArray(8);
+  assert.throws(() => applyMaskToRgba(rgba, new Uint8ClampedArray(5), 2), /non combacia/);
+});
