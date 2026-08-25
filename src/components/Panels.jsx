@@ -1,6 +1,14 @@
 import { Fragment } from 'react';
 import { t } from '../i18n/index.js';
 import { help } from '../i18n/help.js';
+import {
+  SCALES,
+  canUpscale,
+  estimateSeconds,
+  getScale,
+  humanSeconds,
+  inputLimits,
+} from '../engine/upscale.js';
 
 /** Mostra la spiegazione solo quando l'utente ha acceso «Spiegami». */
 export function Help({ k }) {
@@ -135,6 +143,69 @@ export function ExportPanel({ presets, backgrounds, s, set, busy }) {
         />
       ))}
 
+    </div>
+  );
+}
+
+/**
+ * L'ingrandimento, con il conto in chiaro prima di premere.
+ *
+ * Ci vogliono minuti su un file di stampa. Far partire un'attesa lunga senza
+ * dire quanto durera' e' il modo piu' sicuro di far chiudere la scheda a meta'.
+ */
+export function UpscalePanel({ image, scaleId = 'x4', onScale, busy, running, onRun, onStop }) {
+  const scale = getScale(scaleId);
+  const verdict = image ? canUpscale(image.w, image.h, scale.factor) : null;
+  const out = image && { w: image.w * scale.factor, h: image.h * scale.factor };
+  const wait = image && verdict?.ok ? humanSeconds(estimateSeconds(image.w, image.h, scale)) : null;
+  const limits = inputLimits(scale.factor);
+
+  return (
+    <div className="field">
+      <span className="label">
+        <span>{t('upscale.title')}</span>
+      </span>
+      <Help k="upscale.help" />
+
+      {SCALES.map((sc) => (
+        <Choice
+          key={sc.id}
+          label={t(sc.labelKey)}
+          note={image ? `${image.w * sc.factor}×${image.h * sc.factor}` : null}
+          active={sc.id === scaleId}
+          disabled={busy || running}
+          onClick={() => onScale(sc.id)}
+        />
+      ))}
+
+      {image && (
+        verdict.ok ? (
+          <p className="measure">
+            {t('upscale.plan', {
+              from: `${image.w}×${image.h}`,
+              to: `${out.w}×${out.h}`,
+              wait: `${wait.value} ${t(`common.${wait.unit}`)}`,
+            })}
+          </p>
+        ) : (
+          <p className="verdict" data-level="attenzione">
+            {t(`upscale.tooBig.${verdict.reason}`, {
+              side: limits.side,
+              mp: Math.round(limits.pixels / 1e6),
+            })}
+          </p>
+        )
+      )}
+
+      {running ? (
+        <button className="btn ghost small" onClick={onStop}>
+          {t('upscale.stop')}
+        </button>
+      ) : (
+        <button className="btn ghost small" disabled={busy || !image || !verdict?.ok} onClick={onRun}>
+          {t('upscale.run')}
+        </button>
+      )}
     </div>
   );
 }

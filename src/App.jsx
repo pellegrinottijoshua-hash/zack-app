@@ -3,7 +3,7 @@ import Dropzone from './components/Dropzone.jsx';
 import Compare from './components/Compare.jsx';
 import Library from './components/Library.jsx';
 import SvgEditor from './components/SvgEditor.jsx';
-import { RemovePanel, TracePanel, ExportPanel, MetaBlock, Help } from './components/Panels.jsx';
+import { RemovePanel, TracePanel, ExportPanel, UpscalePanel, MetaBlock, Help } from './components/Panels.jsx';
 import EngineBanner from './components/EngineBanner.jsx';
 import LanguageSwitch from './components/LanguageSwitch.jsx';
 import HelpToggle from './components/HelpToggle.jsx';
@@ -18,7 +18,7 @@ import SoundLab from './components/SoundLab.jsx';
 import FinishPanel from './components/FinishPanel.jsx';
 import { useSound } from './hooks/useSound.js';
 import { useBatch } from './hooks/useBatch.js';
-import { SCALES, canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
+import { canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { getService, firstReady } from './services.js';
 import { bundleAll } from './store/bundle.js';
 import { useEngine } from './hooks/useEngine.js';
@@ -76,6 +76,7 @@ export default function App() {
     aspect: 'auto',
     garment: 'nero',
     shape: 'tee-front',
+    scale: 'x4',
   });
   const set = (patch) => setS((prev) => ({ ...prev, ...patch }));
 
@@ -97,6 +98,9 @@ export default function App() {
   const [stats, setStats] = useState(null);
   const [statsReading, setStatsReading] = useState(false);
   const [mockup, setMockup] = useState(null);
+  // L'ingrandimento ora puo' durare minuti: serve sapere quando e' in corso
+  // per offrire di fermarlo.
+  const [upscaling, setUpscaling] = useState(false);
   // Cambia a ogni azione sull'editor per far rileggere al pannello la
   // posizione della selezione, che la libreria muta fuori da React.
   const [editorTick, setEditorTick] = useState(0);
@@ -255,12 +259,23 @@ export default function App() {
         setBusy(t('engine.working'));
         setBusyNote(null);
         const started = Date.now();
-        const blob = await engine.cutout(file, s.model);
+        // Sul lavoro in corso, non sull'originale: chi ha appena ingrandito e
+        // preme Scontorna si vedeva tornare il file piccolo, con
+        // l'ingrandimento buttato via senza un avviso.
+        const blob = await engine.cutout(result?.blob || file, s.model);
         setResult({
           url: own(blob),
           blob,
           kind: 'png',
-          meta: { strategy: 'browser', model: s.model, ms: Date.now() - started },
+          // Lo scontorno non ricampiona: entra e esce alla stessa misura. Dirlo
+          // serve a chi sta controllando di non aver perso risoluzione per strada.
+          meta: {
+            strategy: 'browser',
+            model: s.model,
+            source: stats?.image,
+            output: stats?.image,
+            ms: Date.now() - started,
+          },
         });
         await library.save(blob, {
           name: `${file.name.replace(/\.[^.]+$/, '')}-scontornato`,
@@ -476,17 +491,24 @@ export default function App() {
     setNotice(null);
     try {
       const bmp = await createImageBitmap(src);
-      if (!canUpscale(bmp.width, bmp.height)) {
+      const verdict = canUpscale(bmp.width, bmp.height, getScale(s.scale).factor);
+      if (!verdict.ok) {
         bmp.close?.();
-        setNotice(t('upscale.tooBig'));
+        setNotice(t(`upscale.tooBig.${verdict.reason}`));
         return;
       }
-      const secs = estimateSeconds(bmp.width, bmp.height, getScale('x4'));
+      const secs = estimateSeconds(bmp.width, bmp.height, getScale(s.scale));
       setBusy(t('upscale.working'));
       setBusyNote(t('upscale.estimate', { sec: secs }));
+      setUpscaling(true);
 
-      const out = await engine.upscale(bmp, 'x4', (phase, d) => {
-        if (d?.done) setBusyNote(`${d.done}/${d.total} · ${t('upscale.estimate', { sec: secs })}`);
+      const out = await engine.upscale(bmp, s.scale, (phase, d) => {
+        if (d?.done) {
+          // I secondi che restano davvero, ricalcolati sulle piastrelle gia'
+          // fatte: dopo un minuto una stima ferma sembra un blocco.
+          const left = Math.round(((d.total - d.done) / d.total) * secs);
+          setBusyNote(`${d.done}/${d.total} · ${t('upscale.estimate', { sec: left })}`);
+        }
       });
 
       const cv = document.createElement('canvas');
@@ -498,12 +520,17 @@ export default function App() {
       await library.save(blob, {
         name: `${(file?.name || 'immagine').replace(/\.[^.]+$/, '')}-ingrandita`,
         kind: 'png',
-        meta: { fromId: sourceAssetId, op: 'upscale', scale: 'x4' },
+        meta: { fromId: sourceAssetId, op: 'upscale', scale: s.scale },
       });
     } catch (e) {
       console.error(e);
-      setError(e.code === 'upscale-too-large' ? t('upscale.tooBig') : t('engine.error.body'));
+      // Fermarsi non e' un guasto: e' una scelta, e non merita un allarme.
+      if (e.code === 'upscale-stopped') setNotice(t('upscale.stopped'));
+      else if (e.code?.startsWith('upscale-too-large'))
+        setNotice(t(`upscale.tooBig.${e.code.split('-').pop()}`));
+      else setError(t('engine.error.body'));
     } finally {
+      setUpscaling(false);
       setBusy(null);
       setBusyNote(null);
     }
@@ -717,19 +744,15 @@ export default function App() {
                 onFix={fixFromBatch}
               />
 
-              <div className="field">
-                <span className="label">
-                  <span>{t('upscale.title')}</span>
-                </span>
-                <Help k="upscale.help" />
-                <button
-                  className="opt"
-                  disabled={!file || Boolean(busy)}
-                  onClick={runUpscale}
-                >
-                  {t('upscale.x4')}
-                </button>
-              </div>
+              <UpscalePanel
+                image={stats?.image}
+                scaleId={s.scale}
+                onScale={(id) => set({ scale: id })}
+                busy={Boolean(busy)}
+                running={upscaling}
+                onRun={runUpscale}
+                onStop={engine.stopUpscale}
+              />
             </>
           ) : (
             <TracePanel presets={TRACE_PRESETS} s={s} set={set} busy={Boolean(busy)} />

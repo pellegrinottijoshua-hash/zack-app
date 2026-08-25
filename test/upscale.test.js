@@ -1,10 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  inputLimits,
+  probeCanvasPixels,
+  humanSeconds,
+  MAX_OUTPUT_PIXELS,
+  MAX_OUTPUT_SIDE,
   planTiles,
   outputSize,
   canUpscale,
   getScale,
+  reductionFor,
+  MODEL_FACTOR,
   SCALES,
   TILE,
   OVERLAP,
@@ -101,13 +108,69 @@ test('una sovrapposizione troppo grande viene rifiutata invece di ciclare all in
   assert.throws(() => planTiles(500, 500, 32, 20), /sovrapposizione/);
 });
 
-test('canUpscale limita per TEMPO, non per memoria', () => {
-  // Ogni piastrella costa ~7,5 secondi: oltre il minuto e mezzo la funzione
-  // smette di essere utilizzabile, per quanta memoria ci sia.
-  assert.equal(canUpscale(300, 300), true);
-  assert.equal(canUpscale(512, 512), true);
-  assert.equal(canUpscale(1000, 1000), false, 'un minuto e mezzo di attesa non è una funzione');
-  assert.equal(canUpscale(3661, 4843), false);
+test('il limite è la tela, non il tempo', () => {
+  // Il vecchio tetto di 512 px veniva da una stima otto volte pessimista.
+  // Rimisurato, un file di stampa ci sta: quello che non ci sta è una tela
+  // oltre il limite del browser, che si crea e restituisce pixel vuoti.
+  assert.equal(canUpscale(300, 300, 4).ok, true);
+  assert.equal(canUpscale(1024, 1024, 4).ok, true, 'un file da 1024 deve passare');
+  assert.equal(canUpscale(2048, 2048, 4).ok, true);
+});
+
+test('il rifiuto dice QUALE limite si è superato', () => {
+  // «Troppo grande» non dice cosa fare. «Troppo largo di lato» sì.
+  const lato = canUpscale(5000, 100, 4);
+  assert.equal(lato.ok, false);
+  assert.equal(lato.reason, 'lato', 'oltre 4096 di lato l uscita sfora la tela');
+
+  const area = canUpscale(3000, 3000, 4);
+  assert.equal(area.ok, false);
+  assert.equal(area.reason, 'area');
+});
+
+test('i limiti d ingresso derivano da quelli d uscita, non da una costante', () => {
+  const x4 = inputLimits(4);
+  assert.equal(x4.side, Math.floor(MAX_OUTPUT_SIDE / 4));
+  assert.equal(x4.pixels, Math.floor(MAX_OUTPUT_PIXELS / 16));
+  // Un fattore più piccolo lascia entrare immagini più grandi: è aritmetica,
+  // e se smettesse di valerlo il limite sarebbe scritto a mano da qualche parte.
+  assert.ok(inputLimits(2).pixels > x4.pixels);
+});
+
+test('un tetto di tela più basso stringe l ingresso', () => {
+  // Su Safari mobile la tela regge molto meno: il limite deve seguirla.
+  const stretto = canUpscale(1024, 1024, 4, { maxOutputPixels: 4e6 });
+  assert.equal(stretto.ok, false);
+  assert.equal(stretto.reason, 'area');
+});
+
+test('la prova della tela rifiuta una tela che si crea ma resta vuota', () => {
+  // È il caso pericoloso: oltre il limite la tela NON solleva errori, produce
+  // pixel vuoti. Crearla non basta come prova, va riletta.
+  const finta = (w, h) => ({
+    getContext: () => ({
+      fillRect() {},
+      getImageData: () => ({ data: w <= 4096 ? [255, 0, 0, 255] : [0, 0, 0, 0] }),
+    }),
+    width: w,
+    height: h,
+  });
+  assert.equal(probeCanvasPixels(finta), 4096 * 4096);
+});
+
+test('la stima del tempo si dice come la direbbe una persona', () => {
+  assert.deepEqual(humanSeconds(30), { value: 30, unit: 'sec' });
+  assert.deepEqual(humanSeconds(89), { value: 89, unit: 'sec' });
+  assert.deepEqual(humanSeconds(120), { value: 2, unit: 'min' });
+  // Mai «0 secondi»: un'attesa esiste sempre, e dire zero sembra un guasto.
+  assert.equal(humanSeconds(0.2).value, 1);
+});
+
+test('il caricamento del modello si conta solo la prima volta', () => {
+  const scale = getScale('x4');
+  const freddo = estimateSeconds(300, 300, scale, { warm: false });
+  const caldo = estimateSeconds(300, 300, scale);
+  assert.ok(freddo > caldo, 'la prima volta si aspetta anche il modello');
 });
 
 test('outputSize dice quanto diventerà grande', () => {
@@ -120,15 +183,26 @@ test('la stima del tempo cresce col numero di piastrelle', () => {
   const grande = estimateSeconds(512, 512, scale);
   assert.ok(piccola > 0, 'una stima di zero secondi sarebbe una bugia');
   assert.ok(grande > piccola, 'più area, più attesa');
-  // 300x300 con passo 224 fa 2x2 piastrelle: circa mezzo minuto.
+  // 300x300 con passo 224 fa 2x2 piastrelle.
   assert.equal(estimateTiles(300, 300), 4);
 });
 
-test('si offre solo x4, perché x2 è misurabilmente peggiore', () => {
-  // Stessa uscita, quattro volte il tempo: tenerla sarebbe offrire
-  // un'opzione peggiore sotto ogni aspetto.
-  assert.equal(SCALES.length, 1);
-  assert.equal(SCALES[0].id, 'x4');
+test('il ×2 si ottiene dal ×4, non da un secondo modello', () => {
+  // Un modello ×2 dedicato costa quattro volte il tempo per un risultato
+  // peggiore: ridurre a metà un'immagine già ricostruita batte interpolarla
+  // dal piccolo. Un solo modello da scaricare, due fattori da offrire.
+  assert.deepEqual(SCALES.map((s) => s.id), ['x2', 'x4']);
+  for (const s of SCALES) assert.equal(s.url, '/models/upscale-x4.onnx');
+  assert.equal(reductionFor(4), 1, 'il ×4 esce dal modello così com è');
+  assert.equal(reductionFor(2), 2, 'il ×2 si riduce a metà');
+  assert.equal(MODEL_FACTOR, 4);
+});
+
+test('un fattore più piccolo lascia entrare immagini più grandi', () => {
+  // È il motivo pratico per cui il ×2 serve: su un file già grande il ×4
+  // sfora la tela, il ×2 no.
+  assert.equal(canUpscale(3000, 3000, 4).ok, false);
+  assert.equal(canUpscale(3000, 3000, 2).ok, true);
 });
 
 test('ogni scala dichiara la misura di piastrella che il suo modello pretende', () => {
@@ -142,6 +216,7 @@ test('ogni scala dichiara la misura di piastrella che il suo modello pretende', 
 
 test('le scale disponibili sono coerenti', () => {
   assert.equal(getScale('x4').factor, 4);
+  assert.equal(getScale('x2').factor, 2);
   assert.throws(() => getScale('x8'), /sconosciuto/);
   for (const s of SCALES) assert.match(s.url, /^\/models\/.*\.onnx$/);
 });

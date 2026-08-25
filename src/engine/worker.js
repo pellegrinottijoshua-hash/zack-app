@@ -4,7 +4,16 @@
 import * as ort from 'onnxruntime-web/webgpu';
 import { getModel } from './models.js';
 import { maskToU8, applyMaskToRgba } from './compose.js';
-import { getScale, planTiles, canUpscale } from './upscale.js';
+import {
+  getScale,
+  planTiles,
+  canUpscale,
+  probeCanvasPixels,
+  reductionFor,
+  MODEL_FACTOR,
+  MAX_OUTPUT_PIXELS,
+} from './upscale.js';
+import { bleedEdges, extractAlpha, hasAlpha } from './compose.js';
 
 ort.env.wasm.wasmPaths = '/ort/';
 
@@ -16,6 +25,9 @@ let provider = 'wasm';
 // scontorno costringerebbe a ricaricare un modello a ogni operazione.
 let upSession = null;
 let upScaleId = null;
+// Un ingrandimento grande dura minuti: senza un modo di fermarlo, l'unica via
+// d'uscita e' chiudere la scheda.
+let stopUpscale = false;
 
 const post = (msg, transfer) => self.postMessage(msg, transfer || []);
 
@@ -111,6 +123,13 @@ function tileToTensor(data, w, h) {
 }
 
 self.onmessage = async (e) => {
+  // Arriva mentre l'ingrandimento e' in corso: si limita ad alzare la bandiera,
+  // il ciclo la guarda fra una piastrella e l'altra.
+  if (e.data.type === 'stop-upscale') {
+    stopUpscale = true;
+    return;
+  }
+
   const { type, id } = e.data;
   try {
     if (type === 'init') {
@@ -125,11 +144,17 @@ self.onmessage = async (e) => {
       const w = bitmap.width;
       const h = bitmap.height;
 
-      if (!canUpscale(w, h)) {
+      // Il tetto lo decide questo browser, non una costante: una tela oltre il
+      // suo limite si crea lo stesso e restituisce pixel vuoti in silenzio.
+      const maxOutputPixels = Math.min(MAX_OUTPUT_PIXELS, probeCanvasPixels() || MAX_OUTPUT_PIXELS);
+      const verdict = canUpscale(w, h, scale.factor, { maxOutputPixels });
+      if (!verdict.ok) {
         bitmap.close?.();
-        post({ type: 'error', id, code: 'upscale-too-large' });
+        post({ type: 'error', id, code: `upscale-too-large-${verdict.reason}` });
         return;
       }
+
+      stopUpscale = false;
 
       post({ type: 'progress', id, phase: 'loading' });
       await ensureUpscale(scaleId);
@@ -138,7 +163,23 @@ self.onmessage = async (e) => {
       const sctx = src.getContext('2d', { willReadFrequently: true });
       sctx.drawImage(bitmap, 0, 0);
 
-      const out = new OffscreenCanvas(w * scale.factor, h * scale.factor);
+      // ── L'alfa non passa dal modello ──────────────────────────────────
+      // La rete di super-risoluzione ha tre canali: la trasparenza non la
+      // vede e non la restituisce. Ingrandire un ritaglio senza mettere da
+      // parte l'alfa lo riconsegna opaco — e siccome fuori dal soggetto il
+      // canvas ha lasciato NERO, il ritaglio torna un rettangolo nero.
+      const srcImg = sctx.getImageData(0, 0, w, h);
+      const alpha = hasAlpha(srcImg.data, w * h) ? extractAlpha(srcImg.data, w * h) : null;
+      if (alpha) {
+        // Il colore del bordo cola nel vuoto prima di dare i pixel al modello:
+        // altrimenti ricostruisce quel nero come un contorno vero, e ricompare
+        // come alone appena si riapplica l'alfa.
+        bleedEdges(srcImg.data, w, h);
+        for (let i = 0; i < w * h; i++) srcImg.data[i * 4 + 3] = 255;
+        sctx.putImageData(srcImg, 0, 0);
+      }
+
+      const out = new OffscreenCanvas(w * MODEL_FACTOR, h * MODEL_FACTOR);
       const octx = out.getContext('2d');
 
       const tileSize = scale.tile;
@@ -178,7 +219,7 @@ self.onmessage = async (e) => {
         const tileCanvas = new OffscreenCanvas(ow, oh);
         tileCanvas.getContext('2d').putImageData(new ImageData(rgba, ow, oh), 0, 0);
 
-        const f = scale.factor;
+        const f = MODEL_FACTOR;
         octx.drawImage(
           tileCanvas,
           t.offset.x * f,
@@ -192,13 +233,54 @@ self.onmessage = async (e) => {
         );
 
         post({ type: 'progress', id, phase: 'running', done: ++done, total: tiles.length });
+
+        // Un risultato a meta' e' nitido da una parte e vuoto dall'altra: non
+        // si consegna, si dice che e' stato fermato.
+        if (stopUpscale) {
+          bitmap.close?.();
+          post({ type: 'error', id, code: 'upscale-stopped' });
+          return;
+        }
       }
 
       bitmap.close?.();
-      const img = octx.getImageData(0, 0, out.width, out.height);
-      post({ type: 'result', id, rgba: img.data, width: out.width, height: out.height }, [
-        img.data.buffer,
-      ]);
+
+      // Il modello consegna sempre ×4: per un ×2 si riduce a meta' partendo da
+      // un'immagine gia' ricostruita, che e' meglio di interpolarla dal piccolo.
+      const reduce = reductionFor(scale.factor);
+      let final = out;
+      if (reduce !== 1) {
+        final = new OffscreenCanvas(Math.round(out.width / reduce), Math.round(out.height / reduce));
+        const fctx = final.getContext('2d');
+        fctx.imageSmoothingQuality = 'high';
+        fctx.drawImage(out, 0, 0, final.width, final.height);
+      }
+
+      const fw = final.width;
+      const fh = final.height;
+      const img = final.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, fw, fh);
+
+      if (alpha) {
+        // L'alfa si ingrandisce per conto suo, con un ridimensionamento
+        // morbido: e' una maschera, non un dettaglio da ricostruire.
+        const ac = new OffscreenCanvas(w, h);
+        const actx = ac.getContext('2d');
+        const ai = actx.createImageData(w, h);
+        for (let i = 0; i < w * h; i++) {
+          ai.data[i * 4] = ai.data[i * 4 + 1] = ai.data[i * 4 + 2] = alpha[i];
+          ai.data[i * 4 + 3] = 255;
+        }
+        actx.putImageData(ai, 0, 0);
+
+        const big = new OffscreenCanvas(fw, fh);
+        const bctx = big.getContext('2d', { willReadFrequently: true });
+        bctx.imageSmoothingQuality = 'high';
+        bctx.drawImage(ac, 0, 0, fw, fh);
+        const bd = bctx.getImageData(0, 0, fw, fh).data;
+        for (let i = 0; i < fw * fh; i++) img.data[i * 4 + 3] = bd[i * 4];
+      }
+
+      post({ type: 'result', id, rgba: img.data, width: fw, height: fh }, [img.data.buffer]);
       return;
     }
 

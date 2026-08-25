@@ -52,6 +52,9 @@ export function createEngine() {
       send({ type: 'cutout', bitmap, modelId }, [bitmap], onProgress),
     upscale: (bitmap, scaleId, onProgress) =>
       send({ type: 'upscale', bitmap, scaleId }, [bitmap], onProgress),
+    // Non e' una promessa: chi ha chiesto l'ingrandimento ricevera' l'errore
+    // `upscale-stopped` sulla sua, ed e' li' che va gestito.
+    stopUpscale: () => worker.postMessage({ type: 'stop-upscale' }),
     dispose: () => worker.terminate(),
   };
 }

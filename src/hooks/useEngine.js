@@ -66,10 +66,24 @@ export function useEngine() {
     [tier],
   );
 
+  const upscale = useCallback(async (bitmap, scaleId, onProgress) => {
+    const engine = engineRef.current;
+    if (!engine) {
+      const err = new Error('engine-not-ready');
+      err.code = 'engine-not-ready';
+      throw err;
+    }
+    return engine.upscale(bitmap, scaleId, onProgress);
+  }, []);
+
+  const stopUpscale = useCallback(() => engineRef.current?.stopUpscale(), []);
+
   return {
     tier,
     phase,
     cutout,
+    upscale,
+    stopUpscale,
     ready: Boolean(tier),
     models: tier ? modelsFor(tier) : [],
     defaultModelId: tier ? defaultModelFor(tier).id : null,

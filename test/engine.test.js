@@ -50,7 +50,14 @@ test('getModel rifiuta un id sconosciuto', () => {
 });
 
 // ─── compositing (Task 2) ───────────────────────────────────────────────────
-import { normalizeMask, maskToU8, applyMaskToRgba } from '../src/engine/compose.js';
+import {
+  normalizeMask,
+  maskToU8,
+  applyMaskToRgba,
+  bleedEdges,
+  extractAlpha,
+  hasAlpha,
+} from '../src/engine/compose.js';
 
 test('normalizeMask riscala su 0..1 usando min e max effettivi', () => {
   const out = normalizeMask(Float32Array.from([-2, 0, 2]));
@@ -117,4 +124,57 @@ test('detectWebGpu è falso se l API non c è o non dà un adapter', async () =>
 test('detectWebGpu non propaga eccezioni', async () => {
   const gpu = { requestAdapter: async () => { throw new Error('boom'); } };
   assert.equal(await detectWebGpu(gpu), false);
+});
+
+test('la colatura riempie il vuoto col colore del bordo, non col nero', () => {
+  // È il difetto che rendeva nero un ritaglio ingrandito: fuori dal soggetto
+  // il canvas non lascia "trasparente e colorato", lascia NERO, e il modello
+  // di super-risoluzione ricostruisce quel nero come un bordo vero.
+  const w = 5;
+  const h = 1;
+  const rgba = new Uint8ClampedArray(w * h * 4);
+  // un solo pixel opaco al centro, rosso
+  rgba[2 * 4] = 200;
+  rgba[2 * 4 + 1] = 40;
+  rgba[2 * 4 + 2] = 40;
+  rgba[2 * 4 + 3] = 255;
+
+  bleedEdges(rgba, w, h, 2);
+  assert.deepEqual([...rgba.slice(4, 7)], [200, 40, 40], 'il vicino prende il colore');
+  assert.deepEqual([...rgba.slice(0, 3)], [200, 40, 40], 'e cola ancora al giro dopo');
+});
+
+test("la colatura non tocca mai l'alfa", () => {
+  // Il vuoto deve restare vuoto: si colora soltanto, per non dare nero in
+  // pasto al modello. L'alfa si riapplica dopo, intatta.
+  const rgba = new Uint8ClampedArray([0, 0, 0, 0, 10, 20, 30, 255]);
+  bleedEdges(rgba, 2, 1, 3);
+  assert.equal(rgba[3], 0, 'il pixel vuoto è ancora vuoto');
+  assert.equal(rgba[7], 255);
+});
+
+test("un'immagine tutta piena o tutta vuota non viene toccata", () => {
+  const piena = new Uint8ClampedArray([10, 20, 30, 255, 40, 50, 60, 255]);
+  assert.deepEqual([...bleedEdges(piena.slice(), 2, 1, 5)], [...piena]);
+  const vuota = new Uint8ClampedArray(8);
+  assert.deepEqual([...bleedEdges(vuota.slice(), 2, 1, 5)], [...vuota]);
+});
+
+test('la colatura si ferma quando non ha più dove crescere', () => {
+  // Due giri su un pixel solo devono bastare a coprire tutto: senza l'uscita
+  // anticipata, dodici giri su un file grande sarebbero dodici scansioni inutili.
+  const rgba = new Uint8ClampedArray([0, 0, 0, 0, 90, 90, 90, 255]);
+  bleedEdges(rgba, 2, 1, 12);
+  assert.deepEqual([...rgba.slice(0, 3)], [90, 90, 90]);
+});
+
+test('la colatura rifiuta dimensioni incoerenti invece di leggere a vuoto', () => {
+  assert.throws(() => bleedEdges(new Uint8ClampedArray(8), 5, 5), /non combaciano/);
+});
+
+test("l'alfa si estrae e si riconosce", () => {
+  const rgba = new Uint8ClampedArray([1, 2, 3, 128, 4, 5, 6, 255]);
+  assert.deepEqual([...extractAlpha(rgba, 2)], [128, 255]);
+  assert.equal(hasAlpha(rgba, 2), true);
+  assert.equal(hasAlpha(new Uint8ClampedArray([1, 2, 3, 255]), 1), false);
 });

@@ -230,7 +230,9 @@
   },
   "common": {
     "on": "on",
-    "off": "off"
+    "off": "off",
+    "sec": "s",
+    "min": "min"
   },
   "group": {
     "stampa": "Print",
@@ -372,10 +374,18 @@
   "upscale": {
     "title": "Enlarge",
     "x4": "Four times",
-    "help": "Rebuilds detail instead of just making it bigger. Meant for small images: a logo, a cutout, a thumbnail.",
-    "tooBig": "This image is already large: enlarging is for small files, under 512 pixels a side.",
+    "help": "Rebuilds detail instead of just scaling up. On a print file it fills the area at the density the printer asks for: four times a 1000-pixel file gives 4000, which is 29 cm at 350 dpi.",
+    "plan": "{from} → {to}, about {wait}",
+    "tooBig": {
+      "lato": "Too wide: enlarging goes up to {side} pixels per side, because four times that is the most a browser canvas can hold.",
+      "area": "Too many pixels: enlarging goes up to about {mp} megapixels, because four times that won't fit in the tab's memory."
+    },
     "estimate": "About {sec} seconds",
-    "working": "Rebuilding detail…"
+    "working": "Rebuilding detail…",
+    "stop": "Stop enlarging",
+    "stopped": "Enlarging stopped. The starting file is untouched.",
+    "x2": "Two times",
+    "run": "Enlarge"
   },
   "batch": {
     "title": "In bulk",

@@ -230,7 +230,9 @@
   },
   "common": {
     "on": "attivo",
-    "off": "spento"
+    "off": "spento",
+    "sec": "s",
+    "min": "min"
   },
   "group": {
     "stampa": "Stampa",
@@ -372,10 +374,18 @@
   "upscale": {
     "title": "Ingrandisci",
     "x4": "Quattro volte",
-    "help": "Ricostruisce il dettaglio invece di limitarsi a ingrandire. Serve su immagini piccole: un logo, un ritaglio, una miniatura.",
-    "tooBig": "Questa immagine è già grande: l'ingrandimento serve su file piccoli, sotto i 512 pixel di lato.",
+    "help": "Ricostruisce il dettaglio invece di limitarsi a ingrandire. Su un file di stampa serve a riempire l'area alla densità che la stamperia chiede: quattro volte un file da 1000 pixel fa 4000, cioè 29 cm a 350 dpi.",
+    "plan": "{from} → {to}, circa {wait}",
+    "tooBig": {
+      "lato": "Troppo grande di lato: l'ingrandimento arriva fino a {side} pixel per lato, perché quattro volte tanto è il massimo che una tela del browser regge.",
+      "area": "Troppi pixel: l'ingrandimento arriva fino a circa {mp} megapixel, perché quattro volte tanto non entra nella memoria della scheda."
+    },
     "estimate": "Circa {sec} secondi",
-    "working": "Sto ricostruendo il dettaglio…"
+    "working": "Sto ricostruendo il dettaglio…",
+    "stop": "Ferma l'ingrandimento",
+    "stopped": "Ingrandimento fermato. Il file di partenza è rimasto com'era.",
+    "x2": "Due volte",
+    "run": "Ingrandisci"
   },
   "batch": {
     "title": "In blocco",

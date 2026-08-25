@@ -11,7 +11,10 @@
  * centimetri, e senza di lui il controllo di stampa non ha niente da dire.
  */
 export const PRESETS = [
-  { id: 'gelato-front', w: 3661, h: 4843, safeArea: 0.9, dpi: 300, label: 'Gelato 3661×4843', group: 'stampa' },
+  { id: 'gelato-front', w: 3661, h: 4843, safeArea: 0.9, dpi: 300, label: 'Gelato · 300 dpi', group: 'stampa' },
+  // Stessa area fisica del formato sopra — 31 × 41 cm — alla densita' che
+  // Gelato chiede sui prodotti piu' esigenti: 3661 × 350/300 = 4271.
+  { id: 'gelato-front-350', w: 4271, h: 5650, safeArea: 0.9, dpi: 350, label: 'Gelato · 350 dpi', group: 'stampa' },
   { id: 'print-a4-300', w: 2480, h: 3508, safeArea: 0.9, dpi: 300, label: 'A4 · 300 dpi', group: 'stampa' },
   { id: 'square', w: 2048, h: 2048, safeArea: 0.85, label: '1:1', group: 'social' },
   { id: 'portrait', w: 1638, h: 2048, safeArea: 0.85, label: '4:5', group: 'social' },
