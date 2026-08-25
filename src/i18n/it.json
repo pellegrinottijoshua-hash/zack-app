@@ -112,7 +112,22 @@
       "label": "Apri",
       "help": "Riapre questo file vettoriale nell'editor per modificarlo."
     },
-    "refresh": "Aggiorna"
+    "refresh": "Aggiorna",
+    "search": "Cerca…",
+    "all": "Tutti",
+    "newFolder": "+ cartella",
+    "newMoodboard": "+ moodboard",
+    "newTag": "tag…",
+    "tag": "Tag",
+    "removeTag": "Togli questo tag",
+    "folder": {
+      "help": "Clicca per filtrare. Doppio clic elimina la cartella: i lavori restano, tornano fuori dalle cartelle."
+    },
+    "moodboard": {
+      "help": "Clicca per vedere solo i lavori di questa moodboard. Doppio clic la elimina; i lavori restano."
+    },
+    "localWarning": "Tutto è salvato in questo browser, sul tuo computer. Svuotare i dati del sito cancella l'archivio: scarica tutto ogni tanto.",
+    "unsupported": "Questo browser non sa conservare i file in locale. I lavori si possono ancora creare e scaricare, ma non restano in archivio."
   },
   "status": {
     "file": "file",
