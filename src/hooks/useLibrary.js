@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as lib from '../store/library.js';
-import { queryAssets, allTags, folderPath } from '../store/model.js';
+import { queryAssets, allTags, folderPath, smartCollections, lineage, derivedFrom } from '../store/model.js';
 
 /**
  * La libreria vista da React.
@@ -18,7 +18,7 @@ export function useLibrary() {
   const [moodboards, setMoodboards] = useState([]);
   const [usage, setUsage] = useState({ used: null, quota: null });
 
-  const [filter, setFilter] = useState({ folderId: undefined, moodboardId: undefined, tag: null, search: '' });
+  const [filter, setFilter] = useState({ folderId: undefined, moodboardId: undefined, tag: null, search: '', collection: null });
 
   const refresh = useCallback(async () => {
     try {
@@ -43,6 +43,14 @@ export function useLibrary() {
 
   const visible = useMemo(() => queryAssets(assets, filter), [assets, filter]);
   const tags = useMemo(() => allTags(assets), [assets]);
+  const collections = useMemo(() => smartCollections(assets), [assets]);
+
+  // Filtro applicato dopo la query, perché le raccolte pronte non sono
+  // cartelle: sono domande sul tempo e sull'uso.
+  const shown = useMemo(() => {
+    const c = collections.find((x) => x.id === filter.collection);
+    return c ? visible.filter(c.match) : visible;
+  }, [visible, collections, filter.collection]);
 
   const save = useCallback(
     async (blob, opts) => {
@@ -67,7 +75,8 @@ export function useLibrary() {
     ready,
     supported,
     assets,
-    visible,
+    visible: shown,
+    collections,
     folders,
     moodboards,
     tags,
@@ -83,6 +92,11 @@ export function useLibrary() {
     addTag: act(lib.addTag),
     removeTag: act(lib.removeTag),
     createFolder: act(lib.createFolder),
+    updateFolder: act(lib.updateFolder),
+    setNote: act(lib.setNote),
+    toggleStar: act(lib.toggleStar),
+    lineageOf: (id) => lineage(assets, id),
+    derivedOf: (id) => derivedFrom(assets, id),
     deleteFolder: act(lib.deleteFolder),
     createMoodboard: act(lib.createMoodboard),
     deleteMoodboard: act(lib.deleteMoodboard),

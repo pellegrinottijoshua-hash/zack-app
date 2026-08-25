@@ -1863,3 +1863,68 @@ body {
   background: var(--oro);
   transition: width 0.25s ease;
 }
+
+/* ─── libreria organizzata ──────────────────────────────────────────────── */
+
+.folder-icon {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  fill: none;
+  stroke: var(--tinta, currentColor);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip.smart {
+  border-style: dashed;
+}
+
+.chip[aria-pressed='true'] .folder-icon {
+  stroke: var(--oro);
+}
+
+/* Il preferito sta sull'anteprima: è un gesto da un clic, non da un menu. */
+.star {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 3;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: rgba(17, 17, 17, 0.7);
+  border: 1px solid var(--linea);
+  color: var(--linea-viva);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.star:hover {
+  color: var(--grigio);
+}
+
+.star[aria-pressed='true'] {
+  color: var(--oro);
+  border-color: var(--oro);
+}
+
+.lineage {
+  display: block;
+  margin-top: 3px;
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  color: var(--grigio-scuro);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

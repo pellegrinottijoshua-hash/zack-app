@@ -139,7 +139,17 @@
       "help": "Clicca per vedere solo i lavori di questa moodboard. Doppio clic la elimina; i lavori restano."
     },
     "localWarning": "Tutto è salvato in questo browser, sul tuo computer. Svuotare i dati del sito cancella l'archivio: scarica tutto ogni tanto.",
-    "unsupported": "Questo browser non sa conservare i file in locale. I lavori si possono ancora creare e scaricare, ma non restano in archivio."
+    "unsupported": "Questo browser non sa conservare i file in locale. I lavori si possono ancora creare e scaricare, ma non restano in archivio.",
+    "smart": {
+      "recent": "Ultimi 7 giorni",
+      "starred": "Preferiti",
+      "references": "Usati come riferimento"
+    },
+    "note": "Nota…",
+    "star": "Preferito",
+    "unstar": "Togli dai preferiti",
+    "lineage": "Viene da",
+    "folderLook": "Aspetto"
   },
   "status": {
     "file": "file",

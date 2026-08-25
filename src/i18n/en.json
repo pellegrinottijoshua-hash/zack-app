@@ -139,7 +139,17 @@
       "help": "Click to see only this moodboard's work. Double-click deletes it; the work stays."
     },
     "localWarning": "Everything is saved in this browser, on your computer. Clearing the site's data wipes the archive: download everything now and then.",
-    "unsupported": "This browser cannot keep files locally. You can still create and download work, but it won't stay in the archive."
+    "unsupported": "This browser cannot keep files locally. You can still create and download work, but it won't stay in the archive.",
+    "smart": {
+      "recent": "Last 7 days",
+      "starred": "Starred",
+      "references": "Used as reference"
+    },
+    "note": "Note…",
+    "star": "Star",
+    "unstar": "Remove star",
+    "lineage": "Comes from",
+    "folderLook": "Look"
   },
   "status": {
     "file": "file",

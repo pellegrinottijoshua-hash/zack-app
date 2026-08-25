@@ -75,6 +75,10 @@ export default function App() {
   const [references, setReferences] = useState([]);
   const [brushOpen, setBrushOpen] = useState(false);
   const [batchFiles, setBatchFiles] = useState([]);
+  // Da quale lavoro in libreria viene il file aperto: serve a registrare la
+  // provenienza, che è ciò che rende ritrovabile un file di cui non si
+  // ricorda il nome.
+  const [sourceAssetId, setSourceAssetId] = useState(null);
   // Cambia a ogni azione sull'editor per far rileggere al pannello la
   // posizione della selezione, che la libreria muta fuori da React.
   const [editorTick, setEditorTick] = useState(0);
@@ -178,6 +182,8 @@ export default function App() {
     setResult(null);
     setFile(f);
     setBeforeUrl(own(f));
+    // Un file trascinato da fuori non ha un'origine in libreria.
+    setSourceAssetId(null);
 
     // An SVG dropped anywhere belongs in the editor.
     if (/\.svg$/i.test(f.name)) {
@@ -216,7 +222,7 @@ export default function App() {
         await library.save(blob, {
           name: `${file.name.replace(/\.[^.]+$/, '')}-scontornato`,
           kind: 'png',
-          meta: { op: 'remove-bg', model: s.model },
+          meta: { fromId: sourceAssetId, op: 'remove-bg', model: s.model },
         });
       } else {
         // Anche il tracciato gira nel browser: VTracer in WebAssembly, 140 KB.
@@ -228,7 +234,7 @@ export default function App() {
         await library.save(blob, {
           name: `${file.name.replace(/\.[^.]+$/, '')}-vettoriale`,
           kind: 'svg',
-          meta: { op: 'vectorize', preset: s.tracePreset, paths: meta.paths },
+          meta: { fromId: sourceAssetId, op: 'vectorize', preset: s.tracePreset, paths: meta.paths },
         });
       }
     } catch (e) {
@@ -280,7 +286,7 @@ export default function App() {
       await library.save(blob, {
         name: `${source.name.replace(/\.[^.]+$/, '')}-${s.preset}`,
         kind: 'png',
-        meta: { op: 'export', preset: s.preset, background: s.background },
+        meta: { fromId: sourceAssetId, op: 'export', preset: s.preset, background: s.background },
       });
       setNotice(
         `${meta.canvas.w}×${meta.canvas.h}${meta.upscaleLimited ? ` — ${t('result.tooSmall')}` : ''}`,
@@ -301,7 +307,7 @@ export default function App() {
       const work = await library.save(new Blob([svg], { type: 'image/svg+xml' }), {
         name: (file?.name || 'disegno').replace(/\.[^.]+$/, ''),
         kind: 'svg',
-        meta: { op: 'editor' },
+        meta: { fromId: sourceAssetId, op: 'editor' },
       });
       setNotice(work.file);
     } catch (e) {
@@ -374,7 +380,7 @@ export default function App() {
       await library.save(blob, {
         name: `${(file?.name || 'immagine').replace(/\.[^.]+$/, '')}-ingrandita`,
         kind: 'png',
-        meta: { op: 'upscale', scale: 'x4' },
+        meta: { fromId: sourceAssetId, op: 'upscale', scale: 'x4' },
       });
     } catch (e) {
       console.error(e);
@@ -408,6 +414,7 @@ export default function App() {
       setResult(null);
       setFile(asFile);
       setBeforeUrl(own(asFile));
+      setSourceAssetId(item.id);
       setTool(kind === 'cutout' ? 'scontorna' : 'vettorializza');
     } catch (e) {
       console.error(e);
@@ -508,7 +515,7 @@ export default function App() {
                 await library.save(blob, {
                   name: `${(file?.name || 'immagine').replace(/\.[^.]+$/, '')}-corretto`,
                   kind: 'png',
-                  meta: { op: 'brush' },
+                  meta: { fromId: sourceAssetId, op: 'brush' },
                 });
               }}
             />

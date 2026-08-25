@@ -7,6 +7,9 @@ import {
   uniqueName,
   normalizeTag,
   canMoveFolder,
+  cleanNote,
+  isFolderColor,
+  isFolderIcon,
 } from './model.js';
 
 /**
@@ -92,6 +95,16 @@ export async function addTag(id, tag) {
   return updateAsset(id, { tags: [...asset.tags, clean] });
 }
 
+export async function setNote(id, note) {
+  return updateAsset(id, { note: cleanNote(note) });
+}
+
+export async function toggleStar(id) {
+  const asset = await db.get('assets', id);
+  if (!asset) return null;
+  return updateAsset(id, { starred: !asset.starred });
+}
+
 export async function removeTag(id, tag) {
   const asset = await db.get('assets', id);
   if (!asset) return null;
@@ -100,10 +113,22 @@ export async function removeTag(id, tag) {
 
 // ─── cartelle ──────────────────────────────────────────────────────────────
 
-export async function createFolder(name, parentId = null) {
-  const folder = makeFolder({ name, parentId });
+export async function createFolder(name, parentId = null, look = {}) {
+  const folder = makeFolder({ name, parentId, ...look });
   await db.put('folders', folder);
   return folder;
+}
+
+/** Cambia aspetto o nota di una cartella, rifiutando valori fuori insieme. */
+export async function updateFolder(id, patch) {
+  const folder = await db.get('folders', id);
+  if (!folder) throw new Error(`Nessuna cartella con id ${id}`);
+  const next = { ...folder, ...patch, id: folder.id };
+  if (patch.color != null && !isFolderColor(patch.color)) next.color = folder.color;
+  if (patch.icon != null && !isFolderIcon(patch.icon)) next.icon = folder.icon;
+  if (patch.note != null) next.note = cleanNote(patch.note);
+  await db.put('folders', next);
+  return next;
 }
 
 export async function moveFolder(id, newParentId) {
