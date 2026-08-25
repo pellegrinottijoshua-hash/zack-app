@@ -10,7 +10,7 @@ import { isEmptyPlan } from '../engine/batch.js';
  * Non è uno strumento nuovo: è ciò che rende utili quelli che ci sono già.
  * Scontornare quaranta file uno per uno è il lavoro che nessuno vuole fare.
  */
-export default function BatchPanel({ files, batch, onPickFiles, onClearFiles }) {
+export default function BatchPanel({ files, batch, onPickFiles, onClearFiles, onFix }) {
   const [opts, setOpts] = useState({ cutout: true, vector: false, exportPresets: ['gelato-front'] });
 
   const togglePreset = (id) =>
@@ -102,6 +102,29 @@ export default function BatchPanel({ files, batch, onPickFiles, onClearFiles }) 
               {t('batch.doneMsg', { done, total })}
               {failed > 0 && ` · ${t('batch.failed', { n: failed })}`}
             </p>
+          )}
+
+          {/* Su quaranta file il modello ne sbaglia qualcuno, e trovarli poi
+              nell'archivio significa cercarli. Qui stanno già in fila, e ci si
+              apre sopra il pennello con l'originale accanto. */}
+          {!batch.running && batch.results.length > 0 && onFix && (
+            <div className="field">
+              <span className="label">
+                <span>{t('batch.fixTitle')}</span>
+                <b>{t('batch.count', { n: batch.results.length })}</b>
+              </span>
+              <Help k="batch.fixHelp" />
+              <ul className="batch-results">
+                {batch.results.map((r, i) => (
+                  <li key={`${r.file.name}-${i}`}>
+                    <button onClick={() => onFix(r)} title={t('batch.fix')}>
+                      <img src={URL.createObjectURL(r.blob)} alt="" loading="lazy" />
+                      <span>{r.file.name}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </>
       )}

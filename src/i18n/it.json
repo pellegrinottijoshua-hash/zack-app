@@ -366,7 +366,8 @@
     "restore": "Recupera",
     "restoreHelp": "Riporta indietro le parti del soggetto che l'automatico ha tolto per errore.",
     "apply": "Applica",
-    "open": "Correggi a mano"
+    "open": "Correggi a mano",
+    "limited": "Recupero limitato: il file di partenza ha un'altra dimensione, quindi nelle zone già cancellate il colore non c'è più. Riapri il file originale per recuperarle."
   },
   "upscale": {
     "title": "Ingrandisci",
@@ -388,7 +389,10 @@
     "progress": "{done} di {total}",
     "eta": "circa {sec} s",
     "doneMsg": "Fatti {done} su {total}",
-    "failed": "{n} non riusciti"
+    "failed": "{n} non riusciti",
+    "fix": "Correggi a mano",
+    "fixTitle": "Da correggere?",
+    "fixHelp": "Su quaranta file il modello ne sbaglia qualcuno. Clicca quello storto e si apre il pennello, con il file di partenza accanto per recuperare i colori."
   },
   "sound": {
     "record": "Registra",

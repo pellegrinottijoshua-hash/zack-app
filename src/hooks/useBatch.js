@@ -21,6 +21,10 @@ import { traceToSvg } from '../engine/trace.js';
  */
 export function useBatch({ engine, library, model }) {
   const [jobs, setJobs] = useState([]);
+  // I ritagli prodotti, tenuti da parte per poterli correggere a mano.
+  // Serve il file di PARTENZA insieme al risultato: senza, «Recupera»
+  // ridipinge nero, perché il colore tolto vive solo nell'originale.
+  const [results, setResults] = useState([]);
   const [running, setRunning] = useState(false);
   const [current, setCurrent] = useState(null);
   const [eta, setEta] = useState(null);
@@ -34,6 +38,7 @@ export function useBatch({ engine, library, model }) {
 
   const clear = useCallback(() => {
     setJobs([]);
+    setResults([]);
     setCurrent(null);
     setEta(null);
     durations.current = [];
@@ -45,6 +50,7 @@ export function useBatch({ engine, library, model }) {
 
       stopRef.current = false;
       durations.current = [];
+      setResults([]);
       let list = planJobs(files, options);
       setJobs(list);
       setRunning(true);
@@ -66,6 +72,7 @@ export function useBatch({ engine, library, model }) {
             if (job.op === OPS.cutout) {
               const blob = await engine.cutout(job.file, model);
               latest.set(job.file, blob);
+              setResults((r) => [...r, { file: job.file, blob }]);
               await library.save(blob, {
                 name: `${job.file.name.replace(/\.[^.]+$/, '')}-scontornato`,
                 kind: 'png',
@@ -112,5 +119,5 @@ export function useBatch({ engine, library, model }) {
     [engine, library, model],
   );
 
-  return { jobs, running, current, eta, run, stop, clear, summary: summarize(jobs) };
+  return { jobs, running, current, eta, results, run, stop, clear, summary: summarize(jobs) };
 }

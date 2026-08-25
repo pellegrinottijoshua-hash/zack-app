@@ -366,7 +366,8 @@
     "restore": "Bring back",
     "restoreHelp": "Restores parts of the subject the automatic pass removed by mistake.",
     "apply": "Apply",
-    "open": "Fix by hand"
+    "open": "Fix by hand",
+    "limited": "Limited recovery: the starting file has different dimensions, so the colour in the already-erased areas is gone. Reopen the original file to get it back."
   },
   "upscale": {
     "title": "Enlarge",
@@ -388,7 +389,10 @@
     "progress": "{done} of {total}",
     "eta": "about {sec} s",
     "doneMsg": "Done {done} of {total}",
-    "failed": "{n} failed"
+    "failed": "{n} failed",
+    "fix": "Fix by hand",
+    "fixTitle": "Anything to fix?",
+    "fixHelp": "Across forty files the model gets a few wrong. Click a bad one and the brush opens, with the starting file alongside so colours can be recovered."
   },
   "sound": {
     "record": "Record",

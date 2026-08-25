@@ -35,7 +35,9 @@ const PALETTE = ['#111111', '#F5F0E8', '#FFFFFF', '#8A8A85', '#C4A35A', 'none'];
 const px = (d) => (d ? `${d.w}×${d.h}` : '—');
 /** Come è stato ottenuto il risultato, detto in italiano. */
 const STRATEGIE = { mask: 'maschera', crop: 'ritaglio', upscale: 'ingrandimento', browser: 'diretta' };
-const secs = (ms) => `${(ms / 1000).toFixed(1)}s`;
+// Un tempo che non abbiamo misurato non si stampa: «NaNs» sembra un guasto,
+// e un trattino dice la verità.
+const secs = (ms) => (Number.isFinite(ms) ? `${(ms / 1000).toFixed(1)}s` : '—');
 
 export default function App() {
   const [apiState, setApiState] = useState('offline');
@@ -290,6 +292,23 @@ export default function App() {
       setBusyNote(null);
       setApiState('pronta');
     }
+  }
+
+  /**
+   * Porta un risultato del blocco sotto il pennello, con il suo originale.
+   *
+   * L'originale è la metà che conta: senza, «Recupera» non ha colori da
+   * riportare. È il motivo per cui il blocco se li tiene entrambi.
+   */
+  function fixFromBatch({ file: original, blob }) {
+    setError(null);
+    setNotice(null);
+    setTool('scontorna');
+    setFile(original);
+    setBeforeUrl(own(original));
+    setSourceAssetId(null);
+    setResult({ url: own(blob), blob, kind: 'png', meta: { strategy: 'browser', batch: true } });
+    setBrushOpen(true);
   }
 
   /** Taglia attorno al soggetto. Il calcolo è già fatto dal pannello. */
@@ -695,6 +714,7 @@ export default function App() {
                   setBatchFiles([]);
                   batch.clear();
                 }}
+                onFix={fixFromBatch}
               />
 
               <div className="field">
