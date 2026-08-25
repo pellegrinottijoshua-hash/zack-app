@@ -338,5 +338,14 @@
   "soon": {
     "title": "This service isn't here yet",
     "body": "Generation is being built. When it lands you'll pay only for what you generate, and the price will be written before you press."
+  },
+  "actions": {
+    "title": "What you can do with it",
+    "cutout": "Remove background",
+    "vector": "Vectorise",
+    "edit": "Edit",
+    "reference": "Use as reference",
+    "referenceHelp": "Adds it to the references for your next generation, so the subject stays the same.",
+    "added": "Added to references"
   }
 }

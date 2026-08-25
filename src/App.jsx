@@ -65,6 +65,10 @@ export default function App() {
   const editorRef = useRef(null);
   const [selCount, setSelCount] = useState(0);
   const [nodeMode, setNodeMode] = useState(false);
+  // I riferimenti scelti dalla libreria per la prossima generazione. Vivono
+  // qui perché attraversano gli strumenti: si scelgono guardando l'archivio e
+  // si usano generando.
+  const [references, setReferences] = useState([]);
   // Cambia a ogni azione sull'editor per far rileggere al pannello la
   // posizione della selezione, che la libreria muta fuori da React.
   const [editorTick, setEditorTick] = useState(0);
@@ -312,6 +316,36 @@ export default function App() {
     }
   }
 
+  /**
+   * Un'azione partita da un lavoro in libreria: il file diventa quello su cui
+   * si sta lavorando e lo strumento giusto si apre da solo. È la scorciatoia
+   * che evita "scegli lo strumento, poi ritrova il file".
+   */
+  async function assetAction(kind, item) {
+    setError(null);
+    setNotice(null);
+    try {
+      const { file: f } = await library.read(item.id);
+      const asFile = new File([f], item.file, { type: f.type });
+
+      if (kind === 'reference') {
+        setReferences((prev) =>
+          prev.some((r) => r.id === item.id) ? prev : [...prev, { id: item.id, name: item.name }],
+        );
+        setNotice(`${t('actions.added')}: ${item.name}`);
+        return;
+      }
+
+      setResult(null);
+      setFile(asFile);
+      setBeforeUrl(own(asFile));
+      setTool(kind === 'cutout' ? 'scontorna' : 'vettorializza');
+    } catch (e) {
+      console.error(e);
+      setError(t('engine.error.body'));
+    }
+  }
+
   /** Zip di tutto l'archivio, costruito qui: nessun server coinvolto. */
   async function downloadAll() {
     setError(null);
@@ -521,6 +555,7 @@ export default function App() {
         }
         onOpenInEditor={openWorkInEditor}
         onDownloadAll={downloadAll}
+        onAssetAction={assetAction}
       />
 
       <footer className="statusbar">
