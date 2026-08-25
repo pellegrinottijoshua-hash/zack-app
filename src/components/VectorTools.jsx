@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { t } from '../i18n/index.js';
 import { Help } from './Panels.jsx';
+import Section from './Section.jsx';
 
 const PALETTE = ['#111111', '#F5F0E8', '#FFFFFF', '#8A8A85', '#C4A35A', 'none'];
 
@@ -66,12 +67,14 @@ export default function VectorTools({ editor, selCount, nodeMode, onNodeMode, ti
   return (
     <>
       {/* ─── nodi ─────────────────────────────────────────────────────── */}
-      <div className="field">
-        <span className="label">
-          <span>{t('nodes.title')}</span>
-          <b>{nodeMode ? t('common.on') : t('common.off')}</b>
-        </span>
-        <Help k="nodes.help" />
+      <Section
+        id="nodes"
+        title={t('nodes.title')}
+        badge={nodeMode ? t('common.on') : null}
+        helpKey="nodes.help"
+        defaultOpen={false}
+        forceOpen={nodeMode}
+      >
         <button
           className="opt"
           aria-pressed={nodeMode}
@@ -119,15 +122,15 @@ export default function VectorTools({ editor, selCount, nodeMode, onNodeMode, ti
             </div>
           </>
         )}
-      </div>
+      </Section>
 
       {/* ─── posizione e misura ───────────────────────────────────────── */}
-      <div className="field">
-        <span className="label">
-          <span>{t('transform.title')}</span>
-          <b>{has ? `${selCount}` : t('editor.nothing')}</b>
-        </span>
-        <Help k="transform.help" />
+      <Section
+        id="transform"
+        title={t('transform.title')}
+        badge={has ? String(selCount) : null}
+        helpKey="transform.help"
+      >
         <div className="nums">
           <Num
             label="X"
@@ -174,14 +177,10 @@ export default function VectorTools({ editor, selCount, nodeMode, onNodeMode, ti
             ↓
           </button>
         </div>
-      </div>
+      </Section>
 
       {/* ─── allineamento ─────────────────────────────────────────────── */}
-      <div className="field">
-        <span className="label">
-          <span>{t('align.title')}</span>
-        </span>
-        <Help k="align.help" />
+      <Section id="align" title={t('align.title')} helpKey="align.help" defaultOpen={false}>
         <div className="row">
           {['left', 'centerX', 'right'].map((w) => (
             <button
@@ -208,14 +207,10 @@ export default function VectorTools({ editor, selCount, nodeMode, onNodeMode, ti
             </button>
           ))}
         </div>
-      </div>
+      </Section>
 
       {/* ─── aspetto ──────────────────────────────────────────────────── */}
-      <div className="field">
-        <span className="label">
-          <span>{t('editor.fill')}</span>
-          <b>JAYL</b>
-        </span>
+      <Section id="appearance" title={t('editor.fill')} badge="JAYL">
         <div className="swatches">
           {PALETTE.map((c) => (
             <button
@@ -257,13 +252,10 @@ export default function VectorTools({ editor, selCount, nodeMode, onNodeMode, ti
           />
         </div>
         <Help k="appearance.help" />
-      </div>
+      </Section>
 
       {/* ─── disposizione ─────────────────────────────────────────────── */}
-      <div className="field">
-        <span className="label">
-          <span>{t('arrange.title')}</span>
-        </span>
+      <Section id="arrange" title={t('arrange.title')}>
         <div className="row">
           <button className="btn ghost small" disabled={!has} onClick={() => e()?.duplicate()}>
             {t('arrange.duplicate')}
@@ -296,7 +288,7 @@ export default function VectorTools({ editor, selCount, nodeMode, onNodeMode, ti
             {t('editor.redo.label')}
           </button>
         </div>
-      </div>
+      </Section>
     </>
   );
 }

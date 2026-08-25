@@ -1106,3 +1106,64 @@ body {
   transform: none;
   border-color: var(--linea-viva);
 }
+
+/* ─── sezioni richiudibili ──────────────────────────────────────────────── */
+
+.sect {
+  border-bottom: 1px solid var(--linea);
+  padding-bottom: 12px;
+}
+
+.sect:last-of-type {
+  border-bottom: 0;
+}
+
+.sect-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 0;
+  background: none;
+  border: 0;
+  color: var(--grigio-scuro);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.15s;
+}
+
+.sect-head:hover {
+  color: var(--panna);
+}
+
+.sect-head .caret {
+  flex: none;
+  width: 10px;
+  font-size: 9px;
+  color: var(--grigio-scuro);
+}
+
+.sect-title {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.sect-head b {
+  margin-left: auto;
+  padding: 1px 6px;
+  border: 1px solid var(--oro);
+  color: var(--oro);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.sect-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 9px;
+}
