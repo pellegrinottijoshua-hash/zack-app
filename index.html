@@ -3,10 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JAYL STUDIO</title>
+    <title>JAYL STUDIO — genera dove vuoi, rifinisci qui</title>
+    <meta
+      name="description"
+      content="Scontorno, vettoriale e archivio per chi crea con l'AI. Tutto sul tuo computer, illimitato, 3,99 € al mese. La generazione si paga a consumo, col prezzo scritto prima."
+    />
+    <meta property="og:title" content="JAYL STUDIO" />
+    <meta property="og:description" content="Genera dove vuoi. Rifinisci qui." />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#111111" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Type system JAYL: Space Grotesk display/UI, Cormorant Garamond editoriale. -->
     <link
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Cormorant+Garamond:ital,wght@1,400;1,500&display=swap"
       rel="stylesheet"
@@ -14,8 +21,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- svgcanvas types through this off-screen input; it must exist in the DOM. -->
-    <input id="svgcanvas-text-input" style="width: 0; height: 0; opacity: 0; position: fixed" />
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/src/landing/main.jsx"></script>
   </body>
 </html>

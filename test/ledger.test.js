@@ -35,7 +35,7 @@ test('priceFor applica il margine dichiarato del 12% e arrotonda a favore del ce
   assert.equal(p.cost, 35);
   assert.equal(p.margin, Math.ceil(35 * MARGIN));
   assert.equal(p.total, p.cost + p.margin);
-  assert.equal(MARGIN, 0.12);
+  assert.equal(MARGIN, 0.14);
 });
 
 test('priceFor non produce mai un margine di zero su un costo non nullo', () => {

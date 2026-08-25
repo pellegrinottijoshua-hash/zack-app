@@ -1,0 +1,456 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   JAYL STUDIO — pagina di presentazione
+   Stessa palette dell'app (palette.md): nero dominante, panna, grigio, oro
+   sotto il 10%. Space Grotesk per la UI, Cormorant Garamond per l'editoriale.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --nero: #111111;
+  --nero-2: #191919;
+  --linea: #2c2c2c;
+  --linea-viva: #3d3d3a;
+  --panna: #f5f0e8;
+  --grigio: #8a8a85;
+  --grigio-scuro: #5c5c58;
+  --oro: #c4a35a;
+  --oro-velo: rgba(196, 163, 90, 0.12);
+
+  --display: 'Space Grotesk', system-ui, sans-serif;
+  --editoriale: 'Cormorant Garamond', Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--nero);
+  color: var(--panna);
+  font-family: var(--display);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--oro);
+  color: var(--nero);
+}
+
+.landing {
+  max-width: 100%;
+  /* `clip`, MAI `hidden`: overflow-x hidden implica overflow-y auto e crea un
+     contenitore di scorrimento, che disattiva `position: sticky` in tutti i
+     discendenti. Le scene scorrevano via invece di fissarsi, senza che nulla
+     segnalasse l'errore. Verificato il 2026-08-25. */
+  overflow-x: clip;
+}
+
+/* ─── barra in alto ─────────────────────────────────────────────────────── */
+
+.lp-nav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px clamp(16px, 4vw, 48px);
+  background: rgba(17, 17, 17, 0.86);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--linea);
+}
+
+.wordmark {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.wordmark em {
+  font-style: normal;
+  color: var(--oro);
+}
+
+.spacer {
+  margin-left: auto;
+}
+
+.langswitch {
+  display: flex;
+  gap: 1px;
+  border: 1px solid var(--linea);
+}
+
+.langswitch button {
+  padding: 6px 10px;
+  background: transparent;
+  border: 0;
+  color: var(--grigio-scuro);
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+
+.langswitch button[aria-pressed='true'] {
+  background: var(--oro-velo);
+  color: var(--oro);
+}
+
+/* ─── invito all'azione ─────────────────────────────────────────────────── */
+
+.lp-cta {
+  display: inline-block;
+  padding: 15px 30px;
+  background: var(--oro);
+  color: var(--nero);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: filter 0.15s;
+}
+
+.lp-cta:hover {
+  filter: brightness(1.1);
+}
+
+.lp-cta.small {
+  padding: 9px 16px;
+  font-size: 11px;
+}
+
+/* ─── apertura ──────────────────────────────────────────────────────────── */
+
+.lp-hero {
+  padding: clamp(70px, 14vh, 150px) clamp(16px, 4vw, 48px) clamp(60px, 12vh, 120px);
+  max-width: 980px;
+}
+
+.kicker {
+  margin: 0 0 18px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--oro);
+}
+
+.lp-hero h1 {
+  margin: 0 0 26px;
+  font-family: var(--editoriale);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(42px, 8vw, 92px);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+}
+
+.lp-hero h1 span {
+  display: block;
+}
+
+.lead {
+  max-width: 56ch;
+  margin: 0 0 34px;
+  font-size: clamp(16px, 2vw, 19px);
+  line-height: 1.7;
+  color: var(--grigio);
+}
+
+.lp-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.lp-price {
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: var(--grigio);
+}
+
+.lp-note {
+  margin: 20px 0 0;
+  font-size: 13px;
+  color: var(--grigio-scuro);
+}
+
+/* ─── scene guidate dallo scorrimento ───────────────────────────────────── */
+
+.scene {
+  /* `--depth` decide quanto dura la scena: più alta, più lentamente scorre. */
+  height: calc(var(--depth, 2) * 100vh);
+  position: relative;
+}
+
+.scene-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: grid;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Il livello visivo: oggi un segnaposto, domani il video. */
+.scene-visual {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.scene-visual video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.5;
+}
+
+.scene-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at 65% 40%, var(--nero-2), var(--nero) 68%);
+}
+
+/* Una forma sobria che reagisce allo scorrimento: dice che qui ci sarà
+   qualcosa di vivo, senza fingere di esserlo già. */
+.scene-placeholder span {
+  width: min(44vw, 380px);
+  aspect-ratio: 1;
+  border: 1px solid var(--linea-viva);
+  border-radius: 50%;
+  transition: transform 0.1s linear;
+}
+
+.scene-text {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  padding: 0 clamp(16px, 4vw, 48px);
+}
+
+.scene-text[data-align='center'] {
+  margin: 0 auto;
+  text-align: center;
+}
+
+.scene h2 {
+  margin: 0 0 20px;
+  font-family: var(--editoriale);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(30px, 5vw, 54px);
+  line-height: 1.1;
+}
+
+.scene p {
+  max-width: 58ch;
+  margin: 0 0 16px;
+  font-size: clamp(15px, 1.8vw, 18px);
+  line-height: 1.75;
+  color: var(--grigio);
+}
+
+.lp-quote {
+  font-family: var(--editoriale);
+  font-style: italic;
+  font-size: clamp(19px, 2.6vw, 26px) !important;
+  color: var(--panna) !important;
+  border-left: 2px solid var(--oro);
+  padding-left: 18px;
+}
+
+.lp-list {
+  list-style: none;
+  margin: 26px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.lp-list li {
+  display: grid;
+  gap: 3px;
+  padding-left: 16px;
+  border-left: 1px solid var(--linea-viva);
+}
+
+.lp-list b {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.lp-list span {
+  font-size: 14px;
+  color: var(--grigio);
+}
+
+/* La ricevuta: mostra la trasparenza invece di dichiararla. */
+.lp-receipt {
+  display: inline-block;
+  margin: 8px 0 !important;
+  padding: 14px 18px;
+  border: 1px solid var(--oro);
+  background: var(--oro-velo);
+  font-size: 14px !important;
+  color: var(--panna) !important;
+}
+
+/* ─── confronto ─────────────────────────────────────────────────────────── */
+
+.lp-compare {
+  padding: clamp(70px, 12vh, 130px) clamp(16px, 4vw, 48px);
+  max-width: 860px;
+}
+
+.lp-compare h2 {
+  margin: 0 0 34px;
+  font-family: var(--editoriale);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(30px, 5vw, 50px);
+  line-height: 1.1;
+}
+
+.lp-rows {
+  display: grid;
+  gap: 1px;
+  background: var(--linea);
+  border: 1px solid var(--linea);
+}
+
+.lp-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 18px;
+  padding: 20px;
+  background: var(--nero);
+}
+
+.lp-row[data-us='true'] {
+  background: var(--oro-velo);
+  border-left: 2px solid var(--oro);
+}
+
+.lp-row b {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.lp-row-price {
+  font-size: 16px;
+  color: var(--panna);
+  white-space: nowrap;
+}
+
+.lp-row-note {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  color: var(--grigio-scuro);
+}
+
+.lp-row[data-us='true'] .lp-row-price {
+  color: var(--oro);
+}
+
+/* ─── chiusura ──────────────────────────────────────────────────────────── */
+
+.lp-final {
+  padding: clamp(80px, 16vh, 170px) clamp(16px, 4vw, 48px);
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  text-align: center;
+  border-top: 1px solid var(--linea);
+}
+
+.lp-final .rule {
+  width: 40px;
+  height: 1px;
+  background: var(--oro);
+}
+
+.lp-final h2 {
+  margin: 0;
+  font-family: var(--editoriale);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(30px, 5vw, 54px);
+  line-height: 1.1;
+}
+
+.lp-final p {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--grigio);
+}
+
+.payoff {
+  margin-top: 26px !important;
+  font-family: var(--editoriale);
+  font-style: italic;
+  font-size: 19px;
+  color: var(--grigio-scuro) !important;
+}
+
+/* ─── mobile ────────────────────────────────────────────────────────────── */
+
+@media (max-width: 760px) {
+  /* Scene più corte: su un telefono ogni schermata di scorrimento pesa il
+     doppio, e una scena lunga diventa un tunnel. */
+  .scene {
+    height: calc(var(--depth, 2) * 68vh + 32vh);
+  }
+
+  .scene-text[data-align='left'] {
+    text-align: left;
+  }
+
+  .lp-row {
+    grid-template-columns: 1fr;
+  }
+
+  .lp-cta {
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+
+  .lp-cta.small {
+    display: inline-block;
+    width: auto;
+  }
+
+  .lp-actions {
+    display: grid;
+    gap: 12px;
+    justify-items: start;
+  }
+}
+
+/* Chi ha chiesto meno movimento non deve subire le scene appiccicose. */
+@media (prefers-reduced-motion: reduce) {
+  .scene {
+    height: auto;
+  }
+
+  .scene-sticky {
+    position: static;
+    height: auto;
+    padding: 70px 0;
+  }
+
+  .scene-placeholder span {
+    transition: none;
+  }
+}

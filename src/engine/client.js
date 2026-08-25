@@ -16,7 +16,7 @@ export function createEngine() {
     const entry = pending.get(id);
     if (!entry) return;
     if (type === 'progress') {
-      entry.onProgress?.(e.data.phase);
+      entry.onProgress?.(e.data.phase, e.data);
       return;
     }
     pending.delete(id);
@@ -50,6 +50,8 @@ export function createEngine() {
     init: (tier) => send({ type: 'init', tier }),
     cutout: (bitmap, modelId, onProgress) =>
       send({ type: 'cutout', bitmap, modelId }, [bitmap], onProgress),
+    upscale: (bitmap, scaleId, onProgress) =>
+      send({ type: 'upscale', bitmap, scaleId }, [bitmap], onProgress),
     dispose: () => worker.terminate(),
   };
 }

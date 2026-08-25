@@ -347,5 +347,23 @@
     "reference": "Use as reference",
     "referenceHelp": "Adds it to the references for your next generation, so the subject stays the same.",
     "added": "Added to references"
+  },
+  "brush": {
+    "title": "Fix by hand",
+    "help": "The automatic pass always gets something wrong. Here you bring back what vanished and remove what stayed.",
+    "erase": "Remove",
+    "eraseHelp": "Erases background that stayed stuck to the subject.",
+    "restore": "Bring back",
+    "restoreHelp": "Restores parts of the subject the automatic pass removed by mistake.",
+    "apply": "Apply",
+    "open": "Fix by hand"
+  },
+  "upscale": {
+    "title": "Enlarge",
+    "x4": "Four times",
+    "help": "Rebuilds detail instead of just making it bigger. Meant for small images: a logo, a cutout, a thumbnail.",
+    "tooBig": "This image is already large: enlarging is for small files, under 512 pixels a side.",
+    "estimate": "About {sec} seconds",
+    "working": "Rebuilding detail…"
   }
 }

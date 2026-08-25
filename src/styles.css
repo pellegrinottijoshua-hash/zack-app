@@ -1518,3 +1518,333 @@ body {
   background: var(--oro-velo);
   color: var(--panna);
 }
+
+/* ─── pennello di correzione ────────────────────────────────────────────── */
+
+.brush {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.brush-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.brush-bar .opt {
+  width: auto;
+  padding: 6px 12px;
+}
+
+.brush-sizes {
+  display: flex;
+  gap: 2px;
+  margin-left: 4px;
+}
+
+.brush-sizes button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: 1px solid var(--linea);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.brush-sizes button i {
+  display: block;
+  border-radius: 50%;
+  background: var(--grigio);
+}
+
+.brush-sizes button[aria-pressed='true'] {
+  border-color: var(--oro);
+}
+
+.brush-sizes button[aria-pressed='true'] i {
+  background: var(--oro);
+}
+
+.brush-stage {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  border: 1px solid var(--linea);
+  background-color: #6e6e6a;
+  background-image: linear-gradient(45deg, #8a8a85 25%, transparent 25%),
+    linear-gradient(-45deg, #8a8a85 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #8a8a85 75%),
+    linear-gradient(-45deg, transparent 75%, #8a8a85 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+}
+
+.brush-stage canvas {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* ═══ MOBILE ════════════════════════════════════════════════════════════════
+   Non un adattamento delle tre colonne: su un telefono non ci stanno e non ci
+   staranno mai. La tela prende lo schermo, le proprietà scorrono sotto, e gli
+   strumenti vanno in fondo — dove arriva il pollice, non in cima dove non
+   arriva.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 760px) {
+  :root {
+    --pad: 12px;
+    /* I comandi devono essere grandi abbastanza da colpirli col dito. */
+    --tocco: 44px;
+  }
+
+  body {
+    font-size: 14px;
+  }
+
+  .shell {
+    grid-template-rows: auto 1fr auto;
+    /* Spazio per la barra strumenti fissa in fondo. */
+    padding-bottom: 60px;
+  }
+
+  .topbar {
+    height: auto;
+    gap: 10px;
+    padding: 10px var(--pad);
+    flex-wrap: wrap;
+  }
+
+  .wordmark {
+    font-size: 13px;
+    letter-spacing: 0.22em;
+  }
+
+  .tabhelp {
+    display: none;
+  }
+
+  /* Una colonna: tela sopra, proprietà sotto.
+     Entrambe le righe hanno una quota minima dichiarata: con `auto` la riga
+     delle proprietà veniva schiacciata a 55px pur avendo 1300px di contenuto,
+     e il pannello risultava vuoto senza alcun errore. */
+  .main {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(200px, 1fr) minmax(160px, 38vh);
+  }
+
+  .stage {
+    padding: var(--pad);
+    min-height: 220px;
+  }
+
+  .rail {
+    --rail: auto;
+    border-left: 0;
+    border-top: 1px solid var(--linea);
+    padding: var(--pad);
+    /* Spazio per l'azione principale, che su mobile è fissa in fondo. */
+    padding-bottom: calc(var(--tocco) + 24px);
+  }
+
+  /* L'azione principale non si cerca scorrendo: sta sopra la barra
+     strumenti, dove il pollice la trova sempre. */
+  .rail .cta {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 60px;
+    z-index: 15;
+    margin: 0;
+    padding: 8px var(--pad);
+    background: var(--nero-2);
+    border-top: 1px solid var(--linea);
+    flex-direction: row;
+    gap: 6px;
+  }
+
+  .rail .cta .btn {
+    flex: 1;
+  }
+
+  /* La barra strumenti diventa orizzontale e fissa in fondo. */
+  .toolrail {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 8px;
+    border-right: 0;
+    border-top: 1px solid var(--linea);
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .toolrail .group-label,
+  .toolrail .tool-name,
+  .toolrail .tool-price,
+  .toolrail .tool-soon {
+    display: none;
+  }
+
+  .rail-foot {
+    margin: 0 0 0 auto;
+    padding: 0 8px;
+    border-top: 0;
+    border-left: 1px solid var(--linea);
+    flex: none;
+  }
+
+  .tool-item {
+    width: auto;
+    min-width: var(--tocco);
+    height: var(--tocco);
+    justify-content: center;
+    padding: 0 12px;
+  }
+
+  .tool-item svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Bersagli abbastanza grandi per il dito. */
+  .opt,
+  .btn,
+  .tool,
+  .chip {
+    min-height: var(--tocco);
+  }
+
+  .btn.small,
+  .chip {
+    min-height: 36px;
+  }
+
+  .opt {
+    font-size: 13px;
+  }
+
+  .btn {
+    font-size: 12px;
+  }
+
+  .help,
+  .hint {
+    font-size: 12px;
+  }
+
+  /* La striscia dei lavori si sfoglia col dito. */
+  .library[data-open='true'] {
+    grid-template-rows: auto minmax(0, 46vh);
+  }
+
+  .work {
+    width: 46vw;
+    max-width: 200px;
+  }
+
+  .work .thumb {
+    height: 34vw;
+    max-height: 150px;
+  }
+
+  .work .acts button {
+    padding: 10px 2px;
+    font-size: 10px;
+  }
+
+  /* Su un telefono le azioni al passaggio del mouse non esistono: restano
+     sempre visibili sotto la miniatura invece di coprirla. */
+  .asset-actions {
+    position: static;
+    height: auto;
+    opacity: 1;
+    pointer-events: auto;
+    background: transparent;
+    border-top: 1px solid var(--linea);
+  }
+
+  .asset-actions button {
+    padding: 9px 8px;
+    font-size: 11px;
+  }
+
+  .aa-title {
+    display: none;
+  }
+
+  /* La barra di stato mangia spazio e non dice nulla di indispensabile. */
+  .statusbar {
+    display: none;
+  }
+
+  .nums {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .num input {
+    padding: 11px 0;
+    font-size: 14px;
+  }
+
+  .swatches {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+  }
+
+  .swatches button {
+    min-height: 36px;
+  }
+
+  .onboarding-card {
+    padding: 22px 20px;
+  }
+
+  .onboarding-card h2 {
+    font-size: 23px;
+  }
+
+  .brush-bar .opt {
+    flex: 1;
+  }
+
+  .brush-sizes button {
+    width: var(--tocco);
+    height: var(--tocco);
+  }
+
+  .lib-filters {
+    gap: 6px;
+  }
+
+  .search {
+    min-width: 100%;
+  }
+}
+
+/* Schermi molto stretti: la libreria mostra una scheda per volta. */
+@media (max-width: 400px) {
+  .work {
+    width: 70vw;
+  }
+
+  .work .thumb {
+    height: 52vw;
+  }
+}

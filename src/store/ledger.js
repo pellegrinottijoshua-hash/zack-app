@@ -16,7 +16,7 @@
 export const HOLD_TTL_MS = 15 * 60 * 1000; // una scheda chiusa a metà non blocca il saldo per sempre
 
 /** Il margine dichiarato, applicato al costo del fornitore. */
-export const MARGIN = 0.12;
+export const MARGIN = 0.14;
 
 export function emptyLedger() {
   return { balance: 0, holds: [], entries: [] };
