@@ -5,9 +5,18 @@
     "tagline": "Prepara i tuoi asset. Sul tuo computer, senza mandare niente in giro."
   },
   "tool": {
-    "cutout": { "label": "Scontorna", "help": "Toglie lo sfondo e lascia solo il soggetto, su trasparenza." },
-    "vector": { "label": "Vettorializza", "help": "Trasforma i pixel in forme che puoi ingrandire quanto vuoi senza sgranare." },
-    "editor": { "label": "Editor SVG", "help": "Apre e modifica file vettoriali: sposta, colora, aggiungi testo e forme." }
+    "cutout": {
+      "label": "Scontorna",
+      "help": "Toglie lo sfondo e lascia solo il soggetto, su trasparenza."
+    },
+    "vector": {
+      "label": "Vettorializza",
+      "help": "Trasforma i pixel in forme che puoi ingrandire quanto vuoi senza sgranare."
+    },
+    "editor": {
+      "label": "Editor SVG",
+      "help": "Apre e modifica file vettoriali: sposta, colora, aggiungi testo e forme."
+    }
   },
   "drop": {
     "title": "Trascina qui un'immagine",
@@ -16,18 +25,45 @@
     "vectorHint": "Funziona meglio con colori piatti, loghi e disegni al tratto che con le fotografie."
   },
   "control": {
-    "quality": { "label": "Qualità", "help": "Più alta significa bordi più precisi ma qualche secondo in più di attesa." },
-    "language": { "label": "Lingua", "help": "Cambia la lingua di tutta l'interfaccia, subito." },
-    "background": { "label": "Sfondo", "help": "Il colore dietro alla grafica nel file esportato. Trasparente lascia il buco." },
-    "format": { "label": "Formato", "help": "La misura del file finale. Scegli quello del posto dove lo userai." },
-    "download": { "label": "Scarica", "help": "Salva il file finito nella cartella dei download." },
-    "reset": { "label": "Ricomincia", "help": "Svuota il piano di lavoro e torna alla schermata iniziale." }
+    "quality": {
+      "label": "Qualità",
+      "help": "Più alta significa bordi più precisi ma qualche secondo in più di attesa."
+    },
+    "language": {
+      "label": "Lingua",
+      "help": "Cambia la lingua di tutta l'interfaccia, subito."
+    },
+    "background": {
+      "label": "Sfondo",
+      "help": "Il colore dietro alla grafica nel file esportato. Trasparente lascia il buco."
+    },
+    "format": {
+      "label": "Formato",
+      "help": "La misura del file finale. Scegli quello del posto dove lo userai."
+    },
+    "download": {
+      "label": "Scarica",
+      "help": "Salva il file finito nella cartella dei download."
+    },
+    "reset": {
+      "label": "Ricomincia",
+      "help": "Svuota il piano di lavoro e torna alla schermata iniziale."
+    }
   },
   "engine": {
     "tier": {
-      "fast": { "name": "Rapido", "note": "meno preciso, funziona ovunque" },
-      "quality": { "name": "Qualità", "note": "bordi più puliti" },
-      "anime": { "name": "Illustrazioni", "note": "disegni e line art" }
+      "fast": {
+        "name": "Rapido",
+        "note": "meno preciso, funziona ovunque"
+      },
+      "quality": {
+        "name": "Qualità",
+        "note": "bordi più puliti"
+      },
+      "anime": {
+        "name": "Illustrazioni",
+        "note": "disegni e line art"
+      }
     },
     "download": {
       "title": "Preparo lo strumento",
@@ -59,8 +95,23 @@
   "library": {
     "title": "Lavori",
     "empty": "Ancora niente. Ogni cosa che crei finisce qui.",
-    "downloadAll": { "label": "Scarica tutto", "help": "Mette tutti i tuoi lavori in un unico file zip da salvare." },
-    "delete": { "label": "Elimina", "help": "Cancella questo lavoro. Non si può annullare." },
-    "open": { "label": "Apri", "help": "Riapre questo file vettoriale nell'editor per modificarlo." }
+    "downloadAll": {
+      "label": "Scarica tutto",
+      "help": "Mette tutti i tuoi lavori in un unico file zip da salvare."
+    },
+    "delete": {
+      "label": "Elimina",
+      "help": "Cancella questo lavoro. Non si può annullare."
+    },
+    "open": {
+      "label": "Apri",
+      "help": "Riapre questo file vettoriale nell'editor per modificarlo."
+    }
+  },
+  "status": {
+    "file": "file",
+    "mode": "modalità",
+    "format": "formato",
+    "none": "nessuno"
   }
 }

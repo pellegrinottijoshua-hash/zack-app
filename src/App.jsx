@@ -39,9 +39,10 @@ export default function App() {
   const [libPath, setLibPath] = useState('');
 
   const [s, setS] = useState({
-    model: 'u2net',
-    detail: 'balanced',
-    decontaminate: true,
+    // Sovrascritto appena il motore sa cosa può fare questo browser: scegliere
+    // qui un default fisso significherebbe proporre a un browser lento un
+    // modello che non regge.
+    model: null,
     tracePreset: 'poster',
     clean: true,
     preset: 'gelato-front',
@@ -63,6 +64,12 @@ export default function App() {
     // Cambiare lingua deve ridisegnare tutto, non solo l'interruttore.
     return onLangChange(() => forceRender((n) => n + 1));
   }, []);
+
+  // Il motore decide il default: l'utente deve poter premere Scontorna senza
+  // aver scelto nulla.
+  useEffect(() => {
+    if (engine.defaultModelId) setS((prev) => ({ ...prev, model: prev.model ?? engine.defaultModelId }));
+  }, [engine.defaultModelId]);
 
   // Object URLs we created and must revoke on unmount.
   const urls = useRef(new Set());
@@ -430,7 +437,7 @@ export default function App() {
               </button>
             </>
           ) : tool === 'scontorna' ? (
-            <RemovePanel caps={caps} s={s} set={set} busy={Boolean(busy)} />
+            <RemovePanel models={engine.models} s={s} set={set} busy={Boolean(busy)} />
           ) : (
             <TracePanel caps={caps} s={s} set={set} busy={Boolean(busy)} />
           )}
@@ -509,18 +516,24 @@ export default function App() {
 
       <footer className="statusbar">
         <span>
-          file <b>{file ? file.name : '—'}</b>
+          {t('status.file')} <b>{file ? file.name : t('status.none')}</b>
         </span>
         {!isEditor && (
           <span>
-            {tool === 'scontorna' ? 'modello' : 'tracciato'}{' '}
-            <b>{tool === 'scontorna' ? s.model : s.tracePreset}</b>
+            {t('status.mode')}{' '}
+            {/* Il nome amichevole, non l'id tecnico: "isnet-general-use" non
+                dice niente a nessuno. */}
+            <b>
+              {tool === 'scontorna'
+                ? t(engine.models.find((m) => m.id === s.model)?.labelKey || 'status.none')
+                : s.tracePreset}
+            </b>
           </span>
         )}
         <span>
-          formato <b>{s.preset}</b>
+          {t('status.format')} <b>{s.preset}</b>
         </span>
-        <span className="payoff">Art finds a way.</span>
+        <span className="payoff">{t('app.payoff')}</span>
       </footer>
     </div>
   );

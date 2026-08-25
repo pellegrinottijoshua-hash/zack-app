@@ -1,9 +1,5 @@
 import { Fragment } from 'react';
-const DETAIL_LABELS = {
-  fast: ['Rapido', '1024 px'],
-  balanced: ['Equilibrato', '1536 px'],
-  fine: ['Fine', '2048 px'],
-};
+import { t } from '../i18n/index.js';
 
 const BG_SWATCH = {
   transparent: 'repeating-conic-gradient(#2a2a2a 0% 25%, #1a1a1a 0% 50%) 0 / 8px 8px',
@@ -22,59 +18,34 @@ export function Choice({ label, note, active, disabled, onClick, swatch }) {
   );
 }
 
-export function RemovePanel({ caps, s, set, busy }) {
+/**
+ * Una sola scelta: la qualità.
+ *
+ * Prima erano otto controlli — cinque modelli più tre livelli di dettaglio — da
+ * capire prima di poter premere un bottone, e l'elenco arrivava dal vecchio
+ * backend: comprendeva anche modelli che nel browser non partono affatto.
+ * Offrire un'opzione che si rompe è peggio che non offrirla.
+ *
+ * `models` arriva dal motore e contiene solo ciò che questo browser sa fare.
+ */
+export function RemovePanel({ models, s, set, busy }) {
   return (
-    <>
-      <div className="field">
-        <span className="label">
-          <span>Modello</span>
-          <b>rete neurale</b>
-        </span>
-        {caps.models.map((m) => (
-          <Choice
-            key={m.id}
-            label={m.label}
-            note={m.note}
-            active={s.model === m.id}
-            disabled={busy}
-            onClick={() => set({ model: m.id })}
-          />
-        ))}
-      </div>
-
-      <div className="field">
-        <span className="label">
-          <span>Dettaglio</span>
-          <b>file grandi</b>
-        </span>
-        {Object.keys(DETAIL_LABELS).map((d) => (
-          <Choice
-            key={d}
-            label={DETAIL_LABELS[d][0]}
-            note={DETAIL_LABELS[d][1]}
-            active={s.detail === d}
-            disabled={busy}
-            onClick={() => set({ detail: d })}
-          />
-        ))}
-        <p className="hint">
-          Oltre questa misura l'immagine non viene rimpicciolita: la rete
-          analizza una copia ridotta e la maschera viene riapplicata
-          all'originale a piena risoluzione.
-        </p>
-      </div>
-
-      <div className="field">
+    <div className="field">
+      <span className="label">
+        <span>{t('control.quality.label')}</span>
+      </span>
+      <p className="help">{t('control.quality.help')}</p>
+      {models.map((m) => (
         <Choice
-          label="Togli l'alone sui bordi"
-          note={s.decontaminate ? 'attivo' : 'spento'}
-          active={s.decontaminate}
+          key={m.id}
+          label={t(m.labelKey)}
+          note={t(m.labelKey.replace(/\.name$/, '.note'))}
+          active={s.model === m.id}
           disabled={busy}
-          onClick={() => set({ decontaminate: !s.decontaminate })}
+          onClick={() => set({ model: m.id })}
         />
-      </div>
-
-    </>
+      ))}
+    </div>
   );
 }
 
@@ -121,9 +92,9 @@ export function ExportPanel({ caps, s, set, busy }) {
   return (
     <div className="field">
       <span className="label">
-        <span>Esporta</span>
-        <b>png</b>
+        <span>{t('control.format.label')}</span>
       </span>
+      <p className="help">{t('control.format.help')}</p>
       {groups.map((g) => (
         <div className="field" key={g}>
           <span className="label" style={{ letterSpacing: '0.14em' }}>
@@ -144,8 +115,9 @@ export function ExportPanel({ caps, s, set, busy }) {
       ))}
 
       <span className="label" style={{ marginTop: 6 }}>
-        <span>Sfondo</span>
+        <span>{t('control.background.label')}</span>
       </span>
+      <p className="help">{t('control.background.help')}</p>
       {caps.backgrounds.map((b) => (
         <Choice
           key={b}

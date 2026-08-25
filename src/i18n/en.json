@@ -5,9 +5,18 @@
     "tagline": "Get your assets ready. On your own machine, with nothing sent anywhere."
   },
   "tool": {
-    "cutout": { "label": "Remove background", "help": "Takes the background away and keeps only the subject, on transparency." },
-    "vector": { "label": "Vectorise", "help": "Turns pixels into shapes you can scale as large as you like without going blurry." },
-    "editor": { "label": "SVG editor", "help": "Opens and edits vector files: move things, recolour them, add text and shapes." }
+    "cutout": {
+      "label": "Remove background",
+      "help": "Takes the background away and keeps only the subject, on transparency."
+    },
+    "vector": {
+      "label": "Vectorise",
+      "help": "Turns pixels into shapes you can scale as large as you like without going blurry."
+    },
+    "editor": {
+      "label": "SVG editor",
+      "help": "Opens and edits vector files: move things, recolour them, add text and shapes."
+    }
   },
   "drop": {
     "title": "Drop an image here",
@@ -16,18 +25,45 @@
     "vectorHint": "Works better with flat colours, logos and line art than with photographs."
   },
   "control": {
-    "quality": { "label": "Quality", "help": "Higher means cleaner edges but a few more seconds of waiting." },
-    "language": { "label": "Language", "help": "Changes the language of the whole interface, straight away." },
-    "background": { "label": "Background", "help": "The colour behind your artwork in the exported file. Transparent leaves it empty." },
-    "format": { "label": "Format", "help": "The size of the finished file. Pick the one for wherever you will use it." },
-    "download": { "label": "Download", "help": "Saves the finished file to your downloads folder." },
-    "reset": { "label": "Start over", "help": "Clears the workspace and takes you back to the first screen." }
+    "quality": {
+      "label": "Quality",
+      "help": "Higher means cleaner edges but a few more seconds of waiting."
+    },
+    "language": {
+      "label": "Language",
+      "help": "Changes the language of the whole interface, straight away."
+    },
+    "background": {
+      "label": "Background",
+      "help": "The colour behind your artwork in the exported file. Transparent leaves it empty."
+    },
+    "format": {
+      "label": "Format",
+      "help": "The size of the finished file. Pick the one for wherever you will use it."
+    },
+    "download": {
+      "label": "Download",
+      "help": "Saves the finished file to your downloads folder."
+    },
+    "reset": {
+      "label": "Start over",
+      "help": "Clears the workspace and takes you back to the first screen."
+    }
   },
   "engine": {
     "tier": {
-      "fast": { "name": "Fast", "note": "less precise, runs anywhere" },
-      "quality": { "name": "Quality", "note": "cleaner edges" },
-      "anime": { "name": "Illustrations", "note": "drawings and line art" }
+      "fast": {
+        "name": "Fast",
+        "note": "less precise, runs anywhere"
+      },
+      "quality": {
+        "name": "Quality",
+        "note": "cleaner edges"
+      },
+      "anime": {
+        "name": "Illustrations",
+        "note": "drawings and line art"
+      }
     },
     "download": {
       "title": "Getting the tool ready",
@@ -59,8 +95,23 @@
   "library": {
     "title": "Your work",
     "empty": "Nothing yet. Everything you make lands here.",
-    "downloadAll": { "label": "Download all", "help": "Puts all of your work into a single zip file to save." },
-    "delete": { "label": "Delete", "help": "Removes this piece of work. This cannot be undone." },
-    "open": { "label": "Open", "help": "Reopens this vector file in the editor so you can change it." }
+    "downloadAll": {
+      "label": "Download all",
+      "help": "Puts all of your work into a single zip file to save."
+    },
+    "delete": {
+      "label": "Delete",
+      "help": "Removes this piece of work. This cannot be undone."
+    },
+    "open": {
+      "label": "Open",
+      "help": "Reopens this vector file in the editor so you can change it."
+    }
+  },
+  "status": {
+    "file": "file",
+    "mode": "mode",
+    "format": "format",
+    "none": "none"
   }
 }
