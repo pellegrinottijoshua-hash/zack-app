@@ -3,7 +3,7 @@
 Documento di passaggio. Serve ad aprire una chat nuova e ripartire senza
 ricostruire il contesto. Se leggi solo una cosa, leggi la sezione 2.
 
-- **Repo:** `~/jayl-studio` — ramo `main`, 62 commit, **221 test verdi**
+- **Repo:** `~/jayl-studio` — ramo `main`, 64 commit, **234 test verdi**
 - **Data di questo passaggio:** 25 agosto 2026
 - **Il resto:** [README.md](README.md) descrive il prodotto per intero;
   `docs/superpowers/specs/` contiene i due disegni approvati.
@@ -82,7 +82,7 @@ in generale: non si dichiarano numeri stimati come se fossero misurati.
 
 | servizio | gruppo | stato |
 |---|---|---|
-| Scontorna (+ pennello, + ingrandimento x4) | locale | **fatto** |
+| Scontorna (+ pennello, + ingrandimento ×2 e ×4) | locale | **fatto** |
 | Vettorializza | locale | **fatto** |
 | Editor SVG | locale | **fatto** |
 | Suono (dalla voce) | locale | **fatto** |
@@ -127,7 +127,9 @@ Ognuna è costata tempo. Non ripercorrerle.
 | trappola | cosa succede |
 |---|---|
 | **BiRefNet nel browser** | non parte: 11 storage buffer per shader contro i 10 di Metal. Misurato, non supposto. |
-| **Upscale x2** | produce la stessa uscita di x4 in quattro volte il tempo. Rimosso. La dimensione dell'ingresso è **del modello**, non una costante globale. |
+| **Upscale x2 come modello a sé** | il modello ×2 dedicato costa quattro volte il tempo per un risultato peggiore. Il ×2 si ottiene ingrandendo ×4 e riducendo a metà. La dimensione dell'ingresso è **del modello**, non una costante globale. |
+| **Super-risoluzione e trasparenza** | la rete ha tre canali: l'alfa non la vede e non la restituisce. Va messa da parte e ringrandita a parte, e il colore del bordo va fatto colare nel vuoto prima, o il modello ricostruisce il nero come un contorno vero. |
+| **Transizioni su `grid-template-rows`/`-columns`** | fra `0fr` e un `minmax()` non c'è interpolazione: la traccia resta congelata al valore vecchio, senza errori. La libreria si apriva alta zero pixel. |
 | **`vite-plugin-top-level-await`** | rompeva la build di produzione (`missing field type` da swc). Tolto: TLA nativo con `target: 'esnext'`. |
 | **`?import` di Vite su ONNX** | 500 sui `.mjs` di `public/`. Lo risolve il plugin `serveOrtAssets`. |
 | **`PORT` d'ambiente** | collide fra Vite e l'API. Si usa `API_PORT`. |

@@ -168,6 +168,27 @@ Il limite è il tempo, non la memoria: **ingresso massimo 512 px di lato**,
 perché l'ingrandimento serve su asset piccoli, non su un file di stampa che è
 già grande. L'attesa stimata si dice prima.
 
+## Ingrandire per la stampa
+
+Il modello ingrandisce **quattro volte**; il **×2** si ottiene riducendo a metà
+un'immagine già ricostruita, che è meglio che interpolarla dal piccolo. Un
+solo modello da scaricare, due fattori da offrire — e sui file già grandi il
+×4 sfora la tela, il ×2 no.
+
+Due cose che non si vedono ma decidono il risultato:
+
+- **la trasparenza non passa dal modello.** La rete ha tre canali: l'alfa va
+  messa da parte e ringrandita per conto suo. Senza, un ritaglio ingrandito
+  torna un rettangolo nero;
+- **il colore del bordo cola nel vuoto** prima di dare i pixel al modello.
+  Fuori dal soggetto il canvas ha lasciato nero, e il modello lo
+  ricostruirebbe come un contorno vero, che ricompare come alone appena si
+  riapplica l'alfa.
+
+Il tetto non è il tempo ma la **tela**: oltre il massimo del browser una tela
+si crea lo stesso e restituisce pixel vuoti, in silenzio. Si misura invece di
+indovinare, e l'attesa è scritta prima di premere.
+
 ## Prima della stampa
 
 Tre rifiniture in un pannello solo, perché sono la stessa domanda in tre
@@ -298,7 +319,7 @@ docs/superpowers/  spec e piani
 npm test
 ```
 
-Duecentoventuno test. Coprono il vincolo di licenza, le funzioni pure del motore, la
+Duecentotrentaquattro test. Coprono il vincolo di licenza, le funzioni pure del motore, la
 parità con il backend (IoU ≥ 0,98, differenza alfa media ≤ 2/255) e la
 completezza delle due lingue.
 
