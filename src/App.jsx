@@ -13,6 +13,7 @@ import { t, setLang, detectLang, onLangChange } from './i18n/index.js';
 import { onHelpChange, isHelpOn } from './i18n/help.js';
 import { renderExport } from './engine/render.js';
 import { PRESETS, BACKGROUNDS } from './engine/export.js';
+import { traceToSvg, TRACE_PRESETS } from './engine/trace.js';
 import * as api from './lib/api.js';
 
 const TOOLS = [
@@ -160,12 +161,10 @@ export default function App() {
           meta: { strategy: 'browser', model: s.model, ms: Date.now() - started },
         });
       } else {
+        // Anche il tracciato gira nel browser: VTracer in WebAssembly, 140 KB.
         setBusy(t('vector.working'));
         setBusyNote(null);
-        const { text, meta } = await api.vectorize(file, {
-          preset: s.tracePreset,
-          clean: s.clean,
-        });
+        const { svg: text, meta } = await traceToSvg(file, { preset: s.tracePreset, clean: s.clean });
         const blob = new Blob([text], { type: 'image/svg+xml' });
         setResult({ url: own(blob), blob, text, kind: 'svg', meta });
       }
@@ -174,7 +173,9 @@ export default function App() {
       // Un codice interno non è un messaggio: lo traduciamo in una frase che
       // dice cosa è successo e cosa fare. Lo stack resta in console.
       console.error(e);
-      setError(e.code ? `${t('engine.error.title')} — ${t('engine.error.body')}` : e.message);
+      if (e.code === 'trace-empty') setError(`${t('trace.empty.title')} — ${t('trace.empty.body')}`);
+      else if (e.code) setError(`${t('engine.error.title')} — ${t('engine.error.body')}`);
+      else setError(e.message);
     } finally {
       setBusy(null);
       setBusyNote(null);
@@ -459,7 +460,7 @@ export default function App() {
           ) : tool === 'scontorna' ? (
             <RemovePanel models={engine.models} s={s} set={set} busy={Boolean(busy)} />
           ) : (
-            <TracePanel caps={caps} s={s} set={set} busy={Boolean(busy)} />
+            <TracePanel presets={TRACE_PRESETS} s={s} set={set} busy={Boolean(busy)} />
           )}
 
           {result?.meta && !isEditor && (
