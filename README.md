@@ -79,13 +79,41 @@ una stringa è vuota, o se un testo d'aiuto si limita a ripetere l'etichetta.
 tutorial vive dentro l'interfaccia invece che in un manuale che nessuno apre. Al
 primo avvio compaiono tre passi, una volta sola.
 
+## L'editor vettoriale
+
+Nodi e maniglie Bézier, campi numerici X/Y/L/A e rotazione, allineamento fra
+elementi, duplica, spostamento di un pixel per volta, spessore e opacità.
+
+**Scorciatoie**: `V` seleziona, `A` nodi, `P` penna, `N` matita, `L` linea,
+`R` rettangolo, `E` ellisse, `T` testo. `Cmd+Z` / `Cmd+Shift+Z` annulla e
+ripete, `Cmd+D` duplica, `Cmd+G` raggruppa, le frecce spostano (con `Shift` di
+dieci pixel).
+
+La modifica dei nodi si abilita **solo con un tracciato selezionato**: entrarci
+senza mandava in crash il modulo interno della libreria e bloccava l'editor per
+sempre.
+
 Regola di progetto: **un controllo senza testo d'aiuto non è finito.**
 
 ## I lavori
 
-Ogni risultato finisce nella striscia in basso e in `library/` sul disco, con un
-nome leggibile. Nessun database: è una cartella, apribile dal Finder. *Scarica*
-per il singolo file, *Scarica tutto* per uno zip dell'intera libreria.
+Tutto vive **nel browser**: i file in OPFS, i metadati in IndexedDB. Nessun
+server, nessun account.
+
+- **Cartelle** per organizzare. Eliminarne una **non cancella i lavori**: li
+  riporta fuori dalle cartelle.
+- **Moodboard** per raggruppare per intenzione, con una palette.
+- **Tag** e **ricerca** per ritrovare.
+- **Scarica tutto** costruisce lo zip in locale (fflate), con dentro un
+  `indice.json` leggibile: senza, un archivio di nomi-con-codice è
+  indecifrabile fra sei mesi.
+
+Il rovescio di vivere nel browser è che **svuotare i dati del sito cancella
+l'archivio**. L'avviso sta sopra la striscia e fuori dallo scorrimento, non in
+un menu: un avviso che si perde scorrendo è un avviso che nessuno legge.
+
+`repair()` riallinea record fantasma e file orfani — li produce davvero una
+scheda chiusa a metà scrittura.
 
 ## Struttura
 
@@ -99,6 +127,12 @@ src/engine/     motore nel browser
   export.js       matematica del posizionamento (testata in Node)
   render.js       disegno dell'export su canvas
   trace.js        VTracer in WebAssembly
+src/store/      libreria nel browser
+  model.js        modello puro: nomi, cartelle, tag, query (testato in Node)
+  files.js        i file in OPFS
+  db.js           i metadati in IndexedDB
+  library.js      l'API unica per l'interfaccia
+  bundle.js       lo zip di tutto, costruito in locale
 src/i18n/       italiano, inglese, e la modalità «Spiegami»
 server/         backend Fastify: modalità locale e futura qualità premium
 py/             ambiente Python (rembg) usato dal backend
@@ -112,7 +146,7 @@ docs/superpowers/  spec e piani
 npm test
 ```
 
-Quarantotto test. Coprono il vincolo di licenza, le funzioni pure del motore, la
+Settantaquattro test. Coprono il vincolo di licenza, le funzioni pure del motore, la
 parità con il backend (IoU ≥ 0,98, differenza alfa media ≤ 2/255) e la
 completezza delle due lingue.
 
@@ -134,6 +168,7 @@ partire se la variabile non è impostata.
 
 ## Da fare
 
-Il piano successivo (blocco 2) copre la libreria nel browser con cartelle e
-moodboard — l'ultimo pezzo che ancora dipende dal backend — e la quantizzazione
-dei modelli a fp16 per dimezzare il primo scaricamento.
+- Quantizzare i modelli a fp16 per dimezzare i 170 MB del primo scaricamento.
+- La sezione effetti sonori: registri la voce, l'app estrae il ritmo in locale e
+  lo applica a un timbro. Disegno deciso, costruzione rimandata.
+- Account e pagamenti, quando ci sarà qualcuno che paga.
