@@ -48,6 +48,10 @@
     "reset": {
       "label": "Ricomincia",
       "help": "Svuota il piano di lavoro e torna alla schermata iniziale."
+    },
+    "help": {
+      "label": "Spiegami",
+      "help": "Accende le spiegazioni: ogni comando ti dice cosa fa, finché non lo rispegni."
     }
   },
   "engine": {
@@ -113,5 +117,13 @@
     "mode": "modalità",
     "format": "formato",
     "none": "nessuno"
+  },
+  "onboarding": {
+    "title": "Tre cose e sei operativo",
+    "step1": "Trascina un'immagine nel riquadro grande, o cliccaci sopra per sceglierla dal computer.",
+    "step2": "Premi Scontorna. Il lavoro avviene qui, sul tuo computer: nessun file viene spedito da nessuna parte.",
+    "step3": "Scegli un formato e premi Esporta. Trovi tutto anche in fondo, nella striscia dei lavori.",
+    "hint": "Se un comando non ti è chiaro, accendi «Spiegami» in alto a destra.",
+    "action": "Ho capito, cominciamo"
   }
 }

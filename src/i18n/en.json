@@ -48,6 +48,10 @@
     "reset": {
       "label": "Start over",
       "help": "Clears the workspace and takes you back to the first screen."
+    },
+    "help": {
+      "label": "Explain",
+      "help": "Turns explanations on: every control tells you what it does, until you turn it off."
     }
   },
   "engine": {
@@ -113,5 +117,13 @@
     "mode": "mode",
     "format": "format",
     "none": "none"
+  },
+  "onboarding": {
+    "title": "Three things and you're set",
+    "step1": "Drop an image into the big panel, or click it to pick one from your computer.",
+    "step2": "Press Remove background. The work happens here, on your machine: no file is sent anywhere.",
+    "step3": "Pick a format and press Export. Everything also lands in the strip of work at the bottom.",
+    "hint": "If a control isn't clear, switch on «Explain» at the top right.",
+    "action": "Got it, let's start"
   }
 }

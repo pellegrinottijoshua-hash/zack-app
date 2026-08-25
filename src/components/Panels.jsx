@@ -1,5 +1,12 @@
 import { Fragment } from 'react';
 import { t } from '../i18n/index.js';
+import { help } from '../i18n/help.js';
+
+/** Mostra la spiegazione solo quando l'utente ha acceso «Spiegami». */
+export function Help({ k }) {
+  const text = help(k);
+  return text ? <p className="help">{text}</p> : null;
+}
 
 const BG_SWATCH = {
   transparent: 'repeating-conic-gradient(#2a2a2a 0% 25%, #1a1a1a 0% 50%) 0 / 8px 8px',
@@ -34,7 +41,7 @@ export function RemovePanel({ models, s, set, busy }) {
       <span className="label">
         <span>{t('control.quality.label')}</span>
       </span>
-      <p className="help">{t('control.quality.help')}</p>
+      <Help k="control.quality.help" />
       {models.map((m) => (
         <Choice
           key={m.id}
@@ -94,7 +101,7 @@ export function ExportPanel({ caps, s, set, busy }) {
       <span className="label">
         <span>{t('control.format.label')}</span>
       </span>
-      <p className="help">{t('control.format.help')}</p>
+      <Help k="control.format.help" />
       {groups.map((g) => (
         <div className="field" key={g}>
           <span className="label" style={{ letterSpacing: '0.14em' }}>
@@ -117,7 +124,7 @@ export function ExportPanel({ caps, s, set, busy }) {
       <span className="label" style={{ marginTop: 6 }}>
         <span>{t('control.background.label')}</span>
       </span>
-      <p className="help">{t('control.background.help')}</p>
+      <Help k="control.background.help" />
       {caps.backgrounds.map((b) => (
         <Choice
           key={b}

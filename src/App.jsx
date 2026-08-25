@@ -6,8 +6,11 @@ import SvgEditor from './components/SvgEditor.jsx';
 import { RemovePanel, TracePanel, ExportPanel, MetaBlock } from './components/Panels.jsx';
 import EngineBanner from './components/EngineBanner.jsx';
 import LanguageSwitch from './components/LanguageSwitch.jsx';
+import HelpToggle from './components/HelpToggle.jsx';
+import Onboarding, { hasSeenOnboarding } from './components/Onboarding.jsx';
 import { useEngine } from './hooks/useEngine.js';
 import { t, setLang, detectLang, onLangChange } from './i18n/index.js';
+import { onHelpChange, isHelpOn } from './i18n/help.js';
 import * as api from './lib/api.js';
 
 const TOOLS = [
@@ -58,11 +61,19 @@ export default function App() {
   const [bannerOpen, setBannerOpen] = useState(true);
   const [, forceRender] = useState(0);
 
+  const [showOnboarding, setShowOnboarding] = useState(!hasSeenOnboarding());
+
   useEffect(() => {
     setLang(detectLang(navigator.languages));
     forceRender((n) => n + 1);
-    // Cambiare lingua deve ridisegnare tutto, non solo l'interruttore.
-    return onLangChange(() => forceRender((n) => n + 1));
+    // Lingua e spiegazioni devono ridisegnare tutta l'interfaccia, non solo il
+    // proprio interruttore.
+    const offLang = onLangChange(() => forceRender((n) => n + 1));
+    const offHelp = onHelpChange(() => forceRender((n) => n + 1));
+    return () => {
+      offLang();
+      offHelp();
+    };
   }, []);
 
   // Il motore decide il default: l'utente deve poter premere Scontorna senza
@@ -303,9 +314,17 @@ export default function App() {
             </button>
           ))}
         </nav>
+        {/* La spiegazione della scheda attiva, quando «Spiegami» è acceso:
+            è il punto in cui un nuovo utente si blocca per primo. */}
+        {isHelpOn() && (
+          <span className="tabhelp">{t(`${TOOLS.find((x) => x.id === tool).key}.help`)}</span>
+        )}
         <span className="spacer" />
+        <HelpToggle />
         <LanguageSwitch />
       </header>
+
+      {showOnboarding && <Onboarding onClose={() => setShowOnboarding(false)} />}
 
       <div className="main">
         <section className="stage">
