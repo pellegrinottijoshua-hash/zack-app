@@ -15,7 +15,11 @@ before(async () => {
 
 after(async () => {
   await app.close();
-  // Tests write into the real library folder; leave the user's alone.
+  // Safe only because `npm test` points JAYL_CRAFT_LIBRARY at a throwaway dir.
+  // Without that guard this line would delete the user's actual work.
+  if (!process.env.JAYL_CRAFT_LIBRARY) {
+    throw new Error('Rifiuto di ripulire: JAYL_CRAFT_LIBRARY non è impostata. Usa `npm test`.');
+  }
   await rm(LIBRARY, { recursive: true, force: true }).catch(() => {});
 });
 
