@@ -88,7 +88,8 @@
     "error": {
       "title": "Non sono riuscito a ritagliare questa immagine",
       "body": "Riprova, oppure prova con un'immagine diversa. Se succede ancora, il file potrebbe essere rovinato."
-    }
+    },
+    "starting": "Avvio lo strumento…"
   },
   "result": {
     "before": "originale",
