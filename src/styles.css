@@ -24,6 +24,10 @@
 
   --pad: clamp(14px, 1.8vw, 24px);
   --rail: 300px;
+  /* La larghezza della barra servizi la decide il LAYOUT, non l'elemento: in
+     una griglia la traccia vince sulla width dell'item, e cambiarla sull'item
+     produce un elemento che ignora la propria regola senza dirlo. */
+  --toolrail: 190px;
 }
 
 * {
@@ -172,13 +176,22 @@ body {
 
 .main {
   display: grid;
-  grid-template-columns: 1fr var(--rail);
+  grid-template-columns: var(--toolrail) 1fr var(--rail);
   min-height: 0;
+  /* NIENTE transizione su grid-template-columns: con un valore che arriva da
+     una variabile CSS la traccia resta congelata al vecchio valore e il
+     cambio di layout non avviene affatto. Verificato il 2026-08-25: la barra
+     restava a 190px pur avendo la variabile a 56px. */
+}
+
+/* Mentre si lavora contano i pixel della tela, non i nomi. */
+.shell[data-working='true'] {
+  --toolrail: 56px;
 }
 
 @media (max-width: 940px) {
   .main {
-    grid-template-columns: 1fr;
+    grid-template-columns: var(--toolrail) 1fr;
   }
   .rail {
     border-left: 0;
@@ -1306,4 +1319,137 @@ body {
   font-size: 10px;
   line-height: 1.6;
   color: var(--grigio-scuro);
+}
+
+/* ─── barra dei servizi ─────────────────────────────────────────────────── */
+
+.toolrail {
+  min-width: 0;
+  padding: 12px 10px;
+  border-right: 1px solid var(--linea);
+  background: var(--nero);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+/* Mentre si lavora contano i pixel della tela, non i nomi: restano
+   raggiungibili col passaggio del mouse. */
+.toolrail[data-collapsed='true'] {
+  padding: 12px 8px;
+}
+
+.toolrail .group-label {
+  margin: 10px 0 4px;
+  padding: 0 6px;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--grigio-scuro);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.toolrail[data-collapsed='true'] .group-label {
+  text-align: center;
+  padding: 0;
+}
+
+.tool-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--grigio);
+  font: inherit;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.tool-item:hover {
+  color: var(--panna);
+  background: var(--nero-2);
+}
+
+.tool-item[aria-pressed='true'] {
+  border-color: var(--oro);
+  background: var(--oro-velo);
+  color: var(--panna);
+}
+
+.tool-item svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.toolrail[data-collapsed='true'] .tool-item {
+  justify-content: center;
+  padding: 9px 0;
+}
+
+.tool-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tool-price {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--grigio-scuro);
+  white-space: nowrap;
+}
+
+.tool-soon {
+  margin-left: 4px;
+  padding: 1px 5px;
+  border: 1px solid var(--linea);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--grigio-scuro);
+}
+
+.tool-item[aria-pressed='true'] .tool-price {
+  color: var(--oro);
+}
+
+.rail-foot {
+  margin-top: auto;
+  padding: 10px 6px 2px;
+  border-top: 1px solid var(--linea);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grigio-scuro);
+}
+
+.rail-foot b {
+  margin-left: auto;
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--panna);
+  font-weight: 500;
+}
+
+.toolrail[data-collapsed='true'] .rail-foot {
+  justify-content: center;
+  font-size: 12px;
 }

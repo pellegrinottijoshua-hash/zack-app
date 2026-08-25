@@ -16,6 +16,18 @@
     "editor": {
       "label": "SVG editor",
       "help": "Opens and edits vector files: move things, recolour them, add text and shapes."
+    },
+    "image": {
+      "label": "Image",
+      "help": "Generate an image from a description, using your work as reference."
+    },
+    "video": {
+      "label": "Video",
+      "help": "Generate a video from a description and your references."
+    },
+    "sound": {
+      "label": "Sound",
+      "help": "Build a sound effect by imitating it with your voice and describing it."
     }
   },
   "drop": {
@@ -315,5 +327,16 @@
   "arrange": {
     "title": "Arrange",
     "duplicate": "Duplicate"
+  },
+  "rail": {
+    "title": "Services",
+    "local": "On your computer",
+    "paid": "Pay per use",
+    "balance": "Balance",
+    "soon": "soon"
+  },
+  "soon": {
+    "title": "This service isn't here yet",
+    "body": "Generation is being built. When it lands you'll pay only for what you generate, and the price will be written before you press."
   }
 }

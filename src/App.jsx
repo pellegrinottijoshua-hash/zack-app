@@ -11,6 +11,8 @@ import Onboarding, { hasSeenOnboarding } from './components/Onboarding.jsx';
 import VectorTools from './components/VectorTools.jsx';
 import { resolveShortcut } from './engine/shortcuts.js';
 import { useLibrary } from './hooks/useLibrary.js';
+import ToolRail from './components/ToolRail.jsx';
+import { getService, firstReady } from './services.js';
 import { bundleAll } from './store/bundle.js';
 import { useEngine } from './hooks/useEngine.js';
 import { t, setLang, detectLang, onLangChange } from './i18n/index.js';
@@ -19,12 +21,6 @@ import { renderExport } from './engine/render.js';
 import { PRESETS, BACKGROUNDS } from './engine/export.js';
 import { traceToSvg, TRACE_PRESETS } from './engine/trace.js';
 import * as api from './lib/api.js';
-
-const TOOLS = [
-  { id: 'scontorna', key: 'tool.cutout' },
-  { id: 'vettorializza', key: 'tool.vector' },
-  { id: 'editor', key: 'tool.editor' },
-];
 
 const PALETTE = ['#111111', '#F5F0E8', '#FFFFFF', '#8A8A85', '#C4A35A', 'none'];
 
@@ -355,31 +351,11 @@ export default function App() {
   const canExport = isEditor || Boolean(file);
 
   return (
-    <div className="shell">
+    <div className="shell" data-working={isEditor}>
       <header className="topbar">
         <span className="wordmark">
           JAYL <em>STUDIO</em>
         </span>
-        <nav className="tabs" role="tablist">
-          {/* `tab`, non `t`: `t` è la funzione di traduzione e verrebbe oscurata. */}
-          {TOOLS.map((tab) => (
-            <button
-              key={tab.id}
-              className="tab"
-              role="tab"
-              aria-selected={tool === tab.id}
-              title={t(`${tab.key}.help`)}
-              onClick={() => setTool(tab.id)}
-            >
-              {t(`${tab.key}.label`)}
-            </button>
-          ))}
-        </nav>
-        {/* La spiegazione della scheda attiva, quando «Spiegami» è acceso:
-            è il punto in cui un nuovo utente si blocca per primo. */}
-        {isHelpOn() && (
-          <span className="tabhelp">{t(`${TOOLS.find((x) => x.id === tool).key}.help`)}</span>
-        )}
         <span className="spacer" />
         <HelpToggle />
         <LanguageSwitch />
@@ -388,6 +364,20 @@ export default function App() {
       {showOnboarding && <Onboarding onClose={() => setShowOnboarding(false)} />}
 
       <div className="main">
+        <ToolRail
+          current={tool}
+          collapsed={isEditor}
+          balance={null}
+          onPick={(svc) => {
+            if (!svc.ready) {
+              setNotice(`${t('soon.title')} — ${t('soon.body')}`);
+              return;
+            }
+            setNotice(null);
+            setTool(svc.id);
+          }}
+        />
+
         <section className="stage">
           {bannerOpen && engine.ready && (
             <EngineBanner
