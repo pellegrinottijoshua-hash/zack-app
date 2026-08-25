@@ -421,5 +421,73 @@
       "label": "Radio",
       "hint": "parla normalmente"
     }
+  },
+  "finish": {
+    "title": "Prima della stampa",
+    "help": "Tre controlli sul file finito: taglialo attorno al soggetto, guarda cosa succederà in stampa, e vedilo addosso a un capo prima di ordinarlo.",
+    "needsRaster": "Apri un file a pixel: queste misure si leggono sui pixel.",
+    "reading": "Sto misurando…"
+  },
+  "crop": {
+    "title": "Ritaglio",
+    "help": "Taglia attorno al soggetto, non attorno al centro della tela. È il motivo per cui non taglia le teste.",
+    "auto": "Come viene",
+    "square": "Quadrato",
+    "portrait": "4:5",
+    "story": "9:16",
+    "wide": "16:9",
+    "apply": "Ritaglia",
+    "saved": "{from} → {to}, {pct}% di tela in meno",
+    "cut": "A questo formato il soggetto non ci sta tutto: qualcosa verrà tagliato.",
+    "nothing": "Il soggetto riempie già l'immagine: non c'è niente da togliere.",
+    "none": "Non c'è nessun soggetto: scontorna prima il file."
+  },
+  "print": {
+    "title": "Controllo di stampa",
+    "help": "Un file può essere perfetto sullo schermo e sbagliato sulla maglietta. Queste sono misure, non pareri: dove non c'è una misura non c'è un avviso.",
+    "garment": "Colore del capo",
+    "onlyPrint": "Vale sui formati di stampa: scegline uno qui sopra.",
+    "verdict": {
+      "ok": "Pronto per la stampa.",
+      "attenzione": "Si può stampare, ma leggi prima questo.",
+      "errore": "Così non va in stampa."
+    },
+    "size": {
+      "ok": "Stamperà {w}×{h} cm, dentro un'area di {area} cm.",
+      "attenzione": "Stamperà {w}×{h} cm e non riempirà i {area} cm dell'area. Non lo ingrandiamo: sul tessuto si vedrebbe sgranato.",
+      "errore": "Stamperà appena {w}×{h} cm. Sul petto sparisce: serve un file più grande."
+    },
+    "background": {
+      "ok": "Lo sfondo è trasparente: verrà stampata solo la grafica.",
+      "attenzione": "Non c'è un solo pixel trasparente: verrà stampato un rettangolo pieno di inchiostro, bordi compresi."
+    },
+    "edges": {
+      "ok": "I bordi sono netti.",
+      "attenzione": "Il {pct}% della grafica ha bordi mezzo trasparenti. La stampa diretta non sa fare mezzo inchiostro: lo simula a puntini, e si vede come un alone."
+    },
+    "contrast": {
+      "ok": "Contrasto {ratio}:1 su capo {garment}: si legge bene.",
+      "attenzione": "Contrasto {ratio}:1 su capo {garment}: si vede poco.",
+      "errore": "Contrasto {ratio}:1 su capo {garment}: praticamente invisibile."
+    },
+    "clipped": {
+      "ok": "La grafica sta tutta dentro l'immagine.",
+      "attenzione": "La grafica tocca il bordo dell'immagine: quasi sempre vuol dire che è già tagliata."
+    },
+    "empty": {
+      "errore": "L'immagine è vuota: non c'è niente da stampare."
+    }
+  },
+  "mockup": {
+    "title": "Mockup",
+    "help": "La grafica appoggiata sul capo, in scala giusta. Non è una foto e non finge di esserlo: serve a rispondere a «quanto è grande e dove finisce».",
+    "teeFront": "T-shirt davanti",
+    "teeBack": "T-shirt dietro",
+    "hoodie": "Felpa",
+    "tote": "Borsa",
+    "make": "Crea il mockup",
+    "download": "Scarica il mockup",
+    "fill": "riempie il {pct}% dell'area stampabile",
+    "small": "Sul capo vero sembrerà un francobollo: ingrandiscila o cambia formato."
   }
 }

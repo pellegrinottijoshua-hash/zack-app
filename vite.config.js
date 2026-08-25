@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 // wasm_vtracer è una build wasm-bindgen "bundler": importa il .wasm come
 // modulo ESM, cosa che Vite non gestisce da sola.
 import wasm from 'vite-plugin-wasm';
-import topLevelAwait from 'vite-plugin-top-level-await';
 
 /**
  * onnxruntime-web carica i suoi helper `.mjs` con un import dinamico calcolato a
@@ -37,6 +36,13 @@ export default defineConfig({
   // Due entrate separate: la pagina di presentazione non deve caricare ONNX
   // Runtime e i modelli. Chi non ha ancora deciso di restare non aspetta.
   build: {
+    // Top-level await nativo, senza vite-plugin-top-level-await.
+    // Quel plugin riscriveva il TLA con swc e dal 2026 la sua coppia di
+    // versioni non regge: `missing field type`, e la build di produzione non
+    // usciva piu' — verificato il 2026-08-25. Tutti i browser che reggono
+    // WebGPU o WebAssembly SIMD reggono anche il TLA nativo, quindi il plugin
+    // proteggeva da browser che non potrebbero comunque far girare l'app.
+    target: 'esnext',
     rollupOptions: {
       input: {
         landing: resolve(process.cwd(), 'index.html'),
@@ -44,7 +50,7 @@ export default defineConfig({
       },
     },
   },
-  plugins: [react(), serveOrtAssets(), wasm(), topLevelAwait()],
+  plugins: [react(), serveOrtAssets(), wasm()],
   // Impedisce a Vite di pre-ottimizzare onnxruntime-web e riscriverne gli
   // import dinamici. Verificato il 2026-08-25: senza, il motore non parte.
   optimizeDeps: { exclude: ['onnxruntime-web'] },

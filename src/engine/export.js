@@ -6,9 +6,13 @@
  * solleva errori, arriva in stampa.
  */
 
+/**
+ * `dpi` c'è solo sui formati di stampa: è ciò che trasforma i pixel in
+ * centimetri, e senza di lui il controllo di stampa non ha niente da dire.
+ */
 export const PRESETS = [
-  { id: 'gelato-front', w: 3661, h: 4843, safeArea: 0.9, label: 'Gelato 3661×4843', group: 'stampa' },
-  { id: 'print-a4-300', w: 2480, h: 3508, safeArea: 0.9, label: 'A4 · 300 dpi', group: 'stampa' },
+  { id: 'gelato-front', w: 3661, h: 4843, safeArea: 0.9, dpi: 300, label: 'Gelato 3661×4843', group: 'stampa' },
+  { id: 'print-a4-300', w: 2480, h: 3508, safeArea: 0.9, dpi: 300, label: 'A4 · 300 dpi', group: 'stampa' },
   { id: 'square', w: 2048, h: 2048, safeArea: 0.85, label: '1:1', group: 'social' },
   { id: 'portrait', w: 1638, h: 2048, safeArea: 0.85, label: '4:5', group: 'social' },
   { id: 'story', w: 1152, h: 2048, safeArea: 0.8, label: '9:16', group: 'social' },
