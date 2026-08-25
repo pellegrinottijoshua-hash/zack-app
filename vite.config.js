@@ -31,7 +31,19 @@ function serveOrtAssets() {
   };
 }
 
+import { resolve } from 'node:path';
+
 export default defineConfig({
+  // Due entrate separate: la pagina di presentazione non deve caricare ONNX
+  // Runtime e i modelli. Chi non ha ancora deciso di restare non aspetta.
+  build: {
+    rollupOptions: {
+      input: {
+        landing: resolve(process.cwd(), 'index.html'),
+        app: resolve(process.cwd(), 'app/index.html'),
+      },
+    },
+  },
   plugins: [react(), serveOrtAssets(), wasm(), topLevelAwait()],
   // Impedisce a Vite di pre-ottimizzare onnxruntime-web e riscriverne gli
   // import dinamici. Verificato il 2026-08-25: senza, il motore non parte.
