@@ -1,13 +1,21 @@
 import { useEffect, useImperativeHandle, useRef, useState, forwardRef } from 'react';
+import { t } from '../i18n/index.js';
+
+/** Misura della tavola da disegno, in pixel del documento. */
+const CANVAS_W = 1200;
+const CANVAS_H = 1200;
 
 const TOOLS = [
-  { id: 'select', label: 'Seleziona' },
-  { id: 'path', label: 'Penna' },
-  { id: 'fhpath', label: 'Matita' },
-  { id: 'line', label: 'Linea' },
-  { id: 'rect', label: 'Rettangolo' },
-  { id: 'ellipse', label: 'Ellisse' },
-  { id: 'text', label: 'Testo' },
+  { id: 'select', key: 'tools.select' },
+  // `pathedit` è la modifica dei nodi: seleziona un tracciato e poi entra qui
+  // per spostarne i punti e le maniglie.
+  { id: 'pathedit', key: 'tools.nodes' },
+  { id: 'path', key: 'tools.pen' },
+  { id: 'fhpath', key: 'tools.pencil' },
+  { id: 'line', key: 'tools.line' },
+  { id: 'rect', key: 'tools.rect' },
+  { id: 'ellipse', key: 'tools.ellipse' },
+  { id: 'text', key: 'tools.text' },
 ];
 
 /**
@@ -42,12 +50,18 @@ const SvgEditor = forwardRef(function SvgEditor({ onReady, onSelection }, ref) {
           text: { stroke_width: 0, font_size: 48, font_family: "'Space Grotesk', sans-serif" },
           initOpacity: 1,
           imgPath: '/svgedit-images',
-          dimensions: [1200, 1200],
+          dimensions: [CANVAS_W, CANVAS_H],
           baseUnit: 'px',
           selectionColor: '#C4A35A',
         });
 
         canvasRef.current = canvas;
+
+        // Senza questa chiamata il documento resta a +1200,+1200 dentro la
+        // radice: l'area bianca visibile NON è la tavola, e ogni coordinata
+        // esce negativa. Il difetto è invisibile finché non si mostrano i
+        // numeri — è il pannello numerico che l'ha fatto emergere.
+        canvas.updateCanvas?.(CANVAS_W, CANVAS_H);
 
         const textInput = document.getElementById('svgcanvas-text-input');
         if (textInput && canvas.textActions?.setInputElem) {
@@ -110,30 +124,165 @@ const SvgEditor = forwardRef(function SvgEditor({ onReady, onSelection }, ref) {
       els.forEach((el) => el.setAttribute(attr, colour));
       return els.length;
     },
+
+    // ─── selezione ──────────────────────────────────────────────────────
+    selection: () => canvasRef.current?.getSelectedElements().filter(Boolean) || [],
+
+    /** Posizione e misura della selezione, in coordinate del documento. */
+    box() {
+      const els = canvasRef.current?.getSelectedElements().filter(Boolean) || [];
+      if (!els.length) return null;
+      let x0 = Infinity;
+      let y0 = Infinity;
+      let x1 = -Infinity;
+      let y1 = -Infinity;
+      for (const el of els) {
+        const b = el.getBBox();
+        x0 = Math.min(x0, b.x);
+        y0 = Math.min(y0, b.y);
+        x1 = Math.max(x1, b.x + b.width);
+        y1 = Math.max(y1, b.y + b.height);
+      }
+      return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+    },
+
+    /** Sposta la selezione a una posizione assoluta. */
+    moveTo(x, y) {
+      const c = canvasRef.current;
+      const b = this.box?.() ?? null;
+      if (!c || !b) return;
+      c.moveSelectedElements(x - b.x, y - b.y);
+    },
+
+    nudge(dx, dy) {
+      canvasRef.current?.moveSelectedElements(dx, dy);
+    },
+
+    /** Attributo numerico o testuale sulla selezione, con undo. */
+    attr(name, value) {
+      canvasRef.current?.changeSelectedAttribute(name, value);
+    },
+
+    /**
+     * Rotazione applicata come transform attorno al centro dell'elemento.
+     * Non uso l'API di rotazione di svgedit perché non è dichiarata nei tipi:
+     * appoggiarsi a funzioni non documentate è come si rompono le cose al
+     * primo aggiornamento della libreria.
+     */
+    rotate(deg) {
+      const els = canvasRef.current?.getSelectedElements().filter(Boolean) || [];
+      for (const el of els) {
+        const b = el.getBBox();
+        const cx = b.x + b.width / 2;
+        const cy = b.y + b.height / 2;
+        const base = (el.getAttribute('transform') || '').replace(/rotate\([^)]*\)/g, '').trim();
+        const rot = deg ? `rotate(${deg} ${cx} ${cy})` : '';
+        const next = [base, rot].filter(Boolean).join(' ');
+        if (next) el.setAttribute('transform', next);
+        else el.removeAttribute('transform');
+      }
+      return els.length;
+    },
+
+    duplicate() {
+      const c = canvasRef.current;
+      if (!c) return;
+      c.cloneSelectedElements?.(12, 12);
+    },
+
+    /**
+     * Allinea più elementi fra loro. Implementato qui perché la libreria non
+     * lo espone: si seleziona un elemento alla volta e lo si sposta, così ogni
+     * passaggio entra nella cronologia di annullamento.
+     */
+    align(where) {
+      const c = canvasRef.current;
+      const els = c?.getSelectedElements().filter(Boolean) || [];
+      if (els.length < 2) return 0;
+
+      const boxes = els.map((el) => ({ el, b: el.getBBox() }));
+      const x0 = Math.min(...boxes.map((o) => o.b.x));
+      const x1 = Math.max(...boxes.map((o) => o.b.x + o.b.width));
+      const y0 = Math.min(...boxes.map((o) => o.b.y));
+      const y1 = Math.max(...boxes.map((o) => o.b.y + o.b.height));
+
+      for (const { el, b } of boxes) {
+        let dx = 0;
+        let dy = 0;
+        if (where === 'left') dx = x0 - b.x;
+        else if (where === 'right') dx = x1 - (b.x + b.width);
+        else if (where === 'centerX') dx = (x0 + x1) / 2 - (b.x + b.width / 2);
+        else if (where === 'top') dy = y0 - b.y;
+        else if (where === 'bottom') dy = y1 - (b.y + b.height);
+        else if (where === 'centerY') dy = (y0 + y1) / 2 - (b.y + b.height / 2);
+        if (dx || dy) {
+          c.selectOnly([el]);
+          c.moveSelectedElements(dx, dy);
+        }
+      }
+      c.selectOnly(els);
+      return els.length;
+    },
+
+    // ─── nodi e maniglie ────────────────────────────────────────────────
+    /** Entra o esce dalla modifica dei nodi di un tracciato. */
+    nodeMode(on) {
+      const c = canvasRef.current;
+      if (!c) return;
+      c.setMode(on ? 'pathedit' : 'select');
+      setMode(on ? 'pathedit' : 'select');
+    },
+    addNode: () => canvasRef.current?.pathActions?.clonePathNode(),
+    removeNode: () => canvasRef.current?.pathActions?.deletePathNode(),
+    /** Maniglie simmetriche: muovendo un raggio si muove anche l'opposto. */
+    linkHandles: (on) => canvasRef.current?.pathActions?.linkControlPoints(on),
+    /** 4 = curva, 2 = segmento dritto (valori dell'enum SVG PathSeg). */
+    segmentType: (curve) => canvasRef.current?.pathActions?.setSegType(curve ? 4 : 2),
+    closePath: () => canvasRef.current?.pathActions?.opencloseSubPath(),
+    smooth: () => canvasRef.current?.pathActions?.smoothPolylineIntoPath(),
+
+    // ─── livelli ────────────────────────────────────────────────────────
+    layers() {
+      const c = canvasRef.current;
+      if (!c) return [];
+      const out = [];
+      for (let i = c.getNumLayers() - 1; i >= 0; i--) {
+        const d = c.getCurrentDrawing?.();
+        const name = d?.getLayerName ? d.getLayerName(i) : null;
+        if (name) out.push({ name, current: name === c.getCurrentLayerName() });
+      }
+      return out;
+    },
+    addLayer: () => canvasRef.current?.cloneLayer?.(),
+    selectLayer: (name) => canvasRef.current?.setCurrentLayer(name),
+    layerVisible: (name, on) => canvasRef.current?.setLayerVisibility(name, on),
+    deleteLayer: () => canvasRef.current?.deleteCurrentLayer(),
   }));
 
   return (
     <div className="editor-wrap">
       <div className="tools">
-        {TOOLS.map((t) => (
+        {/* `tool`, non `t`: `t` è la funzione di traduzione e verrebbe oscurata. */}
+        {TOOLS.map((tool) => (
           <button
-            key={t.id}
+            key={tool.id}
             className="tool"
-            aria-pressed={mode === t.id}
+            aria-pressed={mode === tool.id}
             disabled={Boolean(error)}
+            title={t(`${tool.key}.help`)}
             onClick={() => {
-              canvasRef.current?.setMode(t.id);
-              setMode(t.id);
+              canvasRef.current?.setMode(tool.id);
+              setMode(tool.id);
             }}
           >
-            {t.label}
+            {t(`${tool.key}.label`)}
           </button>
         ))}
       </div>
 
       {error && (
         <div className="alert">
-          L'editor vettoriale non si è avviato: {error}
+          {t('editor.failed')}
         </div>
       )}
 

@@ -181,7 +181,8 @@
       "help": "Riscrive il file in modo più compatto senza cambiarne l'aspetto."
     },
     "nothing": "niente selezionato",
-    "selected": "{n} selezionati"
+    "selected": "{n} selezionati",
+    "failed": "L'editor vettoriale non si è avviato. Ricarica la pagina; se succede ancora, il browser potrebbe essere troppo vecchio."
   },
   "action": {
     "export": {
@@ -216,5 +217,87 @@
       "title": "Non ho trovato nessuna forma da tracciare",
       "body": "Il soggetto ha troppo poco contrasto con lo sfondo. Prova «Colori piatti», oppure scontorna prima l'immagine."
     }
+  },
+  "tools": {
+    "select": {
+      "label": "Seleziona",
+      "help": "Scegli e sposta gli elementi. È lo strumento di partenza."
+    },
+    "nodes": {
+      "label": "Nodi",
+      "help": "Modifica i punti di un tracciato e i loro raggi, per cambiarne la forma."
+    },
+    "pen": {
+      "label": "Penna",
+      "help": "Disegna tracciati punto per punto: clicca per un angolo, trascina per una curva."
+    },
+    "pencil": {
+      "label": "Matita",
+      "help": "Disegna a mano libera; il tracciato segue il movimento del mouse."
+    },
+    "line": {
+      "label": "Linea",
+      "help": "Traccia un segmento dritto fra due punti."
+    },
+    "rect": {
+      "label": "Rettangolo",
+      "help": "Disegna un rettangolo trascinando da un angolo all'altro."
+    },
+    "ellipse": {
+      "label": "Ellisse",
+      "help": "Disegna un cerchio o un'ellisse trascinando."
+    },
+    "text": {
+      "label": "Testo",
+      "help": "Clicca sulla tela e scrivi. Il testo resta modificabile."
+    }
+  },
+  "nodes": {
+    "title": "Nodi e raggi",
+    "help": "Seleziona un tracciato e accendi la modifica nodi: puoi spostare i punti e piegare le curve tirando i raggi.",
+    "toggle": "Modifica i nodi",
+    "add": "Aggiungi nodo",
+    "remove": "Togli nodo",
+    "curve": "Rendi curva",
+    "straight": "Rendi dritto",
+    "handles": "Raggi",
+    "symmetric": "simmetrici",
+    "free": "liberi",
+    "close": "Chiudi tracciato",
+    "smooth": "Ammorbidisci"
+  },
+  "transform": {
+    "title": "Posizione e misura",
+    "w": "L",
+    "h": "A",
+    "rotation": "Rotazione",
+    "help": "Valori esatti invece di trascinare a occhio. Le frecce spostano di un pixel per volta."
+  },
+  "align": {
+    "title": "Allinea",
+    "help": "Serve almeno due elementi selezionati. Li allinea fra loro, non alla tela.",
+    "left": "A sinistra",
+    "centerX": "Al centro in orizzontale",
+    "right": "A destra",
+    "top": "In alto",
+    "centerY": "Al centro in verticale",
+    "bottom": "In basso",
+    "short": {
+      "left": "⇤",
+      "centerX": "⇔",
+      "right": "⇥",
+      "top": "⇡",
+      "centerY": "⇕",
+      "bottom": "⇣"
+    }
+  },
+  "appearance": {
+    "strokeWidth": "Spessore",
+    "opacity": "Opacità",
+    "help": "Lo spessore è in pixel. L'opacità va da 0 (invisibile) a 1 (pieno)."
+  },
+  "arrange": {
+    "title": "Disponi",
+    "duplicate": "Duplica"
   }
 }

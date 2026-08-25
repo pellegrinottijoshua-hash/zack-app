@@ -1038,3 +1038,71 @@ body {
     display: none;
   }
 }
+
+/* ─── campi numerici dell'editor vettoriale ─────────────────────────────── */
+
+.nums {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.num {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--linea);
+  background: var(--nero);
+  padding: 0 8px;
+  transition: border-color 0.15s;
+}
+
+.num:focus-within {
+  border-color: var(--oro);
+}
+
+.num > span {
+  flex: none;
+  min-width: 1.6em;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--grigio-scuro);
+}
+
+.num input {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 0;
+  background: transparent;
+  border: 0;
+  color: var(--panna);
+  font: inherit;
+  font-size: 11px;
+  outline: none;
+}
+
+.num input:disabled {
+  color: var(--grigio-scuro);
+}
+
+/* Le frecce native rubano spazio e non servono: si scrive il numero. */
+.num input::-webkit-outer-spin-button,
+.num input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.num input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+.swatches button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.swatches button:disabled:hover {
+  transform: none;
+  border-color: var(--linea-viva);
+}

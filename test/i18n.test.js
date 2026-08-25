@@ -45,9 +45,14 @@ test("il testo di aiuto spiega davvero, non ripete l'etichetta", () => {
     ['it', it],
     ['en', en],
   ]) {
-    for (const k of keys(dict).filter((k) => k.endsWith('.help'))) {
+    const all = keys(dict);
+    for (const k of all.filter((k) => k.endsWith('.help'))) {
+      const labelKey = k.replace(/\.help$/, '.label');
+      // Un aiuto può descrivere un intero gruppo di comandi e non avere
+      // un'etichetta gemella: la regola vale solo dove il confronto esiste.
+      if (!all.includes(labelKey)) continue;
       const help = at(dict, k);
-      const label = at(dict, k.replace(/\.help$/, '.label'));
+      const label = at(dict, labelKey);
       assert.ok(help.length > label.length + 15, `${lang}.${k} è troppo scarno per aiutare`);
     }
   }
