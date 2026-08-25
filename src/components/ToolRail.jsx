@@ -34,10 +34,19 @@ function Item({ service, active, collapsed, onPick }) {
     >
       <Icon name={service.icon} />
       {!collapsed && <span className="tool-name">{label}</span>}
-      {!collapsed && service.price != null && (
-        <span className="tool-price">{service.price.toFixed(2).replace('.', ',')} €</span>
-      )}
-      {!collapsed && !service.ready && <span className="tool-soon">{t('rail.soon')}</span>}
+      {/* Prezzo OPPURE 'presto', mai entrambi: a 190px si contendono lo
+          spazio e vince la troncatura del nome, che è l'unica cosa
+          davvero necessaria. */}
+      {!collapsed &&
+        (service.ready ? (
+          service.price != null && (
+            <span className="tool-price">{service.price.toFixed(2).replace('.', ',')} €</span>
+          )
+        ) : (
+          <span className="tool-soon" title={`~${service.price?.toFixed(2).replace('.', ',')} €`}>
+            {t('rail.soon')}
+          </span>
+        ))}
     </button>
   );
 }

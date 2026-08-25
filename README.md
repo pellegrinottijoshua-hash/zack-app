@@ -10,8 +10,16 @@ npm run dev
 
 ## Cos'è
 
-Lo strato di post-produzione per chi genera con l'AI: scontorno,
-vettorializzazione, ridimensionamento, editor SVG e una libreria dei lavori.
+Lo strato di post-produzione per chi genera con l'AI. **Sei servizi in due
+gruppi**, e la divisione non è cosmetica:
+
+| sul tuo computer | a consumo |
+|---|---|
+| Scontorna · Vettorializza · Editor SVG | Immagine · Video · Suono |
+| illimitati, inclusi nei 3,99 €/mese | si paga a generazione, prezzo scritto prima |
+
+I tre a consumo non ci sono ancora: la barra li mostra marcati «presto», perché
+nascondere metà del prodotto non aiuta nessuno a capire cosa sia.
 
 Il pezzo che conta: **scontorno, vettorializzazione ed export girano nel
 browser**, non su un server. Sulla macchina di chi lo usa, senza che nessun file
@@ -95,6 +103,19 @@ sempre.
 
 Regola di progetto: **un controllo senza testo d'aiuto non è finito.**
 
+## Come si usa
+
+**Le azioni vanno all'asset, non viceversa.** Passi il mouse su un lavoro e
+vedi cosa puoi farci; quelle che non hanno senso non compaiono — un PNG offre
+*scontorna* e *vettorializza*, un SVG offre *modifica*. Un bottone spento è una
+domanda senza risposta.
+
+*Usa come riferimento* mette il lavoro fra i riferimenti della prossima
+generazione: è la scorciatoia che chiude il ciclo libreria → generazione.
+
+La barra dei servizi si riduce a sole icone nell'editor: la tela passa da 950 a
+1084 px.
+
 ## I lavori
 
 Tutto vive **nel browser**: i file in OPFS, i metadati in IndexedDB. Nessun
@@ -127,7 +148,8 @@ src/engine/     motore nel browser
   export.js       matematica del posizionamento (testata in Node)
   render.js       disegno dell'export su canvas
   trace.js        VTracer in WebAssembly
-src/store/      libreria nel browser
+src/store/      libreria e contabilità
+  ledger.js       saldo in centesimi, prenota/conferma/rilascia (testato in Node)
   model.js        modello puro: nomi, cartelle, tag, query (testato in Node)
   files.js        i file in OPFS
   db.js           i metadati in IndexedDB
@@ -146,7 +168,7 @@ docs/superpowers/  spec e piani
 npm test
 ```
 
-Settantaquattro test. Coprono il vincolo di licenza, le funzioni pure del motore, la
+Novanta test. Coprono il vincolo di licenza, le funzioni pure del motore, la
 parità con il backend (IoU ≥ 0,98, differenza alfa media ≤ 2/255) e la
 completezza delle due lingue.
 

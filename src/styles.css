@@ -1414,7 +1414,7 @@ body {
 }
 
 .tool-soon {
-  margin-left: 4px;
+  margin-left: auto;
   padding: 1px 5px;
   border: 1px solid var(--linea);
   font-size: 8px;
