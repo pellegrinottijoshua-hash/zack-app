@@ -88,7 +88,8 @@
     "error": {
       "title": "I couldn't cut out this image",
       "body": "Try again, or try a different image. If it keeps happening, the file may be damaged."
-    }
+    },
+    "starting": "Starting the tool…"
   },
   "result": {
     "before": "original",

@@ -28,7 +28,6 @@ const px = (d) => (d ? `${d.w}×${d.h}` : '—');
 const secs = (ms) => `${(ms / 1000).toFixed(1)}s`;
 
 export default function App() {
-  const [caps, setCaps] = useState(null);
   const [apiState, setApiState] = useState('offline');
   const [tool, setTool] = useState('scontorna');
 
@@ -108,10 +107,11 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    // Il backend serve solo alla libreria su disco. Se non c'è, l'app funziona
+    // lo stesso: si perde solo il salvataggio automatico dei lavori.
     api
       .health()
       .then((h) => {
-        setCaps(h);
         setApiState('pronta');
         setLibPath(h.libraryPath);
       })
@@ -273,20 +273,21 @@ export default function App() {
     }
   }
 
-  if (!caps) {
+  // L'attesa dipende dal MOTORE, non dal server. Il backend serve solo alla
+  // libreria su disco: legare tutta l'interfaccia alla sua risposta rendeva
+  // l'app inutilizzabile senza backend, cioè l'esatto contrario della promessa.
+  if (!engine.ready) {
     return (
       <div className="shell">
         <header className="topbar">
           <span className="wordmark">
-            JAYL <em>CRAFT</em>
+            JAYL <em>STUDIO</em>
           </span>
+          <span className="spacer" />
+          <LanguageSwitch />
         </header>
         <div className="stage">
-          <p className="editorial">
-            {apiState === 'offline'
-              ? 'API non raggiungibile. Avvia con npm run dev.'
-              : 'Avvio…'}
-          </p>
+          <p className="editorial">{t('engine.starting')}</p>
         </div>
       </div>
     );
