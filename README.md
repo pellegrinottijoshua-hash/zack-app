@@ -13,10 +13,19 @@ npm run dev
 Lo strato di post-produzione per chi genera con l'AI: scontorno,
 vettorializzazione, ridimensionamento, editor SVG e una libreria dei lavori.
 
-Il pezzo che conta: **lo scontorno gira nel browser**, non su un server. Sulla
-macchina di chi lo usa, in circa un secondo, senza che nessun file esca dal suo
-computer e senza costo di elaborazione per chi lo offre. È la ragione per cui il
-prodotto può stare a 3,99 €/mese senza erodersi i margini.
+Il pezzo che conta: **scontorno, vettorializzazione ed export girano nel
+browser**, non su un server. Sulla macchina di chi lo usa, senza che nessun file
+esca dal suo computer e senza costo di elaborazione per chi lo offre. È la
+ragione per cui il prodotto può stare a 3,99 €/mese senza erodersi i margini.
+
+**Il backend può restare spento.** Serve solo alla libreria su disco: senza di
+lui l'app si avvia lo stesso e il flusso principale funziona per intero.
+
+| operazione | dove | tempo |
+|---|---|---|
+| scontorno 2000×2000 | browser, WebGPU | ~1,0 s |
+| export a 3661×4843 | browser, canvas | ~1,2 s |
+| vettorializzazione a colori | browser, WASM 140 KB | ~0,4 s |
 
 ## Come funziona il motore
 
@@ -87,6 +96,9 @@ src/engine/     motore nel browser
   capabilities.js rilevamento WebGPU e scelta del livello
   worker.js       ONNX Runtime, gira nel Worker
   client.js       API a promesse verso il worker
+  export.js       matematica del posizionamento (testata in Node)
+  render.js       disegno dell'export su canvas
+  trace.js        VTracer in WebAssembly
 src/i18n/       italiano, inglese, e la modalità «Spiegami»
 server/         backend Fastify: modalità locale e futura qualità premium
 py/             ambiente Python (rembg) usato dal backend
@@ -100,7 +112,7 @@ docs/superpowers/  spec e piani
 npm test
 ```
 
-Quaranta test. Coprono il vincolo di licenza, le funzioni pure del motore, la
+Quarantotto test. Coprono il vincolo di licenza, le funzioni pure del motore, la
 parità con il backend (IoU ≥ 0,98, differenza alfa media ≤ 2/255) e la
 completezza delle due lingue.
 
@@ -123,5 +135,5 @@ partire se la variabile non è impostata.
 ## Da fare
 
 Il piano successivo (blocco 2) copre la libreria nel browser con cartelle e
-moodboard, la vettorializzazione in WASM e la quantizzazione dei modelli a fp16
-per dimezzare il primo scaricamento.
+moodboard — l'ultimo pezzo che ancora dipende dal backend — e la quantizzazione
+dei modelli a fp16 per dimezzare il primo scaricamento.
