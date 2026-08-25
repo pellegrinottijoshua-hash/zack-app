@@ -13,6 +13,8 @@ import { resolveShortcut } from './engine/shortcuts.js';
 import { useLibrary } from './hooks/useLibrary.js';
 import ToolRail from './components/ToolRail.jsx';
 import MaskBrush from './components/MaskBrush.jsx';
+import BatchPanel from './components/BatchPanel.jsx';
+import { useBatch } from './hooks/useBatch.js';
 import { SCALES, canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { getService, firstReady } from './services.js';
 import { bundleAll } from './store/bundle.js';
@@ -72,6 +74,7 @@ export default function App() {
   // si usano generando.
   const [references, setReferences] = useState([]);
   const [brushOpen, setBrushOpen] = useState(false);
+  const [batchFiles, setBatchFiles] = useState([]);
   // Cambia a ogni azione sull'editor per far rileggere al pannello la
   // posizione della selezione, che la libreria muta fuori da React.
   const [editorTick, setEditorTick] = useState(0);
@@ -95,6 +98,28 @@ export default function App() {
       offHelp();
     };
   }, []);
+
+  const batch = useBatch({
+    engine,
+    library,
+    model: s.model || engine.defaultModelId,
+  });
+
+  /** Sceglie più file in una volta: è il gesto che apre il lavoro in blocco. */
+  function pickBatchFiles() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.onchange = () => {
+      const list = [...(input.files || [])].filter((f) => f.type.startsWith('image/'));
+      if (list.length) {
+        setBatchFiles(list);
+        batch.clear();
+      }
+    };
+    input.click();
+  }
 
   // Scorciatoie da tastiera: attive solo nell'editor, e mai mentre si scrive.
   // La decisione su quale azione eseguire sta in una funzione pura testata a
@@ -542,6 +567,16 @@ export default function App() {
                   </button>
                 </div>
               )}
+
+              <BatchPanel
+                files={batchFiles}
+                batch={batch}
+                onPickFiles={pickBatchFiles}
+                onClearFiles={() => {
+                  setBatchFiles([]);
+                  batch.clear();
+                }}
+              />
 
               <div className="field">
                 <span className="label">

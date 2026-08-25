@@ -1,0 +1,110 @@
+import { useState } from 'react';
+import { t } from '../i18n/index.js';
+import { Choice, Help } from './Panels.jsx';
+import { PRESETS } from '../engine/export.js';
+import { isEmptyPlan } from '../engine/batch.js';
+
+/**
+ * Le operazioni in blocco.
+ *
+ * Non è uno strumento nuovo: è ciò che rende utili quelli che ci sono già.
+ * Scontornare quaranta file uno per uno è il lavoro che nessuno vuole fare.
+ */
+export default function BatchPanel({ files, batch, onPickFiles, onClearFiles }) {
+  const [opts, setOpts] = useState({ cutout: true, vector: false, exportPresets: ['gelato-front'] });
+
+  const togglePreset = (id) =>
+    setOpts((o) => ({
+      ...o,
+      exportPresets: o.exportPresets.includes(id)
+        ? o.exportPresets.filter((p) => p !== id)
+        : [...o.exportPresets, id],
+    }));
+
+  const { done, failed, total, ratio } = batch.summary;
+  const nothingToDo = isEmptyPlan(opts);
+
+  return (
+    <div className="field">
+      <span className="label">
+        <span>{t('batch.title')}</span>
+        <b>{files.length ? t('batch.count', { n: files.length }) : t('batch.none')}</b>
+      </span>
+      <Help k="batch.help" />
+
+      <div className="row">
+        <button className="btn ghost small" disabled={batch.running} onClick={onPickFiles}>
+          {t('batch.pick')}
+        </button>
+        {files.length > 0 && (
+          <button className="btn ghost small" disabled={batch.running} onClick={onClearFiles}>
+            {t('batch.clear')}
+          </button>
+        )}
+      </div>
+
+      {files.length > 0 && (
+        <>
+          <Choice
+            label={t('tool.cutout.label')}
+            active={opts.cutout}
+            disabled={batch.running}
+            onClick={() => setOpts((o) => ({ ...o, cutout: !o.cutout }))}
+          />
+          <Choice
+            label={t('tool.vector.label')}
+            active={opts.vector}
+            disabled={batch.running}
+            onClick={() => setOpts((o) => ({ ...o, vector: !o.vector }))}
+          />
+
+          <span className="label" style={{ marginTop: 6 }}>
+            <span>{t('control.format.label')}</span>
+          </span>
+          {PRESETS.map((p) => (
+            <Choice
+              key={p.id}
+              label={p.label}
+              active={opts.exportPresets.includes(p.id)}
+              disabled={batch.running}
+              onClick={() => togglePreset(p.id)}
+            />
+          ))}
+
+          {batch.running ? (
+            <>
+              <div className="batch-bar" role="progressbar" aria-valuenow={Math.round(ratio * 100)}>
+                <span style={{ width: `${ratio * 100}%` }} />
+              </div>
+              <p className="help">
+                {t('batch.progress', { done: done + failed, total })}
+                {batch.eta != null && ` · ${t('batch.eta', { sec: batch.eta })}`}
+              </p>
+              {batch.current && (
+                <p className="help">{batch.current.file?.name}</p>
+              )}
+              <button className="btn ghost small" onClick={batch.stop}>
+                {t('batch.stop')}
+              </button>
+            </>
+          ) : (
+            <button
+              className="btn"
+              disabled={nothingToDo}
+              onClick={() => batch.run(files, opts)}
+            >
+              {t('batch.start', { n: files.length })}
+            </button>
+          )}
+
+          {!batch.running && total > 0 && (
+            <p className="help">
+              {t('batch.doneMsg', { done, total })}
+              {failed > 0 && ` · ${t('batch.failed', { n: failed })}`}
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

@@ -365,5 +365,19 @@
     "tooBig": "This image is already large: enlarging is for small files, under 512 pixels a side.",
     "estimate": "About {sec} seconds",
     "working": "Rebuilding detail…"
+  },
+  "batch": {
+    "title": "In bulk",
+    "none": "no files",
+    "count": "{n} files",
+    "help": "Applies the same operations to every file at once. It's what makes the tools useful when there are forty files and not one.",
+    "pick": "Choose files",
+    "clear": "Clear",
+    "start": "Run on {n} files",
+    "stop": "Stop",
+    "progress": "{done} of {total}",
+    "eta": "about {sec} s",
+    "doneMsg": "Done {done} of {total}",
+    "failed": "{n} failed"
   }
 }

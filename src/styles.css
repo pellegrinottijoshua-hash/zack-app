@@ -1848,3 +1848,18 @@ body {
     height: 52vw;
   }
 }
+
+/* ─── operazioni in blocco ──────────────────────────────────────────────── */
+
+.batch-bar {
+  height: 3px;
+  background: var(--linea);
+  overflow: hidden;
+}
+
+.batch-bar span {
+  display: block;
+  height: 100%;
+  background: var(--oro);
+  transition: width 0.25s ease;
+}

@@ -365,5 +365,19 @@
     "tooBig": "Questa immagine è già grande: l'ingrandimento serve su file piccoli, sotto i 512 pixel di lato.",
     "estimate": "Circa {sec} secondi",
     "working": "Sto ricostruendo il dettaglio…"
+  },
+  "batch": {
+    "title": "In blocco",
+    "none": "nessun file",
+    "count": "{n} file",
+    "help": "Applica le stesse operazioni a tutti i file insieme. È quello che rende utili gli strumenti quando i file sono quaranta e non uno.",
+    "pick": "Scegli i file",
+    "clear": "Svuota",
+    "start": "Avvia su {n} file",
+    "stop": "Ferma",
+    "progress": "{done} di {total}",
+    "eta": "circa {sec} s",
+    "doneMsg": "Fatti {done} su {total}",
+    "failed": "{n} non riusciti"
   }
 }
