@@ -12,6 +12,9 @@ npm run dev
 Due entrate separate di proposito: la pagina che deve convincere non può
 caricare ONNX Runtime e 28 MB di modelli.
 
+Se stai riprendendo il progetto da zero — chat nuova, contesto perso —
+parti da **[RIPRENDI-QUI.md](RIPRENDI-QUI.md)**.
+
 ## Cos'è
 
 Lo strato di post-produzione per chi genera con l'AI. **Sei servizi in due
@@ -155,6 +158,40 @@ Il limite è il tempo, non la memoria: **ingresso massimo 512 px di lato**,
 perché l'ingrandimento serve su asset piccoli, non su un file di stampa che è
 già grande. L'attesa stimata si dice prima.
 
+## Prima della stampa
+
+Tre rifiniture in un pannello solo, perché sono la stessa domanda in tre
+momenti: **il file è pronto per finire su qualcosa di fisico?**
+
+**Ritaglio.** Taglia attorno al soggetto, non attorno al centro della tela — è
+il motivo per cui non taglia le teste. La finestra parte dal baricentro pesato
+sull'opacità e poi scivola quanto serve a contenere tutto il soggetto. Non esce
+mai dall'immagine: se il formato non ci sta si perde margine, non si aggiunge
+tela finta. E se il soggetto verrà comunque tagliato, lo dice prima.
+
+**Controllo di stampa.** Il controllo che nessuno offre e che serve a tutti: un
+file può essere perfetto sullo schermo e sbagliato sulla maglietta, e te ne
+accorgi col campione in mano — cioè quando hai già pagato.
+
+| controllo | cosa misura |
+|---|---|
+| dimensione | quanti centimetri verrà davvero, sull'area del capo |
+| sfondo | se manca la trasparenza, stampa un rettangolo di inchiostro |
+| bordi | quanti pixel mezzo trasparenti diventeranno aloni |
+| contrasto | grafica contro **colore del capo**: nero su nero è un file perfetto e una maglietta vuota |
+| bordo immagine | se la grafica è già tagliata |
+
+Sono misure, non pareri: **dove non c'è una misura non c'è un avviso.** Sui
+formati social il controllo tace, e sui vettori salta il conto dei bordi
+sfumati, perché misurerebbe l'antialiasing della nostra rasterizzazione invece
+del file.
+
+**Mockup.** La grafica sul capo — t-shirt davanti e dietro, felpa, borsa. Non è
+una fotografia e non prova a sembrarlo: una finta foto si riconosce subito. Le
+proporzioni vengono da una taglia M stesa, 52 cm di torace su 72 di lunghezza.
+Si posiziona il **soggetto**, non il file: un PNG con mezzo metro di margine
+trasparente finirebbe stampato grande come un francobollo.
+
 ## Mobile
 
 Non tre colonne rimpicciolite: su un telefono non ci stanno. La tela prende lo
@@ -221,6 +258,13 @@ src/engine/     motore nel browser
   export.js       matematica del posizionamento (testata in Node)
   render.js       disegno dell'export su canvas
   trace.js        VTracer in WebAssembly
+  pixels.js       una passata sui pixel → riquadro, baricentro, colore, bordi
+  crop.js         il ritaglio attorno al soggetto (testato in Node)
+  print.js        i cinque controlli di stampa (testati in Node)
+  mockup.js       sagome dei capi e posizionamento (testato in Node)
+  finish.js       il lato canvas delle tre rifiniture
+  batch.js        pianificazione delle operazioni in blocco
+  sound.js        ricette e matematica del laboratorio audio
 src/store/      libreria e contabilità
   ledger.js       saldo in centesimi, prenota/conferma/rilascia (testato in Node)
 src/landing/    la pagina di presentazione, entrata separata
@@ -244,7 +288,7 @@ docs/superpowers/  spec e piani
 npm test
 ```
 
-Centosessantasette test. Coprono il vincolo di licenza, le funzioni pure del motore, la
+Duecentosedici test. Coprono il vincolo di licenza, le funzioni pure del motore, la
 parità con il backend (IoU ≥ 0,98, differenza alfa media ≤ 2/255) e la
 completezza delle due lingue.
 
@@ -267,6 +311,8 @@ partire se la variabile non è impostata.
 ## Da fare
 
 - Quantizzare i modelli a fp16 per dimezzare i 170 MB del primo scaricamento.
-- La sezione effetti sonori: registri la voce, l'app estrae il ritmo in locale e
-  lo applica a un timbro. Disegno deciso, costruzione rimandata.
 - Account e pagamenti, quando ci sarà qualcuno che paga.
+- Estrazione fotogrammi da un video e palette dai colori di un'immagine: gli
+  ultimi due servizi gratuiti disegnati e non costruiti.
+- Rileggere il tono di tutti i testi dell'interfaccia. Li ho scritti io; la
+  voce del marchio la conosci tu.
