@@ -347,5 +347,23 @@
     "reference": "Usa come riferimento",
     "referenceHelp": "Lo mette fra i riferimenti della prossima generazione, così il soggetto resta lo stesso.",
     "added": "Aggiunto ai riferimenti"
+  },
+  "brush": {
+    "title": "Correggi a mano",
+    "help": "L'automatico sbaglia sempre in qualche punto. Qui recuperi ciò che è sparito e togli ciò che è rimasto.",
+    "erase": "Togli",
+    "eraseHelp": "Cancella le parti di sfondo rimaste attaccate al soggetto.",
+    "restore": "Recupera",
+    "restoreHelp": "Riporta indietro le parti del soggetto che l'automatico ha tolto per errore.",
+    "apply": "Applica",
+    "open": "Correggi a mano"
+  },
+  "upscale": {
+    "title": "Ingrandisci",
+    "x4": "Quattro volte",
+    "help": "Ricostruisce il dettaglio invece di limitarsi a ingrandire. Serve su immagini piccole: un logo, un ritaglio, una miniatura.",
+    "tooBig": "Questa immagine è già grande: l'ingrandimento serve su file piccoli, sotto i 512 pixel di lato.",
+    "estimate": "Circa {sec} secondi",
+    "working": "Sto ricostruendo il dettaglio…"
   }
 }

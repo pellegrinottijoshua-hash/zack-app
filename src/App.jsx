@@ -3,7 +3,7 @@ import Dropzone from './components/Dropzone.jsx';
 import Compare from './components/Compare.jsx';
 import Library from './components/Library.jsx';
 import SvgEditor from './components/SvgEditor.jsx';
-import { RemovePanel, TracePanel, ExportPanel, MetaBlock } from './components/Panels.jsx';
+import { RemovePanel, TracePanel, ExportPanel, MetaBlock, Help } from './components/Panels.jsx';
 import EngineBanner from './components/EngineBanner.jsx';
 import LanguageSwitch from './components/LanguageSwitch.jsx';
 import HelpToggle from './components/HelpToggle.jsx';
@@ -12,6 +12,8 @@ import VectorTools from './components/VectorTools.jsx';
 import { resolveShortcut } from './engine/shortcuts.js';
 import { useLibrary } from './hooks/useLibrary.js';
 import ToolRail from './components/ToolRail.jsx';
+import MaskBrush from './components/MaskBrush.jsx';
+import { SCALES, canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { getService, firstReady } from './services.js';
 import { bundleAll } from './store/bundle.js';
 import { useEngine } from './hooks/useEngine.js';
@@ -69,6 +71,7 @@ export default function App() {
   // qui perché attraversano gli strumenti: si scelgono guardando l'archivio e
   // si usano generando.
   const [references, setReferences] = useState([]);
+  const [brushOpen, setBrushOpen] = useState(false);
   // Cambia a ogni azione sull'editor per far rileggere al pannello la
   // posizione della selezione, che la libreria muta fuori da React.
   const [editorTick, setEditorTick] = useState(0);
@@ -316,6 +319,47 @@ export default function App() {
     }
   }
 
+  /** Ingrandimento: ricostruisce il dettaglio invece di interpolare. */
+  async function runUpscale() {
+    const src = result?.blob || file;
+    if (!src) return;
+    setError(null);
+    setNotice(null);
+    try {
+      const bmp = await createImageBitmap(src);
+      if (!canUpscale(bmp.width, bmp.height)) {
+        bmp.close?.();
+        setNotice(t('upscale.tooBig'));
+        return;
+      }
+      const secs = estimateSeconds(bmp.width, bmp.height, getScale('x4'));
+      setBusy(t('upscale.working'));
+      setBusyNote(t('upscale.estimate', { sec: secs }));
+
+      const out = await engine.upscale(bmp, 'x4', (phase, d) => {
+        if (d?.done) setBusyNote(`${d.done}/${d.total} · ${t('upscale.estimate', { sec: secs })}`);
+      });
+
+      const cv = document.createElement('canvas');
+      cv.width = out.width;
+      cv.height = out.height;
+      cv.getContext('2d').putImageData(new ImageData(out.rgba, out.width, out.height), 0, 0);
+      const blob = await new Promise((r) => cv.toBlob(r, 'image/png'));
+      setResult({ url: own(blob), blob, kind: 'png', meta: { strategy: 'upscale', output: { w: out.width, h: out.height } } });
+      await library.save(blob, {
+        name: `${(file?.name || 'immagine').replace(/\.[^.]+$/, '')}-ingrandita`,
+        kind: 'png',
+        meta: { op: 'upscale', scale: 'x4' },
+      });
+    } catch (e) {
+      console.error(e);
+      setError(e.code === 'upscale-too-large' ? t('upscale.tooBig') : t('engine.error.body'));
+    } finally {
+      setBusy(null);
+      setBusyNote(null);
+    }
+  }
+
   /**
    * Un'azione partita da un lavoro in libreria: il file diventa quello su cui
    * si sta lavorando e lo strumento giusto si apre da solo. È la scorciatoia
@@ -429,6 +473,20 @@ export default function App() {
               onSelection={setSelCount}
               onRefuseNodes={() => setNotice(t('nodes.needPath'))}
             />
+          ) : brushOpen && result?.kind === 'png' ? (
+            <MaskBrush
+              source={file}
+              cutout={result.blob}
+              onDone={async (blob) => {
+                setResult({ url: own(blob), blob, kind: 'png', meta: { ...result.meta, retouched: true } });
+                setBrushOpen(false);
+                await library.save(blob, {
+                  name: `${(file?.name || 'immagine').replace(/\.[^.]+$/, '')}-corretto`,
+                  kind: 'png',
+                  meta: { op: 'brush' },
+                });
+              }}
+            />
           ) : file ? (
             <Compare
               before={beforeUrl}
@@ -465,7 +523,40 @@ export default function App() {
               </button>
             </>
           ) : tool === 'scontorna' ? (
-            <RemovePanel models={engine.models} s={s} set={set} busy={Boolean(busy)} />
+            <>
+              <RemovePanel models={engine.models} s={s} set={set} busy={Boolean(busy)} />
+
+              {result?.kind === 'png' && (
+                <div className="field">
+                  <span className="label">
+                    <span>{t('brush.title')}</span>
+                  </span>
+                  <Help k="brush.help" />
+                  <button
+                    className="opt"
+                    aria-pressed={brushOpen}
+                    disabled={Boolean(busy)}
+                    onClick={() => setBrushOpen((v) => !v)}
+                  >
+                    {t('brush.open')}
+                  </button>
+                </div>
+              )}
+
+              <div className="field">
+                <span className="label">
+                  <span>{t('upscale.title')}</span>
+                </span>
+                <Help k="upscale.help" />
+                <button
+                  className="opt"
+                  disabled={!file || Boolean(busy)}
+                  onClick={runUpscale}
+                >
+                  {t('upscale.x4')}
+                </button>
+              </div>
+            </>
           ) : (
             <TracePanel presets={TRACE_PRESETS} s={s} set={set} busy={Boolean(busy)} />
           )}
