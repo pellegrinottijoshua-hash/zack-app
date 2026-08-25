@@ -15,6 +15,7 @@ import ToolRail from './components/ToolRail.jsx';
 import MaskBrush from './components/MaskBrush.jsx';
 import BatchPanel from './components/BatchPanel.jsx';
 import SoundLab from './components/SoundLab.jsx';
+import FinishPanel from './components/FinishPanel.jsx';
 import { useSound } from './hooks/useSound.js';
 import { useBatch } from './hooks/useBatch.js';
 import { SCALES, canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
@@ -24,6 +25,7 @@ import { useEngine } from './hooks/useEngine.js';
 import { t, setLang, detectLang, onLangChange } from './i18n/index.js';
 import { onHelpChange, isHelpOn } from './i18n/help.js';
 import { renderExport } from './engine/render.js';
+import { analyze, applyCrop, renderMockup } from './engine/finish.js';
 import { PRESETS, BACKGROUNDS } from './engine/export.js';
 import { traceToSvg, TRACE_PRESETS } from './engine/trace.js';
 import * as api from './lib/api.js';
@@ -31,6 +33,8 @@ import * as api from './lib/api.js';
 const PALETTE = ['#111111', '#F5F0E8', '#FFFFFF', '#8A8A85', '#C4A35A', 'none'];
 
 const px = (d) => (d ? `${d.w}×${d.h}` : '—');
+/** Come è stato ottenuto il risultato, detto in italiano. */
+const STRATEGIE = { mask: 'maschera', crop: 'ritaglio', upscale: 'ingrandimento', browser: 'diretta' };
 const secs = (ms) => `${(ms / 1000).toFixed(1)}s`;
 
 export default function App() {
@@ -65,6 +69,11 @@ export default function App() {
     clean: true,
     preset: 'gelato-front',
     background: 'transparent',
+    // Le tre rifiniture. Il capo nero è il default perché è il capo su cui si
+    // sbaglia di più: è lì che una grafica scura sparisce senza avvisare.
+    aspect: 'auto',
+    garment: 'nero',
+    shape: 'tee-front',
   });
   const set = (patch) => setS((prev) => ({ ...prev, ...patch }));
 
@@ -81,9 +90,37 @@ export default function App() {
   // provenienza, che è ciò che rende ritrovabile un file di cui non si
   // ricorda il nome.
   const [sourceAssetId, setSourceAssetId] = useState(null);
+  // Le misure del file aperto: le leggono tutte e tre le rifiniture, e leggerle
+  // una volta sola costa una passata invece di tre su milioni di pixel.
+  const [stats, setStats] = useState(null);
+  const [statsReading, setStatsReading] = useState(false);
+  const [mockup, setMockup] = useState(null);
   // Cambia a ogni azione sull'editor per far rileggere al pannello la
   // posizione della selezione, che la libreria muta fuori da React.
   const [editorTick, setEditorTick] = useState(0);
+
+  // Le misure si rifanno a ogni cambio del file o del risultato: un controllo
+  // di stampa che descrive il file di prima è peggio di nessun controllo.
+  const measured = result?.blob || file;
+  useEffect(() => {
+    let alive = true;
+    setMockup(null);
+    if (!measured) {
+      setStats(null);
+      return undefined;
+    }
+    setStatsReading(true);
+    analyze(measured)
+      .then((m) => alive && setStats(m))
+      .catch((e) => {
+        console.error(e);
+        if (alive) setStats(null);
+      })
+      .finally(() => alive && setStatsReading(false));
+    return () => {
+      alive = false;
+    };
+  }, [measured]);
 
   // ─── motore nel browser ────────────────────────────────────────────────
   const engine = useEngine();
@@ -252,6 +289,64 @@ export default function App() {
       setBusy(null);
       setBusyNote(null);
       setApiState('pronta');
+    }
+  }
+
+  /** Taglia attorno al soggetto. Il calcolo è già fatto dal pannello. */
+  async function runCrop(rect) {
+    setError(null);
+    setNotice(null);
+    setBusy(t('crop.apply'));
+    const started = Date.now();
+    try {
+      const blob = await applyCrop(measured, rect);
+      // Meta proprio, non ereditato dal ritaglio dello sfondo: tenere i numeri
+      // del passaggio precedente li farebbe leggere come se fossero di questo.
+      setResult({
+        url: own(blob),
+        blob,
+        kind: 'png',
+        meta: {
+          strategy: 'crop',
+          source: stats?.image,
+          output: { w: rect.w, h: rect.h },
+          ms: Date.now() - started,
+        },
+      });
+      await library.save(blob, {
+        name: `${(file?.name || 'immagine').replace(/\.[^.]+$/, '')}-ritagliato`,
+        kind: 'png',
+        meta: { fromId: sourceAssetId, op: 'crop', aspect: s.aspect },
+      });
+      setNotice(`${rect.w}×${rect.h}`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function runMockup() {
+    setError(null);
+    setNotice(null);
+    setBusy(t('mockup.make'));
+    try {
+      const { blob } = await renderMockup(measured, {
+        shape: s.shape,
+        garment: s.garment,
+        box: stats?.box,
+      });
+      const name = `${(file?.name || 'grafica').replace(/\.[^.]+$/, '')}-${s.shape}-${s.garment}`;
+      setMockup({ url: own(blob), blob, name: `${name}.png` });
+      await library.save(blob, {
+        name,
+        kind: 'png',
+        meta: { fromId: sourceAssetId, op: 'mockup', shape: s.shape, garment: s.garment },
+      });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -633,7 +728,7 @@ export default function App() {
                         ['tempo', secs(result.meta.ms)],
                       ]
                     : [
-                        ['strategia', result.meta.strategy === 'mask' ? 'maschera' : 'diretta'],
+                        ['strategia', STRATEGIE[result.meta.strategy] || 'diretta'],
                         ['sorgente', px(result.meta.source)],
                         ['uscita', px(result.meta.output)],
                         ['la rete ha visto', px(result.meta.modelSaw)],
@@ -647,6 +742,20 @@ export default function App() {
                 </button>
               )}
             </>
+          )}
+
+          {!isEditor && tool !== 'suono' && file && (
+            <FinishPanel
+              stats={stats}
+              reading={statsReading}
+              s={s}
+              set={set}
+              busy={Boolean(busy)}
+              isVector={result?.kind === 'svg'}
+              mockup={mockup}
+              onCrop={runCrop}
+              onMockup={runMockup}
+            />
           )}
 
           <ExportPanel

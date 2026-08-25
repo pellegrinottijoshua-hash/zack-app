@@ -421,5 +421,73 @@
       "label": "Radio",
       "hint": "just talk normally"
     }
+  },
+  "finish": {
+    "title": "Before printing",
+    "help": "Three checks on the finished file: crop it around the subject, see what printing will actually do, and look at it on a garment before ordering.",
+    "needsRaster": "Open a pixel file: these measurements are read off pixels.",
+    "reading": "Measuring…"
+  },
+  "crop": {
+    "title": "Crop",
+    "help": "Crops around the subject, not around the middle of the canvas. That is why it doesn't cut heads off.",
+    "auto": "As it comes",
+    "square": "Square",
+    "portrait": "4:5",
+    "story": "9:16",
+    "wide": "16:9",
+    "apply": "Crop",
+    "saved": "{from} → {to}, {pct}% less canvas",
+    "cut": "The subject doesn't fit this shape: something will be cut off.",
+    "nothing": "The subject already fills the image: there is nothing to remove.",
+    "none": "There is no subject: remove the background first."
+  },
+  "print": {
+    "title": "Print check",
+    "help": "A file can be perfect on screen and wrong on the shirt. These are measurements, not opinions: where there is no measurement there is no warning.",
+    "garment": "Garment colour",
+    "onlyPrint": "This applies to print formats: pick one above.",
+    "verdict": {
+      "ok": "Ready to print.",
+      "attenzione": "Printable, but read this first.",
+      "errore": "This won't print well."
+    },
+    "size": {
+      "ok": "It will print {w}×{h} cm, inside a {area} cm area.",
+      "attenzione": "It will print {w}×{h} cm and won't fill the {area} cm area. We don't enlarge it: on fabric it would look soft.",
+      "errore": "It will print just {w}×{h} cm. That disappears on a chest: you need a bigger file."
+    },
+    "background": {
+      "ok": "The background is transparent: only the artwork gets printed.",
+      "attenzione": "Not a single transparent pixel: a full rectangle of ink will be printed, edges included."
+    },
+    "edges": {
+      "ok": "The edges are clean.",
+      "attenzione": "{pct}% of the artwork has half-transparent edges. Direct-to-garment printing can't do half ink: it fakes it with dots, and it shows as a halo."
+    },
+    "contrast": {
+      "ok": "Contrast {ratio}:1 on a {garment} garment: reads well.",
+      "attenzione": "Contrast {ratio}:1 on a {garment} garment: barely reads.",
+      "errore": "Contrast {ratio}:1 on a {garment} garment: practically invisible."
+    },
+    "clipped": {
+      "ok": "The artwork sits fully inside the image.",
+      "attenzione": "The artwork touches the image edge: almost always means it is already cut off."
+    },
+    "empty": {
+      "errore": "The image is empty: there is nothing to print."
+    }
+  },
+  "mockup": {
+    "title": "Mockup",
+    "help": "The artwork on the garment, at the right scale. It isn't a photo and doesn't pretend to be: it answers \"how big is it and where does it end\".",
+    "teeFront": "T-shirt front",
+    "teeBack": "T-shirt back",
+    "hoodie": "Hoodie",
+    "tote": "Tote bag",
+    "make": "Make the mockup",
+    "download": "Download the mockup",
+    "fill": "fills {pct}% of the printable area",
+    "small": "On a real garment this will look like a postage stamp: enlarge it or change format."
   }
 }

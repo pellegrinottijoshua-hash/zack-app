@@ -1996,3 +1996,94 @@ body {
 .sl-result .row {
   max-width: 220px;
 }
+
+/* ─── le tre rifiniture ──────────────────────────────────────────────────
+   Tre livelli, tre colori, e il colore non è mai l'unico segnale: ogni voce
+   dice a parole cosa succede. Un pallino verde o rosso da solo esclude chi
+   non distingue i due, e qui si parla di soldi spesi in stampa. */
+.measure {
+  margin: 6px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--grigio);
+}
+
+.verdict {
+  margin: 8px 0 0;
+  padding: 7px 10px;
+  border-left: 2px solid var(--linea-viva);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--panna);
+  background: var(--nero-3);
+}
+.verdict[data-level='ok'] {
+  border-left-color: var(--oro);
+}
+.verdict[data-level='attenzione'] {
+  border-left-color: #c98a2e;
+}
+.verdict[data-level='errore'] {
+  border-left-color: #b4523f;
+}
+
+.checks {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 7px;
+}
+.checks li {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 8px;
+  align-items: start;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--grigio);
+}
+.checks li[data-level='attenzione'],
+.checks li[data-level='errore'] {
+  color: var(--panna);
+}
+.checks .dot {
+  width: 7px;
+  height: 7px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--grigio-scuro);
+}
+.checks li[data-level='ok'] .dot {
+  background: var(--oro);
+}
+.checks li[data-level='attenzione'] .dot {
+  background: #c98a2e;
+}
+.checks li[data-level='errore'] .dot {
+  background: #b4523f;
+}
+
+.mockup-preview {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px;
+  border: 1px solid var(--linea);
+  background: var(--nero-2);
+  text-decoration: none;
+  color: var(--grigio);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.mockup-preview:hover {
+  border-color: var(--oro);
+  color: var(--panna);
+}
+.mockup-preview img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
