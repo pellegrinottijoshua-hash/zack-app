@@ -6,7 +6,11 @@ Prepara i tuoi asset. Sul tuo computer, senza mandare niente in giro.
 npm run dev
 ```
 
-`http://localhost:5173`.
+- **`http://localhost:5173/`** — la pagina di presentazione
+- **`http://localhost:5173/app/`** — lo studio
+
+Due entrate separate di proposito: la pagina che deve convincere non può
+caricare ONNX Runtime e 28 MB di modelli.
 
 ## Cos'è
 
@@ -17,6 +21,10 @@ gruppi**, e la divisione non è cosmetica:
 |---|---|
 | Scontorna · Vettorializza · Editor SVG | Immagine · Video · Suono |
 | illimitati, inclusi nei 3,99 €/mese | si paga a generazione, prezzo scritto prima |
+
+Lo scontorno include la **correzione a mano col pennello** — l'automatico
+sbaglia sempre in qualche punto — e un **ingrandimento con super-risoluzione**
+che ricostruisce il dettaglio invece di interpolare.
 
 I tre a consumo non ci sono ancora: la barra li mostra marcati «presto», perché
 nascondere metà del prodotto non aiuta nessuno a capire cosa sia.
@@ -103,6 +111,36 @@ sempre.
 
 Regola di progetto: **un controllo senza testo d'aiuto non è finito.**
 
+## Ingrandimento
+
+RealPLKSR (darktable-org, MIT, 28 MB), convoluzionale: i transformer sforano il
+limite di storage buffer di WebGPU su Metal.
+
+**Misurato, non stimato:** x4 su 300×300 impiega ~31 s a caldo. La variante x2
+è stata **tolta** perché produce la stessa uscita in quattro volte il tempo —
+tenerla sarebbe offrire un'opzione peggiore sotto ogni aspetto.
+
+Il limite è il tempo, non la memoria: **ingresso massimo 512 px di lato**,
+perché l'ingrandimento serve su asset piccoli, non su un file di stampa che è
+già grande. L'attesa stimata si dice prima.
+
+## Mobile
+
+Non tre colonne rimpicciolite: su un telefono non ci stanno. La tela prende lo
+schermo, le proprietà scorrono sotto, gli strumenti stanno in fondo a icone —
+dove arriva il pollice. L'azione principale è fissa sopra la barra. Bersagli da
+44 px, e le azioni sull'asset restano visibili invece di comparire al passaggio
+del mouse, che su un telefono non esiste.
+
+## La pagina di presentazione
+
+Struttura a **scene**: ogni sezione è alta più di uno schermo e tiene fermo un
+livello mentre si scorre. Il posto per il video AI è già dentro `Scene` —
+quando i video ci saranno si passano come attributo e la pagina non cambia.
+
+Rispetta `prefers-reduced-motion`: niente scene appiccicose per chi ha chiesto
+meno movimento.
+
 ## Come si usa
 
 **Le azioni vanno all'asset, non viceversa.** Passi il mouse su un lavoro e
@@ -150,6 +188,9 @@ src/engine/     motore nel browser
   trace.js        VTracer in WebAssembly
 src/store/      libreria e contabilità
   ledger.js       saldo in centesimi, prenota/conferma/rilascia (testato in Node)
+src/landing/    la pagina di presentazione, entrata separata
+  scrollVideo.js  la matematica del video guidato dallo scorrimento
+  copy.js         i testi, separati dai componenti
   model.js        modello puro: nomi, cartelle, tag, query (testato in Node)
   files.js        i file in OPFS
   db.js           i metadati in IndexedDB
@@ -168,7 +209,7 @@ docs/superpowers/  spec e piani
 npm test
 ```
 
-Novanta test. Coprono il vincolo di licenza, le funzioni pure del motore, la
+Centotrenta test. Coprono il vincolo di licenza, le funzioni pure del motore, la
 parità con il backend (IoU ≥ 0,98, differenza alfa media ≤ 2/255) e la
 completezza delle due lingue.
 
