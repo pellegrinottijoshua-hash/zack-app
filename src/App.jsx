@@ -19,6 +19,7 @@ import FinishPanel from './components/FinishPanel.jsx';
 import Advanced from './components/Advanced.jsx';
 import Brain from './components/Brain.jsx';
 import { kindFromFile } from './store/model.js';
+import { impacchetta, spacchetta } from './store/brainBundle.js';
 import StageBar from './components/StageBar.jsx';
 import { useSound } from './hooks/useSound.js';
 import { useBatch } from './hooks/useBatch.js';
@@ -796,6 +797,47 @@ export default function App() {
     setNotice(detto.join(' · ') || null);
   }
 
+  /**
+   * Il tasto Zack di Brain: porta via l'idea intera.
+   *
+   * È la risposta al lato debole del prodotto. `downloadAll()` salva i file ma
+   * perde la disposizione, le note e i legami — cioè il pensiero. Qui esce
+   * tutto, in un pacco che si rimette dentro.
+   */
+  async function faiPacco() {
+    setError(null);
+    try {
+      const nome = library.moodboards.find((m) => m.id === telaId)?.name || 'Brain';
+      const { blob, nomeFile } = await impacchetta(tela, library.assets, nome);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = nomeFile;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      setNotice(t('brain.packed', { file: nomeFile }));
+    } catch (e) {
+      console.error(e);
+      setError(e.message);
+    }
+  }
+
+  /** Riapre un pacco: i file tornano in libreria, la tela torna com'era. */
+  async function apriPacco(file) {
+    setError(null);
+    try {
+      const { nome, tela: dentro, entrati } = await spacchetta(file);
+      await library.refresh();
+      const board = await library.createMoodboard(nome);
+      setTelaId(board.id);
+      setTela(dentro);
+      await library.saveBrain(board.id, dentro);
+      setNotice(t('brain.unpacked', { nome, n: entrati }));
+    } catch (e) {
+      console.error(e);
+      setError(e.message);
+    }
+  }
+
   /** Ogni cambiamento si salva subito: nessuno preme "salva" su una lavagna. */
   async function cambiaTela(prossima) {
     setTela(prossima);
@@ -965,6 +1007,8 @@ export default function App() {
               onChange={cambiaTela}
               onUse={assetAction}
               onImport={importaFile}
+              onPacco={faiPacco}
+              onApriPacco={apriPacco}
             />
           ) : tool === 'suono' ? (
             <SoundLab

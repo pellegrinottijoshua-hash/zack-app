@@ -2867,3 +2867,48 @@ body {
 .brain-porta input {
   display: none;
 }
+
+/* Il tasto Zack di Brain. In Brain non c'è un file sul piano, quindi la barra
+   sopra la tela non esiste: il tasto vive nella riga dei comandi, ed è
+   comunque il più grande della schermata. */
+.brain-zack {
+  background: var(--oro-velo) !important;
+  border-color: var(--oro) !important;
+  color: var(--panna) !important;
+  padding: 9px 18px !important;
+}
+
+.brain-zack svg {
+  stroke: var(--oro);
+}
+
+.brain-zack:disabled {
+  opacity: 0.4;
+}
+
+.brain-riapri {
+  padding: 9px 12px;
+  border: 1px solid var(--linea-viva);
+  color: var(--grigio);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.brain-riapri:hover {
+  color: var(--panna);
+  border-color: var(--oro);
+}
+
+.brain-riapri input {
+  display: none;
+}
+
+/* Nessun comando della barra va a capo: un'etichetta su due righe fa crescere
+   la riga e sballa l'allineamento di tutti gli altri. */
+.brain-barra button,
+.brain-riapri {
+  white-space: nowrap;
+}

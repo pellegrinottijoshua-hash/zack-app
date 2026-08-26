@@ -564,7 +564,7 @@
       "group": "Gruppo",
       "arrow": "Freccia"
     },
-    "center": "Rimetti tutto in vista",
+    "center": "Centra tutto",
     "drawer": "Da mettere sulla tela",
     "drawerEmpty": "Tutti i lavori sono già sulla tela.",
     "notePlaceholder": "Scrivi qui",
@@ -584,6 +584,10 @@
     "libraryEmpty": "La libreria è vuota: i lavori che salvi dagli strumenti compaiono qui.",
     "import": "Porta dei file",
     "imported": "Portati dentro: {n}",
-    "refused": "{n} file di un tipo che non so tenere."
+    "refused": "{n} file di un tipo che non so tenere.",
+    "reopen": "Riapri un pacco",
+    "packed": "Pacco pronto: {file}",
+    "unpacked": "Riaperto «{nome}»: {n} lavori tornati dentro.",
+    "packHelp": "Scarica tutta l'idea — file, note, disposizione — in un solo pacco che si può rimettere dentro."
   }
 }

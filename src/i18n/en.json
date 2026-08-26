@@ -564,7 +564,7 @@
       "group": "Group",
       "arrow": "Arrow"
     },
-    "center": "Bring everything back into view",
+    "center": "Centre all",
     "drawer": "Not on the canvas yet",
     "drawerEmpty": "Every piece is already on the canvas.",
     "notePlaceholder": "Write here",
@@ -584,6 +584,10 @@
     "libraryEmpty": "The library is empty: whatever you save from the tools shows up here.",
     "import": "Bring files in",
     "imported": "Brought in: {n}",
-    "refused": "{n} files of a kind I cannot hold."
+    "refused": "{n} files of a kind I cannot hold.",
+    "reopen": "Reopen a pack",
+    "packed": "Pack ready: {file}",
+    "unpacked": "Reopened “{nome}”: {n} pieces back in.",
+    "packHelp": "Download the whole idea — files, notes, layout — as one pack you can put back."
   }
 }

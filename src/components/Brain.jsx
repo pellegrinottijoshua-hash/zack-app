@@ -70,7 +70,7 @@ function Contenuto({ item, asset, leggi }) {
   return <img src={url} alt={asset.name} draggable={false} />;
 }
 
-export default function Brain({ items, assets, leggi, onChange, onUse, onImport }) {
+export default function Brain({ items, assets, leggi, onChange, onUse, onImport, onPacco, onApriPacco }) {
   const [scelto, setScelto] = useState(null);
   const [vista, setVista] = useState({ x: 40, y: 40, z: 1 });
   const [collega, setCollega] = useState(null);
@@ -173,6 +173,29 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport 
           {t('brain.center')}
         </button>
         <span className="brain-zoom">{Math.round(vista.z * 100)}%</span>
+
+        {/* Riaprire un pacco sta accanto al tasto che li fa: chi ne ha uno lo
+            cerca qui, non in un menu impostazioni. */}
+        <label className="brain-riapri">
+          {t('brain.reopen')}
+          <input
+            type="file"
+            accept=".zip,application/zip"
+            onChange={async (e) => {
+              const f = e.target.files[0];
+              e.target.value = '';
+              if (f) await onApriPacco(f);
+            }}
+          />
+        </label>
+
+        {/* Il tasto Zack di Brain: porta via l'idea intera. In Brain non c'è
+            un file sul piano di lavoro, quindi la barra sopra la tela non
+            c'è — il tasto vive qui, dove sta il lavoro. */}
+        <button className="brain-zack" disabled={items.length === 0} onClick={onPacco}>
+          <Icon name="feather" draw />
+          {t('zack.label')}
+        </button>
       </div>
 
       <div className="brain-corpo">
