@@ -19,7 +19,7 @@
     },
     "image": {
       "label": "Immagine",
-      "help": "Genera un'immagine da una descrizione, usando i tuoi lavori come riferimento."
+      "help": "Genera un'immagine da una descrizione, usando i tuoi asset come riferimento."
     },
     "video": {
       "label": "Video",
@@ -31,7 +31,7 @@
     },
     "brain": {
       "label": "Brain",
-      "help": "La tela dove metti in ordine le idee: lavori, note colorate, gruppi e frecce."
+      "help": "La tela dove metti in ordine le idee: asset, note colorate, gruppi e frecce."
     },
     "film": {
       "label": "Filmato",
@@ -118,15 +118,15 @@
     "tooSmall": "Questa grafica è più piccola dell'area di stampa. L'ho centrata invece di ingrandirla: ingrandita si vedrebbe sgranata sul tessuto."
   },
   "library": {
-    "title": "Lavori",
+    "title": "Asset",
     "empty": "Ancora niente. Ogni cosa che crei finisce qui.",
     "downloadAll": {
       "label": "Scarica tutto",
-      "help": "Mette tutti i tuoi lavori in un unico file zip da salvare."
+      "help": "Mette tutti i tuoi asset in un unico file zip da salvare."
     },
     "delete": {
       "label": "Elimina",
-      "help": "Cancella questo lavoro. Non si può annullare."
+      "help": "Cancella questo asset. Non si può annullare."
     },
     "open": {
       "label": "Apri",
@@ -141,13 +141,13 @@
     "tag": "Tag",
     "removeTag": "Togli questo tag",
     "folder": {
-      "help": "Clicca per filtrare. Doppio clic elimina la cartella: i lavori restano, tornano fuori dalle cartelle."
+      "help": "Clicca per filtrare. Doppio clic elimina la cartella: gli asset restano, tornano fuori dalle cartelle."
     },
     "moodboard": {
-      "help": "Clicca per vedere solo i lavori di questa moodboard. Doppio clic la elimina; i lavori restano."
+      "help": "Clicca per vedere solo gli asset di questa moodboard. Doppio clic la elimina; gli asset restano."
     },
     "localWarning": "Tutto è salvato in questo browser, sul tuo computer. Svuotare i dati del sito cancella l'archivio: scarica tutto ogni tanto.",
-    "unsupported": "Questo browser non sa conservare i file in locale. I lavori si possono ancora creare e scaricare, ma non restano in archivio.",
+    "unsupported": "Questo browser non sa conservare i file in locale. Gli asset si possono ancora creare e scaricare, ma non restano in archivio.",
     "smart": {
       "recent": "Ultimi 7 giorni",
       "starred": "Preferiti",
@@ -179,13 +179,13 @@
     "none": "Deseleziona",
     "selected": "{n} scelti · {peso}",
     "delete": "Elimina {n}",
-    "confirm": "Elimino {n} lavori e libero {peso}? Non si può annullare.",
-    "help": "Scegli più lavori insieme e buttali. «Scegli i doppioni» propone gli scarti — la stessa operazione rifatta sullo stesso file — e non tocca mai preferiti, note, tag, riferimenti e lavori da cui ne sono nati altri."
+    "confirm": "Elimino {n} asset e libero {peso}? Non si può annullare.",
+    "help": "Scegli più asset insieme e buttali. «Scegli i doppioni» propone gli scarti — la stessa operazione rifatta sullo stesso file — e non tocca mai preferiti, note, tag, riferimenti e asset da cui ne sono nati altri."
   },
   "onboarding": {
     "title": "Tre cose e sei operativo",
     "step1": "Sul piano di lavoro c'è già un file di prova: una maglietta JAYL. Il tuo lo trascini nel riquadro grande, o ci clicchi sopra per sceglierlo dal computer.",
-    "step2": "Premi il tasto «Zack», in alto a destra: sotto l'etichetta c'è scritto cosa farà e quanto ci mette. Il lavoro avviene qui, sul tuo computer: nessun file viene spedito da nessuna parte.",
+    "step2": "Premi il tasto «Zack», in alto a destra: sotto l'etichetta c'è scritto cosa farà e quanto ci mette. L'elaborazione avviene qui, sul tuo computer: nessun file viene spedito da nessuna parte.",
     "step3": "Se l'automatico ha sbagliato in qualche punto, usa la Gomma per correggere a mano. Poi scegli un formato e premi Esporta.",
     "hint": "Se un comando non ti è chiaro, accendi «Spiegami» in alto a destra.",
     "action": "Ho capito, cominciamo"
@@ -235,8 +235,8 @@
       "help": "Cancella gli elementi selezionati. Annulla li riporta indietro."
     },
     "save": {
-      "label": "Salva nei lavori",
-      "help": "Mette il disegno fra i tuoi lavori, in fondo alla pagina."
+      "label": "Salva negli asset",
+      "help": "Mette il disegno fra i tuoi asset, in fondo alla pagina."
     },
     "clean": {
       "label": "Ripulisci l'SVG",
@@ -443,7 +443,7 @@
     "record": "Registra",
     "again": "Registra di nuovo",
     "stop": "Ferma",
-    "save": "Salva nei lavori",
+    "save": "Salva negli asset",
     "heard": "Ho sentito {n} colpi, a circa {bpm} al minuto.",
     "micDenied": "Non riesco ad accedere al microfono. Devi darne il permesso al browser: di solito compare un avviso vicino alla barra dell'indirizzo.",
     "giant": {
@@ -571,7 +571,7 @@
     "clear": "Togli",
     "ready": "Pronto per la stampa",
     "readyNote": "{size} · {wait}",
-    "confirmClear": "Tolgo il file dal piano di lavoro? I lavori salvati restano nella libreria."
+    "confirmClear": "Tolgo il file dal piano di lavoro? Gli asset salvati restano nella libreria."
   },
   "ready": {
     "working": "Scontorno e ingrandisco…",
@@ -606,7 +606,7 @@
   },
   "advanced": {
     "title": "Avanzati",
-    "help": "I comandi che non servono al lavoro normale. Restano aperti se li lasci aperti."
+    "help": "I comandi che non servono all'uso normale. Restano aperti se li lasci aperti."
   },
   "brain": {
     "add": {
@@ -616,28 +616,28 @@
     },
     "center": "Centra tutto",
     "drawer": "Da mettere sulla tela",
-    "drawerEmpty": "Tutti i lavori sono già sulla tela.",
+    "drawerEmpty": "Tutti gli asset sono già sulla tela.",
     "notePlaceholder": "Scrivi qui",
     "groupPlaceholder": "Come si chiama questo gruppo",
     "remove": "Togli dalla tela",
-    "lost": "Il lavoro dietro a questo oggetto non c'è più.",
+    "lost": "L'asset dietro a questo oggetto non c'è più.",
     "kind": {
-      "asset": "Lavoro",
+      "asset": "Asset",
       "nota": "Nota",
       "cerchio": "Gruppo",
       "freccia": "Freccia"
     },
-    "empty": "La tela è vuota. Metti un lavoro dal cassetto, o comincia da una nota.",
+    "empty": "La tela è vuota. Metti un asset dal cassetto, o comincia da una nota.",
     "board": "Tela",
     "newBoard": "Tela nuova",
     "newBoardName": "Come si chiama questa tela?",
-    "libraryEmpty": "La libreria è vuota: i lavori che salvi dagli strumenti compaiono qui.",
+    "libraryEmpty": "La libreria è vuota: gli asset che salvi dagli strumenti compaiono qui.",
     "import": "Porta dei file",
     "imported": "Portati dentro: {n}",
     "refused": "{n} file di un tipo che non so tenere.",
     "reopen": "Riapri un pacco",
     "packed": "Pacco pronto: {file}",
-    "unpacked": "Riaperto «{nome}»: {n} lavori tornati dentro.",
+    "unpacked": "Riaperto «{nome}»: {n} asset tornati dentro.",
     "packHelp": "Scarica tutta l'idea — file, note, disposizione — in un solo pacco che si può rimettere dentro.",
     "cat": {
       "idea": "Idea",

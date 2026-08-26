@@ -97,3 +97,54 @@ test('nessun messaggio di errore mostra gergo tecnico', () => {
     }
   }
 });
+
+// ── Una parola sola ────────────────────────────────────────────────────────
+//
+// Nel prodotto convivevano «lavoro», «asset» e «file» — e in inglese «piece»,
+// «work», «file» — per la stessa cosa. Su un utente nuovo questo costa più di
+// un bug: un bug lo segnali, un vocabolario incoerente ti fa solo sentire
+// stupido.
+//
+// La parola scelta dal committente (2026-08-27) è **asset**, in entrambe le
+// lingue. «File» resta, e non è un doppione: nomina ciò che sta sul computer
+// dell'utente, non ciò che sta in libreria.
+
+/**
+ * Le parole bandite, per lingua.
+ *
+ * Sono i *nomi* che significavano «la cosa che sta in libreria». I verbi non
+ * c'entrano — «sto lavorando», «you're working» dicono un'altra cosa — e per
+ * questo i confini di parola sono stretti.
+ */
+const BANDITE = {
+  it: /\blavor[oi]\b/i,
+  en: /\b(works?|pieces?)\b/i,
+};
+
+/**
+ * Le eccezioni, una per una, ognuna con la sua ragione.
+ *
+ * Un elenco di eccezioni lungo significherebbe che la parola è quella
+ * sbagliata. Queste due nominano **il piano su cui si lavora**, che non è un
+ * asset: è il tavolo, non ciò che ci sta sopra.
+ */
+const AMMESSE = [/piano di lavoro/i, /work surface/i];
+
+const senzaEccezioni = (testo) => AMMESSE.reduce((s, re) => s.replace(re, ''), testo);
+
+test('una parola sola per la cosa che sta in libreria: «asset»', () => {
+  for (const [lang, dict] of [
+    ['it', it],
+    ['en', en],
+  ]) {
+    for (const k of keys(dict)) {
+      const testo = senzaEccezioni(String(at(dict, k)));
+      const trovata = testo.match(BANDITE[lang]);
+      assert.equal(
+        trovata,
+        null,
+        `${lang}.${k} dice «${trovata?.[0]}»: in libreria si chiama asset.\n   → ${at(dict, k)}`,
+      );
+    }
+  }
+});

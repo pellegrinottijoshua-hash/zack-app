@@ -19,7 +19,7 @@
     },
     "image": {
       "label": "Image",
-      "help": "Generate an image from a description, using your work as reference."
+      "help": "Generate an image from a description, using your assets as reference."
     },
     "video": {
       "label": "Video",
@@ -31,7 +31,7 @@
     },
     "brain": {
       "label": "Brain",
-      "help": "The canvas where you sort your ideas out: pieces, coloured notes, groups and arrows."
+      "help": "The canvas where you sort your ideas out: assets, coloured notes, groups and arrows."
     },
     "film": {
       "label": "Video clip",
@@ -42,7 +42,7 @@
     "title": "Drop an image here",
     "hint": "PNG, JPG or WebP, large print files included. Nothing leaves this computer.",
     "vectorTitle": "Drop an image to vectorise",
-    "vectorHint": "Works better with flat colours, logos and line art than with photographs."
+    "vectorHint": "Better with flat colours, logos and line art than with photographs."
   },
   "control": {
     "quality": {
@@ -118,15 +118,15 @@
     "tooSmall": "This artwork is smaller than the print area. I centred it rather than blowing it up: enlarged, it would look grainy on fabric."
   },
   "library": {
-    "title": "Your work",
+    "title": "Assets",
     "empty": "Nothing yet. Everything you make lands here.",
     "downloadAll": {
       "label": "Download all",
-      "help": "Puts all of your work into a single zip file to save."
+      "help": "Puts all of your assets into a single zip file to save."
     },
     "delete": {
       "label": "Delete",
-      "help": "Removes this piece of work. This cannot be undone."
+      "help": "Removes this asset. This cannot be undone."
     },
     "open": {
       "label": "Open",
@@ -141,13 +141,13 @@
     "tag": "Tag",
     "removeTag": "Remove this tag",
     "folder": {
-      "help": "Click to filter. Double-click deletes the folder: your work stays, it just moves out of folders."
+      "help": "Click to filter. Double-click deletes the folder: your assets stay, they just move out of folders."
     },
     "moodboard": {
-      "help": "Click to see only this moodboard's work. Double-click deletes it; the work stays."
+      "help": "Click to see only this moodboard's assets. Double-click deletes it; the assets stay."
     },
     "localWarning": "Everything is saved in this browser, on your computer. Clearing the site's data wipes the archive: download everything now and then.",
-    "unsupported": "This browser cannot keep files locally. You can still create and download work, but it won't stay in the archive.",
+    "unsupported": "This browser cannot keep files locally. You can still create and download assets, but they won't stay in the archive.",
     "smart": {
       "recent": "Last 7 days",
       "starred": "Starred",
@@ -179,13 +179,13 @@
     "none": "Deselect",
     "selected": "{n} selected · {peso}",
     "delete": "Delete {n}",
-    "confirm": "Delete {n} pieces and free {peso}? This cannot be undone.",
-    "help": "Pick several pieces at once and throw them away. “Select duplicates” proposes the scraps — the same operation redone on the same file — and never touches favourites, notes, tags, references, or pieces that others came from."
+    "confirm": "Delete {n} assets and free {peso}? This cannot be undone.",
+    "help": "Pick several assets at once and throw them away. “Select duplicates” proposes the scraps — the same operation redone on the same file — and never touches favourites, notes, tags, references, or assets that others came from."
   },
   "onboarding": {
     "title": "Three things and you're working",
     "step1": "There's already a sample file on the work surface: a JAYL tee. Drop yours in the big frame, or click it to pick one from your computer.",
-    "step2": "Press the “Zack” button, top right: under the label it says what it will do and how long it takes. The work happens here, on your computer: no file is sent anywhere.",
+    "step2": "Press the “Zack” button, top right: under the label it says what it will do and how long it takes. The processing happens here, on your computer: no file is sent anywhere.",
     "step3": "If the automatic pass got something wrong, use the Eraser to fix it by hand. Then pick a format and press Export.",
     "hint": "If a control isn't clear, switch on “Explain” at the top right.",
     "action": "Got it, let's start"
@@ -235,8 +235,8 @@
       "help": "Removes the selected items. Undo brings them straight back."
     },
     "save": {
-      "label": "Save to your work",
-      "help": "Adds this drawing to your work, at the bottom of the page."
+      "label": "Save to your assets",
+      "help": "Adds this drawing to your assets, at the bottom of the page."
     },
     "clean": {
       "label": "Tidy the SVG",
@@ -443,7 +443,7 @@
     "record": "Record",
     "again": "Record again",
     "stop": "Stop",
-    "save": "Save to your work",
+    "save": "Save to your assets",
     "heard": "I heard {n} hits, about {bpm} a minute.",
     "micDenied": "I can't reach the microphone. You need to allow it in the browser: the prompt usually appears near the address bar.",
     "giant": {
@@ -571,7 +571,7 @@
     "clear": "Remove",
     "ready": "Print-ready",
     "readyNote": "{size} · {wait}",
-    "confirmClear": "Remove the file from the workspace? Saved works stay in the library."
+    "confirmClear": "Remove the file from the workspace? Saved assets stay in the library."
   },
   "ready": {
     "working": "Removing background and enlarging…",
@@ -616,18 +616,18 @@
     },
     "center": "Centre all",
     "drawer": "Not on the canvas yet",
-    "drawerEmpty": "Every piece is already on the canvas.",
+    "drawerEmpty": "Every asset is already on the canvas.",
     "notePlaceholder": "Write here",
     "groupPlaceholder": "What is this group called",
     "remove": "Take off the canvas",
-    "lost": "The piece behind this object is gone.",
+    "lost": "The asset behind this object is gone.",
     "kind": {
-      "asset": "Piece",
+      "asset": "Asset",
       "nota": "Note",
       "cerchio": "Group",
       "freccia": "Arrow"
     },
-    "empty": "The canvas is empty. Bring a piece over from the drawer, or start with a note.",
+    "empty": "The canvas is empty. Bring an asset over from the drawer, or start with a note.",
     "board": "Canvas",
     "newBoard": "New canvas",
     "newBoardName": "What is this canvas called?",
@@ -637,7 +637,7 @@
     "refused": "{n} files of a kind I cannot hold.",
     "reopen": "Reopen a pack",
     "packed": "Pack ready: {file}",
-    "unpacked": "Reopened “{nome}”: {n} pieces back in.",
+    "unpacked": "Reopened “{nome}”: {n} assets back in.",
     "packHelp": "Download the whole idea — files, notes, layout — as one pack you can put back.",
     "cat": {
       "idea": "Idea",
@@ -670,7 +670,7 @@
     "estraiOra": "Pull",
     "estratti": "Pulled {n} frames",
     "sfondo": "Drop the background",
-    "sfondoNota": "Works on clips shot on the cream void: the cream touching the edge goes, the cream inside the character stays.",
+    "sfondoNota": "Made for clips shot on the cream void: the cream touching the edge goes, the cream inside the character stays.",
     "tolto": "Background dropped · {n} islands kept",
     "toltoDubbio": "Background dropped, but no islands kept: look at a frame before using it.",
     "togliOraAttesa": "Remove the background — at least {s}s of waiting"
