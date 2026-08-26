@@ -1,33 +1,32 @@
 import { useEffect, useRef, useState } from 'react';
-import { timeForBlock, blockAt } from './scrollVideo.js';
+import { blockAt } from './scrollVideo.js';
 
 /**
- * Il video della home: uno solo, sempre visibile, che avanza a blocchi.
+ * Il video della home: a schermo intero, sempre visibile, cinque clip che si
+ * susseguono mentre scorrono solo le parole.
  *
- * **Non sono cinque video in cinque scene.** È un video unico che resta fermo
- * sullo schermo mentre le informazioni gli scorrono davanti: scorri una volta
- * e partono i primi cinque secondi, scorri ancora e il gesto continua. Le
- * uniche cose che si muovono davvero sono le parole.
+ * **Sono cinque video separati, non uno diviso in cinque.** Ognuno riprende
+ * dall'ultimo fotogramma del precedente, quindi il passaggio non si vede: chi
+ * scorre vede Zack fare una cosa sola dall'inizio alla fine della pagina.
+ * Erano nati come un file unico spezzato a tempo — sbagliato, perché i cinque
+ * pezzi si generano e si rifanno uno alla volta, e un file unico costringe a
+ * rimontare tutto per cambiarne uno.
  *
- * La differenza non è di effetto: con cinque video separati l'attenzione si
- * spezza a ogni scena e il personaggio riparte da capo ogni volta. Così invece
- * Zack sta facendo **una cosa sola** per tutta la pagina, e chi legge la vede
- * andare avanti.
+ * Stanno tutti nel DOM, sovrapposti, e si mostra quello del blocco corrente.
+ * L'alternativa — un `<video>` solo a cui si cambia `src` — costringe a
+ * ricaricare e decodificare a ogni passaggio, e il salto si vede proprio nel
+ * momento in cui deve essere invisibile.
  *
- * Il conto di quale blocco e a che punto sta in `scrollVideo.js`, dove i test
- * lo vedono senza browser: un blocco sbagliato non solleva niente, fa solo
- * vedere il gesto sbagliato accanto alla frase giusta.
+ * Il carico è misurato: il video attivo e il successivo si preparano davvero,
+ * gli altri non scaricano niente finché non servono. Cinque clip caricate
+ * tutte all'apertura sarebbero il peso che le due entrate separate volevano
+ * evitare.
  */
-export default function HomeVideo({ src, poster, blocchi, sezioni }) {
-  const video = useRef(null);
+export default function HomeVideo({ clip, sezioni }) {
+  const riferimenti = useRef([]);
   const [attivo, setAttivo] = useState(0);
 
   useEffect(() => {
-    const v = video.current;
-    if (!v) return undefined;
-
-    // Chi ha chiesto meno movimento vede il poster e basta: un video che si
-    // trascina sotto le dita è esattamente ciò che quell'impostazione evita.
     const calmo = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     if (calmo?.matches) return undefined;
 
@@ -35,18 +34,20 @@ export default function HomeVideo({ src, poster, blocchi, sezioni }) {
 
     const aggiorna = () => {
       frame = null;
-      const riquadri = sezioni.current
-        .filter(Boolean)
-        .map((el) => {
-          const r = el.getBoundingClientRect();
-          return { top: r.top, height: r.height };
-        });
+      const riquadri = sezioni.current.filter(Boolean).map((el) => {
+        const r = el.getBoundingClientRect();
+        return { top: r.top, height: r.height };
+      });
 
       const { indice, progresso } = blockAt(riquadri, window.innerHeight);
-      setAttivo(indice);
+      // Un blocco può non avere ancora il suo video: finché mancano, si resta
+      // sull'ultimo girato invece di mostrare un riquadro vuoto.
+      const quale = Math.min(indice, clip.length - 1);
+      setAttivo(quale);
 
-      if (!Number.isFinite(v.duration)) return;
-      const target = timeForBlock(indice, progresso, v.duration, blocchi);
+      const v = riferimenti.current[quale];
+      if (!v || !Number.isFinite(v.duration)) return;
+      const target = Math.max(0, Math.min(v.duration, progresso * v.duration));
       // Sotto un fotogramma il salto non si vede, e cercare a ogni evento di
       // scorrimento inonda il decoder: il video scatterebbe invece di scorrere.
       if (Math.abs(v.currentTime - target) > 1 / 30) v.currentTime = target;
@@ -62,7 +63,7 @@ export default function HomeVideo({ src, poster, blocchi, sezioni }) {
     window.addEventListener('scroll', programma, { passive: true });
     window.addEventListener('resize', programma);
     document.addEventListener('visibilitychange', risincronizza);
-    v.addEventListener('loadedmetadata', programma);
+    riferimenti.current.forEach((v) => v?.addEventListener('loadedmetadata', programma));
     programma();
 
     return () => {
@@ -70,28 +71,27 @@ export default function HomeVideo({ src, poster, blocchi, sezioni }) {
       window.removeEventListener('scroll', programma);
       window.removeEventListener('resize', programma);
       document.removeEventListener('visibilitychange', risincronizza);
-      v.removeEventListener('loadedmetadata', programma);
+      riferimenti.current.forEach((v) => v?.removeEventListener('loadedmetadata', programma));
     };
-  }, [blocchi, sezioni]);
+  }, [clip, sezioni]);
 
   return (
     <div className="home-video" data-blocco={attivo}>
-      <video
-        ref={video}
-        src={src}
-        poster={poster}
-        muted
-        playsInline
-        preload="auto"
-        aria-hidden="true"
-      />
-      {/* Dove si è arrivati. Non è decorazione: senza, chi scorre non sa che
-          il video sta seguendo lui, e crede che sia un'animazione qualunque. */}
-      <div className="home-tacche" aria-hidden="true">
-        {Array.from({ length: blocchi }, (_, i) => (
-          <span key={i} data-on={i <= attivo || undefined} />
-        ))}
-      </div>
+      {clip.map((c, i) => (
+        <video
+          key={c.src}
+          ref={(el) => {
+            riferimenti.current[i] = el;
+          }}
+          src={c.src}
+          poster={c.poster}
+          data-on={i === attivo || undefined}
+          muted
+          playsInline
+          preload={i === attivo || i === attivo + 1 ? 'auto' : 'none'}
+          aria-hidden="true"
+        />
+      ))}
     </div>
   );
 }

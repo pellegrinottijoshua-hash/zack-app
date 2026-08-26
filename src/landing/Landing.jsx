@@ -5,6 +5,19 @@ import HomeVideo from './HomeVideo.jsx';
 const APP_URL = '/app/';
 
 /**
+ * Le cinque clip della home, in ordine.
+ *
+ * Ognuna riprende dall'ultimo fotogramma della precedente: il passaggio non si
+ * vede, e chi scorre vede Zack fare una cosa sola per tutta la pagina. Se ne
+ * mancano, i blocchi rimasti restano sull'ultima girata invece di mostrare un
+ * riquadro vuoto — quindi si possono aggiungere una alla volta, man mano che
+ * si generano, senza toccare il resto.
+ */
+const CLIP = [
+  { src: '/hero/zack-1.mp4', poster: '/hero/zack-1.webp' },
+];
+
+/**
  * I blocchi del racconto, in ordine.
  *
  * Uno per ogni pezzo del video: il primo blocco vede i primi secondi, il
@@ -85,9 +98,10 @@ const BLOCCHI = [
 /**
  * La pagina che deve convincere.
  *
- * Struttura a scene: ognuna è alta più di uno schermo e tiene fermo un livello
- * mentre si scorre. Il posto per il video AI è già dentro `Scene` — quando i
- * video ci saranno, si passano come attributo e la pagina non cambia.
+ * Il video sta a schermo intero e non si muove mai; scorrono solo le parole,
+ * sulla metà sinistra, perché Zack vive sulla destra dell'inquadratura. Le
+ * clip sono cinque e si susseguono: ognuna riprende dall'ultimo fotogramma
+ * della precedente, quindi il passaggio non si vede.
  *
  * Regole JAYL rispettate: niente televendita, niente giustificazioni, mostrare
  * invece di dichiarare. E il payoff chiude, in corsivo.
@@ -143,12 +157,7 @@ export default function Landing() {
           Zack fa una cosa sola per tutta la pagina; le uniche cose che si
           muovono davvero sono le parole. */}
       <div className="home-racconto">
-        <HomeVideo
-          src="/hero/zack-marchio.mp4"
-          poster="/hero/zack-marchio.webp"
-          blocchi={BLOCCHI.length}
-          sezioni={sezioni}
-        />
+        <HomeVideo clip={CLIP} sezioni={sezioni} />
 
         <div className="home-testi">
           {BLOCCHI.map((b, i) => (

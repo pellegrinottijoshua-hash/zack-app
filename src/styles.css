@@ -2935,15 +2935,21 @@ body {
 /* ------------------------------------------------------------------ *
  * IL TASTO JAYL — uno stile solo, per tutti i tasti dello studio.
  *
- * Richiesta del committente: nero, contorno bianco, scritta in grassetto, e
- * al passaggio del mouse il bianco diventa oro.
+ * Dal disegno del committente: **forma ovale, contorno bianco, scritta
+ * grossa in stampatello.** L'ovale è reso con estremi semicircolari
+ * (`border-radius` oltre la metà dell'altezza) invece che con un'ellisse
+ * vera: un'ellisse vera sprecherebbe metà della sua larghezza ai lati, e su
+ * un'etichetta come «PORTA ALLA MISURA DI STAMPA» il testo uscirebbe dalla
+ * curva. Sui tasti corti — NOTA, ZACK, GRUPPO — la forma è di fatto l'ovale
+ * del disegno.
  *
- * È scritto in CSS e non ritagliato da immagini generate. La ragione non è
- * comodità: un tasto-immagine non si traduce (l'interfaccia è in due lingue),
- * non si adatta a un'etichetta più lunga, non ha uno stato disabilitato né un
- * fuoco da tastiera, pesa migliaia di volte di più, e sfoca su uno schermo
- * che non sia quello per cui è stato ritagliato. Lo stile qui sotto è
- * *esattamente* quello descritto e vale su ogni tasto insieme.
+ * Contorno bianco spesso, fondo nero, lettere panna grandi e spaziate. Sopra,
+ * bordo e lettere diventano oro insieme.
+ *
+ * È CSS e non immagini ritagliate: un tasto-immagine non si traduce (due
+ * lingue), non si adatta a un'etichetta più lunga, non ha stato disabilitato
+ * né fuoco da tastiera, e sfoca su uno schermo diverso da quello per cui è
+ * stato ritagliato.
  * ------------------------------------------------------------------ */
 :root {
   --tasto-bordo: #f5f0e8;
@@ -2958,16 +2964,24 @@ body {
 .brain-usa button,
 .brain-togli,
 .brain-chip,
-.avanzati-head {
-  border: 1px solid var(--tasto-bordo);
+.brain-categoria,
+.avanzati-head,
+.bg-testa button,
+.bg-azioni button {
+  border: 2px solid var(--tasto-bordo);
+  border-radius: 999px;
   background: var(--nero);
   color: var(--panna);
+  font-family: var(--display);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 11px 20px;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 
-/* Sopra, tutto diventa oro: bordo e scritta insieme. */
+/* Sopra, tutto diventa oro: contorno e scritta insieme. */
 .brain-barra button:hover:not(:disabled),
 .brain-riapri:hover,
 .brain-porta:hover,
@@ -2977,7 +2991,10 @@ body {
 .brain-usa button:hover,
 .brain-togli:hover,
 .brain-chip:hover,
-.avanzati-head:hover {
+.brain-categoria:hover,
+.avanzati-head:hover,
+.bg-testa button:hover,
+.bg-azioni button:hover {
   border-color: var(--oro);
   color: var(--oro);
   background: var(--nero);
@@ -2986,15 +3003,15 @@ body {
 /* Acceso: l'oro riempie appena, così si distingue da "ci sto sopra". */
 .brain-barra button[aria-pressed='true'],
 .zack-cosa[aria-expanded='true'],
-.sb-tool[aria-pressed='true'] {
+.sb-tool[aria-pressed='true'],
+.brain-categoria[aria-pressed='true'] {
   border-color: var(--oro);
   color: var(--oro);
   background: var(--oro-velo);
 }
 
-/* Spento: si vede che c'è e che non si può premere. Il bordo resta, sbiadito:
-   togliere il bordo farebbe sparire il tasto, e un comando che sparisce è un
-   comando che l'utente crede di aver sognato. */
+/* Spento: il contorno resta, sbiadito. Toglierlo farebbe sparire il tasto, e
+   un comando che sparisce è un comando che l'utente crede di aver sognato. */
 .brain-barra button:disabled,
 .zack-go:disabled {
   border-color: var(--linea-viva);
@@ -3008,6 +3025,27 @@ body {
 .brain-zack {
   border-color: var(--oro) !important;
   background: var(--oro-velo) !important;
+}
+
+/* Il cassetto della libreria: nomi lunghi, quindi allineati a sinistra e non
+   in stampatello — sono nomi di file, non comandi. */
+.brain-chip {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+  font-size: 11px;
+  padding: 8px 14px;
+  text-align: left;
+}
+
+/* La riga dei comandi va a capo invece di stringere i tasti: la forma ovale
+   ha bisogno del suo respiro, e schiacciarla la fa sembrare un rettangolo. */
+.brain-barra {
+  flex-wrap: wrap;
+}
+
+.brain-categoria {
+  justify-content: flex-start;
 }
 
 /* ---- la nota: maniglia e categoria ---- */

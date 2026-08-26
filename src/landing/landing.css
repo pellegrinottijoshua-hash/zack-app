@@ -476,62 +476,78 @@ body {
 }
 
 /* ------------------------------------------------------------------ *
- * LA HOME A BLOCCHI
+ * LA HOME: il video a schermo intero, le parole che scorrono sopra.
  *
- * Il video sta fermo e le informazioni scorrono. È una griglia a due
- * colonne: a sinistra un livello `sticky` alto quanto lo schermo, a destra
- * una colonna di testi lunga quanto serve. Scorrendo, l'unica cosa che si
- * muove davvero è la colonna di destra — e il video la segue.
+ * Il video occupa tutta la finestra e non si muove mai. Zack sta sulla metà
+ * destra dell'inquadratura, quindi i testi vivono a sinistra e non lo
+ * coprono: nessun velo, nessuna colonna che gli rubi spazio.
+ *
+ * L'unica cosa che scorre davvero è la colonna dei testi.
  * ------------------------------------------------------------------ */
 .home-racconto {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: clamp(24px, 5vw, 80px);
-  max-width: 1500px;
-  margin: 0 auto;
-  padding: 0 var(--pad, 24px);
-  align-items: start;
+  position: relative;
 }
 
+/* Il video sta appiccicato in cima e alto quanto la finestra; il margine
+   negativo rimette i testi sopra di lui invece che sotto.
+   `position: fixed` sembrava la strada ovvia ed era sbagliata: copriva anche
+   l'apertura della pagina, che sta prima del racconto e non ha niente a che
+   fare col video. */
 .home-video {
   position: sticky;
   top: 0;
   height: 100vh;
-  display: grid;
-  align-content: center;
-  justify-items: center;
+  margin-bottom: -100vh;
+  z-index: 0;
+  background: var(--nero, #111111);
+  overflow: clip;
 }
 
 .home-video video {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  max-height: 78vh;
-  object-fit: contain;
-  /* Nessun velo: qui il video non sta sotto al testo, sta accanto. Il velo
-     serviva a far leggere le parole scritte sopra — e spegneva il fondo panna
-     rendendolo grigio sporco. Accanto, il video può stare pieno. */
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  /* Il passaggio fra una clip e la successiva deve essere invisibile: le due
+     condividono il fotogramma, quindi non si dissolve — si scambia e basta.
+     Una dissolvenza qui farebbe vedere proprio la giunzione che il montaggio
+     ha eliminato. */
+  transition: none;
 }
 
-/* Dove si è arrivati. Senza, chi scorre non sa che il video sta seguendo lui
-   e lo scambia per un'animazione qualunque. */
-.home-tacche {
-  display: flex;
-  gap: 7px;
-  margin-top: 22px;
+.home-video video[data-on] {
+  opacity: 1;
 }
 
-.home-tacche span {
-  width: 34px;
-  height: 2px;
-  background: var(--linea-viva, #3d3d3a);
-  transition: background 0.3s;
+/* Il velo, dentro il video e non dietro: sta sopra le immagini e sotto le
+   parole. Messo fuori finiva sotto al video e il testo restava illeggibile.
+   Sfuma prima di arrivare a Zack, che vive sulla destra dell'inquadratura. */
+.home-video::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    95deg,
+    var(--nero, #111111) 0%,
+    rgba(17, 17, 17, 0.94) 34%,
+    rgba(17, 17, 17, 0.6) 52%,
+    rgba(17, 17, 17, 0) 78%
+  );
+  pointer-events: none;
 }
 
-.home-tacche span[data-on] {
-  background: var(--oro, #c4a35a);
+/* I testi scorrono sopra il video, sulla metà sinistra. */
+.home-testi {
+  position: relative;
+  z-index: 1;
+  width: min(46%, 620px);
+  padding: 0 clamp(20px, 4vw, 64px);
 }
 
-/* Ogni blocco è alto uno schermo: è quanto serve perché il suo pezzo di video
-   scorra per intero mentre lo si legge. */
+/* Ogni blocco è alto uno schermo: è quanto serve perché la sua clip scorra
+   per intero mentre lo si legge. */
 .home-blocco {
   min-height: 100vh;
   display: grid;
@@ -539,56 +555,34 @@ body {
   gap: 14px;
 }
 
-/* Sotto una certa larghezza le due colonne non stanno: il video va sopra e
-   resta appiccicato in alto, il testo gli scorre sotto. */
+/* Sotto una certa larghezza il testo non può stare a metà: prende tutta la
+   colonna, e il velo copre l'intera finestra perché Zack finisce dietro le
+   parole invece che accanto. */
 @media (max-width: 900px) {
-  .home-racconto {
-    grid-template-columns: 1fr;
+  .home-testi {
+    width: 100%;
   }
 
-  .home-video {
-    height: 46vh;
-    top: 0;
-    z-index: 2;
-    background: var(--nero, #111111);
-  }
-
-  .home-video video {
-    max-height: 38vh;
-  }
-
-  .home-blocco {
-    min-height: 70vh;
+  .home-video::after {
+    background: rgba(17, 17, 17, 0.84);
   }
 }
 
-/* Chi ha chiesto meno movimento vede il poster e legge in colonna: senza
-   sticky non c'è niente che si trascini sotto le dita. */
+/* Chi ha chiesto meno movimento vede il poster e legge in colonna. */
 @media (prefers-reduced-motion: reduce) {
-  .home-video {
-    position: static;
-    height: auto;
-  }
-
   .home-blocco {
     min-height: 0;
     padding: 48px 0;
   }
 }
 
-/* L'illustrazione di ogni blocco. Ferma per scelta: il video accanto è la
-   cosa che si muove, e due animazioni sullo stesso schermo si tolgono
-   attenzione a vicenda. */
+/* L'illustrazione di ogni blocco, dentro la colonna dei testi. Ferma per
+   scelta: il video dietro è la cosa che si muove, e due animazioni sullo
+   stesso schermo si tolgono attenzione a vicenda. */
 .home-figura {
-  width: min(210px, 42%);
+  width: min(180px, 40%);
   height: auto;
-  margin-top: 10px;
+  margin-top: 12px;
   mix-blend-mode: screen;
-  opacity: 0.95;
-}
-
-@media (max-width: 900px) {
-  .home-figura {
-    width: 150px;
-  }
+  opacity: 0.92;
 }
