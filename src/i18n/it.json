@@ -32,6 +32,10 @@
     "brain": {
       "label": "Brain",
       "help": "La tela dove metti in ordine le idee: lavori, note colorate, gruppi e frecce."
+    },
+    "film": {
+      "label": "Filmato",
+      "help": "Taglia una clip, estrai i fotogrammi, togli lo sfondo. Tutto sul tuo computer."
     }
   },
   "drop": {
@@ -449,7 +453,31 @@
     "radio": {
       "label": "Radio",
       "hint": "parla normalmente"
-    }
+    },
+    "fam": {
+      "whoosh": "Whoosh",
+      "impatto": "Impatto",
+      "click": "Click",
+      "vento": "Vento",
+      "passi": "Passi",
+      "ronzio": "Ronzio"
+    },
+    "par": {
+      "corpo": "Corpo",
+      "tono": "Tono",
+      "sporco": "Sporco",
+      "velocita": "Velocità",
+      "durata": "Durata"
+    },
+    "altro": "Un altro così",
+    "rec": "Batti un ritmo",
+    "stopRec": "Ferma",
+    "ritmoTrovato": "Ritmo trovato: {n} colpi",
+    "ritmoNiente": "Nessun ritmo: batti «tum tum tum» e l'effetto lo seguirà.",
+    "scordaRitmo": "Scorda il ritmo",
+    "ascolta": "Ascolta",
+    "suona": "Sta suonando…",
+    "salva": "Salva in libreria"
   },
   "finish": {
     "title": "Prima della stampa",
@@ -604,5 +632,31 @@
     },
     "arrowFrom": "Scegli da dove parte la freccia",
     "arrowTo": "Ora scegli dove arriva — Esc per uscire"
+  },
+  "film": {
+    "vuoto": "Porta un filmato",
+    "vuotoNota": "MP4, WebM o MOV. Tre gesti: taglia, estrai i fotogrammi, togli lo sfondo. Niente montaggio.",
+    "scegli": "Scegli un filmato",
+    "taglia": "Taglia e ritaglia",
+    "da": "Da",
+    "a": "A",
+    "formato": {
+      "originale": "Originale",
+      "quadrato": "Quadrato",
+      "verticale": "9:16",
+      "orizzontale": "16:9",
+      "ritratto": "4:5"
+    },
+    "tagliaOra": "Taglia — circa {s}s di attesa",
+    "tagliato": "Tagliato: {s}s",
+    "frames": "Estrai fotogrammi",
+    "quanti": "{n} fotogrammi",
+    "estraiOra": "Estrai",
+    "estratti": "Estratti {n} fotogrammi",
+    "sfondo": "Togli lo sfondo",
+    "sfondoNota": "Funziona sui filmati girati su fondo panna: il panna che tocca il bordo se ne va, quello dentro il personaggio resta.",
+    "togliOra": "Togli lo sfondo",
+    "tolto": "Sfondo tolto · {n} isole salvate",
+    "toltoDubbio": "Sfondo tolto, ma nessuna isola salvata: guarda un fotogramma prima di usarlo."
   }
 }

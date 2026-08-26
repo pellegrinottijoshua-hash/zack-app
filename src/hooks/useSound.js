@@ -141,7 +141,34 @@ export function useSound() {
     setRhythm(null);
   }, [clip]);
 
-  return { recording, clip, rhythm, error, start, stop, apply, reset };
+  /**
+   * Ascolta e consegna un effetto sintetizzato.
+   *
+   * Sta qui e non nel componente perché l'AudioContext è una risorsa di
+   * sessione: crearne uno per ogni ascolto ne lascia decine aperti, e dopo
+   * qualche decina il browser smette di darne.
+   */
+  const suona = useCallback(async (campioni, sampleRate) => {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const buf = ctx.createBuffer(1, campioni.length, sampleRate);
+    buf.copyToChannel(campioni, 0);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start();
+    await new Promise((ok) => (src.onended = ok));
+    await ctx.close();
+  }, []);
+
+  /** Lo stesso suono, come file: il WAV lo scriviamo già a mano. */
+  const comeFile = useCallback((campioni, sampleRate) => {
+    const ctx = new OfflineAudioContext(1, campioni.length, sampleRate);
+    const buf = ctx.createBuffer(1, campioni.length, sampleRate);
+    buf.copyToChannel(campioni, 0);
+    return encodeWav(buf);
+  }, []);
+
+  return { recording, clip, rhythm, error, start, stop, apply, reset, suona, comeFile };
 }
 
 /**

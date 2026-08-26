@@ -32,6 +32,10 @@
     "brain": {
       "label": "Brain",
       "help": "The canvas where you sort your ideas out: pieces, coloured notes, groups and arrows."
+    },
+    "film": {
+      "label": "Video clip",
+      "help": "Trim a clip, pull frames, drop the background. All on your computer."
     }
   },
   "drop": {
@@ -449,7 +453,31 @@
     "radio": {
       "label": "Radio",
       "hint": "just talk normally"
-    }
+    },
+    "fam": {
+      "whoosh": "Whoosh",
+      "impatto": "Impact",
+      "click": "Click",
+      "vento": "Wind",
+      "passi": "Footsteps",
+      "ronzio": "Hum"
+    },
+    "par": {
+      "corpo": "Body",
+      "tono": "Pitch",
+      "sporco": "Grit",
+      "velocita": "Speed",
+      "durata": "Length"
+    },
+    "altro": "Another like this",
+    "rec": "Tap a rhythm",
+    "stopRec": "Stop",
+    "ritmoTrovato": "Rhythm found: {n} hits",
+    "ritmoNiente": "No rhythm yet: tap “tum tum tum” and the effect will follow it.",
+    "scordaRitmo": "Forget the rhythm",
+    "ascolta": "Listen",
+    "suona": "Playing…",
+    "salva": "Save to library"
   },
   "finish": {
     "title": "Before printing",
@@ -604,5 +632,31 @@
     },
     "arrowFrom": "Pick where the arrow starts",
     "arrowTo": "Now pick where it lands — Esc to leave"
+  },
+  "film": {
+    "vuoto": "Bring a video in",
+    "vuotoNota": "MP4, WebM or MOV. Three gestures: trim, pull frames, drop the background. No editing.",
+    "scegli": "Choose a video",
+    "taglia": "Trim and crop",
+    "da": "From",
+    "a": "To",
+    "formato": {
+      "originale": "Original",
+      "quadrato": "Square",
+      "verticale": "9:16",
+      "orizzontale": "16:9",
+      "ritratto": "4:5"
+    },
+    "tagliaOra": "Trim — about {s}s of waiting",
+    "tagliato": "Trimmed: {s}s",
+    "frames": "Pull frames",
+    "quanti": "{n} frames",
+    "estraiOra": "Pull",
+    "estratti": "Pulled {n} frames",
+    "sfondo": "Drop the background",
+    "sfondoNota": "Works on clips shot on the cream void: the cream touching the edge goes, the cream inside the character stays.",
+    "togliOra": "Drop the background",
+    "tolto": "Background dropped · {n} islands kept",
+    "toltoDubbio": "Background dropped, but no islands kept: look at a frame before using it."
   }
 }

@@ -48,6 +48,15 @@ export const SERVICES = [
     ready: true,
   },
   {
+    // Tre gesti su un filmato, non un montaggio: il confine è dichiarato in
+    // `engine/clip.js` e va tenuto.
+    id: 'filmato',
+    group: GROUP_LOCAL,
+    key: 'tool.film',
+    icon: 'film',
+    ready: true,
+  },
+  {
     id: 'immagine',
     group: GROUP_PAID,
     key: 'tool.image',

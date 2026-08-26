@@ -3573,3 +3573,174 @@ body {
   width: 18px;
   height: 18px;
 }
+
+/* ── IL FILMATO: tre gesti, e nient'altro ─────────────────────────────── */
+.film {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+  padding: 12px;
+}
+
+.film-video {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+  background: transparent;
+}
+
+.film-comandi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+}
+
+.film-gesto {
+  display: grid;
+  gap: 9px;
+  align-content: start;
+  padding: 12px;
+  border: 2px solid var(--nero);
+  border-radius: 18px;
+  background: transparent;
+}
+
+.film-gesto h3 {
+  margin: 0;
+  font-family: var(--tasto-font);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--inchiostro);
+}
+
+.film-tempi label,
+.film-quanti {
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--inchiostro-2);
+}
+
+.film-quanti {
+  grid-template-columns: 1fr;
+}
+
+.film-formati {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.film-formati .btn {
+  min-height: 30px;
+  padding: 0 12px;
+  font-size: 10px;
+}
+
+.film input[type='range'] {
+  accent-color: var(--oro);
+}
+
+.film-vuoto {
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.film-vuoto img {
+  width: min(240px, 40%);
+}
+
+.film-vuoto input {
+  display: none;
+}
+
+.film-attesa {
+  margin: 0;
+  font-family: var(--tasto-font);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--oro);
+}
+
+/* ── IL LABORATORIO DEI SUONI ─────────────────────────────────────────── */
+.sound {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 16px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.sound-famiglie {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sound-manopole {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 2px solid var(--nero);
+  border-radius: 18px;
+}
+
+.sound-manopola {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--display);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--inchiostro-2);
+}
+
+.sound input[type='range'] {
+  accent-color: var(--oro);
+}
+
+.sound-ritmo,
+.sound-azioni {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.sound-nota {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--inchiostro-2);
+  flex: 1;
+  min-width: 180px;
+}
+
+/* Un tasto largo con testo lungo diventava un'ellisse alta mezza scheda: il
+   raggio a 999px su un elemento alto disegna un uovo, non una pillola. Si
+   fissa l'altezza e il testo resta su una riga. */
+.film-gesto .btn {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.film-gesto .btn svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+}

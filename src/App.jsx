@@ -19,6 +19,7 @@ import FinishPanel from './components/FinishPanel.jsx';
 import Advanced from './components/Advanced.jsx';
 import Brain from './components/Brain.jsx';
 import BatchGrid from './components/BatchGrid.jsx';
+import FilmLab from './components/FilmLab.jsx';
 import { kindFromFile } from './store/model.js';
 import { impacchetta, spacchetta } from './store/brainBundle.js';
 import StageBar from './components/StageBar.jsx';
@@ -81,6 +82,11 @@ export default function App() {
    * sola alla prima apertura — chiedere un nome prima di aver visto la tela è
    * un modulo davanti a una porta.
    */
+  /** Il filmato aperto nel servizio Filmato: non è il file del piano di
+   *  lavoro, che resta un'immagine. Tenerli separati evita che aprire una
+   *  clip butti via il ritaglio a cui si stava lavorando. */
+  const [filmato, setFilmato] = useState(null);
+
   const [telaId, setTelaId] = useState(null);
   const [tela, setTela] = useState([]);
 
@@ -1039,6 +1045,20 @@ export default function App() {
               onPacco={faiPacco}
               onApriPacco={apriPacco}
             />
+          ) : tool === 'filmato' ? (
+            <FilmLab
+              file={filmato}
+              onPick={setFilmato}
+              onSave={async (blob, { kind, op }) =>
+                library.save(blob, {
+                  name: (filmato?.name || 'filmato').replace(/\.[^.]+$/, ''),
+                  kind,
+                  meta: { op },
+                })
+              }
+              onNotice={setNotice}
+              onError={setError}
+            />
           ) : tool === 'suono' ? (
             <SoundLab
               sound={sound}
@@ -1089,11 +1109,18 @@ export default function App() {
           )}
         </section>
 
-        <aside className="rail" data-vuota={tool === 'brain' || undefined}>
+        <aside
+          className="rail"
+          /* Brain, Suono e Filmato hanno i loro comandi sulla tela, dove si
+             guarda. Senza questo la colonna mostrava i comandi del vettoriale
+             accanto al laboratorio dei suoni: un pannello che parla di
+             un'altra cosa è peggio di un pannello vuoto. */
+          data-vuota={['brain', 'suono', 'filmato'].includes(tool) || undefined}
+        >
           {/* Brain non ha comandi in colonna: i suoi stanno sulla tela, dove
               si guarda. Una colonna di comandi spenti accanto a una lavagna è
               esattamente il rumore che la regola §6.1 vuole togliere. */}
-          {tool === 'brain' ? null : isEditor ? (
+          {['brain', 'suono', 'filmato'].includes(tool) ? null : isEditor ? (
             <>
               <VectorTools
                 editor={editorRef}
