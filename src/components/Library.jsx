@@ -53,6 +53,39 @@ export default function Library({ store, open, big, onToggleBig, onToggle, onOpe
   const [tagFor, setTagFor] = useState(null);
   const [tagDraft, setTagDraft] = useState('');
 
+  /**
+   * La potatura.
+   *
+   * In una sessione di prova sono finiti in archivio 128 lavori e 645 MB,
+   * quasi tutti scarti, e non c'era modo di sceglierne dieci e buttarli. Da
+   * qui in poi si può — ma solo entrando in una modalità apposta: mettere una
+   * spunta su ogni lavoro in permanenza avrebbe fatto della libreria un
+   * modulo da compilare invece di un archivio da guardare.
+   *
+   * «Togli i doppioni» **non cancella**: seleziona. Chi sta per buttare
+   * cinquanta file deve vederli prima, e vedere quanto spazio libera.
+   */
+  const [potatura, setPotatura] = useState(false);
+  const [scelti, setScelti] = useState(() => new Set());
+
+  const chiudiPotatura = () => {
+    setPotatura(false);
+    setScelti(new Set());
+  };
+
+  const commutaScelto = (id) =>
+    setScelti((prima) => {
+      const dopo = new Set(prima);
+      if (dopo.has(id)) dopo.delete(id);
+      else dopo.add(id);
+      return dopo;
+    });
+
+  const scegliDoppioni = () => {
+    const ids = store.doppioni().flatMap((g) => g.scarti.map((a) => a.id));
+    setScelti(new Set(ids));
+  };
+
   const f = store.filter;
   const set = (patch) => store.setFilter({ ...f, ...patch });
 
@@ -92,6 +125,19 @@ export default function Library({ store, open, big, onToggleBig, onToggle, onOpe
             }}
           >
             {big ? t('library.shrink') : t('library.expand')}
+          </button>
+        )}
+        {open && store.assets.length > 0 && (
+          <button
+            className="btn ghost small"
+            aria-pressed={potatura}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (potatura) chiudiPotatura();
+              else setPotatura(true);
+            }}
+          >
+            {potatura ? t('prune.exit') : t('prune.enter')}
           </button>
         )}
         {store.assets.length > 0 && (
@@ -219,12 +265,61 @@ export default function Library({ store, open, big, onToggleBig, onToggle, onOpe
               {store.usage.used != null && ` · ${size(store.usage.used)}`}
             </p>
 
+            {potatura && (
+              <div className="lib-potatura" onClick={(e) => e.stopPropagation()}>
+                <p className="help">{t('prune.help')}</p>
+                <button className="btn ghost small" onClick={scegliDoppioni}>
+                  {t('prune.duplicates')}
+                </button>
+                <button
+                  className="btn ghost small"
+                  disabled={scelti.size === 0}
+                  onClick={() => setScelti(new Set())}
+                >
+                  {t('prune.none')}
+                </button>
+                <span className="lib-potatura-conto">
+                  {t('prune.selected', { n: scelti.size, peso: size(store.pesoDi(scelti)) })}
+                </span>
+                {/* Un solo passo di conferma, e dice **cosa** sparisce e
+                    **quanto** libera: la cancellazione non si annulla, e un
+                    «sei sicuro?» senza numeri non aiuta a essere sicuri. */}
+                <button
+                  className="btn small danger"
+                  disabled={scelti.size === 0}
+                  onClick={async () => {
+                    const quanti = scelti.size;
+                    const peso = size(store.pesoDi(scelti));
+                    if (!window.confirm(t('prune.confirm', { n: quanti, peso }))) return;
+                    await store.removeMany([...scelti]);
+                    setScelti(new Set());
+                  }}
+                >
+                  {t('prune.delete', { n: scelti.size })}
+                </button>
+              </div>
+            )}
+
             {store.visible.length === 0 ? (
               <p className="empty-strip">{t('library.empty')}</p>
             ) : (
               <div className="strip" onClick={(e) => e.stopPropagation()}>
                 {store.visible.map((item) => (
-                  <figure className="work" key={item.id}>
+                  <figure
+                    className="work"
+                    key={item.id}
+                    data-scelto={(potatura && scelti.has(item.id)) || undefined}
+                  >
+                    {potatura && (
+                      <label className="work-scelta">
+                        <input
+                          type="checkbox"
+                          checked={scelti.has(item.id)}
+                          onChange={() => commutaScelto(item.id)}
+                        />
+                        <span className="sr-only">{item.name}</span>
+                      </label>
+                    )}
                     <Thumb item={item} read={store.read} />
                     <AssetActions
                       item={item}

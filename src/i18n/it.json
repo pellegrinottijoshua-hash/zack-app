@@ -172,6 +172,16 @@
     "carica": "Prova con un esempio",
     "nota": "File di prova: una maglietta JAYL su fondo bianco."
   },
+  "prune": {
+    "enter": "Pota",
+    "exit": "Fatto",
+    "duplicates": "Scegli i doppioni",
+    "none": "Deseleziona",
+    "selected": "{n} scelti · {peso}",
+    "delete": "Elimina {n}",
+    "confirm": "Elimino {n} lavori e libero {peso}? Non si può annullare.",
+    "help": "Scegli più lavori insieme e buttali. «Scegli i doppioni» propone gli scarti — la stessa operazione rifatta sullo stesso file — e non tocca mai preferiti, note, tag, riferimenti e lavori da cui ne sono nati altri."
+  },
   "onboarding": {
     "title": "Tre cose e sei operativo",
     "step1": "Sul piano di lavoro c'è già un file di prova: una maglietta JAYL. Il tuo lo trascini nel riquadro grande, o ci clicchi sopra per sceglierlo dal computer.",

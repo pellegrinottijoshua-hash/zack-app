@@ -355,9 +355,18 @@ body {
   color: var(--inchiostro-2);
 }
 
+/* Il passaggio del mouse su un tasto secondario.
+ *
+ * Diceva `color: var(--inchiostro)` — nero — da quando i tasti secondari erano
+ * scritte scure su fondo panna. Con la palette invertita il fondo del tasto è
+ * diventato nero anche lui, e la regola più specifica vinceva: nero su nero,
+ * su OGNI tasto secondario del prodotto, ogni volta che ci si passava sopra
+ * (visto guardando i pixel, 2026-08-27). Ora il secondario si accende come il
+ * primario — pillola nera, scritta oro — che è la sola cosa che il resto
+ * dell'interfaccia fa già. */
 .btn.ghost:hover:not(:disabled) {
-  color: var(--inchiostro);
-  border-color: var(--inchiostro-2);
+  color: var(--oro);
+  border-color: var(--oro);
 }
 
 .btn.small {
@@ -2336,6 +2345,75 @@ body {
   align-items: center;
   gap: 2px;
   line-height: 1.2;
+}
+
+/* ── Potare la libreria ─────────────────────────────────────────────────
+ *
+ * La modalità si accende da un tasto e si spegne: fuori di lì la libreria
+ * resta un archivio da guardare, non un modulo da compilare. */
+.lib-potatura {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--linea-viva);
+  background: var(--fondo-2);
+}
+
+.lib-potatura .help {
+  flex-basis: 100%;
+  margin: 0 0 2px;
+}
+
+.lib-potatura-conto {
+  margin-left: auto;
+  font-family: var(--display);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--inchiostro);
+}
+
+/* La spunta sta sul lavoro, in alto a sinistra, e il lavoro scelto si vede
+ * anche senza guardarla: il colore non è mai l'unico segnale, e nemmeno una
+ * casella da sei pixel in un angolo. */
+.work-scelta {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  background: var(--fondo);
+  border: 1px solid var(--linea-viva);
+  cursor: pointer;
+}
+
+.work-scelta input {
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--oro);
+}
+
+.work[data-scelto] {
+  outline: 2px solid var(--oro);
+  outline-offset: -2px;
+}
+
+.work[data-scelto] .thumb {
+  opacity: 0.55;
+}
+
+/* Un'etichetta che serve solo a chi legge con la voce. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* Il conto del blocco nella barra di stato: acceso solo mentre gira, e in

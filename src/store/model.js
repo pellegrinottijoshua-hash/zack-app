@@ -284,3 +284,94 @@ export function normalizeTag(tag) {
   const t = String(tag || '').trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 30);
   return t || null;
 }
+
+/**
+ * ── POTARE LA LIBRERIA ────────────────────────────────────────────────────
+ *
+ * In una sessione di prova sono finiti dentro 128 lavori e 645 MB, quasi tutti
+ * scarti: la stessa maglietta scontornata undici volte per guardare un bordo.
+ * Non c'era modo di sceglierne dieci e buttarli, né di vedere cosa occupava
+ * spazio. Fra tre mesi d'uso vero è un archivio che nessuno apre più.
+ */
+
+/**
+ * Cosa rende due lavori *lo stesso lavoro*.
+ *
+ * Non il contenuto — confrontare i byte di 645 MB dentro il browser è una
+ * scansione che blocca la scheda. La chiave è ciò che rende un doppione un
+ * doppione **nel modo in cui nascono davvero qui**: la stessa operazione,
+ * sullo stesso file di partenza, con lo stesso peso esatto. Rifare due volte
+ * lo stesso scontorno sullo stesso file dà esattamente questo.
+ *
+ * Un peso uguale per caso fra due file diversi esiste; un peso uguale **e**
+ * la stessa origine **e** la stessa operazione, no.
+ */
+export function chiaveDoppione(a) {
+  return [a.kind, a.bytes, a.fromId || '', a.meta?.op || '', a.meta?.preset || ''].join('|');
+}
+
+/**
+ * Un lavoro che non si tocca, per quanto duplicato sia.
+ *
+ * È la parte che conta più dell'algoritmo: chi propone di cancellare deve
+ * sbagliare per difetto. Un preferito, una nota scritta a mano, un
+ * riferimento dentro una moodboard e un lavoro da cui ne è nato un altro
+ * sono tutte prove che qualcuno ci ha messo le mani.
+ */
+export function intoccabile(asset, derivati = new Set()) {
+  return Boolean(
+    asset.starred ||
+      (asset.note || '').trim() ||
+      (asset.moodboardIds || []).length > 0 ||
+      (asset.tags || []).length > 0 ||
+      derivati.has(asset.id),
+  );
+}
+
+/**
+ * I doppioni da proporre, raggruppati.
+ *
+ * Di ogni gruppo si **tiene il più vecchio** e si propongono gli altri: il più
+ * vecchio è quello che gli altri lavori possono citare come origine, ed è
+ * anche quello che l'utente ricorda di aver fatto. Un gruppo in cui tutto è
+ * intoccabile non compare affatto.
+ *
+ * Non cancella niente: restituisce una proposta. La cancellazione è un gesto
+ * dell'utente, e deve vedere cosa sta per sparire prima di farlo.
+ *
+ * @returns {{tenuto: object, scarti: object[]}[]}
+ */
+export function doppioni(assets = []) {
+  const derivati = new Set(assets.map((a) => a.fromId).filter(Boolean));
+  const gruppi = new Map();
+
+  for (const a of assets) {
+    // Un lavoro senza peso non si confronta: peso zero significa che non
+    // sappiamo quanto pesa, non che è vuoto.
+    if (!a.bytes) continue;
+    const k = chiaveDoppione(a);
+    if (!gruppi.has(k)) gruppi.set(k, []);
+    gruppi.get(k).push(a);
+  }
+
+  const out = [];
+  for (const gruppo of gruppi.values()) {
+    if (gruppo.length < 2) continue;
+    const ordinati = [...gruppo].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    const tenuto = ordinati[0];
+    const scarti = ordinati.slice(1).filter((a) => !intoccabile(a, derivati));
+    if (scarti.length) out.push({ tenuto, scarti });
+  }
+  // I gruppi che liberano più spazio per primi: è l'ordine in cui uno guarda
+  // una proposta di potatura.
+  return out.sort(
+    (x, y) =>
+      y.scarti.reduce((n, a) => n + a.bytes, 0) - x.scarti.reduce((n, a) => n + a.bytes, 0),
+  );
+}
+
+/** Quanto spazio libererebbe una selezione di lavori. */
+export function pesoDi(assets, ids) {
+  const set = ids instanceof Set ? ids : new Set(ids);
+  return assets.filter((a) => set.has(a.id)).reduce((n, a) => n + (a.bytes || 0), 0);
+}

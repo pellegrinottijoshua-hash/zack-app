@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as lib from '../store/library.js';
-import { queryAssets, allTags, folderPath, smartCollections, lineage, derivedFrom } from '../store/model.js';
+import {
+  queryAssets,
+  allTags,
+  folderPath,
+  smartCollections,
+  lineage,
+  derivedFrom,
+  doppioni,
+  pesoDi,
+} from '../store/model.js';
 
 /**
  * La libreria vista da React.
@@ -88,6 +97,28 @@ export function useLibrary() {
     pathOf: (id) => folderPath(folders, id),
     read: lib.readAsset,
     remove: act(lib.deleteAsset),
+    /**
+     * Cancella molti lavori con un solo ricarico della libreria.
+     *
+     * Passare cento volte da `remove` significherebbe cento istantanee
+     * dell'archivio: la potatura è il gesto che tocca più lavori insieme, ed è
+     * anche quello che deve sembrare istantaneo. Un fallimento su uno non
+     * ferma gli altri — chi ha chiesto di buttare cinquanta scarti non vuole
+     * ritrovarne quaranta perché il decimo era già sparito.
+     */
+    removeMany: useCallback(
+      async (ids) => {
+        for (const id of ids) {
+          try {
+            await lib.deleteAsset(id);
+          } catch {
+            // Già sparito, o file irraggiungibile: si va avanti.
+          }
+        }
+        await refresh();
+      },
+      [refresh],
+    ),
     update: act(lib.updateAsset),
     addTag: act(lib.addTag),
     removeTag: act(lib.removeTag),
@@ -96,6 +127,8 @@ export function useLibrary() {
     setNote: act(lib.setNote),
     toggleStar: act(lib.toggleStar),
     lineageOf: (id) => lineage(assets, id),
+    doppioni: () => doppioni(assets),
+    pesoDi: (ids) => pesoDi(assets, ids),
     derivedOf: (id) => derivedFrom(assets, id),
     deleteFolder: act(lib.deleteFolder),
     createMoodboard: act(lib.createMoodboard),

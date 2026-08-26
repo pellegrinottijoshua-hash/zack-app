@@ -13,6 +13,8 @@ import {
   normalizeTag,
   isHex,
   newId,
+  doppioni,
+  pesoDi,
 } from '../src/store/model.js';
 
 // Sorgenti deterministiche: un test che dipende dal caso non è un test.
@@ -254,4 +256,87 @@ test('le raccolte pronte contano quello che serve davvero', () => {
   assert.equal(byId.recenti, 2);
   assert.equal(byId.preferiti, 1);
   assert.equal(byId.riferimenti, 1);
+});
+
+// ── Potare la libreria ─────────────────────────────────────────────────────
+//
+// In una sessione di prova sono finiti dentro 128 lavori e 645 MB, quasi tutti
+// scarti. Questi test proteggono la regola che conta più dell'algoritmo: chi
+// propone di cancellare deve sbagliare per difetto.
+
+const lav = (over = {}) => ({
+  id: 'x',
+  name: 'a.png',
+  kind: 'png',
+  bytes: 1000,
+  fromId: null,
+  tags: [],
+  moodboardIds: [],
+  note: '',
+  starred: false,
+  createdAt: '2026-08-01T00:00:00.000Z',
+  meta: {},
+  ...over,
+});
+
+test('due scontorni identici sullo stesso file sono un doppione', () => {
+  const a = lav({ id: 'a', fromId: 'src', meta: { op: 'remove-bg' }, createdAt: '2026-08-01T00:00:00.000Z' });
+  const b = lav({ id: 'b', fromId: 'src', meta: { op: 'remove-bg' }, createdAt: '2026-08-02T00:00:00.000Z' });
+  const gruppi = doppioni([a, b]);
+  assert.equal(gruppi.length, 1);
+  assert.equal(gruppi[0].tenuto.id, 'a', 'si tiene il più vecchio: è quello che gli altri citano');
+  assert.deepEqual(gruppi[0].scarti.map((x) => x.id), ['b']);
+});
+
+test('stesso peso ma origine diversa non è un doppione', () => {
+  // Un peso uguale per caso esiste; un peso uguale E la stessa origine E la
+  // stessa operazione, no.
+  const a = lav({ id: 'a', fromId: 'uno', meta: { op: 'remove-bg' } });
+  const b = lav({ id: 'b', fromId: 'due', meta: { op: 'remove-bg' } });
+  assert.deepEqual(doppioni([a, b]), []);
+});
+
+test('un preferito non si propone mai per la cancellazione', () => {
+  const a = lav({ id: 'a', fromId: 's', createdAt: '2026-08-01T00:00:00.000Z' });
+  const b = lav({ id: 'b', fromId: 's', starred: true, createdAt: '2026-08-02T00:00:00.000Z' });
+  assert.deepEqual(doppioni([a, b]), []);
+});
+
+test('una nota, un tag o una moodboard sono prove che qualcuno ci ha messo le mani', () => {
+  const base = { fromId: 's', createdAt: '2026-08-02T00:00:00.000Z' };
+  const vecchio = lav({ id: 'a', fromId: 's', createdAt: '2026-08-01T00:00:00.000Z' });
+  for (const prova of [{ note: 'la buona' }, { tags: ['stampa'] }, { moodboardIds: ['m1'] }]) {
+    assert.deepEqual(doppioni([vecchio, lav({ id: 'b', ...base, ...prova })]), [], JSON.stringify(prova));
+  }
+});
+
+test('un lavoro da cui ne è nato un altro non si butta', () => {
+  const a = lav({ id: 'a', fromId: 's', createdAt: '2026-08-01T00:00:00.000Z' });
+  const b = lav({ id: 'b', fromId: 's', createdAt: '2026-08-02T00:00:00.000Z' });
+  const figlio = lav({ id: 'c', fromId: 'b', bytes: 50, createdAt: '2026-08-03T00:00:00.000Z' });
+  assert.deepEqual(doppioni([a, b, figlio]), [], 'b è la radice di c: cancellarlo spezzerebbe la provenienza');
+});
+
+test('un lavoro senza peso non si confronta', () => {
+  // Peso zero significa che non sappiamo quanto pesa, non che è vuoto.
+  const a = lav({ id: 'a', bytes: 0, fromId: 's' });
+  const b = lav({ id: 'b', bytes: 0, fromId: 's' });
+  assert.deepEqual(doppioni([a, b]), []);
+});
+
+test('i gruppi arrivano ordinati per spazio liberato', () => {
+  const g = (id, from, bytes, giorno) =>
+    lav({ id, fromId: from, bytes, createdAt: `2026-08-0${giorno}T00:00:00.000Z` });
+  const gruppi = doppioni([
+    g('a1', 'p', 100, 1), g('a2', 'p', 100, 2),
+    g('b1', 'q', 900, 1), g('b2', 'q', 900, 2),
+  ]);
+  assert.deepEqual(gruppi.map((x) => x.tenuto.id), ['b1', 'a1']);
+});
+
+test('il peso di una selezione è la somma dei suoi lavori', () => {
+  const assets = [lav({ id: 'a', bytes: 10 }), lav({ id: 'b', bytes: 32 }), lav({ id: 'c', bytes: 5 })];
+  assert.equal(pesoDi(assets, ['a', 'b']), 42);
+  assert.equal(pesoDi(assets, []), 0);
+  assert.equal(pesoDi(assets, new Set(['c'])), 5);
 });

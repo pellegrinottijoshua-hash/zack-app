@@ -172,6 +172,16 @@
     "carica": "Try it with a sample",
     "nota": "Sample file: a JAYL tee on a white background."
   },
+  "prune": {
+    "enter": "Prune",
+    "exit": "Done",
+    "duplicates": "Select duplicates",
+    "none": "Deselect",
+    "selected": "{n} selected · {peso}",
+    "delete": "Delete {n}",
+    "confirm": "Delete {n} pieces and free {peso}? This cannot be undone.",
+    "help": "Pick several pieces at once and throw them away. “Select duplicates” proposes the scraps — the same operation redone on the same file — and never touches favourites, notes, tags, references, or pieces that others came from."
+  },
   "onboarding": {
     "title": "Three things and you're working",
     "step1": "There's already a sample file on the work surface: a JAYL tee. Drop yours in the big frame, or click it to pick one from your computer.",
