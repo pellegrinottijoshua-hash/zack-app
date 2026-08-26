@@ -150,3 +150,17 @@ test('senza documenti la sezione non compare', () => {
   const testo = scriviIdee(manifesto(items, [asset('a1', 'tappeto')], { quando }));
   assert.ok(!testo.includes('## Documenti'));
 });
+
+test('un documento dentro un gruppo si annuncia col titolo, non con «md»', () => {
+  // È la riga che chi legge incontra per prima, prima della sezione
+  // «Documenti»: «the-rug-bible — md» dice due volte niente.
+  const gruppo = nuovoCerchio({ titolo: 'The Rug', x: 0, y: 0, w: 400, h: 400, rand });
+  const md = nuovoAsset({ assetId: 'd1', x: 40, y: 40, rand });
+  const testo = scriviIdee(
+    manifesto([gruppo, md], [doc('d1', 'the-rug-bible')], {
+      quando,
+      testi: { d1: '# The Rug — episodio 1\n' },
+    }),
+  );
+  assert.match(testo, /\*\*The Rug — episodio 1\*\* — documento/);
+});

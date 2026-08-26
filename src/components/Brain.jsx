@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
-import { KIND_AUDIO, KIND_VIDEO, kindFromFile } from '../store/model.js';
+import { KIND_AUDIO, KIND_VIDEO, KIND_TESTO, ICONE_DOCUMENTO, iconaDocumento, anteprimaTesto, kindFromFile } from '../store/model.js';
 import {
   nuovoAsset,
   nuovaNota,
@@ -68,11 +68,142 @@ function Contenuto({ item, asset, leggi }) {
     );
   }
   if (KIND_VIDEO.includes(asset.kind)) return <video src={url} controls preload="metadata" />;
+  if (KIND_TESTO.includes(asset.kind)) return <SchedaDocumento asset={asset} leggi={leggi} />;
   return <img src={url} alt={asset.name} draggable={false} />;
 }
 
-export default function Brain({ items, assets, leggi, onChange, onUse, onImport, onPacco, onApriPacco }) {
+/**
+ * Un documento sulla tela: la scheda chiusa.
+ *
+ * Mostra l'icona scelta, il nome e da dove comincia il testo — non tutto. Il
+ * tetto sta in `anteprimaTesto`, ed è dichiarato: una bibbia da 200 KB dentro
+ * un riquadro di 200 px non è illeggibile, è una tela che si impianta.
+ *
+ * Non prova a somigliare a un markdown reso: sulla tela conta **riconoscerlo**
+ * fra venti altri, e per questo bastano un'icona e tre righe. La lettura vera
+ * è l'editor, e ci si arriva con un doppio clic.
+ */
+function SchedaDocumento({ asset, leggi }) {
+  const [testo, setTesto] = useState(null);
+
+  useEffect(() => {
+    let vivo = true;
+    leggi(asset.id)
+      .then(({ file }) => file.text())
+      .then((txt) => vivo && setTesto(txt));
+    return () => {
+      vivo = false;
+    };
+  }, [asset, leggi]);
+
+  return (
+    <div className="brain-doc">
+      <span className="brain-doc-testa">
+        <Icon name={iconaDocumento(asset)} />
+        <b>{asset.name}</b>
+      </span>
+      <pre>{testo === null ? '' : anteprimaTesto(testo)}</pre>
+      <span className="brain-doc-apri">{t('brain.doc.open')}</span>
+    </div>
+  );
+}
+
+/**
+ * Il documento aperto: si legge intero, e si scrive.
+ *
+ * Copre la tela per intero, e questa è l'unica eccezione alla regola «gli
+ * strumenti non coprono la tela» — perché qui il documento **è** il lavoro,
+ * non un comando che gli sta accanto. Leggere una bibbia di serie dentro un
+ * riquadro di 200 px sarebbe leggere da una feritoia.
+ *
+ * Salva sopra lo stesso asset, non ne crea uno nuovo: vedi `sovrascriviAsset`.
+ * E salva **su richiesta**, non a ogni tasto: un salvataggio automatico su un
+ * documento di 200 KB significa riscrivere 200 KB in OPFS a ogni lettera.
+ */
+function Documento({ asset, leggi, onSalva, onScarica, onChiudi }) {
+  const [testo, setTesto] = useState(null);
+  const [partenza, setPartenza] = useState('');
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    let vivo = true;
+    leggi(asset.id)
+      .then(({ file }) => file.text())
+      .then((txt) => {
+        if (!vivo) return;
+        setTesto(txt);
+        setPartenza(txt);
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [asset, leggi]);
+
+  const sporco = testo !== null && testo !== partenza;
+
+  // Esc chiude, ma non butta via il lavoro non salvato senza chiedere: un
+  // documento perso per un tasto premuto di sfuggita è il difetto che fa
+  // smettere di usare uno strumento.
+  useEffect(() => {
+    const esc = (e) => {
+      if (e.key !== 'Escape') return;
+      if (sporco && !window.confirm(t('brain.doc.perdere'))) return;
+      onChiudi();
+    };
+    document.addEventListener('keydown', esc);
+    return () => document.removeEventListener('keydown', esc);
+  }, [sporco, onChiudi]);
+
+  async function salva() {
+    setSalvando(true);
+    try {
+      await onSalva(asset.id, testo);
+      setPartenza(testo);
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <div className="brain-documento" role="dialog" aria-modal="true" aria-label={asset.name}>
+      <div className="brain-doc-barra">
+        <Icon name={iconaDocumento(asset)} />
+        <b>{asset.name}</b>
+        {sporco && <span className="brain-doc-sporco">{t('brain.doc.nonSalvato')}</span>}
+        <span className="brain-spazio" />
+        <button className="btn ghost small" onClick={() => onScarica(asset)}>
+          {t('library.download')}
+        </button>
+        <button className="btn small" disabled={!sporco || salvando} onClick={salva}>
+          {salvando ? t('brain.doc.salvando') : t('brain.doc.salva')}
+        </button>
+        <button
+          className="btn ghost small"
+          onClick={() => {
+            if (sporco && !window.confirm(t('brain.doc.perdere'))) return;
+            onChiudi();
+          }}
+        >
+          {t('batch.close')}
+        </button>
+      </div>
+      <textarea
+        className="brain-doc-testo"
+        value={testo ?? ''}
+        readOnly={testo === null}
+        spellCheck={false}
+        onChange={(e) => setTesto(e.target.value)}
+      />
+    </div>
+  );
+}
+
+export default function Brain({ items, assets, leggi, onChange, onUse, onImport, onPacco, onApriPacco, onSalvaDoc, onIcona, onFoto, onScarica }) {
   const [scelto, setScelto] = useState(null);
+  /* Il documento aperto a tutto schermo sopra la tela. Non è un secondo
+     stato del prodotto: è una lettura, e si chiude con Esc come ogni altro
+     pannello che copre il lavoro. */
+  const [aperto, setAperto] = useState(null);
   const [vista, setVista] = useState({ x: 40, y: 40, z: 1 });
   const [collega, setCollega] = useState(null);
   const piano = useRef(null);
@@ -193,6 +324,14 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
         {/* Il tasto Zack di Brain: porta via l'idea intera. In Brain non c'è
             un file sul piano di lavoro, quindi la barra sopra la tela non
             c'è — il tasto vive qui, dove sta il lavoro. */}
+        {/* La fotografia della tela. Sta accanto al pacco perché sono la
+            stessa famiglia di gesti — portarsi via ciò che si è fatto — ma
+            sono due cose diverse, e la misura lo dice: il pacco si rimette
+            dentro, l'immagine si guarda e si manda a qualcuno. */}
+        <button className="brain-foto" disabled={items.length === 0} onClick={onFoto}>
+          {t('brain.foto')}
+        </button>
+
         <button className="brain-zack" disabled={items.length === 0} onClick={onPacco}>
           <Icon name="feather" draw />
           {t('zack.label')}
@@ -213,7 +352,7 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
             <input
               type="file"
               multiple
-              accept="image/png,image/jpeg,image/svg+xml,audio/wav,audio/mpeg,video/mp4,video/webm"
+              accept="image/png,image/jpeg,image/svg+xml,audio/wav,audio/mpeg,video/mp4,video/webm,.md,.markdown,text/markdown"
               onChange={async (e) => {
                 const scelti = [...e.target.files];
                 e.target.value = '';
@@ -319,6 +458,13 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
                     height: o.h,
                     '--tinta': o.colore || undefined,
                   }}
+                  onDoubleClick={() => {
+                    // Il doppio clic apre il documento. Sugli altri oggetti non
+                    // fa niente: un'immagine si guarda già, e aprirla a tutto
+                    // schermo sarebbe una lente, non una lettura.
+                    const a = o.t === 'asset' ? perId.get(o.assetId) : null;
+                    if (a && KIND_TESTO.includes(a.kind)) setAperto(a);
+                  }}
                   onPointerDown={(e) => {
                     if (collega) {
                       // Due clic: il primo sceglie da dove, il secondo dove.
@@ -411,13 +557,47 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
               </div>
             )}
 
+            {/* L'icona di un documento. Su una tela con venti documenti è
+                l'unica cosa che si legge senza avvicinarsi — il nome no, è
+                troppo piccolo, e sono tutti .md. */}
+            {assetScelto && KIND_TESTO.includes(assetScelto.kind) && (
+              <div className="brain-icone">
+                {ICONE_DOCUMENTO.map((nome) => (
+                  <button
+                    key={nome}
+                    className="brain-icona"
+                    aria-pressed={iconaDocumento(assetScelto) === nome}
+                    aria-label={nome}
+                    onClick={() => onIcona(assetScelto.id, nome)}
+                  >
+                    <Icon name={nome} />
+                  </button>
+                ))}
+              </div>
+            )}
+
             {assetScelto && (
               <div className="brain-usa">
                 {/* Il ponte verso gli strumenti: da qui il lavoro finisce
-                    sul piano senza passare dalla libreria. */}
-                <button onClick={() => onUse('cutout', assetScelto)}>{t('actions.cutout')}</button>
-                <button onClick={() => onUse('vector', assetScelto)}>{t('actions.vector')}</button>
-                <button onClick={() => onUse('open', assetScelto)}>{t('library.resume')}</button>
+                    sul piano senza passare dalla libreria.
+
+                    Su un documento questi tre non esistono: scontornare un
+                    .md non significa niente, e «Riprendi» lo aprirebbe in
+                    silenzio su una tela che non lo sa disegnare. Al loro
+                    posto c'è ciò che di un documento si fa davvero: aprirlo,
+                    e riportarselo fuori. */}
+                {KIND_TESTO.includes(assetScelto.kind) ? (
+                  <>
+                    <button onClick={() => setAperto(assetScelto)}>{t('brain.doc.open')}</button>
+                    <button onClick={() => onScarica(assetScelto)}>{t('library.download')}</button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => onUse('cutout', assetScelto)}>{t('actions.cutout')}</button>
+                    <button onClick={() => onUse('vector', assetScelto)}>{t('actions.vector')}</button>
+                    <button onClick={() => onUse('open', assetScelto)}>{t('library.resume')}</button>
+                  </>
+                )}
               </div>
             )}
 
@@ -433,6 +613,16 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
           </aside>
         )}
       </div>
+
+      {aperto && (
+        <Documento
+          asset={aperto}
+          leggi={leggi}
+          onSalva={onSalvaDoc}
+          onScarica={onScarica}
+          onChiudi={() => setAperto(null)}
+        />
+      )}
     </div>
   );
 }

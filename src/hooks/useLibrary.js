@@ -120,6 +120,7 @@ export function useLibrary() {
       [refresh],
     ),
     update: act(lib.updateAsset),
+    sovrascrivi: act(lib.sovrascriviAsset),
     addTag: act(lib.addTag),
     removeTag: act(lib.removeTag),
     createFolder: act(lib.createFolder),

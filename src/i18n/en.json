@@ -160,7 +160,8 @@
     "folderLook": "Look",
     "expand": "Open large",
     "shrink": "Shrink",
-    "resume": "Resume"
+    "resume": "Resume",
+    "download": "Download"
   },
   "status": {
     "file": "file",
@@ -647,7 +648,18 @@
       "fatto": "Done"
     },
     "arrowFrom": "Pick where the arrow starts",
-    "arrowTo": "Now pick where it lands — Esc to leave"
+    "arrowTo": "Now pick where it lands — Esc to leave",
+    "doc": {
+      "open": "Open",
+      "salva": "Save",
+      "salvando": "Saving…",
+      "salvato": "Document saved.",
+      "nonSalvato": "unsaved",
+      "perdere": "There are unsaved changes. Close anyway?"
+    },
+    "foto": "Canvas image",
+    "fotoFatta": "Image downloaded: {nome}",
+    "fotoVuota": "The canvas is empty: there is nothing to photograph."
   },
   "film": {
     "vuoto": "Bring a video in",

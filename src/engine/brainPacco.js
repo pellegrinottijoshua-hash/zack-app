@@ -172,7 +172,11 @@ function percorsoTesto(o, manifest) {
 function descrivi(o, manifest) {
   if (o.t === 'nota') return `- **Nota:** ${o.testo || '_vuota_'}`;
   const f = manifest.file.find((x) => x.percorso === o.file);
-  if (!f) return '- Un lavoro che non è nel pacco.';
+  if (!f) return '- Un asset che non è nel pacco.';
+  // Un documento dentro un gruppo si annuncia col titolo che ha dentro:
+  // «the-rug-bible — md» dice due volte niente, e questa è la riga che chi
+  // legge incontra per prima, prima della sezione «Documenti».
+  if (KIND_TESTO.includes(f.tipo) && f.titolo) return `- **${f.titolo}** — documento · ${f.nome}`;
   const coda = [f.tipo, f.tag?.length ? f.tag.join(', ') : null, f.nota || null].filter(Boolean).join(' · ');
   return `- **${f.nome}** — ${coda}`;
 }

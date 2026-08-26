@@ -160,7 +160,8 @@
     "folderLook": "Aspetto",
     "expand": "Apri in grande",
     "shrink": "Riduci",
-    "resume": "Riprendi"
+    "resume": "Riprendi",
+    "download": "Scarica"
   },
   "status": {
     "file": "file",
@@ -647,7 +648,18 @@
       "fatto": "Fatto"
     },
     "arrowFrom": "Scegli da dove parte la freccia",
-    "arrowTo": "Ora scegli dove arriva — Esc per uscire"
+    "arrowTo": "Ora scegli dove arriva — Esc per uscire",
+    "doc": {
+      "open": "Apri",
+      "salva": "Salva",
+      "salvando": "Salvo…",
+      "salvato": "Documento salvato.",
+      "nonSalvato": "non salvato",
+      "perdere": "Ci sono modifiche non salvate. Chiudo lo stesso?"
+    },
+    "foto": "Immagine della tela",
+    "fotoFatta": "Immagine scaricata: {nome}",
+    "fotoVuota": "La tela è vuota: non c'è niente da fotografare."
   },
   "film": {
     "vuoto": "Porta un filmato",

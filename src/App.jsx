@@ -21,7 +21,7 @@ import Brain from './components/Brain.jsx';
 import BatchGrid from './components/BatchGrid.jsx';
 import FilmLab from './components/FilmLab.jsx';
 import { kindFromFile } from './store/model.js';
-import { impacchetta, spacchetta } from './store/brainBundle.js';
+import { impacchetta, spacchetta, fotografaTela } from './store/brainBundle.js';
 import StageBar from './components/StageBar.jsx';
 import { useSound } from './hooks/useSound.js';
 import { useBatch } from './hooks/useBatch.js';
@@ -870,6 +870,73 @@ export default function App() {
   }
 
   /**
+   * Salva un documento modificato sulla tela.
+   *
+   * Riscrive i byte dello stesso asset invece di crearne uno nuovo: per un
+   * `.md` la modifica non è un lavoro derivato, è lo stesso documento un
+   * minuto dopo. Vedi `sovrascriviAsset`.
+   */
+  async function salvaDocumento(id, testo) {
+    setError(null);
+    try {
+      await library.sovrascrivi(id, new Blob([testo], { type: 'text/markdown' }));
+      setNotice(t('brain.doc.salvato'));
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  /** L'icona di un documento: è il modo in cui lo si riconosce sulla tela. */
+  async function iconaDocumentoScelta(id, icona) {
+    const a = library.assets.find((x) => x.id === id);
+    await library.update(id, { meta: { ...(a?.meta || {}), icona } });
+  }
+
+  /** Porta via un asset così com'è, senza passare dallo zip di tutto. */
+  async function scaricaAsset(asset) {
+    try {
+      const { file } = await library.read(asset.id);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(file);
+      a.download = `${asset.name}.${asset.kind}`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  /**
+   * La fotografia della tela.
+   *
+   * Lo stesso disegno che finisce nel pacco come `mappa.png`, ma fuori: era
+   * sepolto dentro uno zip, cioè invisibile a chi voleva solo far vedere a
+   * qualcuno com'è messa un'idea.
+   */
+  async function fotografaLaTela() {
+    setError(null);
+    setBusy('foto');
+    try {
+      const nome = library.moodboards.find((m) => m.id === telaId)?.name || 'Brain';
+      const scatto = await fotografaTela(tela, library.assets, nome);
+      if (!scatto) {
+        setNotice(t('brain.fotoVuota'));
+        return;
+      }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(scatto.blob);
+      a.download = scatto.nomeFile;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      setNotice(t('brain.fotoFatta', { nome: scatto.nomeFile }));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /**
    * Il tasto Zack di Brain: porta via l'idea intera.
    *
    * È la risposta al lato debole del prodotto. `downloadAll()` salva i file ma
@@ -1094,6 +1161,10 @@ export default function App() {
               onImport={importaFile}
               onPacco={faiPacco}
               onApriPacco={apriPacco}
+              onSalvaDoc={salvaDocumento}
+              onIcona={iconaDocumentoScelta}
+              onFoto={fotografaLaTela}
+              onScarica={scaricaAsset}
             />
           ) : tool === 'filmato' ? (
             <FilmLab

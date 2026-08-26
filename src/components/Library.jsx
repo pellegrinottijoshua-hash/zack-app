@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { t } from '../i18n/index.js';
 import AssetActions from './AssetActions.jsx';
 import Icon from './Icon.jsx';
-import { FOLDER_ICONS } from '../store/model.js';
+import { FOLDER_ICONS, KIND_TESTO, iconaDocumento } from '../store/model.js';
 
 function FolderIcon({ name }) {
   return <Icon name={name} className="folder-icon" />;
@@ -32,6 +32,18 @@ function Thumb({ item, read }) {
       if (made) URL.revokeObjectURL(made);
     };
   }, [item.id, read]);
+
+  // Un documento non ha un'anteprima da guardare: `<img src>` su un .md
+  // mostrerebbe l'icona di immagine rotta, cioè un asset che sembra
+  // danneggiato quando invece sta benissimo. Al suo posto l'icona scelta,
+  // che è anche il modo in cui lo si riconosce sulla tela di Brain.
+  if (KIND_TESTO.includes(item.kind)) {
+    return (
+      <div className="thumb" data-doc="true">
+        <Icon name={iconaDocumento(item)} />
+      </div>
+    );
+  }
 
   return (
     <div className="thumb">
@@ -386,9 +398,15 @@ export default function Library({ store, open, big, onToggleBig, onToggle, onOpe
                       {/* Riprendere un lavoro è il gesto più frequente della
                           libreria e non aveva un pulsante: si passava da
                           «Scontorna», che pero' promette un'altra cosa. */}
-                      <button className="primary" onClick={() => onAssetAction('open', item)}>
-                        {t('library.resume')}
-                      </button>
+                      {/* «Riprendi» mette il file sul piano di lavoro, che è
+                          una tela per immagini: su un documento aprirebbe in
+                          silenzio qualcosa che non si sa disegnare. Un .md si
+                          riprende da Brain. */}
+                      {!KIND_TESTO.includes(item.kind) && (
+                        <button className="primary" onClick={() => onAssetAction('open', item)}>
+                          {t('library.resume')}
+                        </button>
+                      )}
                       <button onClick={() => download(item)}>{t('control.download.label')}</button>
                       <button onClick={() => setTagFor(item.id)}>{t('library.tag')}</button>
                       {item.kind === 'svg' && (
