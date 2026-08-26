@@ -1,26 +1,11 @@
 import { useEffect, useState } from 'react';
 import { t } from '../i18n/index.js';
 import AssetActions from './AssetActions.jsx';
+import Icon from './Icon.jsx';
 import { FOLDER_ICONS } from '../store/model.js';
 
-/** Icone disegnate a mano: sono otto, pesano nulla e restano coerenti. */
-const ICON_PATHS = {
-  cartella: 'M3 6h6l2 2h10v11H3z',
-  maglietta: 'M8 4l-4 3 2 3 2-1v10h8V9l2 1 2-3-4-3-2 2h-4z',
-  personaggio: 'M12 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5 20a7 7 0 0 1 14 0',
-  stella: 'M12 3l2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z',
-  fuoco: 'M12 3s5 4.5 5 9a5 5 0 0 1-10 0c0-2 1-3.5 1-3.5S9 11 11 11c1.5 0 1-4 1-8z',
-  occhio: 'M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z',
-  tag: 'M3 12l9-9h8v8l-9 9zM16.5 7a1 1 0 1 0 0 .01',
-  cerchio: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z',
-};
-
 function FolderIcon({ name }) {
-  return (
-    <svg viewBox="0 0 24 24" className="folder-icon" aria-hidden="true">
-      <path d={ICON_PATHS[name] || ICON_PATHS.cartella} />
-    </svg>
-  );
+  return <Icon name={name} className="folder-icon" />;
 }
 
 const size = (n) => {

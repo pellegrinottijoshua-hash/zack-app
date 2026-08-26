@@ -1,26 +1,6 @@
 import { t } from '../i18n/index.js';
 import { localServices, paidServices } from '../services.js';
-
-/**
- * Icone disegnate a mano, non una libreria: sono sei, pesano nulla, e restano
- * coerenti col tratto sottile del resto dell'interfaccia.
- */
-const ICONS = {
-  scissors: 'M6 4l12 12M18 4L6 16M6 18.5a2 2 0 1 0 0 .01M18 18.5a2 2 0 1 0 0 .01',
-  vector: 'M5 5h3v3H5zM16 16h3v3h-3zM8 6.5h5.5a4 4 0 0 1 4 4V16',
-  pencil: 'M4 20l4-1 10-10-3-3L5 16zM14 6l3 3',
-  image: 'M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M9 9.5a1 1 0 1 0 0 .01',
-  film: 'M4 5h16v14H4zM9 5v14M15 5v14M4 9.5h5M15 9.5h5M4 14.5h5M15 14.5h5',
-  wave: 'M3 12h2M7 7v10M11 4v16M15 8v8M19 11h2',
-};
-
-function Icon({ name }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d={ICONS[name]} />
-    </svg>
-  );
-}
+import Icon from './Icon.jsx';
 
 function Item({ service, active, collapsed, onPick }) {
   const label = t(`${service.key}.label`);
@@ -32,7 +12,7 @@ function Item({ service, active, collapsed, onPick }) {
       title={collapsed ? `${label} — ${t(`${service.key}.help`)}` : t(`${service.key}.help`)}
       onClick={() => onPick(service)}
     >
-      <Icon name={service.icon} />
+      <Icon name={service.icon} draw />
       {!collapsed && <span className="tool-name">{label}</span>}
       {/* Prezzo OPPURE 'presto', mai entrambi: a 190px si contendono lo
           spazio e vince la troncatura del nome, che è l'unica cosa

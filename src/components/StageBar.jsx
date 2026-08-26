@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.js';
+import Icon from './Icon.jsx';
 
 /**
  * I comandi sopra la tela.
@@ -11,21 +12,6 @@ import { t } from '../i18n/index.js';
  * A destra c'è **una cosa sola**: il file pronto per la stampa. È l'unico
  * pulsante che porta a termine un lavoro intero, e si vede che è quello.
  */
-const ICONS = {
-  undo: 'M9 7L4 12l5 5M4 12h9a6 6 0 0 1 0 12h-2',
-  eraser: 'M8 20H4l-1-4L14 5l6 6-9 9zM10 9l6 6',
-  crop: 'M6 2v16h16M2 6h16v16',
-  swap: 'M4 8h14l-4-4M20 16H6l4 4',
-  clear: 'M6 6l12 12M18 6L6 18',
-};
-
-function Icon({ name }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d={ICONS[name]} />
-    </svg>
-  );
-}
 
 function Tool({ icon, label, disabled, active, onClick }) {
   return (
