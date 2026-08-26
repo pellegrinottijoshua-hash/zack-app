@@ -67,12 +67,8 @@ export function RemovePanel({ models, s, set, busy }) {
 
 export function TracePanel({ presets, s, set, busy }) {
   return (
-    <>
+    <Section id="trace" title={t('vector.kind.label')} helpKey="vector.kind.help">
       <div className="field">
-        <span className="label">
-          <span>{t('vector.kind.label')}</span>
-        </span>
-        <Help k="vector.kind.help" />
         {presets.map((p) => (
           <Choice
             key={p.id}
@@ -95,8 +91,7 @@ export function TracePanel({ presets, s, set, busy }) {
         />
         <Help k="vector.clean.help" />
       </div>
-
-    </>
+    </Section>
   );
 }
 

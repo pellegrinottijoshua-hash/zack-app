@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { t } from '../i18n/index.js';
 import { Choice, Help } from './Panels.jsx';
+import Section from './Section.jsx';
 import { PRESETS } from '../engine/export.js';
 import { isEmptyPlan } from '../engine/batch.js';
 
@@ -30,13 +31,17 @@ export default function BatchPanel({ files, batch, onPickFiles, onClearFiles, on
   const nothingToDo = isEmptyPlan(opts);
 
   return (
-    <div className="field">
-      <span className="label">
-        <span>{t('batch.title')}</span>
-        <b>{files.length ? t('batch.count', { n: files.length }) : t('batch.none')}</b>
-      </span>
-      <Help k="batch.help" />
-
+    /* Come ogni altro gruppo di comandi: si chiude per dare spazio alla tela.
+       Era l'ultimo pannello rimasto fuori dalla regola, e con quaranta file
+       dentro era anche il più lungo — cioè quello che il lavoro copriva di
+       più. Il conteggio resta sull'intestazione: chiusa, la sezione dice
+       comunque quanti file ha in coda. */
+    <Section
+      id="batch"
+      title={t('batch.title')}
+      badge={files.length ? t('batch.count', { n: files.length }) : t('batch.none')}
+      helpKey="batch.help"
+    >
       <div className="row">
         <button className="btn ghost small" disabled={batch.running} onClick={onPickFiles}>
           {t('batch.pick')}
@@ -140,6 +145,6 @@ export default function BatchPanel({ files, batch, onPickFiles, onClearFiles, on
           )}
         </>
       )}
-    </div>
+    </Section>
   );
 }
