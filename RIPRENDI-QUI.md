@@ -3,7 +3,7 @@
 Documento di passaggio. Serve ad aprire una chat nuova e ripartire senza
 ricostruire il contesto. Se leggi solo una cosa, leggi la sezione 2.
 
-- **Repo:** `~/jayl-studio` — ramo `main`, 64 commit, **234 test verdi**
+- **Repo:** `~/jayl-studio` — ramo `main`, 67 commit, **248 test verdi**
 - **Data di questo passaggio:** 25 agosto 2026
 - **Il resto:** [README.md](README.md) descrive il prodotto per intero;
   `docs/superpowers/specs/` contiene i due disegni approvati.
@@ -95,6 +95,8 @@ Più, non come servizi ma come rifiniture su un file aperto:
 - **Libreria organizzata** — cartelle con colore e icona, note, preferiti,
   provenienza, raccolte pronte
 - **Prima della stampa** — ritaglio intelligente, controllo di stampa, mockup
+- **«Pronto per la stampa»** — un pulsante: scontorno + ingrandimento al lato
+  lungo di 4000 px, con misura e attesa scritte prima di premere. Anche in blocco.
 
 Fuori dall'app: **pagina di presentazione** su `/`, predisposta per un video AI
 guidato dallo scorrimento (la matematica è testata; l'effetto va guardato con

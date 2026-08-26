@@ -168,6 +168,27 @@ Il limite è il tempo, non la memoria: **ingresso massimo 512 px di lato**,
 perché l'ingrandimento serve su asset piccoli, non su un file di stampa che è
 già grande. L'attesa stimata si dice prima.
 
+## Un pulsante solo
+
+**Pronto per la stampa**, in alto a destra. Toglie lo sfondo e porta il file
+alla misura giusta in un colpo: sono due gesti separati soltanto per chi ha
+scritto il programma — per chi stampa sono una cosa sola.
+
+Il conto sta scritto sul pulsante — misura d'arrivo e attesa — invece di
+scoprirlo dopo. Il fattore lo decide il file: **il più piccolo che arriva al
+bersaglio**, perché ingrandire più del necessario costa tempo e memoria senza
+dare un pixel utile in più. Se nemmeno il massimo ci arriva, lo dice.
+
+Il bersaglio è 4000 px sul lato lungo, e non è un numero tondo scelto a caso:
+l'area stampabile di Gelato a 350 dpi è 3844×5085.
+
+Stessa cosa **in blocco**, con l'ingrandimento sempre dopo lo scontorno —
+ingrandire lo sfondo per poi buttarlo via, su quaranta file, sono minuti
+regalati.
+
+Sopra la tela una barra coi gesti di tutti i giorni: annulla (otto passi veri),
+gomma, ritaglia, cambia file, togli.
+
 ## Ingrandire per la stampa
 
 Il modello ingrandisce **quattro volte**; il **×2** si ottiene riducendo a metà
@@ -319,7 +340,7 @@ docs/superpowers/  spec e piani
 npm test
 ```
 
-Duecentotrentaquattro test. Coprono il vincolo di licenza, le funzioni pure del motore, la
+Duecentoquarantotto test. Coprono il vincolo di licenza, le funzioni pure del motore, la
 parità con il backend (IoU ≥ 0,98, differenza alfa media ≤ 2/255) e la
 completezza delle due lingue.
 
