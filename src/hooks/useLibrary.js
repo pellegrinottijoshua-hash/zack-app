@@ -101,6 +101,11 @@ export function useLibrary() {
     createMoodboard: act(lib.createMoodboard),
     deleteMoodboard: act(lib.deleteMoodboard),
     setInMoodboard: act(lib.setInMoodboard),
+    // La tela di Brain non passa da `act`: quello ricarica tutta la libreria
+    // a ogni chiamata, e qui si salva a ogni oggetto spostato. Ricaricare
+    // l'archivio mentre trascini è il modo più diretto di far scattare la tela.
+    readBrain: lib.readBrain,
+    saveBrain: lib.saveBrain,
     repair: act(lib.repair),
     wipe: act(lib.wipe),
   };

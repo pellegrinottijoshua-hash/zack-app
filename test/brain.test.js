@@ -1,0 +1,135 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  nuovoAsset,
+  nuovaNota,
+  nuovoCerchio,
+  nuovaFreccia,
+  normalizzaTela,
+  muovi,
+  aggiorna,
+  togli,
+  davanti,
+  riquadro,
+  prossimoPosto,
+  COLORI,
+  TIPI,
+} from '../src/engine/brain.js';
+
+/** Un generatore prevedibile: gli id contano solo per essere diversi. */
+let seme = 0;
+const rand = () => ((seme = (seme * 9301 + 49297) % 233280) / 233280);
+
+const tela = () => {
+  const a = nuovoAsset({ assetId: 'aaa', x: 0, y: 0, rand });
+  const b = nuovaNota({ testo: 'va sul retro', x: 300, y: 0, rand });
+  return [a, b, nuovaFreccia({ da: a.id, a: b.id, rand })];
+};
+
+test('una nota tiene testo e colore', () => {
+  const n = nuovaNota({ testo: 'chiedere a lei', colore: COLORI[1], rand });
+  assert.equal(n.testo, 'chiedere a lei');
+  assert.equal(n.colore, COLORI[1]);
+});
+
+test('un colore inventato ricade su quello di partenza', () => {
+  // I colori arrivano anche da una tela salvata mesi fa: uno fuori palette
+  // non deve entrare nell'interfaccia dalla porta di servizio.
+  const n = nuovaNota({ colore: '#ff00ff', rand });
+  assert.ok(COLORI.includes(n.colore));
+});
+
+test('un asset senza lavoro dietro non si crea', () => {
+  assert.throws(() => nuovoAsset({ assetId: null, rand }), /senza lavoro dietro/);
+});
+
+test('una freccia collega due oggetti, non due punti', () => {
+  // Ancorata a coordinate resterebbe indietro appena sposti ciò che collega.
+  const items = tela();
+  const f = items.find((o) => o.t === 'freccia');
+  assert.equal(f.da, items[0].id);
+  assert.equal(f.a, items[1].id);
+});
+
+test('una freccia che torna su se stessa non si crea', () => {
+  assert.throws(() => nuovaFreccia({ da: 'x', a: 'x', rand }), /su se stessa/);
+});
+
+test('togliere un oggetto porta via le sue frecce', () => {
+  // Lasciarle sarebbe un errore visibile solo al ricaricamento dopo, quando
+  // normalizzaTela le butta via e la tela sembra cambiata da sola.
+  const items = tela();
+  const dopo = togli(items, items[0].id);
+  assert.equal(dopo.length, 1);
+  assert.equal(dopo[0].t, 'nota');
+});
+
+test('una freccia orfana salvata ieri viene scartata al caricamento', () => {
+  const items = [...tela()];
+  items.splice(0, 1); // l'asset sparisce, la freccia resta
+  assert.equal(normalizzaTela(items).length, 1);
+});
+
+test('un oggetto di tipo sconosciuto non entra sulla tela', () => {
+  assert.deepEqual(normalizzaTela([{ id: 'a', t: 'ologramma' }]), []);
+  assert.deepEqual(normalizzaTela('non è una tela'), []);
+});
+
+test('spostare sposta solo ciò che si è preso in mano', () => {
+  const items = tela();
+  const dopo = muovi(items, items[1].id, 10, -5);
+  assert.equal(dopo[1].x, 310);
+  assert.equal(dopo[1].y, -5);
+  assert.equal(dopo[0].x, 0, 'gli altri non si muovono');
+});
+
+test('un oggetto non si può rimpicciolire fino a non poterlo più afferrare', () => {
+  // Sotto una certa misura non c'è più niente da prendere per ingrandirlo:
+  // l'oggetto resta sulla tela e non si recupera.
+  const items = tela();
+  const dopo = aggiorna(items, items[0].id, { w: 2, h: 2 });
+  assert.ok(dopo[0].w >= 60);
+  assert.ok(dopo[0].h >= 48);
+});
+
+test('portare davanti mette l\'oggetto in fondo alla lista', () => {
+  // L'ordine della lista è l'ordine di disegno: ultimo disegnato, sopra tutti.
+  const items = tela();
+  const dopo = davanti(items, items[0].id);
+  assert.equal(dopo[dopo.length - 1].id, items[0].id);
+});
+
+test('il riquadro contiene tutto e ignora le frecce', () => {
+  const r = riquadro(tela());
+  assert.equal(r.x, 0);
+  assert.equal(r.w, 500, '300 di distanza più i 200 della nota');
+});
+
+test('una tela vuota non ha riquadro, invece di averne uno sbagliato', () => {
+  assert.equal(riquadro([]), null);
+});
+
+test('i nuovi oggetti non finiscono impilati nello stesso punto', () => {
+  // Dieci oggetti nello stesso punto rendono la tela inservibile, e nessuno
+  // si mette a spostarli uno per uno.
+  const uno = prossimoPosto([]);
+  const due = prossimoPosto([nuovaNota({ rand })]);
+  assert.notDeepEqual(uno, due);
+});
+
+test('la lista dei tipi resta chiusa', () => {
+  // Sei oggetti, non venti: è una decisione, non un limite tecnico.
+  assert.deepEqual(TIPI, ['asset', 'nota', 'cerchio', 'freccia']);
+});
+
+test('i colori delle note sono quelli delle cartelle', () => {
+  // Due insiemi di colori per due cose che l'utente legge entrambe come
+  // "etichette" produrrebbero un colore che significa due cose diverse.
+  assert.ok(COLORI.length >= 3);
+  for (const c of COLORI) assert.match(c, /^#[0-9A-Fa-f]{6}$/);
+});
+
+test('un titolo lunghissimo su un cerchio viene ripulito', () => {
+  const c = nuovoCerchio({ titolo: '  spazi  ', rand });
+  assert.equal(c.titolo, 'spazi');
+});

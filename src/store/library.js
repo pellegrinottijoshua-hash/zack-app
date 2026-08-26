@@ -1,4 +1,5 @@
 import * as db from './db.js';
+import { normalizzaTela } from '../engine/brain.js';
 import * as files from './files.js';
 import {
   makeAsset,
@@ -170,6 +171,24 @@ export async function updateMoodboard(id, patch) {
   const next = { ...board, ...patch, id: board.id };
   await db.put('moodboards', next);
   return next;
+}
+
+/**
+ * La tela di Brain di una raccolta.
+ *
+ * Sta dentro il record della raccolta invece che in un archivio suo: una tela
+ * senza la sua raccolta non significa niente, e tenerle separate vorrebbe
+ * dire poterle cancellare a metà. Si normalizza in lettura, non in scrittura:
+ * ciò che è salvato può tornare indietro sbagliato, e il momento in cui te ne
+ * accorgi deve essere prima di disegnarlo.
+ */
+export async function readBrain(id) {
+  const board = await db.get('moodboards', id);
+  return normalizzaTela(board?.brain);
+}
+
+export async function saveBrain(id, items) {
+  return updateMoodboard(id, { brain: normalizzaTela(items) });
 }
 
 export async function deleteMoodboard(id) {

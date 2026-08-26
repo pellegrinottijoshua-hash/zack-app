@@ -15,6 +15,18 @@ export const GROUP_PAID = 'paid';
 
 export const SERVICES = [
   {
+    // Primo della lista, e non per gerarchia: è l'unico servizio che ha senso
+    // guardare senza aver caricato niente. Gli altri, senza un file, sono una
+    // tela vuota con una colonna di comandi spenti; Brain aperto è il tuo
+    // archivio. È anche il posto dove il ciclo dei riferimenti si chiude —
+    // scontorni, l'asset entra in una tela, la tela è il set di riferimenti.
+    id: 'brain',
+    group: GROUP_LOCAL,
+    key: 'tool.brain',
+    icon: 'brain',
+    ready: true,
+  },
+  {
     id: 'scontorna',
     group: GROUP_LOCAL,
     key: 'tool.cutout',

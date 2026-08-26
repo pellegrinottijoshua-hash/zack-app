@@ -8,7 +8,19 @@
  */
 
 /** Un asset non è un file: è l'originale più tutto ciò che ne è derivato. */
-export const KINDS = ['png', 'svg', 'wav'];
+export const KINDS = ['png', 'svg', 'wav', 'mp3', 'mp4', 'webm'];
+
+/**
+ * Che cosa si può ascoltare o guardare, invece che soltanto vedere.
+ *
+ * Serve a Brain, dove sulla stessa tela stanno un ritaglio, una voce
+ * registrata e un video di riferimento. La libreria sapeva già tenere i wav
+ * del laboratorio suoni; i tre tipi aggiunti sono quelli che l'utente si
+ * porta dietro da fuori — e senza di loro Brain sarebbe una bacheca di sole
+ * immagini, cioè metà di quello che serve.
+ */
+export const KIND_AUDIO = ['wav', 'mp3'];
+export const KIND_VIDEO = ['mp4', 'webm'];
 
 export function newId(rand = Math.random) {
   // Abbastanza corto da leggersi in un nome di file, abbastanza lungo da non

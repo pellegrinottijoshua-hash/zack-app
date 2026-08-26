@@ -28,6 +28,10 @@
     "sound": {
       "label": "Suono",
       "help": "Costruisci un effetto sonoro imitandolo con la voce e descrivendolo."
+    },
+    "brain": {
+      "label": "Brain",
+      "help": "La tela dove metti in ordine le idee: lavori, note colorate, gruppi e frecce."
     }
   },
   "drop": {
@@ -553,5 +557,30 @@
   "advanced": {
     "title": "Avanzati",
     "help": "I comandi che non servono al lavoro normale. Restano aperti se li lasci aperti."
+  },
+  "brain": {
+    "add": {
+      "note": "Nota",
+      "group": "Gruppo",
+      "arrow": "Freccia"
+    },
+    "center": "Rimetti tutto in vista",
+    "drawer": "Da mettere sulla tela",
+    "drawerEmpty": "Tutti i lavori sono già sulla tela.",
+    "notePlaceholder": "Scrivi qui",
+    "groupPlaceholder": "Come si chiama questo gruppo",
+    "remove": "Togli dalla tela",
+    "lost": "Il lavoro dietro a questo oggetto non c'è più.",
+    "kind": {
+      "asset": "Lavoro",
+      "nota": "Nota",
+      "cerchio": "Gruppo",
+      "freccia": "Freccia"
+    },
+    "empty": "La tela è vuota. Metti un lavoro dal cassetto, o comincia da una nota.",
+    "board": "Tela",
+    "newBoard": "Tela nuova",
+    "newBoardName": "Come si chiama questa tela?",
+    "libraryEmpty": "La libreria è vuota: i lavori che salvi dagli strumenti compaiono qui."
   }
 }

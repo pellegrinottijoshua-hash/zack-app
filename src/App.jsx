@@ -17,6 +17,7 @@ import BatchPanel from './components/BatchPanel.jsx';
 import SoundLab from './components/SoundLab.jsx';
 import FinishPanel from './components/FinishPanel.jsx';
 import Advanced from './components/Advanced.jsx';
+import Brain from './components/Brain.jsx';
 import StageBar from './components/StageBar.jsx';
 import { useSound } from './hooks/useSound.js';
 import { useBatch } from './hooks/useBatch.js';
@@ -68,6 +69,17 @@ export default function App() {
    * promessa di non tenere niente su un server.
    */
   const [ricetta, setRicetta] = useState(() => leggiRicetta('scontorna'));
+
+  /**
+   * La tela di Brain aperta, e i suoi oggetti.
+   *
+   * Vive dentro una raccolta della libreria: una tela senza la sua raccolta
+   * non significa niente. Se non ce n'è ancora nessuna, la prima si crea da
+   * sola alla prima apertura — chiedere un nome prima di aver visto la tela è
+   * un modulo davanti a una porta.
+   */
+  const [telaId, setTelaId] = useState(null);
+  const [tela, setTela] = useState([]);
 
   function salvaRicetta(prossima) {
     const pulita = normalizza(prossima);
@@ -734,6 +746,28 @@ export default function App() {
     }
   }
 
+  // Entrando in Brain si apre l'ultima tela, o se ne crea una: una schermata
+  // che chiede di creare qualcosa prima di mostrare com'è fatta si abbandona.
+  useEffect(() => {
+    if (tool !== 'brain' || !library.ready || telaId) return;
+    let vivo = true;
+    (async () => {
+      const prima = library.moodboards[0] || (await library.createMoodboard(t('brain.board')));
+      if (!vivo || !prima) return;
+      setTelaId(prima.id);
+      setTela(await library.readBrain(prima.id));
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, [tool, library.ready, library.moodboards, telaId]);
+
+  /** Ogni cambiamento si salva subito: nessuno preme "salva" su una lavagna. */
+  async function cambiaTela(prossima) {
+    setTela(prossima);
+    if (telaId) await library.saveBrain(telaId, prossima);
+  }
+
   /**
    * Un'azione partita da un lavoro in libreria: il file diventa quello su cui
    * si sta lavorando e lo strumento giusto si apre da solo. È la scorciatoia
@@ -848,7 +882,11 @@ export default function App() {
               onDismiss={() => setBannerOpen(false)}
             />
           )}
-          {!isEditor && tool !== 'suono' && (
+          {/* La barra parla del file sul piano di lavoro. In Brain non c'è un
+              file sul piano: c'è una tela, e i suoi comandi stanno sopra di
+              lei. Lasciarla visibile faceva credere che il tasto Zack agisse
+              su ciò che si stava guardando. */}
+          {!isEditor && tool !== 'suono' && tool !== 'brain' && (
             <StageBar
               file={file}
               image={stats?.image}
@@ -885,7 +923,15 @@ export default function App() {
           {error && <div className="alert">{error}</div>}
           {notice && !error && <div className="alert">{notice}</div>}
 
-          {tool === 'suono' ? (
+          {tool === 'brain' ? (
+            <Brain
+              items={tela}
+              assets={library.assets}
+              leggi={library.read}
+              onChange={cambiaTela}
+              onUse={assetAction}
+            />
+          ) : tool === 'suono' ? (
             <SoundLab
               sound={sound}
               onSave={async (blob, recipe) => {
@@ -935,8 +981,11 @@ export default function App() {
           )}
         </section>
 
-        <aside className="rail">
-          {isEditor ? (
+        <aside className="rail" data-vuota={tool === 'brain' || undefined}>
+          {/* Brain non ha comandi in colonna: i suoi stanno sulla tela, dove
+              si guarda. Una colonna di comandi spenti accanto a una lavagna è
+              esattamente il rumore che la regola §6.1 vuole togliere. */}
+          {tool === 'brain' ? null : isEditor ? (
             <>
               <VectorTools
                 editor={editorRef}

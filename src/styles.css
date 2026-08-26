@@ -2526,3 +2526,320 @@ body {
   gap: 7px;
   padding: 0 0 7px;
 }
+
+/* ------------------------------------------------------------------ *
+ * Brain: la tela dove le idee si mettono in ordine.
+ *
+ * Un nodo DOM per oggetto invece di un canvas unico: gli oggetti sono decine,
+ * non migliaia, e così il testo resta selezionabile, l'audio si ascolta, il
+ * video si guarda e la tastiera funziona senza riscrivere niente.
+ * ------------------------------------------------------------------ */
+.brain {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
+
+.brain-barra {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--linea);
+}
+
+.brain-barra button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 13px;
+  background: transparent;
+  border: 1px solid var(--linea-viva);
+  color: var(--grigio);
+  font-family: var(--display);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.brain-barra button:hover:not(:disabled),
+.brain-barra button[aria-pressed='true'] {
+  color: var(--panna);
+  border-color: var(--oro);
+}
+
+.brain-barra button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.brain-barra svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.brain-spazio {
+  flex: 1;
+}
+
+.brain-zoom {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--grigio);
+  min-width: 46px;
+  text-align: right;
+}
+
+.brain-corpo {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr) auto;
+  min-height: 0;
+}
+
+.brain-cassetto {
+  border-right: 1px solid var(--linea);
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.brain-cassetto h3,
+.brain-scelto h3 {
+  margin: 0 0 9px;
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--grigio);
+}
+
+.brain-elenco {
+  display: grid;
+  gap: 4px;
+}
+
+.brain-chip {
+  padding: 7px 8px;
+  background: transparent;
+  border: 1px solid var(--linea);
+  color: var(--panna);
+  font-family: var(--display);
+  font-size: 10.5px;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.brain-chip:hover {
+  border-color: var(--oro);
+}
+
+.brain-vuoto,
+.brain-perso {
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--grigio);
+}
+
+/* Il piano si taglia con `clip`, non con `hidden`: `overflow-x: hidden`
+   disattiva position:sticky in tutti i discendenti — trappola già pagata. */
+.brain-piano {
+  position: relative;
+  overflow: clip;
+  background:
+    radial-gradient(circle at 1px 1px, var(--linea-viva) 1px, transparent 0) 0 0 / 28px 28px;
+  touch-action: none;
+  cursor: grab;
+}
+
+.brain-tela {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+}
+
+/* Le frecce stanno sotto tutto: una freccia sopra una nota ne copre il testo.
+   Il riquadro è enorme apposta — un SVG delle dimensioni del piano
+   taglierebbe le frecce appena ci si allontana. */
+.brain-frecce {
+  position: absolute;
+  left: -5000px;
+  top: -5000px;
+  width: 10000px;
+  height: 10000px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.brain-frecce line {
+  stroke: var(--oro);
+  stroke-width: 1.75;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.brain-frecce marker path {
+  fill: var(--oro);
+}
+
+.brain-frecce > * {
+  transform: translate(5000px, 5000px);
+}
+
+.brain-oggetto {
+  position: absolute;
+  border: 1px solid var(--linea-viva);
+  background: var(--nero-2);
+  overflow: hidden;
+  cursor: grab;
+  resize: both;
+}
+
+.brain-oggetto[data-scelto],
+.brain-oggetto[data-collega] {
+  border-color: var(--oro);
+  box-shadow: 0 0 0 1px var(--oro);
+}
+
+.brain-oggetto img,
+.brain-oggetto video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+}
+
+.brain-oggetto audio {
+  width: 100%;
+}
+
+.brain-oggetto[data-t='asset'] {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+}
+
+/* La nota: il colore scelto tinge il bordo e un velo di fondo, mai il testo —
+   su fondo panna un testo panna sparisce, e il colore non è mai l'unico
+   segnale di niente. */
+.brain-oggetto[data-t='nota'] {
+  border-color: var(--tinta, var(--oro));
+  border-left-width: 4px;
+  background: color-mix(in srgb, var(--tinta, var(--oro)) 12%, var(--nero-2));
+}
+
+.brain-oggetto[data-t='nota'] textarea {
+  width: 100%;
+  height: 100%;
+  padding: 9px;
+  background: transparent;
+  border: none;
+  resize: none;
+  color: var(--panna);
+  font-family: var(--display);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.brain-oggetto[data-t='nota'] textarea:focus {
+  outline: none;
+}
+
+/* Il gruppo sta sotto le cose che raccoglie, e non le copre. */
+.brain-oggetto[data-t='cerchio'] {
+  border-radius: 50%;
+  border-style: dashed;
+  border-color: var(--tinta, var(--oro));
+  background: transparent;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  padding-top: 10px;
+  pointer-events: auto;
+}
+
+.brain-oggetto[data-t='cerchio'] input {
+  width: 80%;
+  background: transparent;
+  border: none;
+  color: var(--tinta, var(--oro));
+  font-family: var(--display);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.brain-oggetto[data-t='cerchio'] input:focus {
+  outline: none;
+}
+
+.brain-scelto {
+  width: 190px;
+  border-left: 1px solid var(--linea);
+  padding: 10px;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.brain-colori {
+  display: flex;
+  gap: 6px;
+}
+
+.brain-colore {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--linea-viva);
+  cursor: pointer;
+}
+
+.brain-colore[aria-pressed='true'] {
+  box-shadow: 0 0 0 2px var(--nero), 0 0 0 3px var(--oro);
+}
+
+.brain-usa {
+  display: grid;
+  gap: 4px;
+}
+
+.brain-usa button,
+.brain-togli {
+  padding: 8px;
+  background: transparent;
+  border: 1px solid var(--linea-viva);
+  color: var(--panna);
+  font-family: var(--display);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.brain-usa button:hover {
+  border-color: var(--oro);
+}
+
+.brain-togli {
+  color: var(--grigio);
+}
+
+.brain-togli:hover {
+  color: var(--panna);
+  border-color: var(--oro);
+}
+
+/* Brain non ha colonna di destra: la tela è tutta la schermata. */
+.rail[data-vuota] {
+  display: none;
+}
