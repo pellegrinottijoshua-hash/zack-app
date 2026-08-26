@@ -98,3 +98,55 @@ test('un lavoro senza nome di file ne ricava uno leggibile', () => {
   assert.equal(percorso({ name: 'voce', kind: 'wav' }), 'file/voce.wav');
   assert.equal(percorso(null), null);
 });
+
+// ─── i documenti: il ponte verso un modello ──────────────────────────────
+//
+// Il pacco scompattato deve bastare a capire l'insieme dei progetti senza
+// aprire un file alla volta. Per questo `IDEE.md` elenca i documenti con il
+// titolo che hanno DENTRO e il gruppo in cui stanno: è la panoramica.
+
+const doc = (id, name) => ({ id, name, kind: 'md', file: `${name}.md`, tags: [], note: '' });
+
+test('un documento entra nel pacco col titolo che ha dentro, non col nome del file', () => {
+  // «the-rug-bible.md» dice meno di «The Rug — episodio 1», e in un elenco di
+  // venti progetti conta cosa c'è dentro, non come è stato salvato.
+  const gruppo = nuovoCerchio({ titolo: 'The Rug', x: 0, y: 0, rand });
+  const md = nuovoAsset({ assetId: 'd1', x: 40, y: 40, rand });
+  const m = manifesto([gruppo, md], [doc('d1', 'the-rug-bible')], {
+    quando,
+    testi: { d1: '# The Rug — episodio 1\n\nIl tappeto non parla mai.' },
+  });
+  assert.equal(m.file[0].titolo, 'The Rug — episodio 1');
+});
+
+test('un documento senza titolo dentro non se ne inventa uno', () => {
+  const md = nuovoAsset({ assetId: 'd1', x: 40, y: 40, rand });
+  const m = manifesto([md], [doc('d1', 'appunti')], { quando, testi: { d1: 'solo testo' } });
+  assert.equal(m.file[0].titolo, null);
+});
+
+test('IDEE.md elenca i documenti a parte, col percorso da aprire', () => {
+  // È la sezione che un modello legge per prima: nome, di che progetto è, e
+  // dove andarlo a leggere. Senza il percorso, la panoramica è un indice di
+  // file che non si sa dove stiano.
+  const gruppo = nuovoCerchio({ titolo: 'The Rug', x: 0, y: 0, rand });
+  const md = nuovoAsset({ assetId: 'd1', x: 40, y: 40, rand });
+  const testo = scriviIdee(
+    manifesto([gruppo, md], [doc('d1', 'the-rug-bible')], {
+      quando,
+      testi: { d1: '# The Rug — episodio 1\n' },
+    }),
+  );
+  assert.match(testo, /## Documenti/);
+  assert.match(testo, /The Rug — episodio 1/);
+  assert.match(testo, /file\/the-rug-bible\.md/);
+  // Il gruppo di appartenenza: è ciò che trasforma un elenco in una mappa.
+  assert.match(testo, /The Rug\b/);
+});
+
+test('senza documenti la sezione non compare', () => {
+  // Una sezione vuota in cima a ogni pacco insegna a saltarla.
+  const { items } = idea();
+  const testo = scriviIdee(manifesto(items, [asset('a1', 'tappeto')], { quando }));
+  assert.ok(!testo.includes('## Documenti'));
+});

@@ -26,6 +26,7 @@
  */
 
 import { normalizzaTela } from './brain.js';
+import { KIND_TESTO, titoloDocumento } from '../store/model.js';
 
 /** La versione del pacco. Serve a chi lo riaprirà fra due anni, non a noi. */
 export const VERSIONE = 1;
@@ -38,7 +39,7 @@ export const VERSIONE = 1;
  * importa, e un pacco che si riapre solo sul computer che l'ha fatto non è un
  * salvataggio.
  */
-export function manifesto(tela, assets, { nome = 'Brain', quando = () => new Date() } = {}) {
+export function manifesto(tela, assets, { nome = 'Brain', quando = () => new Date(), testi = {} } = {}) {
   const items = normalizzaTela(tela);
   const perId = new Map(assets.map((a) => [a.id, a]));
 
@@ -60,6 +61,10 @@ export function manifesto(tela, assets, { nome = 'Brain', quando = () => new Dat
       tipo: a.kind,
       nota: a.note || '',
       tag: a.tags || [],
+      // Il titolo scritto DENTRO un documento, quando chi impacchetta ce l'ha
+      // già letto. Serve alla panoramica, non al riaprire: chi rimette il
+      // pacco dentro legge il file vero, non questa riga.
+      ...(KIND_TESTO.includes(a.kind) ? { titolo: titoloDocumento(testi[a.id]) } : {}),
     })),
   };
 }
@@ -111,6 +116,34 @@ export function scriviIdee(manifest) {
     righe.push('');
   }
 
+  /*
+   * I documenti, elencati a parte.
+   *
+   * È la sezione per cui esiste tutto il resto: un modello a cui si chiede la
+   * panoramica dei progetti la legge per prima, e da lì sa **quali file
+   * aprire** invece di scompattare a caso. Per questo porta tre cose e non
+   * una: il titolo scritto dentro il documento, il gruppo in cui l'utente
+   * l'ha messo — cioè di che progetto è — e il percorso nel pacco.
+   *
+   * Non compare se non ci sono documenti: una sezione vuota in cima a ogni
+   * pacco insegna a saltarla, e poi si salta anche quando è piena.
+   */
+  const gruppoDi = new Map();
+  for (const g of gruppi) {
+    for (const o of items.filter((x) => dentro(g, x))) gruppoDi.set(o.id, g.titolo || null);
+  }
+  const documenti = items.filter((o) => o.t === 'asset' && percorsoTesto(o, manifest));
+  if (documenti.length) {
+    righe.push('## Documenti', '');
+    for (const o of documenti) {
+      const f = manifest.file.find((x) => x.percorso === o.file);
+      const dove = gruppoDi.get(o.id);
+      const coda = [dove ? `progetto: ${dove}` : null, f.percorso].filter(Boolean).join(' · ');
+      righe.push(`- **${f.titolo || f.nome}** — ${coda}`);
+    }
+    righe.push('');
+  }
+
   const frecce = items.filter((o) => o.t === 'freccia');
   if (frecce.length) {
     righe.push('## Legami', '');
@@ -129,6 +162,12 @@ export function scriviIdee(manifest) {
 }
 
 const taglia = (s = '', max = 60) => (s.length > max ? `${s.slice(0, max)}…` : s);
+
+/** Vero se questo oggetto della tela è un documento presente nel pacco. */
+function percorsoTesto(o, manifest) {
+  const f = manifest.file.find((x) => x.percorso === o.file);
+  return f && KIND_TESTO.includes(f.tipo) ? f : null;
+}
 
 function descrivi(o, manifest) {
   if (o.t === 'nota') return `- **Nota:** ${o.testo || '_vuota_'}`;

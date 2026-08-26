@@ -79,6 +79,28 @@ export async function deleteAsset(id) {
   await files.deleteFile(asset.file);
 }
 
+/**
+ * Riscrive i byte di un asset che c'è già, senza crearne un altro.
+ *
+ * Esiste per i documenti. Modificare un `.md` e ritrovarsi un asset nuovo a
+ * ogni correzione non è versionare: è riempire la libreria di doppioni di un
+ * file che l'utente considera **uno**, e disfare in una sessione la potatura
+ * che abbiamo appena costruito.
+ *
+ * Non tocca `id`, non tocca `file`, non tocca la provenienza: l'identità resta
+ * quella: cambiano soltanto il contenuto e il peso. Per un'immagine derivata da
+ * un'altra la funzione giusta resta `saveAsset` — là il file nuovo *è* un
+ * lavoro nuovo, e la catena di provenienza è il punto.
+ */
+export async function sovrascriviAsset(id, blob) {
+  const asset = await db.get('assets', id);
+  if (!asset) throw new Error(`Nessun asset con id ${id}`);
+  await files.writeFile(asset.file, blob);
+  const next = { ...asset, bytes: blob.size };
+  await db.put('assets', next);
+  return next;
+}
+
 export async function updateAsset(id, patch) {
   const asset = await db.get('assets', id);
   if (!asset) throw new Error(`Nessun lavoro con id ${id}`);

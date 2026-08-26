@@ -1,7 +1,8 @@
 import { zip, unzip } from 'fflate';
 import * as lib from './library.js';
-import { kindFromFile } from './model.js';
+import { KIND_TESTO, kindFromFile } from './model.js';
 import { manifesto, scriviIdee, leggiManifesto } from '../engine/brainPacco.js';
+import { normalizzaTela } from '../engine/brain.js';
 
 /**
  * Il pacco di Brain, lato browser: costruirlo e riaprirlo.
@@ -21,7 +22,7 @@ const MAPPA_LARGA = 1600;
  * un'idea aprendo una cartella piena di zip. Per questo conta la disposizione,
  * non la fedeltà: i colori delle note, i titoli dei gruppi, le miniature.
  */
-async function disegnaMappa(items, perId) {
+async function disegnaMappa(items, perId, testi = {}) {
   const misurabili = items.filter((o) => o.t !== 'freccia');
   if (misurabili.length === 0) return null;
 
@@ -98,6 +99,31 @@ async function disegnaMappa(items, perId) {
     }
 
     const a = perId.get(o.assetId);
+
+    // Un documento non si disegna: si scrive. `createImageBitmap` su un .md
+    // fallirebbe e finirebbe nel ramo del riquadro col nome — corretto ma
+    // muto, e su una tela di venti documenti sarebbe una fila di rettangoli
+    // identici. Qui esce una scheda: il titolo, e da dove comincia il testo.
+    if (a && KIND_TESTO.includes(a.kind)) {
+      g.fillStyle = '#16160f';
+      g.fillRect(o.x, o.y, o.w, o.h);
+      g.strokeStyle = '#C4A35A';
+      g.strokeRect(o.x, o.y, o.w, o.h);
+      g.fillStyle = '#C4A35A';
+      g.font = '600 15px system-ui, sans-serif';
+      g.textAlign = 'left';
+      g.fillText(a.name, o.x + 14, o.y + 26, o.w - 24);
+      g.fillStyle = '#8A8A85';
+      g.font = '13px ui-monospace, monospace';
+      let y = o.y + 50;
+      for (const riga of String(testi?.[a.id] || '').split('\n')) {
+        if (y > o.y + o.h - 8) break;
+        g.fillText(riga, o.x + 14, y, o.w - 24);
+        y += 17;
+      }
+      continue;
+    }
+
     g.strokeStyle = '#3d3d3a';
     g.strokeRect(o.x, o.y, o.w, o.h);
     try {
@@ -120,16 +146,69 @@ async function disegnaMappa(items, perId) {
 }
 
 /**
+ * L'immagine della tela, da sola.
+ *
+ * È lo stesso disegno che finisce nel pacco come `mappa.png`, ma fuori: era
+ * sepolto dentro uno zip, cioè invisibile a chi voleva solo far vedere a
+ * qualcuno com'è messa un'idea. Note col loro colore, gruppi coi loro titoli,
+ * frecce, miniature dei file e schede dei documenti — tutta la tela in
+ * un'immagine sola.
+ *
+ * Non è un salvataggio e non prova a esserlo: è una fotografia, e non si
+ * rimette dentro. Quello resta il compito del pacco.
+ *
+ * @returns {Promise<{blob: Blob, nomeFile: string}|null>} null se la tela è vuota.
+ */
+export async function fotografaTela(tela, assets, nome = 'Brain') {
+  const perId = new Map(assets.map((a) => [a.id, a]));
+
+  const testi = {};
+  for (const o of tela) {
+    const a = o.t === 'asset' ? perId.get(o.assetId) : null;
+    if (!a || !KIND_TESTO.includes(a.kind)) continue;
+    try {
+      const { file } = await lib.readAsset(a.id);
+      testi[a.id] = await file.text();
+    } catch {
+      // Vedi `impacchetta`: resta la scheda col nome.
+    }
+  }
+
+  const blob = await disegnaMappa(normalizzaTela(tela), perId, testi);
+  if (!blob) return null;
+  const pulito = nome.replace(/[^\p{L}\p{N} _-]/gu, '').trim() || 'brain';
+  return { blob, nomeFile: `${pulito}-tela.png` };
+}
+
+/**
  * Costruisce il pacco.
  *
  * @returns {Promise<{blob: Blob, nomeFile: string, dentro: number}>}
  */
 export async function impacchetta(tela, assets, nome = 'Brain') {
+  const perId = new Map(assets.map((a) => [a.id, a]));
+
+  // I documenti si leggono PRIMA del manifesto: la sezione «Documenti» di
+  // IDEE.md porta il titolo scritto dentro il file, e quel titolo sta nei
+  // byte, non nei metadati. È una lettura in più solo sui .md, che sono
+  // kilobyte — non sui file veri, che sono megabyte.
+  const testi = {};
+  for (const o of tela) {
+    const a = o.t === 'asset' ? perId.get(o.assetId) : null;
+    if (!a || !KIND_TESTO.includes(a.kind)) continue;
+    try {
+      const { file } = await lib.readAsset(a.id);
+      testi[a.id] = await file.text();
+    } catch {
+      // Un documento illeggibile finisce nel pacco col nome del file: è
+      // esattamente ciò che succedeva prima, non una perdita.
+    }
+  }
+
   // Il nome va passato: senza, ogni pacco si chiamava «Brain» dentro e con il
   // nome dell'idea fuori — due nomi per la stessa cosa, e quello che conta
   // (il titolo in cima a IDEE.md) era quello sbagliato.
-  const m = manifesto(tela, assets, { nome });
-  const perId = new Map(assets.map((a) => [a.id, a]));
+  const m = manifesto(tela, assets, { nome, testi });
   const files = {};
 
   for (const f of m.file) {
@@ -148,7 +227,7 @@ export async function impacchetta(tela, assets, nome = 'Brain') {
   files['idea.json'] = new TextEncoder().encode(JSON.stringify(m, null, 2));
   files['IDEE.md'] = new TextEncoder().encode(scriviIdee(m));
 
-  const mappa = await disegnaMappa(m.tela, perId);
+  const mappa = await disegnaMappa(m.tela, perId, testi);
   if (mappa) files['mappa.png'] = new Uint8Array(await mappa.arrayBuffer());
 
   const dati = await new Promise((res, rej) =>

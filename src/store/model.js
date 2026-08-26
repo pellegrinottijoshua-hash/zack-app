@@ -8,7 +8,7 @@
  */
 
 /** Un asset non è un file: è l'originale più tutto ciò che ne è derivato. */
-export const KINDS = ['png', 'jpg', 'svg', 'wav', 'mp3', 'mp4', 'webm'];
+export const KINDS = ['png', 'jpg', 'svg', 'wav', 'mp3', 'mp4', 'webm', 'md'];
 
 /**
  * Che cosa si può ascoltare o guardare, invece che soltanto vedere.
@@ -26,6 +26,69 @@ export const KIND_VIDEO = ['mp4', 'webm'];
 export const KIND_IMMAGINE = ['png', 'jpg', 'svg'];
 
 /**
+ * Ciò che si legge, invece che guardare o ascoltare.
+ *
+ * È il tipo che rende Brain un ponte invece che una bacheca. I documenti veri
+ * dei progetti — una bibbia di serie, un piano di lancio, le regole di un
+ * personaggio — sono `.md` sparsi in cartelle diverse, e finché stanno lì
+ * nessuno vede l'insieme: né l'utente né un modello a cui lo si chiede.
+ * Portati sulla tela accanto ai file a cui si riferiscono, e riscaricati nel
+ * pacco, diventano una panoramica sola.
+ *
+ * **Uno solo, e chiuso.** Non `.txt`, non `.rtf`, non `.docx`: il markdown è
+ * l'unico formato che un umano legge in chiaro, un modello capisce senza
+ * conversioni e un editor di testo apre fra dieci anni. Allungare questa lista
+ * significa comprarsi le conversioni, che è un altro prodotto.
+ */
+export const KIND_TESTO = ['md'];
+
+/**
+ * L'icona di un documento, sempre una.
+ *
+ * Un buco nel disegno è peggio di una scelta banale: la scheda resterebbe
+ * vuota proprio nel punto in cui l'occhio cerca di che cosa parla il file.
+ */
+export function iconaDocumento(asset) {
+  const scelta = asset?.meta?.icona;
+  return isFolderIcon(scelta) ? scelta : ICONE_DOCUMENTO[0];
+}
+
+/**
+ * L'assaggio che sta sulla scheda, sulla tela.
+ *
+ * Ha un tetto **dichiarato**, non scoperto: una bibbia da 200 KB dentro un
+ * riquadro di 200 px non è illeggibile, è una tela che si impianta. Nell'editor
+ * il documento si apre intero; qui si mostra da dove comincia.
+ *
+ * Salta il titolo markdown e le righe vuote in cima, perché le prime righe di
+ * un `.md` sono quasi sempre `# Titolo` e una riga bianca — cioè un'anteprima
+ * che ripete quello che il nome dice già.
+ */
+export function anteprimaTesto(testo, { righe = 8 } = {}) {
+  const tutte = String(testo || '').split('\n');
+  let i = 0;
+  while (i < tutte.length && (tutte[i].trim() === '' || /^#{1,6}\s/.test(tutte[i]))) i += 1;
+  return tutte.slice(i, i + righe).join('\n');
+}
+
+/**
+ * Il titolo scritto dentro il documento, se c'è.
+ *
+ * Serve alla panoramica: «the-rug-bible.md» dice meno di «The Rug — episodio
+ * 1», e in un elenco di venti progetti conta cosa c'è dentro, non come è stato
+ * salvato. Se non c'è un titolo non se ne inventa uno: la prima riga di testo
+ * spacciata per titolo è peggio di nessun titolo.
+ */
+export function titoloDocumento(testo) {
+  for (const riga of String(testo || '').split('\n')) {
+    const trovato = riga.match(/^#{1,6}\s+(.+?)\s*#*\s*$/);
+    if (trovato) return trovato[1].trim();
+    if (riga.trim() !== '') return null;
+  }
+  return null;
+}
+
+/**
  * Che tipo è un file che l'utente porta da fuori.
  *
  * Si guarda l'estensione **e** il tipo dichiarato dal sistema: l'estensione
@@ -36,7 +99,7 @@ export const KIND_IMMAGINE = ['png', 'jpg', 'svg'];
  */
 export function kindFromFile(name = '', type = '') {
   const est = String(name).toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] || '';
-  const perEstensione = { jpeg: 'jpg', jpg: 'jpg', png: 'png', svg: 'svg', wav: 'wav', mp3: 'mp3', mp4: 'mp4', webm: 'webm' };
+  const perEstensione = { jpeg: 'jpg', jpg: 'jpg', png: 'png', svg: 'svg', wav: 'wav', mp3: 'mp3', mp4: 'mp4', webm: 'webm', md: 'md', markdown: 'md' };
   if (perEstensione[est]) return perEstensione[est];
 
   const perTipo = {
@@ -48,6 +111,8 @@ export function kindFromFile(name = '', type = '') {
     'audio/mpeg': 'mp3',
     'video/mp4': 'mp4',
     'video/webm': 'webm',
+    'text/markdown': 'md',
+    'text/x-markdown': 'md',
   };
   return perTipo[String(type).toLowerCase()] || null;
 }
@@ -180,6 +245,16 @@ export function isFolderColor(c) {
 export function isFolderIcon(i) {
   return FOLDER_ICONS.includes(i);
 }
+
+/**
+ * Le icone che un documento può portare.
+ *
+ * Sono **le stesse delle cartelle**, e per la stessa ragione per cui i colori
+ * delle note sono quelli delle cartelle: due insiemi di icone per due cose che
+ * l'utente percepisce entrambe come «etichette» produrrebbero una stella che
+ * nella libreria significa una cosa e sulla tela un'altra.
+ */
+export const ICONE_DOCUMENTO = FOLDER_ICONS;
 
 /** Una nota libera, ma non infinita: una nota di mille righe non è una nota. */
 export function cleanNote(note) {
