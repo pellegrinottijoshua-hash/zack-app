@@ -302,6 +302,20 @@ Il resto della coda, invariato:
 Richiesta del 2026-08-25. **La prossima chat deve leggere il materiale che
 esiste già prima di proporre qualunque cosa.**
 
+> **Fatto il 2026-08-26.** Il materiale è stato letto e le decisioni stanno in
+> tre file, che sostituiscono le domande qui sotto:
+> - [docs/2026-08-26-zack-e-brain.md](docs/2026-08-26-zack-e-brain.md) — ruolo di
+>   Zack, il cast come mappa degli stati, il servizio **Brain**, il **tasto
+>   Zack**, la risposta sull'«app Zack» (no come prodotto separato), e la
+>   **scaletta** in dodici passi;
+> - [docs/zack-asset-plan.md](docs/zack-asset-plan.md) — prompt per landing,
+>   tutorial, stati vuoti, marchio;
+> - [docs/zack-animazioni-cast.md](docs/zack-animazioni-cast.md) — prompt Seedance
+>   delle animazioni del cast (4s, tagliate a 2/3s).
+>
+> Costruito: `src/engine/holes.js` (chiusura dei buchi nei loghi),
+> `src/engine/keying.js` + `scripts/clip-alpha.mjs` (fondo panna → trasparente).
+
 ### Dove sta il materiale
 
 ```
