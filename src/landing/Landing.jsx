@@ -29,7 +29,6 @@ const CLIP = [
 const BLOCCHI = [
   {
     id: 'problema',
-    figura: '/zack/sfere.webp',
     render: (c) => (
       <>
         <p className="kicker">{c.problem.kicker}</p>
@@ -40,7 +39,6 @@ const BLOCCHI = [
   },
   {
     id: 'strumenti',
-    figura: '/zack/vettoriale.webp',
     render: (c) => (
       <>
         <p className="kicker">{c.tools.kicker}</p>
@@ -59,7 +57,6 @@ const BLOCCHI = [
   },
   {
     id: 'libreria',
-    figura: '/zack/libreria.webp',
     render: (c) => (
       <>
         <p className="kicker">{c.library.kicker}</p>
@@ -71,7 +68,6 @@ const BLOCCHI = [
   },
   {
     id: 'generazione',
-    figura: '/zack/cornice.webp',
     render: (c) => (
       <>
         <p className="kicker">{c.generate.kicker}</p>
@@ -84,7 +80,6 @@ const BLOCCHI = [
   },
   {
     id: 'privacy',
-    figura: '/zack/piuma.webp',
     render: (c) => (
       <>
         <p className="kicker">{c.privacy.kicker}</p>
@@ -159,21 +154,21 @@ export default function Landing() {
       <div className="home-racconto">
         <HomeVideo clip={CLIP} sezioni={sezioni} />
 
-        <div className="home-testi">
+        <div className="home-testi" data-alterna>
           {BLOCCHI.map((b, i) => (
             <section
               key={b.id}
               className="home-blocco"
               id={b.id}
+              /* Si alterna: il vuoto dell'inquadratura c'è da tutte e due le
+                 parti, e tenere tutto a sinistra farebbe sembrare i testi una
+                 barra laterale invece che scritte dentro la scena. */
+              data-lato={i % 2 ? 'destra' : 'sinistra'}
               ref={(el) => {
                 sezioni.current[i] = el;
               }}
             >
               {b.render(c)}
-              {/* L'illustrazione accompagna il testo e non lo sostituisce:
-                  è ferma, mentre il video accanto è la cosa che si muove.
-                  Due animazioni sullo stesso schermo si tolgono attenzione. */}
-              {b.figura && <img className="home-figura" src={b.figura} alt="" loading="lazy" />}
             </section>
           ))}
         </div>

@@ -521,29 +521,63 @@ body {
   opacity: 1;
 }
 
-/* Il velo, dentro il video e non dietro: sta sopra le immagini e sotto le
-   parole. Messo fuori finiva sotto al video e il testo restava illeggibile.
-   Sfuma prima di arrivare a Zack, che vive sulla destra dell'inquadratura. */
-.home-video::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    95deg,
-    var(--nero, #111111) 0%,
-    rgba(17, 17, 17, 0.94) 34%,
-    rgba(17, 17, 17, 0.6) 52%,
-    rgba(17, 17, 17, 0) 78%
-  );
-  pointer-events: none;
-}
+/* Nessun velo.
+ *
+ * Prima ce n'era uno che scuriva la metà sinistra per far leggere il testo
+ * panna. Ma il video È panna, e il vuoto a sinistra dell'inquadratura è
+ * lasciato apposta per scriverci dentro: oscurarlo buttava via metà del
+ * lavoro per risolvere un problema che si risolve cambiando colore alle
+ * parole. Sul panna si scrive **nero**. */
 
-/* I testi scorrono sopra il video, sulla metà sinistra. */
+/* I testi scorrono sopra il video, nel vuoto che l'inquadratura lascia. */
 .home-testi {
   position: relative;
   z-index: 1;
-  width: min(46%, 620px);
-  padding: 0 clamp(20px, 4vw, 64px);
+  width: min(40%, 520px);
+  padding: 0 clamp(20px, 3vw, 48px);
+  color: var(--nero, #111111);
+}
+
+/* Tutto quello che sta sopra il video diventa nero: titoli, testo, occhielli.
+   Il grigio del fondo scuro qui sparirebbe sul panna. */
+.home-blocco,
+.home-blocco h2,
+.home-blocco p,
+.home-blocco li,
+.home-blocco b,
+.home-blocco span {
+  color: var(--nero, #111111);
+}
+
+.home-blocco .kicker {
+  color: #6b5a2e;
+}
+
+.home-blocco .lp-quote,
+.home-blocco .lp-note {
+  color: #3f3a30;
+}
+
+/* Alcuni blocchi stanno a destra: l'inquadratura ha vuoto da tutte e due le
+   parti, e alternare evita la colonna unica che sembra una barra laterale. */
+.home-blocco[data-lato='destra'] {
+  justify-items: end;
+  text-align: right;
+  margin-left: auto;
+}
+
+.home-testi[data-alterna] {
+  width: 100%;
+  padding: 0 clamp(20px, 4vw, 72px);
+}
+
+.home-testi[data-alterna] .home-blocco {
+  max-width: min(42%, 540px);
+}
+
+.home-testi[data-alterna] .home-blocco[data-lato='destra'] {
+  max-width: min(42%, 540px);
+  margin-left: auto;
 }
 
 /* Ogni blocco è alto uno schermo: è quanto serve perché la sua clip scorra
@@ -563,8 +597,22 @@ body {
     width: 100%;
   }
 
+  /* Su schermo stretto Zack finisce dietro le parole: lì un velo serve, ma
+     chiaro — si continua a scrivere nero. */
   .home-video::after {
-    background: rgba(17, 17, 17, 0.84);
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(245, 240, 232, 0.72);
+    pointer-events: none;
+  }
+
+  .home-testi[data-alterna] .home-blocco,
+  .home-testi[data-alterna] .home-blocco[data-lato='destra'] {
+    max-width: 100%;
+    text-align: left;
+    justify-items: start;
+    margin-left: 0;
   }
 }
 
@@ -585,4 +633,23 @@ body {
   margin-top: 12px;
   mix-blend-mode: screen;
   opacity: 0.92;
+}
+
+/* I tasti della presentazione seguono la stessa forma di quelli dello studio:
+   ovale, contorno, scritta grossa centrata. Un marchio che cambia forma fra
+   la pagina che convince e il prodotto che si apre è due marchi. */
+.lp-cta,
+.langswitch button {
+  font-family: 'Fredoka', 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.lp-cta {
+  border: 2px solid var(--oro, #c4a35a);
 }

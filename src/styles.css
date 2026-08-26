@@ -2953,6 +2953,12 @@ body {
  * ------------------------------------------------------------------ */
 :root {
   --tasto-bordo: #f5f0e8;
+  /* Il font dei tasti, e solo dei tasti: circolare e amichevole, come il
+     disegno. Il sistema tipografico del marchio — Space Grotesk per
+     l'interfaccia, Cormorant per l'editoriale — resta dov'era: cambiarlo
+     tutto per far somigliare i pulsanti a uno schizzo sarebbe stato un
+     rifacimento del marchio, non un ritocco. */
+  --tasto-font: 'Fredoka', 'Space Grotesk', system-ui, sans-serif;
 }
 
 .brain-barra button,
@@ -2972,12 +2978,21 @@ body {
   border-radius: 999px;
   background: var(--nero);
   color: var(--panna);
-  font-family: var(--display);
-  font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 0.14em;
+  font-family: var(--tasto-font);
+  font-weight: 600;
+  font-size: 13px;
+  /* Fredoka è già larga di suo: la spaziatura di Space Grotesk qui
+     sfalderebbe le parole. */
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 11px 20px;
+  padding: 10px 22px;
+  /* Le parole stanno al centro dell'ovale, sempre — anche quando accanto
+     c'è un'icona e anche quando il tasto è più largo del suo testo. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  text-align: center;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 
@@ -3030,11 +3045,13 @@ body {
 /* Il cassetto della libreria: nomi lunghi, quindi allineati a sinistra e non
    in stampatello — sono nomi di file, non comandi. */
 .brain-chip {
+  font-family: var(--display);
   text-transform: none;
   letter-spacing: 0.02em;
   font-weight: 500;
   font-size: 11px;
   padding: 8px 14px;
+  justify-content: flex-start;
   text-align: left;
 }
 
@@ -3249,4 +3266,24 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
+}
+
+/* ---- gli stati vuoti: dove il personaggio serve davvero ----
+   Una schermata senza niente dentro è l'unico momento in cui non c'è il
+   lavoro dell'utente da guardare. Appena c'è, l'illustrazione se ne va. */
+.drop-zack {
+  width: min(190px, 34%);
+  height: auto;
+  margin: 0 auto 6px;
+  display: block;
+}
+
+.brain-vuota {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(280px, 40%);
+  opacity: 0.5;
+  pointer-events: none;
 }

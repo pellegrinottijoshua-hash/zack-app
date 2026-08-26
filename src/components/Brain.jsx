@@ -263,6 +263,12 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
             </p>
           )}
 
+          {/* Tela vuota: Zack seduto fra le sue cose (E-BRAIN). Sparisce al
+              primo oggetto — un fondale che resta sotto il lavoro è rumore. */}
+          {items.length === 0 && (
+            <img className="brain-vuota" src="/zack/sfere.webp" alt="" />
+          )}
+
           <div
             className="brain-tela"
             style={{ transform: `translate(${vista.x}px, ${vista.y}px) scale(${vista.z})` }}

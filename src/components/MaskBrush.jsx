@@ -28,17 +28,40 @@ const MAX_UNDO = 12;
  * colore sul posto, e recuperarlo dal solo ritaglio ridipinge nero. I colori
  * vivi stanno soltanto nella sorgente.
  */
-/** I pixel di un'immagine, senza riscalarla: una scala sbagliata qui
- *  sposterebbe i colori di posto. */
-async function toPixels(blob) {
+/**
+ * I pixel di un'immagine, eventualmente riportata a una misura data.
+ *
+ * Riscalare è lecito **solo se le proporzioni coincidono**: un ingrandimento
+ * cambia la misura ma non il contenuto, quindi la sorgente riscalata ha il
+ * colore giusto in ogni punto. Un ritaglio invece cambia il contenuto, e
+ * riscalarlo sposterebbe i colori di posto — lì si rinuncia e lo si dice.
+ *
+ * Prima non si riscalava mai: dopo un ingrandimento in blocco la sorgente
+ * aveva un'altra misura, il pennello rinunciava al colore e ciò che si
+ * recuperava tornava NERO. Il difetto si vedeva solo correggendo a mano un
+ * file passato dal blocco, cioè nel momento peggiore.
+ */
+async function toPixels(blob, misura = null) {
   const bmp = await createImageBitmap(blob);
+
+  let w = bmp.width;
+  let h = bmp.height;
+  if (misura) {
+    const stessaForma = Math.abs(bmp.width / bmp.height - misura.w / misura.h) < 0.01;
+    if (stessaForma) {
+      w = misura.w;
+      h = misura.h;
+    }
+  }
+
   const c = document.createElement('canvas');
-  c.width = bmp.width;
-  c.height = bmp.height;
+  c.width = w;
+  c.height = h;
   const ctx = c.getContext('2d', { willReadFrequently: true });
-  ctx.drawImage(bmp, 0, 0);
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(bmp, 0, 0, w, h);
   bmp.close?.();
-  return { w: c.width, h: c.height, data: ctx.getImageData(0, 0, c.width, c.height).data };
+  return { w, h, data: ctx.getImageData(0, 0, w, h).data };
 }
 
 export default function MaskBrush({ source, cutout, onChange, onDone }) {
@@ -64,7 +87,7 @@ export default function MaskBrush({ source, cutout, onChange, onDone }) {
       // si continua con quello che c'è invece di fermarsi.
       let src = null;
       try {
-        src = source ? await toPixels(source) : null;
+        src = source ? await toPixels(source, { w: cut.w, h: cut.h }) : null;
       } catch (e) {
         console.error(e);
       }

@@ -28,6 +28,11 @@ export default function Dropzone({ onFile, accept = 'image/*', title, hint }) {
       }}
     >
       <span className="rule" />
+      {/* Lo stato vuoto: Zack aspetta con la piuma in ala. È l'asset E-DROP
+          del piano — una schermata senza niente dentro è il posto dove il
+          personaggio serve davvero, perché è l'unico momento in cui non c'è
+          il lavoro dell'utente da guardare. */}
+      <img className="drop-zack" src="/zack/piuma.webp" alt="" />
       <h2>{title}</h2>
       <p>{hint}</p>
       <input
