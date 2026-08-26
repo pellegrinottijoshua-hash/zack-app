@@ -333,9 +333,16 @@ esiste già prima di proporre qualunque cosa.**
 >    due decisioni di prodotto — «Prima della stampa» come *momento* dopo il
 >    lavoro invece di tre sezioni, e il blocco come *modalità*.
 >
-> **Non fatto**: il servizio **Brain**, «Zack può ricordarlo», Spiegami
+ 7. `src/engine/brain.js` + `Brain.jsx` — il servizio **Brain**, primo della
+>    lista: lavori, note colorate, gruppi e frecce su una tela che si salva a
+>    ogni gesto dentro una raccolta. Il ponte verso gli strumenti passa da
+>    `assetAction`.
+>
+> **Non fatto**: «Zack può ricordarlo» (la ricetta imparata dall'uso), Spiegami
 > profondo, l'aggancio delle animazioni del cast agli eventi, l'hero della
-> presentazione. La scaletta completa è nel documento, §8.
+> presentazione, e **l'importazione di audio e video nella libreria** — `KINDS`
+> li accetta e Brain li mostra, ma nessuna porta li fa entrare. La scaletta
+> completa è nel documento, §8.
 
 ### Dove sta il materiale
 
