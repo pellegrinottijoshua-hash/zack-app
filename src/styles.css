@@ -7,17 +7,29 @@
    ═════════════════════════════════════════════════════════════════════════ */
 
 :root {
+  /* ── I RUOLI ──────────────────────────────────────────────────────────
+     Panna 60, nero 30, oro 10. Le variabili portano il nome del RUOLO e non
+     del colore: `--nero: #f5f0e8` sarebbe una bugia scritta nel codice, e
+     alla prossima inversione nessuno saprebbe più cosa cambiare.
+     Il nero non sparisce — passa da fondo a inchiostro, e resta il colore
+     dei tasti e dei bordi degli strumenti. */
+  --fondo: #f5f0e8;
+  --fondo-2: #efe8dc;
+  --fondo-3: #e6ddcd;
+  --linea: #ded5c3;
+  --linea-viva: #c3b89f;
+  --inchiostro: #111111;
+  --inchiostro-2: #57544c;
+  --inchiostro-3: #8a857a;
+
+  /* ── I COLORI LETTERALI ───────────────────────────────────────────────
+     Servono dove il colore È il punto: i tasti restano neri con la scritta
+     panna, qualunque cosa faccia il fondo intorno. */
   --nero: #111111;
-  --nero-2: #191919;
-  --nero-3: #212121;
-  --linea: #2c2c2c;
-  --linea-viva: #3d3d3a;
   --panna: #f5f0e8;
   --bianco: #ffffff;
-  --grigio: #8a8a85;
-  --grigio-scuro: #5c5c58;
   --oro: #c4a35a;
-  --oro-velo: rgba(196, 163, 90, 0.12);
+  --oro-velo: rgba(196, 163, 90, 0.14);
 
   --display: 'Space Grotesk', system-ui, sans-serif;
   --editoriale: 'Cormorant Garamond', Georgia, serif;
@@ -42,8 +54,8 @@ body,
 
 body {
   margin: 0;
-  background: var(--nero);
-  color: var(--panna);
+  background: var(--fondo);
+  color: var(--inchiostro);
   font-family: var(--display);
   font-size: 13px;
   line-height: 1.5;
@@ -52,7 +64,7 @@ body {
 
 ::selection {
   background: var(--oro);
-  color: var(--nero);
+  color: var(--fondo);
 }
 
 /* ─── shell ─────────────────────────────────────────────────────────────── */
@@ -71,7 +83,7 @@ body {
   padding: 0 var(--pad);
   height: 56px;
   border-bottom: 1px solid var(--linea);
-  background: var(--nero);
+  background: var(--fondo);
 }
 
 .wordmark {
@@ -80,7 +92,7 @@ body {
   font-size: 15px;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: var(--panna);
+  color: var(--inchiostro);
   white-space: nowrap;
 }
 
@@ -100,7 +112,7 @@ body {
   padding: 0 16px;
   background: none;
   border: 0;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font: inherit;
   font-size: 11px;
   font-weight: 500;
@@ -111,11 +123,11 @@ body {
 }
 
 .tab:hover {
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 .tab[aria-selected='true'] {
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 /* The only gold on the bar: a hairline under the active tool. */
@@ -140,14 +152,14 @@ body {
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 .lamp i {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--grigio-scuro);
+  background: var(--inchiostro-3);
 }
 
 .lamp[data-state='pronta'] i {
@@ -160,7 +172,7 @@ body {
 }
 
 .lamp[data-state='offline'] i {
-  background: var(--grigio-scuro);
+  background: var(--inchiostro-3);
   box-shadow: 0 0 0 3px rgba(138, 138, 133, 0.12);
 }
 
@@ -212,7 +224,7 @@ body {
 
 .rail {
   border-left: 1px solid var(--linea);
-  background: var(--nero-2);
+  background: var(--fondo-2);
   padding: var(--pad);
   display: flex;
   flex-direction: column;
@@ -230,25 +242,25 @@ body {
   font-weight: 500;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 .label b {
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font-weight: 500;
 }
 
 .hint {
   font-size: 11px;
   line-height: 1.6;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 .editorial {
   font-family: var(--editoriale);
   font-style: italic;
   font-size: 17px;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
 }
 
 .field {
@@ -276,7 +288,7 @@ body {
   padding: 8px 10px;
   background: transparent;
   border: 1px solid var(--linea);
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font: inherit;
   font-size: 11px;
   text-align: left;
@@ -286,12 +298,12 @@ body {
 
 .opt:hover:not(:disabled) {
   border-color: var(--linea-viva);
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 .opt[aria-pressed='true'] {
   border-color: var(--oro);
-  color: var(--panna);
+  color: var(--inchiostro);
   background: var(--oro-velo);
 }
 
@@ -304,7 +316,7 @@ body {
   margin-left: auto;
   font-size: 9px;
   letter-spacing: 0.08em;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 .opt .swatch {
@@ -318,7 +330,7 @@ body {
   padding: 11px 14px;
   border: 1px solid var(--oro);
   background: var(--oro);
-  color: var(--nero);
+  color: var(--fondo);
   font: inherit;
   font-size: 11px;
   font-weight: 700;
@@ -340,12 +352,12 @@ body {
 .btn.ghost {
   background: transparent;
   border-color: var(--linea-viva);
-  color: var(--grigio);
+  color: var(--inchiostro-2);
 }
 
 .btn.ghost:hover:not(:disabled) {
-  color: var(--panna);
-  border-color: var(--grigio);
+  color: var(--inchiostro);
+  border-color: var(--inchiostro-2);
 }
 
 .btn.small {
@@ -364,7 +376,7 @@ body {
   gap: 8px;
   margin: 0 calc(var(--pad) * -1) calc(var(--pad) * -1);
   padding: 14px var(--pad) var(--pad);
-  background: linear-gradient(to top, var(--nero-2) 72%, rgba(25, 25, 25, 0));
+  background: linear-gradient(to top, var(--fondo-2) 72%, rgba(25, 25, 25, 0));
 }
 
 /* ─── dropzone ──────────────────────────────────────────────────────────── */
@@ -377,14 +389,14 @@ body {
   gap: 16px;
   text-align: center;
   border: 1px dashed var(--linea-viva);
-  background: var(--nero-2);
+  background: var(--fondo-2);
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
 }
 
 .drop[data-over='true'] {
   border-color: var(--oro);
-  background: var(--nero-3);
+  background: var(--fondo-3);
 }
 
 .drop h2 {
@@ -394,7 +406,7 @@ body {
   font-weight: 400;
   font-size: 34px;
   line-height: 1.1;
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 .drop p {
@@ -402,7 +414,7 @@ body {
   max-width: 40ch;
   font-size: 11px;
   line-height: 1.8;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 .drop .rule {
@@ -464,7 +476,7 @@ body {
   height: 24px;
   transform: translate(-50%, -50%) rotate(45deg);
   border: 1px solid var(--oro);
-  background: var(--nero);
+  background: var(--fondo);
 }
 
 .plate input[type='range'] {
@@ -484,7 +496,7 @@ body {
   font-size: 9px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   background: rgba(17, 17, 17, 0.82);
   border: 1px solid var(--linea);
   pointer-events: none;
@@ -543,14 +555,14 @@ body {
   font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 .scanner small {
   max-width: 44ch;
   font-size: 11px;
   line-height: 1.7;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 /* ─── alerts + meta ─────────────────────────────────────────────────────── */
@@ -559,10 +571,10 @@ body {
   padding: 10px 12px;
   border: 1px solid var(--linea-viva);
   border-left: 3px solid var(--oro);
-  background: var(--nero-2);
+  background: var(--fondo-2);
   font-size: 11px;
   line-height: 1.6;
-  color: var(--panna);
+  color: var(--inchiostro);
   word-break: break-word;
 }
 
@@ -577,12 +589,12 @@ body {
 .meta dt {
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 .meta dd {
   margin: 0;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
 }
 
 .meta dd b {
@@ -594,7 +606,7 @@ body {
 
 .library {
   border-top: 1px solid var(--linea);
-  background: var(--nero-2);
+  background: var(--fondo-2);
   display: grid;
   grid-template-rows: auto 0fr;
   /* NIENTE transizione su grid-template-rows. Fra `0fr` e `minmax(0, 64vh)`
@@ -652,7 +664,7 @@ body {
   flex: none;
   width: 132px;
   border: 1px solid var(--linea);
-  background: var(--nero);
+  background: var(--fondo);
   display: flex;
   flex-direction: column;
 }
@@ -680,7 +692,7 @@ body {
 .work .thumb .none {
   font-size: 9px;
   letter-spacing: 0.14em;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 .work figcaption {
@@ -688,7 +700,7 @@ body {
   border-top: 1px solid var(--linea);
   font-size: 9px;
   line-height: 1.4;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
   word-break: break-all;
 }
 
@@ -700,7 +712,7 @@ body {
   font-size: 8px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
 }
 
 .work .acts {
@@ -714,7 +726,7 @@ body {
   padding: 6px 2px;
   background: transparent;
   border: 0;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font: inherit;
   font-size: 9px;
   letter-spacing: 0.1em;
@@ -724,8 +736,8 @@ body {
 }
 
 .work .acts button:hover {
-  background: var(--nero-3);
-  color: var(--panna);
+  background: var(--fondo-3);
+  color: var(--inchiostro);
 }
 
 .work .acts button.danger:hover {
@@ -735,7 +747,7 @@ body {
 .empty-strip {
   padding: 0 var(--pad) var(--pad);
   font-size: 11px;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 /* ─── svg editor ────────────────────────────────────────────────────────── */
@@ -758,7 +770,7 @@ body {
   padding: 7px 11px;
   background: transparent;
   border: 1px solid var(--linea);
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font: inherit;
   font-size: 10px;
   letter-spacing: 0.12em;
@@ -768,14 +780,14 @@ body {
 }
 
 .tool:hover:not(:disabled) {
-  color: var(--panna);
+  color: var(--inchiostro);
   border-color: var(--linea-viva);
 }
 
 .tool[aria-pressed='true'] {
   border-color: var(--oro);
   background: var(--oro-velo);
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 .tool:disabled {
@@ -788,7 +800,7 @@ body {
   min-height: 0;
   overflow: auto;
   border: 1px solid var(--linea);
-  background: var(--nero-3);
+  background: var(--fondo-3);
   display: grid;
   place-items: center;
   padding: 20px;
@@ -830,15 +842,15 @@ body {
   align-items: center;
   padding: 7px var(--pad);
   border-top: 1px solid var(--linea);
-  background: var(--nero);
+  background: var(--fondo);
   font-size: 9px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 .statusbar b {
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font-weight: 500;
 }
 
@@ -849,7 +861,7 @@ body {
   font-size: 13px;
   letter-spacing: 0;
   text-transform: none;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 /* ─── banner del motore ─────────────────────────────────────────────────── */
@@ -858,11 +870,11 @@ body {
   padding: 12px 14px;
   border: 1px solid var(--linea-viva);
   border-left: 3px solid var(--oro);
-  background: var(--nero-2);
+  background: var(--fondo-2);
 }
 
 .banner.warn {
-  border-left-color: var(--grigio);
+  border-left-color: var(--inchiostro-2);
 }
 
 .banner strong {
@@ -872,7 +884,7 @@ body {
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 .banner p {
@@ -880,7 +892,7 @@ body {
   max-width: 62ch;
   font-size: 11px;
   line-height: 1.7;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
 }
 
 .banner .bar {
@@ -901,7 +913,7 @@ body {
   margin-top: 6px;
   font-size: 10px;
   letter-spacing: 0.1em;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 /* Testo di aiuto sotto un controllo: la regola di progetto dice che un
@@ -910,7 +922,7 @@ body {
   margin: -2px 0 2px;
   font-size: 10px;
   line-height: 1.6;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 /* ─── interruttore lingua ───────────────────────────────────────────────── */
@@ -925,7 +937,7 @@ body {
   padding: 5px 9px;
   background: transparent;
   border: 0;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
   font: inherit;
   font-size: 10px;
   font-weight: 500;
@@ -935,7 +947,7 @@ body {
 }
 
 .langswitch button:hover {
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 .langswitch button[aria-pressed='true'] {
@@ -952,7 +964,7 @@ body {
   padding: 5px 10px;
   background: transparent;
   border: 1px solid var(--linea);
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
   font: inherit;
   font-size: 10px;
   font-weight: 500;
@@ -974,7 +986,7 @@ body {
 }
 
 .helptoggle:hover {
-  color: var(--panna);
+  color: var(--inchiostro);
   border-color: var(--linea-viva);
 }
 
@@ -998,7 +1010,7 @@ body {
   max-width: 460px;
   padding: 28px 30px 26px;
   border: 1px solid var(--linea-viva);
-  background: var(--nero-2);
+  background: var(--fondo-2);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -1017,7 +1029,7 @@ body {
   font-weight: 400;
   font-size: 27px;
   line-height: 1.15;
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 .onboarding-card ol {
@@ -1031,7 +1043,7 @@ body {
 .onboarding-card li {
   font-size: 12px;
   line-height: 1.65;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
 }
 
 .onboarding-card li::marker {
@@ -1048,7 +1060,7 @@ body {
   margin-left: 6px;
   font-size: 10px;
   line-height: 1.5;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 @media (max-width: 1100px) {
@@ -1070,7 +1082,7 @@ body {
   align-items: center;
   gap: 6px;
   border: 1px solid var(--linea);
-  background: var(--nero);
+  background: var(--fondo);
   padding: 0 8px;
   transition: border-color 0.15s;
 }
@@ -1085,7 +1097,7 @@ body {
   font-size: 9px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 .num input {
@@ -1094,14 +1106,14 @@ body {
   padding: 7px 0;
   background: transparent;
   border: 0;
-  color: var(--panna);
+  color: var(--inchiostro);
   font: inherit;
   font-size: 11px;
   outline: none;
 }
 
 .num input:disabled {
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 /* Le frecce native rubano spazio e non servono: si scrive il numero. */
@@ -1144,7 +1156,7 @@ body {
   padding: 4px 0;
   background: none;
   border: 0;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
   font: inherit;
   cursor: pointer;
   text-align: left;
@@ -1152,14 +1164,14 @@ body {
 }
 
 .sect-head:hover {
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 .sect-head .caret {
   flex: none;
   width: 10px;
   font-size: 9px;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 .sect-title {
@@ -1199,9 +1211,9 @@ body {
 .search {
   padding: 5px 9px;
   min-width: 150px;
-  background: var(--nero);
+  background: var(--fondo);
   border: 1px solid var(--linea);
-  color: var(--panna);
+  color: var(--inchiostro);
   font: inherit;
   font-size: 11px;
   outline: none;
@@ -1215,7 +1227,7 @@ body {
   padding: 4px 9px;
   background: transparent;
   border: 1px solid var(--linea);
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
   font: inherit;
   font-size: 10px;
   cursor: pointer;
@@ -1224,19 +1236,19 @@ body {
 }
 
 .chip:hover {
-  color: var(--panna);
+  color: var(--inchiostro);
   border-color: var(--linea-viva);
 }
 
 .chip[aria-pressed='true'] {
   border-color: var(--oro);
   background: var(--oro-velo);
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 .chip b {
   margin-left: 4px;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
   font-weight: 500;
 }
 
@@ -1249,7 +1261,7 @@ body {
   padding: 4px 8px;
   background: transparent;
   border: 1px dashed var(--linea);
-  color: var(--panna);
+  color: var(--inchiostro);
   font: inherit;
   font-size: 10px;
   outline: none;
@@ -1271,7 +1283,7 @@ body {
   padding: 1px 4px;
   background: transparent;
   border: 1px solid var(--linea);
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
   font: inherit;
   font-size: 8px;
   cursor: pointer;
@@ -1285,10 +1297,10 @@ body {
 .tag-form input {
   width: 100%;
   padding: 4px 6px;
-  background: var(--nero-3);
+  background: var(--fondo-3);
   border: 0;
   border-top: 1px solid var(--linea);
-  color: var(--panna);
+  color: var(--inchiostro);
   font: inherit;
   font-size: 10px;
   outline: none;
@@ -1323,7 +1335,7 @@ body {
   max-width: 90ch;
   font-size: 10px;
   line-height: 1.6;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 /* ─── barra dei servizi ─────────────────────────────────────────────────── */
@@ -1332,7 +1344,7 @@ body {
   min-width: 0;
   padding: 12px 10px;
   border-right: 1px solid var(--linea);
-  background: var(--nero);
+  background: var(--fondo);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1352,7 +1364,7 @@ body {
   font-weight: 500;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
   white-space: nowrap;
   overflow: hidden;
 }
@@ -1370,7 +1382,7 @@ body {
   padding: 8px;
   background: transparent;
   border: 1px solid transparent;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font: inherit;
   font-size: 11px;
   text-align: left;
@@ -1379,14 +1391,14 @@ body {
 }
 
 .tool-item:hover {
-  color: var(--panna);
-  background: var(--nero-2);
+  color: var(--inchiostro);
+  background: var(--fondo-2);
 }
 
 .tool-item[aria-pressed='true'] {
   border-color: var(--oro);
   background: var(--oro-velo);
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 .tool-item svg {
@@ -1414,7 +1426,7 @@ body {
 .tool-price {
   margin-left: auto;
   font-size: 9px;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
   white-space: nowrap;
 }
 
@@ -1425,7 +1437,7 @@ body {
   font-size: 8px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 .tool-item[aria-pressed='true'] .tool-price {
@@ -1442,7 +1454,7 @@ body {
   font-size: 9px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
 }
 
 .rail-foot b {
@@ -1450,7 +1462,7 @@ body {
   font-size: 11px;
   letter-spacing: 0;
   text-transform: none;
-  color: var(--panna);
+  color: var(--inchiostro);
   font-weight: 500;
 }
 
@@ -1493,7 +1505,7 @@ body {
   font-size: 8px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
   margin-bottom: 2px;
 }
 
@@ -1501,7 +1513,7 @@ body {
   padding: 4px 6px;
   background: transparent;
   border: 1px solid var(--linea-viva);
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font: inherit;
   font-size: 9px;
   text-align: left;
@@ -1510,8 +1522,8 @@ body {
 }
 
 .asset-actions button:hover {
-  color: var(--panna);
-  border-color: var(--grigio);
+  color: var(--inchiostro);
+  border-color: var(--inchiostro-2);
 }
 
 .asset-actions button.primary {
@@ -1521,7 +1533,7 @@ body {
 
 .asset-actions button.primary:hover {
   background: var(--oro-velo);
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 /* ─── pennello di correzione ────────────────────────────────────────────── */
@@ -1566,7 +1578,7 @@ body {
 .brush-sizes button i {
   display: block;
   border-radius: 50%;
-  background: var(--grigio);
+  background: var(--inchiostro-2);
 }
 
 .brush-sizes button[aria-pressed='true'] {
@@ -1672,7 +1684,7 @@ body {
     z-index: 15;
     margin: 0;
     padding: 8px var(--pad);
-    background: var(--nero-2);
+    background: var(--fondo-2);
     border-top: 1px solid var(--linea);
     flex-direction: row;
     gap: 6px;
@@ -1915,7 +1927,7 @@ body {
 }
 
 .star:hover {
-  color: var(--grigio);
+  color: var(--inchiostro-2);
 }
 
 .star[aria-pressed='true'] {
@@ -1928,7 +1940,7 @@ body {
   margin-top: 3px;
   font-size: 8px;
   letter-spacing: 0.04em;
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1944,7 +1956,7 @@ body {
   gap: 14px;
   padding: 20px;
   border: 1px solid var(--linea);
-  background: var(--nero-2);
+  background: var(--fondo-2);
   overflow-y: auto;
 }
 
@@ -1961,7 +1973,7 @@ body {
   height: 8px;
   margin-right: 8px;
   border-radius: 50%;
-  background: var(--nero);
+  background: var(--fondo);
   animation: pulse 1.1s ease-in-out infinite;
 }
 
@@ -2010,7 +2022,7 @@ body {
   margin: 6px 0 0;
   font-size: 12px;
   letter-spacing: 0.02em;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
 }
 
 .verdict {
@@ -2019,8 +2031,8 @@ body {
   border-left: 2px solid var(--linea-viva);
   font-size: 12.5px;
   line-height: 1.45;
-  color: var(--panna);
-  background: var(--nero-3);
+  color: var(--inchiostro);
+  background: var(--fondo-3);
 }
 .verdict[data-level='ok'] {
   border-left-color: var(--oro);
@@ -2046,18 +2058,18 @@ body {
   align-items: start;
   font-size: 12px;
   line-height: 1.45;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
 }
 .checks li[data-level='attenzione'],
 .checks li[data-level='errore'] {
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 .checks .dot {
   width: 7px;
   height: 7px;
   margin-top: 5px;
   border-radius: 50%;
-  background: var(--grigio-scuro);
+  background: var(--inchiostro-3);
 }
 .checks li[data-level='ok'] .dot {
   background: var(--oro);
@@ -2075,9 +2087,9 @@ body {
   margin-top: 10px;
   padding: 8px;
   border: 1px solid var(--linea);
-  background: var(--nero-2);
+  background: var(--fondo-2);
   text-decoration: none;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2085,7 +2097,7 @@ body {
 }
 .mockup-preview:hover {
   border-color: var(--oro);
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 .mockup-preview img {
   width: 100%;
@@ -2110,8 +2122,8 @@ body {
   display: grid;
   gap: 3px;
   border: 1px solid var(--linea);
-  background: var(--nero-2);
-  color: var(--grigio);
+  background: var(--fondo-2);
+  color: var(--inchiostro-2);
   cursor: pointer;
   font: inherit;
   font-size: 9.5px;
@@ -2119,7 +2131,7 @@ body {
 }
 .batch-results button:hover {
   border-color: var(--oro);
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 .batch-results img {
   width: 100%;
@@ -2205,13 +2217,13 @@ body {
   max-width: 30%;
   font-size: 11px;
   letter-spacing: 0.06em;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .sb-file b {
-  color: var(--grigio-scuro);
+  color: var(--inchiostro-3);
   font-weight: 400;
   font-size: 10px;
 }
@@ -2228,7 +2240,7 @@ body {
   padding: 5px 9px;
   border: 1px solid transparent;
   background: transparent;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font: inherit;
   font-size: 9px;
   letter-spacing: 0.08em;
@@ -2246,7 +2258,7 @@ body {
 }
 .sb-tool:hover:not(:disabled) {
   border-color: var(--linea-viva);
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 .sb-tool[aria-pressed='true'] {
   border-color: var(--oro);
@@ -2280,7 +2292,7 @@ body {
   min-height: 56px;
   background: var(--oro-velo);
   border: 1px solid var(--oro);
-  color: var(--panna);
+  color: var(--inchiostro);
   font-family: var(--display);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
@@ -2323,7 +2335,7 @@ body {
 .zack-testo small {
   font-size: 9.5px;
   letter-spacing: 0.06em;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
 }
 
 .zack-cosa {
@@ -2331,7 +2343,7 @@ body {
   background: transparent;
   border: 1px solid var(--linea-viva);
   border-left: none;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font-family: var(--display);
   font-size: 9px;
   letter-spacing: 0.12em;
@@ -2342,7 +2354,7 @@ body {
 
 .zack-cosa:hover,
 .zack-cosa[aria-expanded='true'] {
-  color: var(--panna);
+  color: var(--inchiostro);
   border-color: var(--oro);
 }
 
@@ -2358,7 +2370,7 @@ body {
   display: grid;
   gap: 2px;
   padding: 10px;
-  background: var(--nero-2);
+  background: var(--fondo-2);
   border: 1px solid var(--oro);
 }
 
@@ -2386,7 +2398,7 @@ body {
   display: block;
   font-size: 12px;
   font-weight: 500;
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 .zack-passo small {
@@ -2394,7 +2406,7 @@ body {
   margin-top: 3px;
   font-size: 10.5px;
   line-height: 1.45;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
 }
 
 /* Un passo acceso che stavolta non serve — l'ingrandimento su un file già
@@ -2402,7 +2414,7 @@ body {
    segnale: il testo del passo lo spiega. */
 .zack-passo[data-salta] b::after {
   content: ' · stavolta salta';
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font-size: 10px;
   letter-spacing: 0.04em;
 }
@@ -2426,7 +2438,7 @@ body {
 }
 .work .acts button.primary:hover {
   background: var(--oro-velo);
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 /* ------------------------------------------------------------------ *
@@ -2495,7 +2507,7 @@ body {
   padding: 11px 2px;
   background: transparent;
   border: none;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font-family: var(--display);
   font-size: 10px;
   letter-spacing: 0.16em;
@@ -2505,7 +2517,7 @@ body {
 
 .avanzati-head:hover,
 .avanzati[data-open='true'] .avanzati-head {
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 .avanzati-head .caret {
@@ -2575,7 +2587,7 @@ body {
   padding: 9px 13px;
   background: transparent;
   border: 1px solid var(--linea-viva);
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font-family: var(--display);
   font-size: 11px;
   letter-spacing: 0.1em;
@@ -2585,7 +2597,7 @@ body {
 
 .brain-barra button:hover:not(:disabled),
 .brain-barra button[aria-pressed='true'] {
-  color: var(--panna);
+  color: var(--inchiostro);
   border-color: var(--oro);
 }
 
@@ -2611,7 +2623,7 @@ body {
 .brain-zoom {
   font-size: 10px;
   letter-spacing: 0.1em;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   min-width: 46px;
   text-align: right;
 }
@@ -2635,7 +2647,7 @@ body {
   font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
 }
 
 .brain-elenco {
@@ -2647,7 +2659,7 @@ body {
   padding: 7px 8px;
   background: transparent;
   border: 1px solid var(--linea);
-  color: var(--panna);
+  color: var(--inchiostro);
   font-family: var(--display);
   font-size: 10.5px;
   text-align: left;
@@ -2665,7 +2677,7 @@ body {
 .brain-perso {
   font-size: 10.5px;
   line-height: 1.5;
-  color: var(--grigio);
+  color: var(--inchiostro-2);
 }
 
 /* Il piano si taglia con `clip`, non con `hidden`: `overflow-x: hidden`
@@ -2716,7 +2728,7 @@ body {
 .brain-oggetto {
   position: absolute;
   border: 1px solid var(--linea-viva);
-  background: var(--nero-2);
+  background: var(--fondo-2);
   overflow: hidden;
   cursor: grab;
   resize: both;
@@ -2753,7 +2765,7 @@ body {
 .brain-oggetto[data-t='nota'] {
   border-color: var(--tinta, var(--oro));
   border-left-width: 4px;
-  background: color-mix(in srgb, var(--tinta, var(--oro)) 12%, var(--nero-2));
+  background: color-mix(in srgb, var(--tinta, var(--oro)) 12%, var(--fondo-2));
 }
 
 .brain-oggetto[data-t='nota'] textarea {
@@ -2763,7 +2775,7 @@ body {
   background: transparent;
   border: none;
   resize: none;
-  color: var(--panna);
+  color: var(--inchiostro);
   font-family: var(--display);
   font-size: 12px;
   line-height: 1.5;
@@ -2824,7 +2836,7 @@ body {
 }
 
 .brain-colore[aria-pressed='true'] {
-  box-shadow: 0 0 0 2px var(--nero), 0 0 0 3px var(--oro);
+  box-shadow: 0 0 0 2px var(--fondo), 0 0 0 3px var(--oro);
 }
 
 .brain-usa {
@@ -2837,7 +2849,7 @@ body {
   padding: 8px;
   background: transparent;
   border: 1px solid var(--linea-viva);
-  color: var(--panna);
+  color: var(--inchiostro);
   font-family: var(--display);
   font-size: 10px;
   letter-spacing: 0.1em;
@@ -2850,11 +2862,11 @@ body {
 }
 
 .brain-togli {
-  color: var(--grigio);
+  color: var(--inchiostro-2);
 }
 
 .brain-togli:hover {
-  color: var(--panna);
+  color: var(--inchiostro);
   border-color: var(--oro);
 }
 
@@ -2870,7 +2882,7 @@ body {
   margin-bottom: 10px;
   padding: 8px;
   border: 1px dashed var(--linea-viva);
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -2879,7 +2891,7 @@ body {
 }
 
 .brain-porta:hover {
-  color: var(--panna);
+  color: var(--inchiostro);
   border-color: var(--oro);
 }
 
@@ -2893,7 +2905,7 @@ body {
 .brain-zack {
   background: var(--oro-velo) !important;
   border-color: var(--oro) !important;
-  color: var(--panna) !important;
+  color: var(--inchiostro) !important;
   padding: 9px 18px !important;
 }
 
@@ -2908,7 +2920,7 @@ body {
 .brain-riapri {
   padding: 9px 12px;
   border: 1px solid var(--linea-viva);
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -2917,7 +2929,7 @@ body {
 }
 
 .brain-riapri:hover {
-  color: var(--panna);
+  color: var(--inchiostro);
   border-color: var(--oro);
 }
 
@@ -2952,7 +2964,7 @@ body {
  * stato ritagliato.
  * ------------------------------------------------------------------ */
 :root {
-  --tasto-bordo: #f5f0e8;
+  --tasto-bordo: #111111;
   /* Il font dei tasti, e solo dei tasti: circolare e amichevole, come il
      disegno. Il sistema tipografico del marchio — Space Grotesk per
      l'interfaccia, Cormorant per l'editoriale — resta dov'era: cambiarlo
@@ -2974,8 +2986,10 @@ body {
 .avanzati-head,
 .bg-testa button,
 .bg-azioni button {
-  border: 2px solid var(--tasto-bordo);
+  border: 2px solid var(--nero);
   border-radius: 999px;
+  /* I tasti restano NERI: sul panna sono l'unica cosa che pesa, e il 30% di
+     nero del marchio vive quasi tutto qui. */
   background: var(--nero);
   color: var(--panna);
   font-family: var(--tasto-font);
@@ -3022,15 +3036,17 @@ body {
 .brain-categoria[aria-pressed='true'] {
   border-color: var(--oro);
   color: var(--oro);
-  background: var(--oro-velo);
+  background: var(--nero);
+  box-shadow: inset 0 0 0 2px var(--oro-velo);
 }
 
 /* Spento: il contorno resta, sbiadito. Toglierlo farebbe sparire il tasto, e
    un comando che sparisce è un comando che l'utente crede di aver sognato. */
 .brain-barra button:disabled,
 .zack-go:disabled {
-  border-color: var(--linea-viva);
-  color: var(--grigio-scuro);
+  border-color: var(--inchiostro-3);
+  color: var(--inchiostro-3);
+  background: transparent;
   opacity: 1;
 }
 
@@ -3039,12 +3055,17 @@ body {
 .zack-go,
 .brain-zack {
   border-color: var(--oro) !important;
-  background: var(--oro-velo) !important;
+  background: var(--nero) !important;
+  color: var(--oro) !important;
 }
 
 /* Il cassetto della libreria: nomi lunghi, quindi allineati a sinistra e non
    in stampatello — sono nomi di file, non comandi. */
 .brain-chip {
+  background: transparent;
+  color: var(--inchiostro);
+  border-color: var(--linea-viva);
+  border-width: 1px;
   font-family: var(--display);
   text-transform: none;
   letter-spacing: 0.02em;
@@ -3103,9 +3124,9 @@ body {
   align-items: center;
   gap: 8px;
   padding: 7px 9px;
-  background: var(--nero);
+  background: var(--fondo);
   border: 1px solid var(--linea-viva);
-  color: var(--grigio);
+  color: var(--inchiostro-2);
   font-family: var(--display);
   font-size: 10px;
   font-weight: 700;
@@ -3126,8 +3147,8 @@ body {
 }
 
 .brain-categoria[aria-pressed='true'] {
-  color: var(--panna);
-  border-color: var(--panna);
+  color: var(--inchiostro);
+  border-color: var(--inchiostro);
 }
 
 /* La riga che dice cosa fare mentre si collega. Senza, il modo freccia era
@@ -3141,7 +3162,7 @@ body {
   z-index: 20;
   margin: 0;
   padding: 8px 16px;
-  background: var(--nero);
+  background: var(--fondo);
   border: 1px solid var(--oro);
   color: var(--oro);
   font-size: 10px;
@@ -3184,7 +3205,7 @@ body {
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--panna);
+  color: var(--inchiostro);
 }
 
 .bg-spazio {
@@ -3194,9 +3215,9 @@ body {
 .bg-testa button,
 .bg-azioni button {
   padding: 8px 13px;
-  background: var(--nero);
+  background: var(--fondo);
   border: 1px solid var(--tasto-bordo);
-  color: var(--panna);
+  color: var(--inchiostro);
   font-family: var(--display);
   font-size: 10px;
   font-weight: 700;
@@ -3250,9 +3271,9 @@ body {
    come chiamarlo. */
 .bg-nome {
   padding: 7px 8px;
-  background: var(--nero-2);
+  background: var(--fondo-2);
   border: 1px solid var(--linea-viva);
-  color: var(--panna);
+  color: var(--inchiostro);
   font-family: var(--display);
   font-size: 11px;
 }
@@ -3286,4 +3307,187 @@ body {
   width: min(280px, 40%);
   opacity: 0.5;
   pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════ *
+ * GLI STRUMENTI NON COPRONO LA TELA
+ *
+ * La tela è lo sfondo, sempre e in ogni sezione. I pannelli non ci stanno
+ * sopra come lastre opache: hanno un **bordo nero** e dentro sono
+ * **trasparenti**, così il panna passa attraverso e i personaggi che fanno
+ * cose arrivano sul panna della pagina, non su un rettangolo appiccicato.
+ *
+ * Non è solo estetica: un pannello opaco è un pezzo di schermo tolto al
+ * lavoro, e su una tela è proprio il lavoro la cosa da guardare.
+ * ══════════════════════════════════════════════════════════════════════ */
+.rail,
+.brain-cassetto,
+.brain-scelto,
+.brain-barra,
+.stagebar,
+.bg-testa {
+  background: transparent;
+  backdrop-filter: none;
+}
+
+/* Il bordo che li tiene insieme senza riempirli. */
+.rail {
+  border-left: 2px solid var(--nero);
+}
+
+.brain-cassetto {
+  border-right: 2px solid var(--nero);
+}
+
+.brain-scelto {
+  border-left: 2px solid var(--nero);
+}
+
+.brain-barra,
+.bg-testa {
+  border-bottom: 2px solid var(--nero);
+}
+
+.stagebar {
+  border-bottom: 2px solid var(--nero);
+}
+
+/* Le sezioni dentro i pannelli: nessun fondo, solo il filo che le separa. */
+.sect,
+.field,
+.avanzati {
+  background: transparent;
+}
+
+/* Il velo dietro un pannello serve solo dove il testo finisce sopra
+   un'immagine — e lì è panna appena velato, non nero. */
+.brain-scelto,
+.brain-cassetto {
+  background: rgba(245, 240, 232, 0.72);
+}
+
+/* ── LE TENDINE ────────────────────────────────────────────────────────
+ * Tutto si nasconde per intero. Una sezione chiusa non lascia dietro di sé
+ * un blocco di titoli: resta una riga sola, e la tela si riprende lo spazio.
+ * È la ragione per cui il committente le ha volute — «più userfriendly e
+ * pulito» — ed è anche la ragione per cui prima le avevo tolte: allora
+ * nascondevano il problema (i comandi erano troppi) invece di dare spazio.
+ * ────────────────────────────────────────────────────────────────────── */
+.sect[data-open='false'] {
+  margin-bottom: 0;
+}
+
+.sect-head,
+.avanzati-head {
+  border-radius: 999px;
+  padding: 8px 14px;
+  border: 1px solid var(--linea-viva);
+  background: transparent;
+}
+
+.sect-head:hover,
+.avanzati-head:hover {
+  border-color: var(--oro);
+}
+
+.sect[data-open='true'] .sect-head {
+  border-color: var(--nero);
+}
+
+/* ══════════════════════════════════════════════════════════════════════ *
+ * TUTTI I TASTI, NERI E TONDI — anche quelli che avevano uno stile loro.
+ *
+ * `.btn`, `.opt`, gli elementi della barra servizi: erano nati su fondo
+ * scuro e sul panna sparivano. Uno stile solo per tutti, o dopo tre schermate
+ * il prodotto sembra fatto da tre persone diverse.
+ * ══════════════════════════════════════════════════════════════════════ */
+.btn,
+.opt,
+.tool-item,
+.sb-tool,
+.langswitch button,
+.acts button {
+  border: 2px solid var(--nero);
+  border-radius: 999px;
+  background: var(--nero);
+  color: var(--panna);
+  font-family: var(--tasto-font);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  text-align: center;
+}
+
+.btn:hover:not(:disabled),
+.opt:hover:not(:disabled),
+.tool-item:hover,
+.langswitch button:hover,
+.acts button:hover {
+  border-color: var(--oro);
+  color: var(--oro);
+  background: var(--nero);
+}
+
+.btn:disabled,
+.opt:disabled,
+.acts button:disabled {
+  background: transparent;
+  border-color: var(--inchiostro-3);
+  color: var(--inchiostro-3);
+  opacity: 1;
+}
+
+.opt[aria-pressed='true'],
+.tool-item[aria-pressed='true'],
+.langswitch button[aria-pressed='true'] {
+  border-color: var(--oro);
+  color: var(--oro);
+  background: var(--nero);
+}
+
+/* La nota accanto a una scelta sta dentro un tasto nero: il grigio scuro
+   nato per il fondo scuro qui sparirebbe. */
+.opt .note {
+  color: rgba(245, 240, 232, 0.62);
+}
+
+.opt[aria-pressed='true'] .note,
+.opt:hover .note {
+  color: rgba(196, 163, 90, 0.75);
+}
+
+/* La barra dei servizi e quella di stato vivono sul panna: niente lastre. */
+.topbar,
+.statusbar,
+.toolrail,
+.libbar {
+  background: transparent;
+  color: var(--inchiostro);
+}
+
+.topbar {
+  border-bottom: 2px solid var(--nero);
+}
+
+.statusbar {
+  border-top: 2px solid var(--nero);
+}
+
+.toolrail {
+  border-right: 2px solid var(--nero);
+}
+
+/* La tela: il panna della pagina, con il filo che la delimita. */
+.stage,
+.canvas-host,
+.drop {
+  background: transparent;
+}
+
+.drop {
+  border: 2px dashed var(--linea-viva);
+  border-radius: 22px;
 }

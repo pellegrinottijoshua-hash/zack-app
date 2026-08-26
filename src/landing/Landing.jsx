@@ -14,7 +14,18 @@ const APP_URL = '/app/';
  * si generano, senza toccare il resto.
  */
 const CLIP = [
-  { src: '/hero/zack-1.mp4', poster: '/hero/zack-1.webp' },
+  {
+    // Due sorgenti perché lo sfondo è tolto: VP9 con alfa non lo legge
+    // Safari, HEVC con alfa non lo legge Firefox. Chi non legge nessuno dei
+    // due resta sul .mp4 col fondo panna, che sul panna della pagina è
+    // comunque invisibile.
+    fonti: [
+      { src: '/hero/zack-1a.mov', type: 'video/quicktime' },
+      { src: '/hero/zack-1a.webm', type: 'video/webm' },
+      { src: '/hero/zack-1.mp4', type: 'video/mp4' },
+    ],
+    poster: '/hero/zack-1.webp',
+  },
 ];
 
 /**

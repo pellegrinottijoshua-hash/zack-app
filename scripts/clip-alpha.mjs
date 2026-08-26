@@ -66,20 +66,38 @@ function esegui(comando, argomenti, { raccogli = false } = {}) {
 }
 
 /** I fotogrammi grezzi, in RGB, già tagliati e ridimensionati. */
-async function fotogrammi({ input, from, to, size, fps }) {
+async function misura(input, size) {
+  const out = await esegui(
+    'ffprobe',
+    ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', input],
+    { raccogli: true },
+  );
+  const [w, h] = String(out).trim().split(',').map(Number);
+  const k = size / Math.max(w, h);
+  // Pari: i codec video rifiutano lati dispari.
+  const pari = (n) => Math.max(2, Math.round(n * k / 2) * 2);
+  return { larghezza: pari(w), altezza: pari(h) };
+}
+
+async function fotogrammi({ input, from, to, size, fps, larghezza, altezza }) {
   const argomenti = [];
   if (from !== null) argomenti.push('-ss', String(from));
   if (to !== null) argomenti.push('-to', String(to));
   argomenti.push(
     '-i', input,
-    '-vf', `fps=${fps},scale=${size}:${size}:flags=lanczos`,
+    // `size` è il LATO LUNGO, non un quadrato: forzare due lati uguali
+    // schiacciava un 16:9 in un quadrato senza dire niente, e il difetto si
+    // vedeva solo guardando il personaggio deformato.
+    '-vf', `fps=${fps},scale='if(gt(iw,ih),${size},-2)':'if(gt(iw,ih),-2,${size})':flags=lanczos`,
     '-f', 'rawvideo', '-pix_fmt', 'rgb24',
     '-loglevel', 'error',
     '-',
   );
   const grezzo = await esegui('ffmpeg', argomenti, { raccogli: true });
 
-  const perFotogramma = size * size * 3;
+  // La misura vera la dichiara ffmpeg: dedurla da `size` significherebbe
+  // rifare a mano il conto delle proporzioni, e sbagliarlo in silenzio.
+  const perFotogramma = larghezza * altezza * 3;
   if (grezzo.length === 0) throw new Error('ffmpeg non ha prodotto fotogrammi: controlla --from e --to.');
   if (grezzo.length % perFotogramma !== 0) {
     throw new Error('I byte non sono un multiplo intero di un fotogramma: dimensioni sbagliate.');
@@ -100,23 +118,24 @@ async function principale() {
 
   try {
     console.log(`Leggo ${o.input}…`);
-    const grezzi = await fotogrammi(o);
-    console.log(`${grezzi.length} fotogrammi a ${o.size}×${o.size}, ${o.fps} al secondo.`);
+    const { larghezza, altezza } = await misura(o.input, o.size);
+    const grezzi = await fotogrammi({ ...o, larghezza, altezza });
+    console.log(`${grezzi.length} fotogrammi a ${larghezza}×${altezza}, ${o.fps} al secondo.`);
 
     let isoleTotali = 0;
     let fotogrammiConIsole = 0;
 
     for (let n = 0; n < grezzi.length; n++) {
-      const { alpha, isole } = alphaFromCreamVoid(grezzi[n], o.size, o.size, {
+      const { alpha, isole } = alphaFromCreamVoid(grezzi[n], larghezza, altezza, {
         dentro: o.dentro,
         fuori: o.fuori,
       });
       isoleTotali += isole;
       if (isole > 0) fotogrammiConIsole++;
 
-      const rgba = interlaceRgba(grezzi[n], alpha, o.size, o.size);
+      const rgba = interlaceRgba(grezzi[n], alpha, larghezza, altezza);
       const png = await sharp(Buffer.from(rgba.buffer), {
-        raw: { width: o.size, height: o.size, channels: 4 },
+        raw: { width: larghezza, height: altezza, channels: 4 },
       }).png().toBuffer();
       await writeFile(join(cartella, `f${String(n).padStart(5, '0')}.png`), png);
     }

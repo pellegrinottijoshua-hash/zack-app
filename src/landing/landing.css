@@ -499,7 +499,9 @@ body {
   height: 100vh;
   margin-bottom: -100vh;
   z-index: 0;
-  background: var(--nero, #111111);
+  /* Panna, non nero: le clip hanno lo sfondo tolto, quindi il personaggio
+     arriva sul fondo della pagina e non su un rettangolo appiccicato. */
+  background: var(--fondo, #f5f0e8);
   overflow: clip;
 }
 
@@ -508,7 +510,9 @@ body {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* `contain`: con lo sfondo tolto non c'è un riquadro da riempire, e
+     `cover` taglierebbe i piedi di Zack sugli schermi bassi. */
+  object-fit: contain;
   opacity: 0;
   /* Il passaggio fra una clip e la successiva deve essere invisibile: le due
      condividono il fotogramma, quindi non si dissolve — si scambia e basta.

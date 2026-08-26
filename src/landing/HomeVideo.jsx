@@ -79,18 +79,21 @@ export default function HomeVideo({ clip, sezioni }) {
     <div className="home-video" data-blocco={attivo}>
       {clip.map((c, i) => (
         <video
-          key={c.src}
+          key={c.fonti[0].src}
           ref={(el) => {
             riferimenti.current[i] = el;
           }}
-          src={c.src}
           poster={c.poster}
           data-on={i === attivo || undefined}
           muted
           playsInline
           preload={i === attivo || i === attivo + 1 ? 'auto' : 'none'}
           aria-hidden="true"
-        />
+        >
+          {c.fonti.map((f) => (
+            <source key={f.src} src={f.src} type={f.type} />
+          ))}
+        </video>
       ))}
     </div>
   );
