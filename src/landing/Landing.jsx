@@ -61,7 +61,17 @@ export default function Landing() {
       </section>
 
       {/* ─── il problema ─────────────────────────────────────────────── */}
-      <Scene id="problema" depth={2.2} align="left">
+      {/* Il primo video della home. Non si riproduce da sé: lo scorrimento
+          ne muove la testina, quindi il gesto di Zack — stacca la piuma,
+          disegna, il marchio si solidifica — avanza mentre leggi. Il poster
+          regge da solo finché il video non è arrivato. */}
+      <Scene
+        id="problema"
+        depth={2.2}
+        align="left"
+        video="/hero/zack-marchio.mp4"
+        poster="/hero/zack-marchio.webp"
+      >
         <p className="kicker">{c.problem.kicker}</p>
         <h2>{c.problem.title}</h2>
         <p>{c.problem.body}</p>

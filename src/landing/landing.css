@@ -210,7 +210,27 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.5;
+  /* Quasi pieno. A 0,5 il fondo panna del video diventava grigio sporco e il
+     personaggio perdeva il contrasto: il velo serviva a far leggere il testo,
+     ma spegneva proprio la cosa che deve convincere. La leggibilità la dà il
+     gradiente qui sotto, che copre solo la metà dove il testo sta davvero. */
+  opacity: 0.92;
+}
+
+/* Il testo sta a sinistra, quindi si scurisce solo la sinistra. Un velo su
+   tutta la scena costa contrasto dove non serve. */
+.scene-visual[data-has-video='true']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    var(--nero) 0%,
+    rgba(17, 17, 17, 0.92) 26%,
+    rgba(17, 17, 17, 0.45) 52%,
+    rgba(17, 17, 17, 0) 72%
+  );
+  pointer-events: none;
 }
 
 .scene-placeholder {
