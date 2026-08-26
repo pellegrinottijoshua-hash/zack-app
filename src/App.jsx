@@ -28,6 +28,7 @@ import { useBatch } from './hooks/useBatch.js';
 import { canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { TARGET_SIDE } from './engine/ready.js';
 import { pianoZack, normalizza, RICETTE_DI_FABBRICA } from './engine/ricette.js';
+import { caricaFileDiProva, deveMostrareProva, segnaProvaVista } from './engine/prova.js';
 import { getService, firstReady } from './services.js';
 
 /** La catena salvata per un servizio, o quella di fabbrica se non c'è. */
@@ -224,6 +225,16 @@ export default function App() {
 
   const [showOnboarding, setShowOnboarding] = useState(!hasSeenOnboarding());
 
+  /**
+   * Il lampo sul tasto Zack quando il file di prova arriva da solo.
+   *
+   * Un lampo solo, e poi mai più: è un dito puntato sul punto da cui si
+   * comincia, non un elemento dell'interfaccia che pulsa in eterno. Il colore
+   * non è mai l'unico segnale — sotto il tasto c'è già scritto cosa farà e
+   * quanto ci mette.
+   */
+  const [lampoZack, setLampoZack] = useState(false);
+
   useEffect(() => {
     setLang(detectLang(navigator.languages));
     forceRender((n) => n + 1);
@@ -330,6 +341,44 @@ export default function App() {
       });
     }
   }
+
+  /**
+   * Mette il file di prova sul piano di lavoro.
+   *
+   * Passa dallo stesso `onFile` di un file trascinato: da qui in poi non è
+   * «un esempio», è un file di lavoro, e tutto ciò che l'utente impara su di
+   * lui vale sui suoi. Se il file non c'è (cartella `public` incompleta) non
+   * si dice niente: un errore all'apertura per un file che l'utente non ha
+   * chiesto sarebbe peggio del silenzio.
+   */
+  const caricaEsempio = useCallback(async ({ lampo = false } = {}) => {
+    try {
+      const f = await caricaFileDiProva();
+      onFile(f);
+      if (lampo) {
+        setLampoZack(true);
+        // Il lampo dura quanto l'animazione e poi sparisce dallo stato: un
+        // attributo che resta acceso rianimerebbe il tasto a ogni ridisegno.
+        setTimeout(() => setLampoZack(false), 2000);
+      }
+    } catch {
+      // Silenzio voluto: vedi sopra.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Il primo minuto: alla primissima apertura, con la libreria ancora vuota,
+  // il piano di lavoro non è vuoto. Si aspetta che la libreria abbia risposto,
+  // o si metterebbe un esempio davanti a chi ha già ottanta lavori dentro.
+  useEffect(() => {
+    if (!library.ready || file) return;
+    if (!deveMostrareProva({ archivio: window.localStorage, lavori: library.assets.length })) return;
+    segnaProvaVista(window.localStorage);
+    caricaEsempio({ lampo: true });
+    // Vale una volta sola, all'apertura: le dipendenze mutevoli lo
+    // rifarebbero ogni volta che la libreria cambia.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [library.ready]);
 
   function reset() {
     setHistory([]);
@@ -995,6 +1044,7 @@ export default function App() {
               busy={Boolean(busy)}
               ricetta={ricetta}
               pianoZack={stats?.image ? pianoZack(ricetta, stats.image) : null}
+              lampoZack={lampoZack}
               onZack={runZack}
               onRicetta={salvaRicetta}
               onUndo={undoResult}
@@ -1103,6 +1153,7 @@ export default function App() {
           ) : (
             <Dropzone
               onFile={onFile}
+              onEsempio={caricaEsempio}
               title={t(tool === 'scontorna' ? 'drop.title' : 'drop.vectorTitle')}
               hint={t(tool === 'scontorna' ? 'drop.hint' : 'drop.vectorHint')}
             />

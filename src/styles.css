@@ -2307,6 +2307,27 @@ body {
   cursor: default;
 }
 
+/* Il lampo del primo minuto.
+ *
+ * Due battiti e basta, quando il file di prova arriva da solo all'apertura:
+ * è un dito puntato, non un elemento che pulsa in eterno. `forwards` lascia
+ * il tasto esattamente com'era — un'animazione che finisce a metà strada
+ * lascerebbe il pulsante di un colore che nessuno ha scelto. */
+.zack-go[data-lampo] {
+  animation: zack-lampo 0.9s ease-in-out 2 forwards;
+}
+
+@keyframes zack-lampo {
+  0%, 100% { background: var(--oro-velo); }
+  50% { background: rgba(196, 163, 90, 0.42); }
+}
+
+/* Il tasto «prova con un esempio» nel riquadro vuoto: secondario per misura,
+ * perché la cosa da fare resta trascinare un proprio file. */
+.drop-esempio {
+  margin-top: 4px;
+}
+
 .zack-go svg {
   width: 26px;
   height: 26px;
@@ -2483,6 +2504,12 @@ body {
   .icon-draw path {
     animation: none;
     stroke-dashoffset: 0;
+  }
+
+  /* Chi ha spento le animazioni trova comunque il file di prova sul piano e
+     il tasto scritto: il lampo era un di più, non l'informazione. */
+  .zack-go[data-lampo] {
+    animation: none;
   }
 }
 

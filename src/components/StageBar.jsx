@@ -38,6 +38,7 @@ export default function StageBar({
   busy,
   ricetta,
   pianoZack,
+  lampoZack,
   onZack,
   onRicetta,
   onUndo,
@@ -73,6 +74,7 @@ export default function StageBar({
           la stampa», uno e uguale per tutti; ora è la catena che l'utente ha
           scelto — e continua a dire cosa farà prima di essere premuto. */}
       <ZackButton
+        lampo={lampoZack}
         ricetta={ricetta}
         piano={pianoZack}
         disabled={!image}

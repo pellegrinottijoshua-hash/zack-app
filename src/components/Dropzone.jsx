@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 
-export default function Dropzone({ onFile, accept = 'image/*', title, hint }) {
+import { t } from '../i18n/index.js';
+
+export default function Dropzone({ onFile, onEsempio, accept = 'image/*', title, hint }) {
   const [over, setOver] = useState(false);
   const input = useRef(null);
 
@@ -35,6 +37,22 @@ export default function Dropzone({ onFile, accept = 'image/*', title, hint }) {
       <img className="drop-zack" src="/zack/piuma.webp" alt="" />
       <h2>{title}</h2>
       <p>{hint}</p>
+      {/* La via d'uscita da una tela vuota per chi non ha un file a portata di
+          mano. Non è un tutorial: è il lavoro vero su un file vero, ed è il
+          modo più corto per vedere cosa fa questo strumento. Ferma il clic,
+          o aprirebbe anche il selettore di file del riquadro. */}
+      {onEsempio && (
+        <button
+          type="button"
+          className="btn ghost drop-esempio"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEsempio();
+          }}
+        >
+          {t('prova.carica')}
+        </button>
+      )}
       <input
         ref={input}
         type="file"

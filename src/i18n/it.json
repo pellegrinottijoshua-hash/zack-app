@@ -168,10 +168,14 @@
     "format": "formato",
     "none": "nessuno"
   },
+  "prova": {
+    "carica": "Prova con un esempio",
+    "nota": "File di prova: una maglietta JAYL su fondo bianco."
+  },
   "onboarding": {
     "title": "Tre cose e sei operativo",
-    "step1": "Trascina un'immagine nel riquadro grande, o cliccaci sopra per sceglierla dal computer.",
-    "step2": "Premi «Pronto per la stampa», in alto a destra: toglie lo sfondo e porta il file alla misura giusta, in un colpo solo. Il lavoro avviene qui, sul tuo computer: nessun file viene spedito da nessuna parte.",
+    "step1": "Sul piano di lavoro c'è già un file di prova: una maglietta JAYL. Il tuo lo trascini nel riquadro grande, o ci clicchi sopra per sceglierlo dal computer.",
+    "step2": "Premi il tasto «Zack», in alto a destra: sotto l'etichetta c'è scritto cosa farà e quanto ci mette. Il lavoro avviene qui, sul tuo computer: nessun file viene spedito da nessuna parte.",
     "step3": "Se l'automatico ha sbagliato in qualche punto, usa la Gomma per correggere a mano. Poi scegli un formato e premi Esporta.",
     "hint": "Se un comando non ti è chiaro, accendi «Spiegami» in alto a destra.",
     "action": "Ho capito, cominciamo"

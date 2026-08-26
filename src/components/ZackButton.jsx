@@ -20,7 +20,7 @@ import Icon from './Icon.jsx';
  *   che tiene onesta la lista dei comandi. Se accanto a questo ce ne stanno
  *   altri dieci grandi uguale, la lista è sbagliata.
  */
-export default function ZackButton({ ricetta, piano, disabled, busy, onRun, onChange }) {
+export default function ZackButton({ ricetta, piano, disabled, busy, lampo, onRun, onChange }) {
   const [aperto, setAperto] = useState(false);
   const box = useRef(null);
 
@@ -57,6 +57,10 @@ export default function ZackButton({ ricetta, piano, disabled, busy, onRun, onCh
     <div className="zack" ref={box}>
       <button
         className="zack-go"
+        /* Un lampo solo, quando il file di prova arriva da solo all'apertura:
+           dice da dove si comincia. Non si ripete e non sostituisce nulla —
+           sotto l'etichetta resta scritto cosa farà e quanto ci mette. */
+        data-lampo={lampo || undefined}
         disabled={disabled || busy || vuota}
         onClick={onRun}
         title={vuota ? t('zack.empty') : t('zack.title')}

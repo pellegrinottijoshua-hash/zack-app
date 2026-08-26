@@ -168,10 +168,14 @@
     "format": "format",
     "none": "none"
   },
+  "prova": {
+    "carica": "Try it with a sample",
+    "nota": "Sample file: a JAYL tee on a white background."
+  },
   "onboarding": {
     "title": "Three things and you're working",
-    "step1": "Drop an image in the big frame, or click it to pick one from your computer.",
-    "step2": "Press “Print-ready”, top right: it removes the background and brings the file to the right size, in one go. The work happens here, on your computer: no file is sent anywhere.",
+    "step1": "There's already a sample file on the work surface: a JAYL tee. Drop yours in the big frame, or click it to pick one from your computer.",
+    "step2": "Press the “Zack” button, top right: under the label it says what it will do and how long it takes. The work happens here, on your computer: no file is sent anywhere.",
     "step3": "If the automatic pass got something wrong, use the Eraser to fix it by hand. Then pick a format and press Export.",
     "hint": "If a control isn't clear, switch on “Explain” at the top right.",
     "action": "Got it, let's start"
