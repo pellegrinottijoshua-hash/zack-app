@@ -549,5 +549,9 @@
       "esporta": "Il risultato finisce nella libreria, con la provenienza del file di partenza.",
       "scarica": "Il file parte verso la cartella dei download appena è pronto."
     }
+  },
+  "advanced": {
+    "title": "Avanzati",
+    "help": "I comandi che non servono al lavoro normale. Restano aperti se li lasci aperti."
   }
 }

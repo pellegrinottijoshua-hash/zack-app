@@ -2473,3 +2473,56 @@ body {
     stroke-dashoffset: 0;
   }
 }
+
+/* ------------------------------------------------------------------ *
+ * «Avanzati»: l'unico posto nascosto della schermata.
+ *
+ * Le sezioni richiudibili sono sparite — un comando chiuso è un comando che
+ * non esiste, e sei sezioni chiuse nascondevano il problema vero invece di
+ * risolverlo: i comandi erano troppi. Qui dentro sta solo ciò che il lavoro
+ * normale non usa, e si apre in un clic.
+ * ------------------------------------------------------------------ */
+.avanzati {
+  border-top: 1px solid var(--linea);
+  margin-top: 4px;
+}
+
+.avanzati-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 11px 2px;
+  background: transparent;
+  border: none;
+  color: var(--grigio);
+  font-family: var(--display);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.avanzati-head:hover,
+.avanzati[data-open='true'] .avanzati-head {
+  color: var(--panna);
+}
+
+.avanzati-head .caret {
+  font-size: 9px;
+  color: var(--oro);
+}
+
+.avanzati-body {
+  display: grid;
+  gap: 14px;
+  padding-bottom: 8px;
+}
+
+/* Le sezioni non hanno più un pulsante in testa: il titolo è un titolo. */
+.sect-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 0 7px;
+}

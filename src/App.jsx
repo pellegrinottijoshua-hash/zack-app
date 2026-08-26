@@ -16,6 +16,7 @@ import MaskBrush from './components/MaskBrush.jsx';
 import BatchPanel from './components/BatchPanel.jsx';
 import SoundLab from './components/SoundLab.jsx';
 import FinishPanel from './components/FinishPanel.jsx';
+import Advanced from './components/Advanced.jsx';
 import StageBar from './components/StageBar.jsx';
 import { useSound } from './hooks/useSound.js';
 import { useBatch } from './hooks/useBatch.js';
@@ -862,17 +863,17 @@ export default function App() {
               onUndo={undoResult}
               onBrush={() => setBrushOpen((v) => !v)}
               onCrop={() => {
-                const el = document.querySelector('.rail .sect[data-open] .sect-title');
                 setNotice(null);
-                // La sezione Ritaglio vive nel pannello: si apre e ci si porta.
-                const head = [...document.querySelectorAll('.rail .sect-head')].find(
-                  (h) => h.querySelector('.sect-title')?.textContent === t('crop.title'),
-                );
-                if (head) {
-                  if (head.getAttribute('aria-expanded') !== 'true') head.click();
-                  head.scrollIntoView({ block: 'start', behavior: 'smooth' });
-                }
-                void el;
+                // Il ritaglio vive negli avanzati: si aprono, e ci si porta.
+                // Cercare la sezione per il testo del titolo, com'era prima,
+                // si rompeva al primo cambio di traduzione: ora ha un id.
+                const avanzati = document.querySelector('.rail .avanzati-head');
+                if (avanzati?.getAttribute('aria-expanded') !== 'true') avanzati?.click();
+                requestAnimationFrame(() => {
+                  document
+                    .querySelector('.rail .sect[data-id="crop"]')
+                    ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                });
               }}
               onSwap={swapFile}
               onClear={() => {
@@ -973,6 +974,16 @@ export default function App() {
                 </div>
               )}
 
+            </>
+          ) : (
+            <TracePanel presets={TRACE_PRESETS} s={s} set={set} busy={Boolean(busy)} />
+          )}
+
+          {/* Un solo posto nascosto per schermata, e solo per ciò che il
+              lavoro normale non usa: la catena del tasto Zack porta a termine
+              lo scontorno senza aprirlo mai. */}
+          {!isEditor && (
+            <Advanced id={tool}>
               <BatchPanel
                 files={batchFiles}
                 batch={batch}
@@ -993,61 +1004,59 @@ export default function App() {
                 onRun={runUpscale}
                 onStop={engine.stopUpscale}
               />
-            </>
-          ) : (
-            <TracePanel presets={TRACE_PRESETS} s={s} set={set} busy={Boolean(busy)} />
-          )}
 
-          {result?.meta && !isEditor && (
-            <>
-              <MetaBlock
-                title="Risultato"
-                rows={
-                  result.kind === 'svg'
-                    ? [
-                        ['path', String(result.meta.paths)],
-                        ['peso', `${Math.round(result.meta.bytes / 1024)} KB`],
-                        ['risparmio', `${result.meta.saved}%`],
-                        ['tempo', secs(result.meta.ms)],
-                      ]
-                    : [
-                        ['strategia', STRATEGIE[result.meta.strategy] || 'diretta'],
-                        ['sorgente', px(result.meta.source)],
-                        ['uscita', px(result.meta.output)],
-                        ['la rete ha visto', px(result.meta.modelSaw)],
-                        ['tempo', secs(result.meta.ms)],
-                      ]
-                }
-              />
-              {result.kind === 'svg' && (
-                <button className="btn ghost small" onClick={sendToEditor}>
-                  Apri nell'editor
-                </button>
+              {result?.meta && (
+                <>
+                  <MetaBlock
+                    title="Risultato"
+                    rows={
+                      result.kind === 'svg'
+                        ? [
+                            ['path', String(result.meta.paths)],
+                            ['peso', `${Math.round(result.meta.bytes / 1024)} KB`],
+                            ['risparmio', `${result.meta.saved}%`],
+                            ['tempo', secs(result.meta.ms)],
+                          ]
+                        : [
+                            ['strategia', STRATEGIE[result.meta.strategy] || 'diretta'],
+                            ['sorgente', px(result.meta.source)],
+                            ['uscita', px(result.meta.output)],
+                            ['la rete ha visto', px(result.meta.modelSaw)],
+                            ['tempo', secs(result.meta.ms)],
+                          ]
+                    }
+                  />
+                  {result.kind === 'svg' && (
+                    <button className="btn ghost small" onClick={sendToEditor}>
+                      Apri nell'editor
+                    </button>
+                  )}
+                </>
               )}
-            </>
-          )}
 
-          {!isEditor && tool !== 'suono' && file && (
-            <FinishPanel
-              stats={stats}
-              reading={statsReading}
-              s={s}
-              set={set}
-              busy={Boolean(busy)}
-              isVector={result?.kind === 'svg'}
-              mockup={mockup}
-              onCrop={runCrop}
-              onMockup={runMockup}
-            />
-          )}
+              {tool !== 'suono' && file && (
+                <FinishPanel
+                  stats={stats}
+                  reading={statsReading}
+                  s={s}
+                  set={set}
+                  busy={Boolean(busy)}
+                  isVector={result?.kind === 'svg'}
+                  mockup={mockup}
+                  onCrop={runCrop}
+                  onMockup={runMockup}
+                />
+              )}
 
-          <ExportPanel
-            presets={PRESETS}
-            backgrounds={Object.keys(BACKGROUNDS)}
-            s={s}
-            set={set}
-            busy={Boolean(busy)}
-          />
+              <ExportPanel
+                presets={PRESETS}
+                backgrounds={Object.keys(BACKGROUNDS)}
+                s={s}
+                set={set}
+                busy={Boolean(busy)}
+              />
+            </Advanced>
+          )}
 
           {file && !isEditor && (
             <button className="btn ghost" onClick={reset}>

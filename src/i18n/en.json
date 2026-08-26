@@ -549,5 +549,9 @@
       "esporta": "The result lands in the library, carrying where it came from.",
       "scarica": "The file heads to your downloads folder as soon as it is ready."
     }
+  },
+  "advanced": {
+    "title": "Advanced",
+    "help": "The commands the everyday job does not need. They stay open if you leave them open."
   }
 }
