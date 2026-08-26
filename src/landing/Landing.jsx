@@ -1,8 +1,81 @@
-import { useEffect, useState } from 'react';
-import Scene from './Scene.jsx';
+import { useEffect, useRef, useState } from 'react';
 import { COPY } from './copy.js';
+import HomeVideo from './HomeVideo.jsx';
 
 const APP_URL = '/app/';
+
+/**
+ * I blocchi del racconto, in ordine.
+ *
+ * Uno per ogni pezzo del video: il primo blocco vede i primi secondi, il
+ * secondo i successivi, e così via. Aggiungerne uno senza allungare il video
+ * non rompe niente — i blocchi si dividono la durata che c'è — ma il gesto
+ * non corrisponderà più alla frase, che è il motivo per cui questa lista sta
+ * qui in vista e non sparsa nel JSX.
+ */
+const BLOCCHI = [
+  {
+    id: 'problema',
+    render: (c) => (
+      <>
+        <p className="kicker">{c.problem.kicker}</p>
+        <h2>{c.problem.title}</h2>
+        <p>{c.problem.body}</p>
+      </>
+    ),
+  },
+  {
+    id: 'strumenti',
+    render: (c) => (
+      <>
+        <p className="kicker">{c.tools.kicker}</p>
+        <h2>{c.tools.title}</h2>
+        <p>{c.tools.body}</p>
+        <ul className="lp-list">
+          {c.tools.items.map((it) => (
+            <li key={it.name}>
+              <b>{it.name}</b>
+              <span>{it.note}</span>
+            </li>
+          ))}
+        </ul>
+      </>
+    ),
+  },
+  {
+    id: 'libreria',
+    render: (c) => (
+      <>
+        <p className="kicker">{c.library.kicker}</p>
+        <h2>{c.library.title}</h2>
+        <p>{c.library.body}</p>
+        <p className="lp-quote">{c.library.quote}</p>
+      </>
+    ),
+  },
+  {
+    id: 'generazione',
+    render: (c) => (
+      <>
+        <p className="kicker">{c.generate.kicker}</p>
+        <h2>{c.generate.title}</h2>
+        <p>{c.generate.body}</p>
+        <p className="lp-receipt">{c.generate.example}</p>
+        <p className="lp-note">{c.generate.note}</p>
+      </>
+    ),
+  },
+  {
+    id: 'privacy',
+    render: (c) => (
+      <>
+        <p className="kicker">{c.privacy.kicker}</p>
+        <h2>{c.privacy.title}</h2>
+        <p>{c.privacy.body}</p>
+      </>
+    ),
+  },
+];
 
 /**
  * La pagina che deve convincere.
@@ -16,6 +89,7 @@ const APP_URL = '/app/';
  */
 export default function Landing() {
   const [lang, setLang] = useState('it');
+  const sezioni = useRef([]);
   const c = COPY[lang];
 
   useEffect(() => {
@@ -60,61 +134,32 @@ export default function Landing() {
         <p className="lp-note">{c.hero.note}</p>
       </section>
 
-      {/* ─── il problema ─────────────────────────────────────────────── */}
-      {/* Il primo video della home. Non si riproduce da sé: lo scorrimento
-          ne muove la testina, quindi il gesto di Zack — stacca la piuma,
-          disegna, il marchio si solidifica — avanza mentre leggi. Il poster
-          regge da solo finché il video non è arrivato. */}
-      <Scene
-        id="problema"
-        depth={2.2}
-        align="left"
-        video="/hero/zack-marchio.mp4"
-        poster="/hero/zack-marchio.webp"
-      >
-        <p className="kicker">{c.problem.kicker}</p>
-        <h2>{c.problem.title}</h2>
-        <p>{c.problem.body}</p>
-      </Scene>
+      {/* ─── il racconto: il video sta fermo, le informazioni scorrono ──
+          Zack fa una cosa sola per tutta la pagina; le uniche cose che si
+          muovono davvero sono le parole. */}
+      <div className="home-racconto">
+        <HomeVideo
+          src="/hero/zack-marchio.mp4"
+          poster="/hero/zack-marchio.webp"
+          blocchi={BLOCCHI.length}
+          sezioni={sezioni}
+        />
 
-      {/* ─── gli strumenti inclusi ───────────────────────────────────── */}
-      <Scene id="strumenti" depth={2.6} align="left">
-        <p className="kicker">{c.tools.kicker}</p>
-        <h2>{c.tools.title}</h2>
-        <p>{c.tools.body}</p>
-        <ul className="lp-list">
-          {c.tools.items.map((it) => (
-            <li key={it.name}>
-              <b>{it.name}</b>
-              <span>{it.desc}</span>
-            </li>
+        <div className="home-testi">
+          {BLOCCHI.map((b, i) => (
+            <section
+              key={b.id}
+              className="home-blocco"
+              id={b.id}
+              ref={(el) => {
+                sezioni.current[i] = el;
+              }}
+            >
+              {b.render(c)}
+            </section>
           ))}
-        </ul>
-      </Scene>
-
-      {/* ─── la differenza vera ──────────────────────────────────────── */}
-      <Scene id="libreria" depth={2.4} align="left">
-        <p className="kicker">{c.library.kicker}</p>
-        <h2>{c.library.title}</h2>
-        <p>{c.library.body}</p>
-        <p className="lp-quote">{c.library.quote}</p>
-      </Scene>
-
-      {/* ─── la generazione ──────────────────────────────────────────── */}
-      <Scene id="generazione" depth={2.2} align="left">
-        <p className="kicker">{c.generate.kicker}</p>
-        <h2>{c.generate.title}</h2>
-        <p>{c.generate.body}</p>
-        <p className="lp-receipt">{c.generate.example}</p>
-        <p className="lp-note">{c.generate.note}</p>
-      </Scene>
-
-      {/* ─── privacy ─────────────────────────────────────────────────── */}
-      <Scene id="privacy" depth={2} align="left">
-        <p className="kicker">{c.privacy.kicker}</p>
-        <h2>{c.privacy.title}</h2>
-        <p>{c.privacy.body}</p>
-      </Scene>
+        </div>
+      </div>
 
       {/* ─── il confronto ────────────────────────────────────────────── */}
       <section className="lp-compare">

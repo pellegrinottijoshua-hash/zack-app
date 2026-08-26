@@ -474,3 +474,104 @@ body {
     transition: none;
   }
 }
+
+/* ------------------------------------------------------------------ *
+ * LA HOME A BLOCCHI
+ *
+ * Il video sta fermo e le informazioni scorrono. È una griglia a due
+ * colonne: a sinistra un livello `sticky` alto quanto lo schermo, a destra
+ * una colonna di testi lunga quanto serve. Scorrendo, l'unica cosa che si
+ * muove davvero è la colonna di destra — e il video la segue.
+ * ------------------------------------------------------------------ */
+.home-racconto {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(24px, 5vw, 80px);
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0 var(--pad, 24px);
+  align-items: start;
+}
+
+.home-video {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+}
+
+.home-video video {
+  width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+  /* Nessun velo: qui il video non sta sotto al testo, sta accanto. Il velo
+     serviva a far leggere le parole scritte sopra — e spegneva il fondo panna
+     rendendolo grigio sporco. Accanto, il video può stare pieno. */
+}
+
+/* Dove si è arrivati. Senza, chi scorre non sa che il video sta seguendo lui
+   e lo scambia per un'animazione qualunque. */
+.home-tacche {
+  display: flex;
+  gap: 7px;
+  margin-top: 22px;
+}
+
+.home-tacche span {
+  width: 34px;
+  height: 2px;
+  background: var(--linea-viva, #3d3d3a);
+  transition: background 0.3s;
+}
+
+.home-tacche span[data-on] {
+  background: var(--oro, #c4a35a);
+}
+
+/* Ogni blocco è alto uno schermo: è quanto serve perché il suo pezzo di video
+   scorra per intero mentre lo si legge. */
+.home-blocco {
+  min-height: 100vh;
+  display: grid;
+  align-content: center;
+  gap: 14px;
+}
+
+/* Sotto una certa larghezza le due colonne non stanno: il video va sopra e
+   resta appiccicato in alto, il testo gli scorre sotto. */
+@media (max-width: 900px) {
+  .home-racconto {
+    grid-template-columns: 1fr;
+  }
+
+  .home-video {
+    height: 46vh;
+    top: 0;
+    z-index: 2;
+    background: var(--nero, #111111);
+  }
+
+  .home-video video {
+    max-height: 38vh;
+  }
+
+  .home-blocco {
+    min-height: 70vh;
+  }
+}
+
+/* Chi ha chiesto meno movimento vede il poster e legge in colonna: senza
+   sticky non c'è niente che si trascini sotto le dita. */
+@media (prefers-reduced-motion: reduce) {
+  .home-video {
+    position: static;
+    height: auto;
+  }
+
+  .home-blocco {
+    min-height: 0;
+    padding: 48px 0;
+  }
+}

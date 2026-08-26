@@ -63,3 +63,55 @@ test('la soglia è configurabile', () => {
   assert.equal(shouldSeek(5, 5.1, 0.5), false);
   assert.equal(shouldSeek(5, 5.1, 0.01), true);
 });
+
+// ---------------------------------------------------------------------------
+// La home a blocchi: un video solo, sempre visibile, che avanza mentre le
+// informazioni gli scorrono davanti.
+// ---------------------------------------------------------------------------
+
+test('ogni blocco occupa la sua fetta di video', async () => {
+  const { timeForBlock } = await import('../src/landing/scrollVideo.js');
+  // Cinque blocchi su venticinque secondi: il terzo va dal decimo al quindici.
+  assert.equal(timeForBlock(2, 0, 25, 5), 10);
+  assert.equal(timeForBlock(2, 1, 25, 5), 15);
+  assert.equal(timeForBlock(2, 0.5, 25, 5), 12.5);
+});
+
+test('il primo blocco parte da zero e l\'ultimo finisce alla fine', async () => {
+  const { timeForBlock } = await import('../src/landing/scrollVideo.js');
+  assert.equal(timeForBlock(0, 0, 25, 5), 0);
+  assert.equal(timeForBlock(4, 1, 25, 5), 25);
+});
+
+test('un blocco fuori elenco non manda il video oltre la sua durata', async () => {
+  // Una sezione aggiunta senza aggiornare il conteggio non deve produrre un
+  // seek fuori scala: il video resterebbe fermo sull'ultimo fotogramma senza
+  // che nulla sollevi un errore.
+  const { timeForBlock } = await import('../src/landing/scrollVideo.js');
+  assert.equal(timeForBlock(99, 1, 25, 5), 25);
+  assert.equal(timeForBlock(-3, 0, 25, 5), 0);
+});
+
+test('un video senza durata non fa saltare il conto', async () => {
+  const { timeForBlock } = await import('../src/landing/scrollVideo.js');
+  assert.equal(timeForBlock(1, 0.5, NaN, 5), 0);
+  assert.equal(timeForBlock(1, 0.5, 25, 0), 0);
+});
+
+test('si sta leggendo la sezione che ha già passato la metà dello schermo', async () => {
+  // Non quella che sta arrivando: il testo si legge quando è al centro, e il
+  // gesto di Zack deve corrispondere a ciò che si legge adesso.
+  const { blockAt } = await import('../src/landing/scrollVideo.js');
+  const riquadri = [
+    { top: -600, height: 800 },
+    { top: 200, height: 800 },
+    { top: 1000, height: 800 },
+  ];
+  const { indice } = blockAt(riquadri, 800);
+  assert.equal(indice, 1, 'la seconda ha superato la metà, la terza no');
+});
+
+test('senza sezioni il video resta al principio invece di esplodere', async () => {
+  const { blockAt } = await import('../src/landing/scrollVideo.js');
+  assert.deepEqual(blockAt([], 800), { indice: 0, progresso: 0 });
+});
