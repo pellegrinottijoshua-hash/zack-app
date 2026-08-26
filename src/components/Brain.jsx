@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
-import { KIND_AUDIO, KIND_VIDEO } from '../store/model.js';
+import { KIND_AUDIO, KIND_VIDEO, kindFromFile } from '../store/model.js';
 import {
   nuovoAsset,
   nuovaNota,
@@ -70,7 +70,7 @@ function Contenuto({ item, asset, leggi }) {
   return <img src={url} alt={asset.name} draggable={false} />;
 }
 
-export default function Brain({ items, assets, leggi, onChange, onUse }) {
+export default function Brain({ items, assets, leggi, onChange, onUse, onImport }) {
   const [scelto, setScelto] = useState(null);
   const [vista, setVista] = useState({ x: 40, y: 40, z: 1 });
   const [collega, setCollega] = useState(null);
@@ -180,6 +180,23 @@ export default function Brain({ items, assets, leggi, onChange, onUse }) {
             file dalla libreria non deve essere un viaggio. */}
         <aside className="brain-cassetto">
           <h3>{t('brain.drawer')}</h3>
+
+          {/* La porta d'ingresso. Senza, Brain poteva mostrare solo ciò che
+              era già uscito da uno strumento: un video di riferimento o una
+              voce registrata altrove non avevano modo di entrare. */}
+          <label className="brain-porta">
+            {t('brain.import')}
+            <input
+              type="file"
+              multiple
+              accept="image/png,image/jpeg,image/svg+xml,audio/wav,audio/mpeg,video/mp4,video/webm"
+              onChange={async (e) => {
+                const scelti = [...e.target.files];
+                e.target.value = '';
+                await onImport(scelti);
+              }}
+            />
+          </label>
           {/* Due vuoti diversi: "non hai ancora salvato niente" e "sono già
               tutti sulla tela" sono due situazioni opposte, e dire la seconda
               a chi si trova nella prima lo lascia a cercare un cassetto che

@@ -133,3 +133,30 @@ test('un titolo lunghissimo su un cerchio viene ripulito', () => {
   const c = nuovoCerchio({ titolo: '  spazi  ', rand });
   assert.equal(c.titolo, 'spazi');
 });
+
+// ---------------------------------------------------------------------------
+// La porta d'ingresso: che tipo è un file portato da fuori.
+// ---------------------------------------------------------------------------
+
+test('il tipo si riconosce dall\'estensione', async () => {
+  const { kindFromFile } = await import('../src/store/model.js');
+  assert.equal(kindFromFile('foto.JPG'), 'jpg');
+  assert.equal(kindFromFile('voce.wav'), 'wav');
+  assert.equal(kindFromFile('clip.mp4'), 'mp4');
+  assert.equal(kindFromFile('logo.svg'), 'svg');
+});
+
+test('il tipo si riconosce anche senza estensione', async () => {
+  // I file scaricati da certi siti arrivano senza estensione: rifiutarli
+  // manderebbe l'utente a rinominarli a mano prima di poterli usare.
+  const { kindFromFile } = await import('../src/store/model.js');
+  assert.equal(kindFromFile('scaricato', 'image/png'), 'png');
+  assert.equal(kindFromFile('', 'video/webm'), 'webm');
+});
+
+test('un tipo che non sappiamo tenere si dichiara, non si indovina', async () => {
+  // Salvare un .psd con l'etichetta "png" è un errore che si scopre mesi
+  // dopo, quando il file non si apre più.
+  const { kindFromFile } = await import('../src/store/model.js');
+  assert.equal(kindFromFile('progetto.psd', 'image/vnd.adobe.photoshop'), null);
+});

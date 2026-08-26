@@ -8,7 +8,7 @@
  */
 
 /** Un asset non è un file: è l'originale più tutto ciò che ne è derivato. */
-export const KINDS = ['png', 'svg', 'wav', 'mp3', 'mp4', 'webm'];
+export const KINDS = ['png', 'jpg', 'svg', 'wav', 'mp3', 'mp4', 'webm'];
 
 /**
  * Che cosa si può ascoltare o guardare, invece che soltanto vedere.
@@ -21,6 +21,36 @@ export const KINDS = ['png', 'svg', 'wav', 'mp3', 'mp4', 'webm'];
  */
 export const KIND_AUDIO = ['wav', 'mp3'];
 export const KIND_VIDEO = ['mp4', 'webm'];
+
+/** Ciò che si guarda come immagine ferma. */
+export const KIND_IMMAGINE = ['png', 'jpg', 'svg'];
+
+/**
+ * Che tipo è un file che l'utente porta da fuori.
+ *
+ * Si guarda l'estensione **e** il tipo dichiarato dal sistema: l'estensione
+ * manca sui file scaricati da certi siti, e il tipo dichiarato manca su certi
+ * sistemi. Uno dei due basta; nessuno dei due significa che non lo sappiamo
+ * tenere, ed è meglio dirlo che salvare un file con l'etichetta sbagliata —
+ * un'etichetta sbagliata si scopre mesi dopo, quando non si apre più.
+ */
+export function kindFromFile(name = '', type = '') {
+  const est = String(name).toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] || '';
+  const perEstensione = { jpeg: 'jpg', jpg: 'jpg', png: 'png', svg: 'svg', wav: 'wav', mp3: 'mp3', mp4: 'mp4', webm: 'webm' };
+  if (perEstensione[est]) return perEstensione[est];
+
+  const perTipo = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/svg+xml': 'svg',
+    'audio/wav': 'wav',
+    'audio/x-wav': 'wav',
+    'audio/mpeg': 'mp3',
+    'video/mp4': 'mp4',
+    'video/webm': 'webm',
+  };
+  return perTipo[String(type).toLowerCase()] || null;
+}
 
 export function newId(rand = Math.random) {
   // Abbastanza corto da leggersi in un nome di file, abbastanza lungo da non

@@ -581,6 +581,9 @@
     "board": "Tela",
     "newBoard": "Tela nuova",
     "newBoardName": "Come si chiama questa tela?",
-    "libraryEmpty": "La libreria è vuota: i lavori che salvi dagli strumenti compaiono qui."
+    "libraryEmpty": "La libreria è vuota: i lavori che salvi dagli strumenti compaiono qui.",
+    "import": "Porta dei file",
+    "imported": "Portati dentro: {n}",
+    "refused": "{n} file di un tipo che non so tenere."
   }
 }

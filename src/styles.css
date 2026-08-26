@@ -2843,3 +2843,27 @@ body {
 .rail[data-vuota] {
   display: none;
 }
+
+/* La porta d'ingresso di Brain: un'etichetta che si comporta da pulsante,
+   perché un input file vero è impresentabile in ogni browser. */
+.brain-porta {
+  display: block;
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 1px dashed var(--linea-viva);
+  color: var(--grigio);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  cursor: pointer;
+}
+
+.brain-porta:hover {
+  color: var(--panna);
+  border-color: var(--oro);
+}
+
+.brain-porta input {
+  display: none;
+}

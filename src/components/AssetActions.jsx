@@ -9,7 +9,9 @@ import { t } from '../i18n/index.js';
  * comando spento è una domanda senza risposta.
  */
 export default function AssetActions({ item, onCutout, onVector, onEdit, onReference }) {
-  const isRaster = item.kind === 'png';
+  // Un jpg portato da fuori è raster quanto un png: escluderlo qui
+  // significherebbe un lavoro in libreria su cui non si può fare niente.
+  const isRaster = item.kind === 'png' || item.kind === 'jpg';
   const isVector = item.kind === 'svg';
 
   return (

@@ -18,6 +18,7 @@ import SoundLab from './components/SoundLab.jsx';
 import FinishPanel from './components/FinishPanel.jsx';
 import Advanced from './components/Advanced.jsx';
 import Brain from './components/Brain.jsx';
+import { kindFromFile } from './store/model.js';
 import StageBar from './components/StageBar.jsx';
 import { useSound } from './hooks/useSound.js';
 import { useBatch } from './hooks/useBatch.js';
@@ -762,6 +763,39 @@ export default function App() {
     };
   }, [tool, library.ready, library.moodboards, telaId]);
 
+  /**
+   * Porta dei file dentro la libreria, da Brain.
+   *
+   * È l'unica porta d'ingresso che non passa da uno strumento: finora un
+   * video di riferimento o una voce registrata altrove non avevano modo di
+   * entrare. Ciò che non sappiamo tenere si dice, non si salva con
+   * l'etichetta sbagliata — un'etichetta sbagliata si scopre mesi dopo.
+   */
+  async function importaFile(scelti) {
+    setError(null);
+    let entrati = 0;
+    let rifiutati = 0;
+
+    for (const f of scelti) {
+      const kind = kindFromFile(f.name, f.type);
+      if (!kind) {
+        rifiutati++;
+        continue;
+      }
+      await library.save(f, {
+        name: f.name.replace(/\.[^.]+$/, ''),
+        kind,
+        meta: { op: 'import' },
+      });
+      entrati++;
+    }
+
+    const detto = [];
+    if (entrati) detto.push(t('brain.imported', { n: entrati }));
+    if (rifiutati) detto.push(t('brain.refused', { n: rifiutati }));
+    setNotice(detto.join(' · ') || null);
+  }
+
   /** Ogni cambiamento si salva subito: nessuno preme "salva" su una lavagna. */
   async function cambiaTela(prossima) {
     setTela(prossima);
@@ -930,6 +964,7 @@ export default function App() {
               leggi={library.read}
               onChange={cambiaTela}
               onUse={assetAction}
+              onImport={importaFile}
             />
           ) : tool === 'suono' ? (
             <SoundLab

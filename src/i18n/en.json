@@ -581,6 +581,9 @@
     "board": "Canvas",
     "newBoard": "New canvas",
     "newBoardName": "What is this canvas called?",
-    "libraryEmpty": "The library is empty: whatever you save from the tools shows up here."
+    "libraryEmpty": "The library is empty: whatever you save from the tools shows up here.",
+    "import": "Bring files in",
+    "imported": "Brought in: {n}",
+    "refused": "{n} files of a kind I cannot hold."
   }
 }
