@@ -524,5 +524,30 @@
     "done": "Ready: {size}",
     "short": "Reached {size}: the starting file is not enough for {target} px.",
     "tooBig": "Already past the enlargeable size: background removed only."
+  },
+  "zack": {
+    "label": "Zack",
+    "title": "Your Zack button",
+    "what": "What it will do",
+    "empty": "Zack has nothing to do yet: turn on at least one step.",
+    "note": "{size} · {wait}",
+    "working": "Zack is working…",
+    "holes": "Closed {n} holes inside the artwork.",
+    "noHoles": "No holes to close.",
+    "done": "Done: {size}",
+    "step": {
+      "scontorna": "Remove the background",
+      "buchi": "Close the holes",
+      "ingrandisci": "Take it to print size",
+      "esporta": "Save to library",
+      "scarica": "Download to your computer"
+    },
+    "stepHelp": {
+      "scontorna": "The model separates the subject from the background. It is the slowest step in the chain.",
+      "buchi": "The counters of a logo — the inside of an “o” — that cutout leaves open get filled back in. Large, deliberate holes stay open.",
+      "ingrandisci": "Enlarges to 4000 px on the long side, the size that fills a shirt. Skipped when the file is already big enough.",
+      "esporta": "The result lands in the library, carrying where it came from.",
+      "scarica": "The file heads to your downloads folder as soon as it is ready."
+    }
   }
 }

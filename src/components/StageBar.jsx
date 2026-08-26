@@ -1,5 +1,6 @@
 import { t } from '../i18n/index.js';
 import Icon from './Icon.jsx';
+import ZackButton from './ZackButton.jsx';
 
 /**
  * I comandi sopra la tela.
@@ -35,8 +36,10 @@ export default function StageBar({
   canUndo,
   brushOpen,
   busy,
-  plan,
-  onReady,
+  ricetta,
+  pianoZack,
+  onZack,
+  onRicetta,
   onUndo,
   onBrush,
   onCrop,
@@ -66,18 +69,17 @@ export default function StageBar({
         <Tool icon="clear" label={t('bar.clear')} disabled={busy} onClick={onClear} />
       </span>
 
-      {/* Il conto è scritto sul pulsante, non scoperto dopo averlo premuto. */}
-      <button className="btn sb-ready" disabled={busy || !image} onClick={onReady}>
-        <b>{t('bar.ready')}</b>
-        {plan && (
-          <em>
-            {t('bar.readyNote', {
-              size: `${plan.out.w}×${plan.out.h}`,
-              wait: `${plan.wait.value} ${t(`common.${plan.wait.unit}`)}`,
-            })}
-          </em>
-        )}
-      </button>
+      {/* Il pulsante che porta a termine un lavoro intero. Era «Pronto per
+          la stampa», uno e uguale per tutti; ora è la catena che l'utente ha
+          scelto — e continua a dire cosa farà prima di essere premuto. */}
+      <ZackButton
+        ricetta={ricetta}
+        piano={pianoZack}
+        disabled={!image}
+        busy={busy}
+        onRun={onZack}
+        onChange={onRicetta}
+      />
     </div>
   );
 }

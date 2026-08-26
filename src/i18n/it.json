@@ -524,5 +524,30 @@
     "done": "Pronto: {size}",
     "short": "Arrivato a {size}: il file di partenza non basta per {target} px.",
     "tooBig": "Già oltre la misura ingrandibile: ho solo scontornato."
+  },
+  "zack": {
+    "label": "Zack",
+    "title": "Il tuo tasto Zack",
+    "what": "Cosa farà",
+    "empty": "Zack non ha ancora niente da fare: accendi almeno un passo.",
+    "note": "{size} · {wait}",
+    "working": "Zack sta lavorando…",
+    "holes": "Richiusi {n} buchi dentro la grafica.",
+    "noHoles": "Nessun buco da richiudere.",
+    "done": "Fatto: {size}",
+    "step": {
+      "scontorna": "Togli lo sfondo",
+      "buchi": "Richiudi i buchi",
+      "ingrandisci": "Porta alla misura di stampa",
+      "esporta": "Salva in libreria",
+      "scarica": "Scarica sul computer"
+    },
+    "stepHelp": {
+      "scontorna": "Il modello separa il soggetto dal fondo. È il passo più lento della catena.",
+      "buchi": "Le controforme di un logo — l'interno di una «o» — che lo scontorno lascia aperte vengono richiuse. I buchi grandi e voluti restano.",
+      "ingrandisci": "Ingrandisce fino a 4000 px sul lato lungo, la misura che riempie una maglietta. Se il file è già grande, salta.",
+      "esporta": "Il risultato finisce nella libreria, con la provenienza del file di partenza.",
+      "scarica": "Il file parte verso la cartella dei download appena è pronto."
+    }
   }
 }

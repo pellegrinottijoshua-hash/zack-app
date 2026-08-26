@@ -1,4 +1,5 @@
 import { analyzePixels } from './pixels.js';
+import { fillHoles } from './holes.js';
 import { CANVAS, getShape, placeOnGarment, getGarment, outlineFor } from './mockup.js';
 
 /**
@@ -168,4 +169,43 @@ function canvasToPng(canvas) {
   return new Promise((resolve, reject) =>
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Canvas vuoto.'))), 'image/png'),
   );
+}
+
+/**
+ * Richiude i buchi che lo scontorno apre dentro un logo.
+ *
+ * Il lato browser: legge i pixel, passa il solo canale alfa a `holes.js`, e
+ * riscrive l'alfa corretto. La decisione — quale regione è un buco e quale è
+ * sfondo vero — sta là, dove i test la vedono senza browser.
+ *
+ * **A piena risoluzione, senza campionare.** `analyze` può permettersi di
+ * ridurre perché misura rapporti; qui si modificano i pixel veri, e un buco
+ * ricostruito su un decimo dei pixel tornerebbe indietro con il bordo sbagliato.
+ *
+ * Il colore sotto i pixel richiusi non si inventa: si tiene quello che c'è già.
+ * Il canvas premoltiplica, quindi un pixel portato a trasparente ha perso il
+ * suo colore sul posto — dentro una controforma quel colore è nero, ed è
+ * esattamente il nero del logo. Rimetterci l'alfa lo fa riapparire.
+ *
+ * @returns {Promise<{blob: Blob, richiusi: number, lasciati: number}>}
+ */
+export async function closeHoles(source, opts = {}) {
+  const canvas = await toCanvas(source);
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+  const total = canvas.width * canvas.height;
+  const mask = new Uint8ClampedArray(total);
+  for (let i = 0; i < total; i++) mask[i] = img.data[i * 4 + 3];
+
+  const esito = fillHoles(mask, canvas.width, canvas.height, opts);
+  if (esito.richiusi === 0) {
+    return { blob: source, richiusi: 0, lasciati: esito.lasciati };
+  }
+
+  for (let i = 0; i < total; i++) img.data[i * 4 + 3] = mask[i];
+  ctx.putImageData(img, 0, 0);
+
+  const blob = await new Promise((r) => canvas.toBlob(r, 'image/png'));
+  return { blob, richiusi: esito.richiusi, lasciati: esito.lasciati };
 }

@@ -20,14 +20,26 @@ import StageBar from './components/StageBar.jsx';
 import { useSound } from './hooks/useSound.js';
 import { useBatch } from './hooks/useBatch.js';
 import { canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
-import { planReady, readyLabel, TARGET_SIDE } from './engine/ready.js';
+import { TARGET_SIDE } from './engine/ready.js';
+import { pianoZack, normalizza, RICETTE_DI_FABBRICA } from './engine/ricette.js';
 import { getService, firstReady } from './services.js';
+
+/** La catena salvata per un servizio, o quella di fabbrica se non c'è. */
+function leggiRicetta(servizio) {
+  const fabbrica = RICETTE_DI_FABBRICA[servizio] || [];
+  try {
+    const salvata = localStorage.getItem(`jayl.zack.${servizio}`);
+    return salvata ? normalizza(JSON.parse(salvata)) : fabbrica;
+  } catch {
+    return fabbrica;
+  }
+}
 import { bundleAll } from './store/bundle.js';
 import { useEngine } from './hooks/useEngine.js';
 import { t, setLang, detectLang, onLangChange } from './i18n/index.js';
 import { onHelpChange, isHelpOn } from './i18n/help.js';
 import { renderExport } from './engine/render.js';
-import { analyze, applyCrop, renderMockup } from './engine/finish.js';
+import { analyze, applyCrop, renderMockup, closeHoles } from './engine/finish.js';
 import { PRESETS, BACKGROUNDS } from './engine/export.js';
 import { traceToSvg, TRACE_PRESETS } from './engine/trace.js';
 import * as api from './lib/api.js';
@@ -44,6 +56,28 @@ const secs = (ms) => (Number.isFinite(ms) ? `${(ms / 1000).toFixed(1)}s` : '—'
 export default function App() {
   const [apiState, setApiState] = useState('offline');
   const [tool, setTool] = useState('scontorna');
+
+  /**
+   * La catena del tasto Zack, una per servizio.
+   *
+   * Sta nell'archivio locale come le altre preferenze. Quando ci sarà
+   * l'account ci si sposta: è la prima cosa che l'utente si arrabbierebbe di
+   * perdere, ed è leggerissima — poche righe, non i suoi file. Anche un
+   * account di sola licenza può portarsela dietro senza contraddire la
+   * promessa di non tenere niente su un server.
+   */
+  const [ricetta, setRicetta] = useState(() => leggiRicetta('scontorna'));
+
+  function salvaRicetta(prossima) {
+    const pulita = normalizza(prossima);
+    setRicetta(pulita);
+    try {
+      localStorage.setItem(`jayl.zack.${tool}`, JSON.stringify(pulita));
+    } catch {
+      // Archivio pieno o negato: la catena vale per questa sessione. Meglio
+      // che rifiutare il cambiamento davanti a un utente che l'ha appena fatto.
+    }
+  }
 
   const [file, setFile] = useState(null);
   const [beforeUrl, setBeforeUrl] = useState(null);
@@ -525,67 +559,104 @@ export default function App() {
    * Scontornare e ingrandire sono due gesti separati soltanto per chi ha
    * scritto il programma. Per chi stampa sono una cosa sola.
    */
-  async function runReady() {
+  /**
+   * Il tasto Zack: esegue la catena del servizio, in ordine.
+   *
+   * Era `runReady`, che faceva due gesti fissi. La differenza non è quanti
+   * passi ci sono: è che il piano viene deciso prima, mostrato accanto al
+   * pulsante, e poi eseguito esattamente com'è scritto. Il codice qui sotto
+   * non sceglie niente — `pianoZack` ha già scelto.
+   */
+  async function runZack() {
     if (!stats?.image) return;
     setError(null);
     setNotice(null);
 
-    const plan = planReady(stats.image);
+    const piano = pianoZack(ricetta, stats.image);
+    if (piano.passi.length === 0) return;
+
     try {
       let current = result?.blob || file;
+      const base = (file?.name || 'immagine').replace(/\.[^.]+$/, '');
+      // Più passi, più cose da dire: si tengono tutte. Il conteggio dei buchi
+      // sovrascritto dall'esito dell'ingrandimento è proprio l'informazione
+      // che l'utente non ha modo di ricavare guardando l'immagine.
+      const detto = [];
 
-      if (plan.steps.includes('cutout')) {
-        setBusy(t('ready.working'));
+      if (piano.passi.includes('scontorna')) {
+        setBusy(t('zack.working'));
         setBusyNote(null);
         const started = Date.now();
-        const cut = await engine.cutout(current, s.model);
-        current = cut;
+        current = await engine.cutout(current, s.model);
         pushResult({
-          url: own(cut),
-          blob: cut,
+          url: own(current),
+          blob: current,
           kind: 'png',
           meta: { strategy: 'browser', model: s.model, ms: Date.now() - started },
         });
-        await library.save(cut, {
-          name: `${(file?.name || 'immagine').replace(/\.[^.]+$/, '')}-scontornato`,
-          kind: 'png',
-          meta: { fromId: sourceAssetId, op: 'remove-bg', model: s.model, ready: true },
-        });
       }
 
-      if (plan.steps.includes('upscale')) {
-        setBusy(t('ready.working'));
+      if (piano.passi.includes('buchi')) {
+        setBusy(t('zack.working'));
+        const esito = await closeHoles(current);
+        if (esito.richiusi > 0) {
+          current = esito.blob;
+          pushResult({
+            url: own(current),
+            blob: current,
+            kind: 'png',
+            meta: { strategy: 'holes', holes: esito.richiusi },
+          });
+        }
+        // Il conteggio si dice a parole: un'immagine cambiata in silenzio è
+        // una sorpresa, non una rifinitura.
+        detto.push(esito.richiusi > 0 ? t('zack.holes', { n: esito.richiusi }) : t('zack.noHoles'));
+      }
+
+      if (piano.passi.includes('ingrandisci')) {
+        setBusy(t('zack.working'));
         setUpscaling(true);
         const bmp = await createImageBitmap(current);
-        const out = await engine.upscale(bmp, plan.scaleId, (phase, d) => {
+        const out = await engine.upscale(bmp, piano.scaleId, (phase, d) => {
           if (d?.done) setBusyNote(`${d.done}/${d.total}`);
         });
         const cv = document.createElement('canvas');
         cv.width = out.width;
         cv.height = out.height;
         cv.getContext('2d').putImageData(new ImageData(out.rgba, out.width, out.height), 0, 0);
-        const big = await new Promise((r) => cv.toBlob(r, 'image/png'));
+        current = await new Promise((r) => cv.toBlob(r, 'image/png'));
         pushResult({
-          url: own(big),
-          blob: big,
+          url: own(current),
+          blob: current,
           kind: 'png',
           meta: { strategy: 'upscale', output: { w: out.width, h: out.height } },
         });
-        await library.save(big, {
-          name: `${(file?.name || 'immagine').replace(/\.[^.]+$/, '')}-stampa`,
-          kind: 'png',
-          meta: { fromId: sourceAssetId, op: 'ready', scale: plan.scaleId },
-        });
-        setNotice(
-          plan.reached
-            ? t('ready.done', { size: `${out.width}×${out.height}` })
+        detto.push(
+          piano.raggiunto
+            ? t('zack.done', { size: `${out.width}×${out.height}` })
             : t('ready.short', { size: `${out.width}×${out.height}`, target: TARGET_SIDE }),
         );
-      } else if (plan.reason === 'troppo-grande') {
-        setNotice(t('ready.tooBig'));
-      } else {
-        setNotice(t('ready.done', { size: `${stats.image.w}×${stats.image.h}` }));
       }
+
+      if (piano.passi.includes('esporta')) {
+        await library.save(current, {
+          name: `${base}-zack`,
+          kind: 'png',
+          meta: { fromId: sourceAssetId, op: 'zack', passi: piano.passi },
+        });
+      }
+
+      if (piano.passi.includes('scarica')) {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(current);
+        a.download = `${base}-zack.png`;
+        a.click();
+        // L'URL va rilasciato o la memoria cresce a ogni pressione.
+        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      }
+
+      if (detto.length === 0) detto.push(t('zack.done', { size: `${stats.image.w}×${stats.image.h}` }));
+      setNotice(detto.join(' · '));
     } catch (e) {
       console.error(e);
       if (e.code === 'upscale-stopped') setNotice(t('upscale.stopped'));
@@ -764,6 +835,7 @@ export default function App() {
             }
             setNotice(null);
             setTool(svc.id);
+            setRicetta(leggiRicetta(svc.id));
           }}
         />
 
@@ -783,15 +855,10 @@ export default function App() {
               canUndo={history.length > 0}
               brushOpen={brushOpen}
               busy={Boolean(busy)}
-              plan={
-                stats?.image
-                  ? (() => {
-                      const p = planReady(stats.image);
-                      return { ...p, wait: readyLabel(p) };
-                    })()
-                  : null
-              }
-              onReady={runReady}
+              ricetta={ricetta}
+              pianoZack={stats?.image ? pianoZack(ricetta, stats.image) : null}
+              onZack={runZack}
+              onRicetta={salvaRicetta}
               onUndo={undoResult}
               onBrush={() => setBrushOpen((v) => !v)}
               onCrop={() => {

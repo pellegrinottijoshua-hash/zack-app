@@ -313,8 +313,24 @@ esiste già prima di proporre qualunque cosa.**
 > - [docs/zack-animazioni-cast.md](docs/zack-animazioni-cast.md) — prompt Seedance
 >   delle animazioni del cast (4s, tagliate a 2/3s).
 >
-> Costruito: `src/engine/holes.js` (chiusura dei buchi nei loghi),
-> `src/engine/keying.js` + `scripts/clip-alpha.mjs` (fondo panna → trasparente).
+> Costruito il 2026-08-26, nell'ordine della scaletta:
+> 1. `src/lib/icons.js` + `Icon.jsx` — un solo insieme di icone, tratto 1,75,
+>    con il **filo d'oro** (`draw`) che le traccia invece di farle comparire.
+>    Nuove: `brain`, `feather`, gli oggetti di Brain, i cinque bollini.
+> 2. `scripts/make-icons.mjs` + `manifest.webmanifest` — icona dell'app dalla
+>    faccia di Zack (il nome scritto sotto, a 32 px, è illeggibile) e studio
+>    installabile.
+> 3. `src/engine/holes.js` — chiusura dei buchi nei loghi. **Soglia
+>    provvisoria: va misurata su loghi veri.**
+> 4. `src/engine/ricette.js` + `ZackButton.jsx` + `runZack` in `App.jsx` — il
+>    **tasto Zack**, che ha sostituito «Pronto per la stampa».
+> 5. `src/engine/keying.js` + `scripts/clip-alpha.mjs` — fondo panna →
+>    trasparente, senza bucare i personaggi panna.
+>
+> **Non fatto**, e sono i pezzi grossi: §6.1 comandi visibili (la colonna di
+> destra è ancora quella di prima), il servizio **Brain**, «Zack può
+> ricordarlo», Spiegami profondo, e l'aggancio delle animazioni del cast agli
+> eventi. La scaletta completa è nel documento, §8.
 
 ### Dove sta il materiale
 

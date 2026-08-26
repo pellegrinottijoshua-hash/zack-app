@@ -2257,28 +2257,166 @@ body {
   cursor: default;
 }
 
-.sb-ready {
+/* ------------------------------------------------------------------ *
+ * Il tasto Zack.
+ *
+ * È il più grande della schermata, e non per gusto: la dimensione è ciò che
+ * tiene onesta la lista dei comandi. Se accanto a questo ce ne stanno altri
+ * dieci grandi uguale, la lista è sbagliata.
+ * ------------------------------------------------------------------ */
+.zack {
   margin-left: auto;
-  display: grid;
+  position: relative;
+  display: flex;
+  align-items: stretch;
   gap: 1px;
-  padding: 8px 16px;
-  text-align: center;
 }
-.sb-ready em {
-  font-style: normal;
+
+.zack-go {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 20px;
+  min-height: 56px;
+  background: var(--oro-velo);
+  border: 1px solid var(--oro);
+  color: var(--panna);
+  font-family: var(--display);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.zack-go:hover:not(:disabled) {
+  background: rgba(196, 163, 90, 0.22);
+}
+
+.zack-go:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.zack-go svg {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  fill: none;
+  stroke: var(--oro);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.zack-testo {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+
+.zack-testo b {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* La misura e l'attesa, scritte prima di premere. */
+.zack-testo small {
   font-size: 9.5px;
   letter-spacing: 0.06em;
-  opacity: 0.72;
-  text-transform: none;
+  color: var(--grigio);
+}
+
+.zack-cosa {
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid var(--linea-viva);
+  border-left: none;
+  color: var(--grigio);
+  font-family: var(--display);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.zack-cosa:hover,
+.zack-cosa[aria-expanded='true'] {
+  color: var(--panna);
+  border-color: var(--oro);
+}
+
+/* La catena per esteso. Sta sopra la tela e si chiude da sola: un pannello
+   che resta aperto mentre lavori copre proprio ciò che stai guardando. */
+.zack-catena {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  display: grid;
+  gap: 2px;
+  padding: 10px;
+  background: var(--nero-2);
+  border: 1px solid var(--oro);
+}
+
+.zack-passo {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.zack-passo:hover {
+  background: var(--oro-velo);
+}
+
+.zack-passo input {
+  margin-top: 2px;
+  accent-color: var(--oro);
+  width: 16px;
+  height: 16px;
+}
+
+.zack-passo b {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--panna);
+}
+
+.zack-passo small {
+  display: block;
+  margin-top: 3px;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--grigio);
+}
+
+/* Un passo acceso che stavolta non serve — l'ingrandimento su un file già
+   grande. Dirlo è più utile che nasconderlo, e il colore non è l'unico
+   segnale: il testo del passo lo spiega. */
+.zack-passo[data-salta] b::after {
+  content: ' · stavolta salta';
+  color: var(--grigio);
+  font-size: 10px;
+  letter-spacing: 0.04em;
 }
 
 @media (max-width: 720px) {
   .sb-file {
     max-width: 100%;
   }
-  .sb-ready {
+  .zack {
     margin-left: 0;
     width: 100%;
+  }
+  .zack-go {
+    flex: 1;
   }
 }
 
