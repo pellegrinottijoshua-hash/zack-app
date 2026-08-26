@@ -10,6 +10,8 @@ import {
   nextJob,
   summarize,
   OPS,
+  attesaJobs,
+  SECONDI_PER_OP,
 } from '../src/engine/batch.js';
 
 const f = (name) => ({ name });
@@ -127,4 +129,44 @@ test("l'ingrandimento viene dopo lo scontorno, sempre", () => {
 test('il solo ingrandimento è già un piano valido', () => {
   assert.equal(isEmptyPlan({ upscale: true }), false);
   assert.equal(planJobs(files, { upscale: true }).length, 3);
+});
+
+// ── L'attesa detta prima di premere ────────────────────────────────────────
+//
+// «Quaranta file in un colpo» taceva sul fatto che il colpo dura mezz'ora, e
+// l'utente lo scopriva dopo aver premuto. Questi test proteggono la promessa,
+// non il numero: i numeri cambieranno quando li rimisureremo.
+
+test('un blocco vuoto non promette attesa', () => {
+  assert.deepEqual(attesaJobs([]), { secondi: 0, certo: true });
+});
+
+test("l'attesa cresce col numero di file", () => {
+  const uno = attesaJobs(planJobs([{ name: 'a.png' }], { cutout: true }));
+  const dieci = attesaJobs(planJobs(Array.from({ length: 10 }, (_, i) => ({ name: `${i}.png` })), { cutout: true }));
+  assert.equal(dieci.secondi, uno.secondi * 10);
+});
+
+test("l'ingrandimento è il costo che domina, e per questo va detto", () => {
+  const file = [{ name: 'a.png' }];
+  const solo = attesaJobs(planJobs(file, { cutout: true }));
+  const con = attesaJobs(planJobs(file, { cutout: true, upscale: true }));
+  assert.ok(con.secondi > solo.secondi * 10, 'un ×4 vale decine di scontorni');
+});
+
+test("un'operazione dal costo non misurato rende l'attesa un «almeno»", () => {
+  // La regola del progetto in un booleano: dove non c'è una misura non c'è un
+  // avviso, e una stima che si spaccia per misura è peggio di nessuna stima.
+  const file = [{ name: 'a.png' }];
+  assert.equal(attesaJobs(planJobs(file, { cutout: true })).certo, true);
+  assert.equal(attesaJobs(planJobs(file, { cutout: true, vector: true })).certo, false);
+  assert.equal(attesaJobs(planJobs(file, { exportPresets: ['gelato-front-350'] })).certo, false);
+});
+
+test('ogni operazione del piano ha un costo dichiarato', () => {
+  // Un lavoro che non compare in SECONDI_PER_OP sparirebbe dal conto in
+  // silenzio, e l'attesa scritta sul tasto sarebbe più bassa del vero.
+  for (const op of Object.values(OPS)) {
+    assert.ok(Number.isFinite(SECONDI_PER_OP[op]), `manca il costo di ${op}`);
+  }
 });

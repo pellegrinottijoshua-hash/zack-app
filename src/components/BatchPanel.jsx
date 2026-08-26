@@ -3,7 +3,8 @@ import { t } from '../i18n/index.js';
 import { Choice, Help } from './Panels.jsx';
 import Section from './Section.jsx';
 import { PRESETS } from '../engine/export.js';
-import { isEmptyPlan } from '../engine/batch.js';
+import { attesaJobs, isEmptyPlan, planJobs } from '../engine/batch.js';
+import { humanSeconds } from '../engine/upscale.js';
 
 /**
  * Le operazioni in blocco.
@@ -29,6 +30,19 @@ export default function BatchPanel({ files, batch, onPickFiles, onClearFiles, on
 
   const { done, failed, total, ratio } = batch.summary;
   const nothingToDo = isEmptyPlan(opts);
+
+  /**
+   * L'attesa scritta sul tasto, prima di premere.
+   *
+   * Era la promessa mancante: «quaranta file in un colpo» taceva sul fatto che
+   * il colpo dura mezz'ora. Si dice «almeno» quando il piano contiene
+   * un'operazione dal costo non misurato — vedi `attesaJobs`.
+   */
+  const attesa = nothingToDo || !files.length ? null : attesaJobs(planJobs(files, opts));
+  const attesaTesto = attesa && (() => {
+    const h = humanSeconds(attesa.secondi);
+    return `${h.value} ${t(`common.${h.unit}`)}`;
+  })();
 
   return (
     /* Come ogni altro gruppo di comandi: si chiude per dare spazio alla tela.
@@ -110,7 +124,14 @@ export default function BatchPanel({ files, batch, onPickFiles, onClearFiles, on
               disabled={nothingToDo}
               onClick={() => batch.run(files, opts)}
             >
-              {t('batch.start', { n: files.length })}
+              <span className="batch-avvia">
+                <b>{t('batch.start', { n: files.length })}</b>
+                {attesaTesto && (
+                  <small>
+                    {t(attesa.certo ? 'batch.startCirca' : 'batch.startAlmeno', { wait: attesaTesto })}
+                  </small>
+                )}
+              </span>
             </button>
           )}
 

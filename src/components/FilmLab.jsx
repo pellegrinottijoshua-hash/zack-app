@@ -192,7 +192,11 @@ export default function FilmLab({ file, onPick, onSave, onNotice, onError }) {
             }
           >
             <Icon name="feather" draw />
-            {t('film.togliOra')}
+            {/* «Almeno», non «circa»: il filmato viene rigiocato in tempo
+                reale da MediaRecorder, quindi l'attesa non scende mai sotto la
+                sua durata — e il key fotogramma per fotogramma può stare
+                indietro. Promettere «circa» sarebbe promettere il minimo. */}
+            {t('film.togliOraAttesa', { s: (durata || 0).toFixed(1) })}
           </button>
         </section>
       </div>

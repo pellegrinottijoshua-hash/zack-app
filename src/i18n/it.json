@@ -425,7 +425,9 @@
     "downloadAll": "Scarica tutti",
     "gridTitle": "{n} file scontornati",
     "close": "Chiudi",
-    "renamed": "Rinominato: {nome}"
+    "renamed": "Rinominato: {nome}",
+    "startCirca": "circa {wait} di attesa",
+    "startAlmeno": "almeno {wait} di attesa"
   },
   "sound": {
     "record": "Registra",
@@ -651,7 +653,7 @@
       "orizzontale": "16:9",
       "ritratto": "4:5"
     },
-    "tagliaOra": "Taglia — circa {s}s di attesa",
+    "tagliaOra": "Taglia — almeno {s}s di attesa",
     "tagliato": "Tagliato: {s}s",
     "frames": "Estrai fotogrammi",
     "quanti": "{n} fotogrammi",
@@ -659,8 +661,8 @@
     "estratti": "Estratti {n} fotogrammi",
     "sfondo": "Togli lo sfondo",
     "sfondoNota": "Funziona sui filmati girati su fondo panna: il panna che tocca il bordo se ne va, quello dentro il personaggio resta.",
-    "togliOra": "Togli lo sfondo",
     "tolto": "Sfondo tolto · {n} isole salvate",
-    "toltoDubbio": "Sfondo tolto, ma nessuna isola salvata: guarda un fotogramma prima di usarlo."
+    "toltoDubbio": "Sfondo tolto, ma nessuna isola salvata: guarda un fotogramma prima di usarlo.",
+    "togliOraAttesa": "Togli lo sfondo — almeno {s}s di attesa"
   }
 }

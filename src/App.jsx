@@ -1375,6 +1375,23 @@ export default function App() {
         <span>
           {t('status.format')} <b>{s.preset}</b>
         </span>
+        {/* Il blocco gira anche quando il suo pannello non si vede: è un
+            lavoro da mezz'ora, e obbligare a restare a guardarlo farebbe di
+            «quaranta file in un colpo» una promessa di stare fermi. Qui sotto
+            resta il conto, in ogni servizio. */}
+        {batch.running && (
+          <span className="stato-blocco">
+            {t('batch.title')}{' '}
+            <b>
+              {t('batch.progress', {
+                done: batch.summary.done + batch.summary.failed,
+                total: batch.summary.total,
+              })}
+            </b>
+            {batch.eta != null && ` · ${t('batch.eta', { sec: batch.eta })}`}
+          </span>
+        )}
+
         <span className="payoff">{t('app.payoff')}</span>
       </footer>
     </div>

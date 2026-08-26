@@ -425,7 +425,9 @@
     "downloadAll": "Download all",
     "gridTitle": "{n} files cut out",
     "close": "Close",
-    "renamed": "Renamed: {nome}"
+    "renamed": "Renamed: {nome}",
+    "startCirca": "about {wait} of waiting",
+    "startAlmeno": "at least {wait} of waiting"
   },
   "sound": {
     "record": "Record",
@@ -651,7 +653,7 @@
       "orizzontale": "16:9",
       "ritratto": "4:5"
     },
-    "tagliaOra": "Trim — about {s}s of waiting",
+    "tagliaOra": "Trim — at least {s}s of waiting",
     "tagliato": "Trimmed: {s}s",
     "frames": "Pull frames",
     "quanti": "{n} frames",
@@ -659,8 +661,8 @@
     "estratti": "Pulled {n} frames",
     "sfondo": "Drop the background",
     "sfondoNota": "Works on clips shot on the cream void: the cream touching the edge goes, the cream inside the character stays.",
-    "togliOra": "Drop the background",
     "tolto": "Background dropped · {n} islands kept",
-    "toltoDubbio": "Background dropped, but no islands kept: look at a frame before using it."
+    "toltoDubbio": "Background dropped, but no islands kept: look at a frame before using it.",
+    "togliOraAttesa": "Remove the background — at least {s}s of waiting"
   }
 }

@@ -2328,6 +2328,29 @@ body {
   margin-top: 4px;
 }
 
+/* L'attesa sul tasto d'avvio del blocco, con la stessa forma del tasto Zack:
+ * l'etichetta grossa, e sotto, più piccolo, quanto costa. */
+.batch-avvia {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+/* Il conto del blocco nella barra di stato: acceso solo mentre gira, e in
+ * oro perché è l'unica cosa in movimento nella riga. */
+.stato-blocco b {
+  color: var(--oro);
+}
+
+.batch-avvia small {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  opacity: 0.72;
+}
+
 .zack-go svg {
   width: 26px;
   height: 26px;

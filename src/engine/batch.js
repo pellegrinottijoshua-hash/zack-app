@@ -74,6 +74,52 @@ export function estimateRemaining(jobs, msPerJob) {
   return Math.round((remaining * msPerJob) / 1000);
 }
 
+/**
+ * Quanto costa ogni operazione su un file, in secondi.
+ *
+ * Serve a dire l'attesa **prima** di premere, che è la cosa che oggi manca:
+ * l'utente scopre che quaranta file sono mezz'ora solo dopo aver avviato. A
+ * blocco partito subentra `estimateRemaining`, che è più onesto perché misura
+ * questa macchina invece di indovinarla.
+ *
+ * La provenienza di ogni numero, perché un numero senza provenienza è
+ * un'opinione travestita:
+ */
+export const SECONDI_PER_OP = {
+  // Misurato a modello caldo (vedi `CUTOUT_SECONDS` in ready.js).
+  cutout: 2,
+  // Misurato il 2026-08-26: un ×4 su un file di stampa sono ottanta secondi.
+  // È il costo che domina tutto il resto, e per questo va detto.
+  upscale: 80,
+  // PROVVISORI, NON MISURATI (2026-08-27). Sono l'unica ragione per cui
+  // l'attesa si annuncia come «almeno» e non come «circa».
+  vector: 3,
+  export: 1,
+};
+
+/** Le operazioni il cui costo è stato davvero misurato. */
+const MISURATE = new Set(['cutout', 'upscale']);
+
+/**
+ * L'attesa da scrivere sul tasto d'avvio.
+ *
+ * `certo` è falso se il piano contiene anche una sola operazione dal costo non
+ * misurato: l'interfaccia scrive «almeno» invece di «circa». È la regola di
+ * questo progetto detta in un booleano — dove non c'è una misura non c'è un
+ * avviso, e una stima che si spaccia per misura è peggio di nessuna stima.
+ *
+ * @returns {{secondi: number, certo: boolean}}
+ */
+export function attesaJobs(jobs) {
+  let secondi = 0;
+  let certo = true;
+  for (const j of jobs) {
+    secondi += SECONDI_PER_OP[j.op] ?? 0;
+    if (!MISURATE.has(j.op)) certo = false;
+  }
+  return { secondi: Math.round(secondi), certo };
+}
+
 /** Media dei lavori già conclusi, per stimare quelli che restano. */
 export function averageMs(durations) {
   const valid = durations.filter((d) => Number.isFinite(d) && d > 0);
