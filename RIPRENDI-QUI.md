@@ -87,6 +87,16 @@ stanno fra i servizi **gratuiti**.
 fotogrammi, togli lo sfondo. Alla prima timeline multi-traccia abbiamo comprato
 il problema più costoso del settore.
 
+**Il `.md` è l'unico formato di testo.** Non txt, non rtf, non docx: il
+markdown è l'unico che un umano legge in chiaro, un modello capisce senza
+conversioni e un editor apre fra dieci anni. Allungare quella lista significa
+comprarsi le conversioni, che è un altro prodotto.
+
+**Il ponte verso un modello è il pacco, non un server.** I documenti escono in
+`nome.brain.zip`, si scompatta, si legge `IDEE.md`. Nessuna sincronizzazione,
+nessuna banda, nessuna responsabilità legale sui contenuti. Vedi
+[docs/2026-08-27-brain-come-ponte.md](docs/2026-08-27-brain-come-ponte.md).
+
 **I riferimenti sono il cuore.** Scontorni → l'asset entra in una tela di Brain
 → la tela **è** il set di riferimenti → il risultato torna lì.
 
@@ -101,7 +111,7 @@ incollare; le generazioni le lancia lui.
 
 | servizio | gruppo | stato |
 |---|---|---|
-| **Brain** — tela di idee, note, gruppi, frecce | locale | **fatto** |
+| **Brain** — tela di idee, note, gruppi, frecce, **documenti** | locale | **fatto** |
 | Scontorna (+ pennello, buchi, ingrandimento) | locale | **fatto** |
 | Vettorializza | locale | **fatto** |
 | Editor SVG | locale | **fatto** |
@@ -212,6 +222,26 @@ su ogni tasto secondario del prodotto, da quando la palette è stata invertita.
 13. **Ricerca e storico in Brain**, poi la **cartella vera su disco**. Vedi
     [docs/2026-08-26-brain-ai-e-cervello.md](docs/2026-08-26-brain-ai-e-cervello.md).
 14. **Modelli a fp16**, per dimezzare i 170 MB del primo scaricamento.
+
+---
+
+## 6-bis. Brain come ponte
+
+I `.md` dei progetti entrano nella libreria come asset, stanno sulla tela dentro
+il cerchio del loro progetto, si aprono e si modificano nello studio, e escono
+nel pacco. `IDEE.md` guadagna la sezione **Documenti** — titolo scritto dentro
+il file, progetto, percorso — che è quella da cui un modello parte per sapere
+cosa aprire.
+
+Il giro completo sta in
+[docs/2026-08-27-brain-come-ponte.md](docs/2026-08-27-brain-come-ponte.md).
+Il consiglio che conta: **un gruppo per progetto, e dentro solo i documenti che
+qualcuno leggerebbe davvero.** Se `IDEE.md` ne elenca quaranta non è più una
+panoramica, è di nuovo la cartella di partenza.
+
+Nuovo anche il tasto **«Immagine della tela»**: `nome-tela.png` con note,
+gruppi, frecce, miniature e schede dei documenti. Era già disegnata, ma sepolta
+dentro lo zip.
 
 ---
 
