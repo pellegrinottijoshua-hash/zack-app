@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import { t } from '../i18n/index.js';
 import { help } from '../i18n/help.js';
+import Section from './Section.jsx';
 import {
   SCALES,
   canUpscale,
@@ -46,12 +47,10 @@ export function Choice({ label, note, active, disabled, onClick, swatch }) {
  * `models` arriva dal motore e contiene solo ciò che questo browser sa fare.
  */
 export function RemovePanel({ models, s, set, busy }) {
+  // Richiudibile come tutte le altre: si chiude per dare spazio alla tela,
+  // non per far stare la lista. Vedi `Section.jsx`.
   return (
-    <div className="field">
-      <span className="label">
-        <span>{t('control.quality.label')}</span>
-      </span>
-      <Help k="control.quality.help" />
+    <Section id="quality" title={t('control.quality.label')} helpKey="control.quality.help">
       {models.map((m) => (
         <Choice
           key={m.id}
@@ -62,7 +61,7 @@ export function RemovePanel({ models, s, set, busy }) {
           onClick={() => set({ model: m.id })}
         />
       ))}
-    </div>
+    </Section>
   );
 }
 
@@ -104,11 +103,7 @@ export function TracePanel({ presets, s, set, busy }) {
 export function ExportPanel({ presets, backgrounds, s, set, busy }) {
   const groups = [...new Set(presets.map((p) => p.group))];
   return (
-    <div className="field">
-      <span className="label">
-        <span>{t('control.format.label')}</span>
-      </span>
-      <Help k="control.format.help" />
+    <Section id="format" title={t('control.format.label')} helpKey="control.format.help">
       {groups.map((g) => (
         <div className="field" key={g}>
           <span className="label" style={{ letterSpacing: '0.14em' }}>
@@ -142,8 +137,7 @@ export function ExportPanel({ presets, backgrounds, s, set, busy }) {
           onClick={() => set({ background: b })}
         />
       ))}
-
-    </div>
+    </Section>
   );
 }
 
@@ -161,11 +155,7 @@ export function UpscalePanel({ image, scaleId = 'x4', onScale, busy, running, on
   const limits = inputLimits(scale.factor);
 
   return (
-    <div className="field">
-      <span className="label">
-        <span>{t('upscale.title')}</span>
-      </span>
-      <Help k="upscale.help" />
+    <Section id="upscale" title={t('upscale.title')} helpKey="upscale.help">
 
       {SCALES.map((sc) => (
         <Choice
@@ -206,7 +196,7 @@ export function UpscalePanel({ image, scaleId = 'x4', onScale, busy, running, on
           {t('upscale.run')}
         </button>
       )}
-    </div>
+    </Section>
   );
 }
 

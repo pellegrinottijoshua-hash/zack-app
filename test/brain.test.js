@@ -14,6 +14,7 @@ import {
   prossimoPosto,
   COLORI,
   TIPI,
+  CATEGORIE,
 } from '../src/engine/brain.js';
 
 /** Un generatore prevedibile: gli id contano solo per essere diversi. */
@@ -26,17 +27,30 @@ const tela = () => {
   return [a, b, nuovaFreccia({ da: a.id, a: b.id, rand })];
 };
 
-test('una nota tiene testo e colore', () => {
-  const n = nuovaNota({ testo: 'chiedere a lei', colore: COLORI[1], rand });
+test('una nota tiene testo e categoria', () => {
+  const n = nuovaNota({ testo: 'chiedere a lei', cat: 'domanda', rand });
   assert.equal(n.testo, 'chiedere a lei');
-  assert.equal(n.colore, COLORI[1]);
+  assert.equal(n.cat, 'domanda');
 });
 
-test('un colore inventato ricade su quello di partenza', () => {
-  // I colori arrivano anche da una tela salvata mesi fa: uno fuori palette
-  // non deve entrare nell'interfaccia dalla porta di servizio.
-  const n = nuovaNota({ colore: '#ff00ff', rand });
-  assert.ok(COLORI.includes(n.colore));
+test('la categoria porta con sé il suo colore', () => {
+  // Si sceglie il senso, non la tinta: lasciarli scollegati produce una nota
+  // "Da fare" color idea, cioè un'etichetta che mente.
+  const n = nuovaNota({ cat: 'task', rand });
+  assert.equal(n.colore, CATEGORIE.find((c) => c.id === 'task').colore);
+});
+
+test('una categoria inventata ricade su quella di partenza', () => {
+  // Le tele salvate mesi fa possono contenere categorie che abbiamo tolto.
+  const n = nuovaNota({ cat: 'teletrasporto', rand });
+  assert.equal(n.cat, CATEGORIE[0].id);
+});
+
+test('cambiare categoria cambia anche il colore', () => {
+  const items = [nuovaNota({ cat: 'idea', rand })];
+  const dopo = aggiorna(items, items[0].id, { cat: 'fatto' });
+  assert.equal(dopo[0].cat, 'fatto');
+  assert.equal(dopo[0].colore, CATEGORIE.find((c) => c.id === 'fatto').colore);
 });
 
 test('un asset senza lavoro dietro non si crea', () => {
@@ -122,11 +136,16 @@ test('la lista dei tipi resta chiusa', () => {
   assert.deepEqual(TIPI, ['asset', 'nota', 'cerchio', 'freccia']);
 });
 
-test('i colori delle note sono quelli delle cartelle', () => {
-  // Due insiemi di colori per due cose che l'utente legge entrambe come
-  // "etichette" produrrebbero un colore che significa due cose diverse.
-  assert.ok(COLORI.length >= 3);
-  for (const c of COLORI) assert.match(c, /^#[0-9A-Fa-f]{6}$/);
+test('ogni categoria ha un colore valido e distinto', () => {
+  // Due categorie dello stesso colore sono due etichette che sulla tela si
+  // leggono come una sola.
+  const tinte = new Set();
+  for (const c of CATEGORIE) {
+    assert.match(c.colore, /^#[0-9A-Fa-f]{6}$/);
+    assert.ok(!tinte.has(c.colore), `${c.id} ripete un colore già usato`);
+    tinte.add(c.colore);
+  }
+  assert.ok(COLORI.length >= 3, 'i cerchi usano ancora i colori delle cartelle');
 });
 
 test('un titolo lunghissimo su un cerchio viene ripulito', () => {

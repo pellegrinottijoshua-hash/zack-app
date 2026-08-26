@@ -13,6 +13,7 @@ import {
   prossimoPosto,
   riquadro,
   COLORI,
+  CATEGORIE,
 } from '../engine/brain.js';
 import Icon from './Icon.jsx';
 
@@ -256,6 +257,12 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
             }
           }}
         >
+          {collega && (
+            <p className="brain-istruzione">
+              {collega.da ? t('brain.arrowTo') : t('brain.arrowFrom')}
+            </p>
+          )}
+
           <div
             className="brain-tela"
             style={{ transform: `translate(${vista.x}px, ${vista.y}px) scale(${vista.z})` }}
@@ -309,10 +316,15 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
                   onPointerDown={(e) => {
                     if (collega) {
                       // Due clic: il primo sceglie da dove, il secondo dove.
+                      // Dopo il secondo la modalità RESTA accesa: chi disegna
+                      // una freccia quasi sempre ne disegna tre, e ripremere
+                      // il tasto ogni volta è una tassa. Si esce con Esc o
+                      // ripremendo FRECCIA.
+                      e.stopPropagation();
                       if (!collega.da) setCollega({ da: o.id });
                       else if (collega.da !== o.id) {
                         onChange([...items, nuovaFreccia({ da: collega.da, a: o.id })]);
-                        setCollega(null);
+                        setCollega({ da: null });
                       }
                       return;
                     }
@@ -324,11 +336,20 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
                   )}
 
                   {o.t === 'nota' && (
-                    <textarea
-                      value={o.testo}
-                      placeholder={t('brain.notePlaceholder')}
-                      onChange={(e) => onChange(aggiorna(items, o.id, { testo: e.target.value }))}
-                    />
+                    <>
+                      {/* La maniglia. Senza, la nota era quasi impossibile da
+                          spostare: il testo occupa tutto il riquadro e ogni
+                          clic finisce nel campo di scrittura invece che sul
+                          trascinamento. Ora si scrive dentro e si sposta di
+                          sopra, e la targhetta dice anche che nota è. */}
+                      <span className="nota-presa">{t(`brain.cat.${o.cat || CATEGORIE[0].id}`)}</span>
+                      <textarea
+                        value={o.testo}
+                        placeholder={t('brain.notePlaceholder')}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onChange={(e) => onChange(aggiorna(items, o.id, { testo: e.target.value }))}
+                      />
+                    </>
                   )}
 
                   {o.t === 'cerchio' && (
@@ -349,14 +370,34 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
           <aside className="brain-scelto">
             <h3>{assetScelto ? assetScelto.name : t(`brain.kind.${oggetto.t}`)}</h3>
 
-            {oggetto.t !== 'asset' && (
+            {/* Per una nota si sceglie il SENSO, non la tinta: cinque tinte
+                del marchio non si distinguono a colpo d'occhio, e soprattutto
+                non significano niente. Una nota «Da fare» invece si conta, si
+                cerca e si estrae. */}
+            {oggetto.t === 'nota' && (
+              <div className="brain-categorie">
+                {CATEGORIE.map((c) => (
+                  <button
+                    key={c.id}
+                    className="brain-categoria"
+                    aria-pressed={(oggetto.cat || CATEGORIE[0].id) === c.id}
+                    onClick={() => onChange(aggiorna(items, oggetto.id, { cat: c.id }))}
+                  >
+                    <i style={{ background: c.colore }} />
+                    {t(`brain.cat.${c.id}`)}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {oggetto.t === 'cerchio' && (
               <div className="brain-colori">
                 {COLORI.map((c) => (
                   <button
                     key={c}
                     className="brain-colore"
                     style={{ background: c }}
-                    aria-pressed={o_colore(oggetto) === c}
+                    aria-pressed={oggetto.colore === c}
                     aria-label={c}
                     onClick={() => onChange(aggiorna(items, oggetto.id, { colore: c }))}
                   />
@@ -390,4 +431,3 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
   );
 }
 
-const o_colore = (o) => o.colore;

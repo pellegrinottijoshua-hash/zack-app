@@ -2519,12 +2519,31 @@ body {
   padding-bottom: 8px;
 }
 
-/* Le sezioni non hanno più un pulsante in testa: il titolo è un titolo. */
+/* Il titolo della sezione è di nuovo un pulsante: si chiude per dare spazio
+   alla tela, non per far stare la lista. Aperta di default, e ricorda come
+   l'hai lasciata. */
 .sect-head {
   display: flex;
   align-items: center;
   gap: 7px;
+  width: 100%;
   padding: 0 0 7px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sect-head:hover .sect-title,
+.sect-head:hover .caret {
+  color: var(--oro);
+}
+
+.sect-head .caret {
+  font-size: 9px;
+  color: var(--oro);
 }
 
 /* ------------------------------------------------------------------ *
@@ -2911,4 +2930,173 @@ body {
 .brain-barra button,
 .brain-riapri {
   white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ *
+ * IL TASTO JAYL — uno stile solo, per tutti i tasti dello studio.
+ *
+ * Richiesta del committente: nero, contorno bianco, scritta in grassetto, e
+ * al passaggio del mouse il bianco diventa oro.
+ *
+ * È scritto in CSS e non ritagliato da immagini generate. La ragione non è
+ * comodità: un tasto-immagine non si traduce (l'interfaccia è in due lingue),
+ * non si adatta a un'etichetta più lunga, non ha uno stato disabilitato né un
+ * fuoco da tastiera, pesa migliaia di volte di più, e sfoca su uno schermo
+ * che non sia quello per cui è stato ritagliato. Lo stile qui sotto è
+ * *esattamente* quello descritto e vale su ogni tasto insieme.
+ * ------------------------------------------------------------------ */
+:root {
+  --tasto-bordo: #f5f0e8;
+}
+
+.brain-barra button,
+.brain-riapri,
+.brain-porta,
+.zack-go,
+.zack-cosa,
+.sb-tool,
+.brain-usa button,
+.brain-togli,
+.brain-chip,
+.avanzati-head {
+  border: 1px solid var(--tasto-bordo);
+  background: var(--nero);
+  color: var(--panna);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+/* Sopra, tutto diventa oro: bordo e scritta insieme. */
+.brain-barra button:hover:not(:disabled),
+.brain-riapri:hover,
+.brain-porta:hover,
+.zack-go:hover:not(:disabled),
+.zack-cosa:hover,
+.sb-tool:hover:not(:disabled),
+.brain-usa button:hover,
+.brain-togli:hover,
+.brain-chip:hover,
+.avanzati-head:hover {
+  border-color: var(--oro);
+  color: var(--oro);
+  background: var(--nero);
+}
+
+/* Acceso: l'oro riempie appena, così si distingue da "ci sto sopra". */
+.brain-barra button[aria-pressed='true'],
+.zack-cosa[aria-expanded='true'],
+.sb-tool[aria-pressed='true'] {
+  border-color: var(--oro);
+  color: var(--oro);
+  background: var(--oro-velo);
+}
+
+/* Spento: si vede che c'è e che non si può premere. Il bordo resta, sbiadito:
+   togliere il bordo farebbe sparire il tasto, e un comando che sparisce è un
+   comando che l'utente crede di aver sognato. */
+.brain-barra button:disabled,
+.zack-go:disabled {
+  border-color: var(--linea-viva);
+  color: var(--grigio-scuro);
+  opacity: 1;
+}
+
+/* Il tasto Zack resta l'unico d'oro anche da fermo: è il più importante della
+   schermata e non deve mimetizzarsi con gli altri. */
+.zack-go,
+.brain-zack {
+  border-color: var(--oro) !important;
+  background: var(--oro-velo) !important;
+}
+
+/* ---- la nota: maniglia e categoria ---- */
+
+/* La presa. Senza, la nota era quasi impossibile da spostare: il campo di
+   testo riempie il riquadro e ogni clic ci finisce dentro. */
+.nota-presa {
+  display: block;
+  padding: 5px 9px;
+  background: var(--tinta, var(--oro));
+  color: #111111;
+  font-family: var(--display);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: grab;
+  user-select: none;
+}
+
+.brain-oggetto[data-t='nota'] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border-left-width: 1px;
+}
+
+.brain-oggetto[data-t='nota'] textarea {
+  cursor: text;
+}
+
+.brain-categorie {
+  display: grid;
+  gap: 3px;
+}
+
+.brain-categoria {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  background: var(--nero);
+  border: 1px solid var(--linea-viva);
+  color: var(--grigio);
+  font-family: var(--display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.brain-categoria i {
+  width: 11px;
+  height: 11px;
+  flex: none;
+}
+
+.brain-categoria:hover {
+  color: var(--oro);
+  border-color: var(--oro);
+}
+
+.brain-categoria[aria-pressed='true'] {
+  color: var(--panna);
+  border-color: var(--panna);
+}
+
+/* La riga che dice cosa fare mentre si collega. Senza, il modo freccia era
+   invisibile: il tasto si accendeva e nient'altro succedeva, e nessuno può
+   indovinare "clicca due oggetti". */
+.brain-istruzione {
+  position: absolute;
+  left: 50%;
+  top: 12px;
+  transform: translateX(-50%);
+  z-index: 20;
+  margin: 0;
+  padding: 8px 16px;
+  background: var(--nero);
+  border: 1px solid var(--oro);
+  color: var(--oro);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+/* Mentre si collega, gli oggetti si vedono che sono bersagli. */
+.brain-piano:has(~ * ) .brain-oggetto[data-collega] {
+  box-shadow: 0 0 0 2px var(--oro);
 }

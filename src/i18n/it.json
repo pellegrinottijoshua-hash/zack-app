@@ -588,6 +588,15 @@
     "reopen": "Riapri un pacco",
     "packed": "Pacco pronto: {file}",
     "unpacked": "Riaperto «{nome}»: {n} lavori tornati dentro.",
-    "packHelp": "Scarica tutta l'idea — file, note, disposizione — in un solo pacco che si può rimettere dentro."
+    "packHelp": "Scarica tutta l'idea — file, note, disposizione — in un solo pacco che si può rimettere dentro.",
+    "cat": {
+      "idea": "Idea",
+      "task": "Da fare",
+      "domanda": "Da decidere",
+      "riferimento": "Riferimento",
+      "fatto": "Fatto"
+    },
+    "arrowFrom": "Scegli da dove parte la freccia",
+    "arrowTo": "Ora scegli dove arriva — Esc per uscire"
   }
 }

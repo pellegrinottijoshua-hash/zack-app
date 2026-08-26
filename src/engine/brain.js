@@ -34,6 +34,28 @@ export const TIPI = ['asset', 'nota', 'cerchio', 'freccia'];
  */
 export const COLORI = FOLDER_COLORS;
 
+/**
+ * Le categorie di una nota.
+ *
+ * Il colore da solo non basta e non bastava: cinque tinte del marchio — oro,
+ * panna e tre grigi — non si distinguono a colpo d'occhio, e soprattutto non
+ * *significano* niente. Una nota gialla è gialla; una nota **Da fare** è una
+ * cosa da fare, e si può contare, cercare ed estrarre.
+ *
+ * Ogni categoria porta con sé il suo colore: si sceglie il senso, non la
+ * tinta. Restano cinque perché cinque significati distinti coprono quasi
+ * tutto, e il ventunesimo non lo ritrova più nessuno.
+ */
+export const CATEGORIE = [
+  { id: 'idea', colore: '#C4A35A' },
+  { id: 'task', colore: '#F5F0E8' },
+  { id: 'domanda', colore: '#8A8A85' },
+  { id: 'riferimento', colore: '#6E6E6A' },
+  { id: 'fatto', colore: '#3D3D3A' },
+];
+
+export const categoria = (id) => CATEGORIE.find((c) => c.id === id) || CATEGORIE[0];
+
 /** Misure di partenza. Si ridimensiona a mano: questi sono solo l'inizio. */
 export const MISURE = {
   asset: { w: 180, h: 180 },
@@ -50,12 +72,16 @@ export function nuovoAsset({ assetId, x = 0, y = 0, rand = Math.random }) {
 }
 
 /** Una nota: il motivo per cui questa tela esiste più della moodboard. */
-export function nuovaNota({ testo = '', colore = COLORI[0], x = 0, y = 0, rand = Math.random }) {
+export function nuovaNota({ testo = '', cat = CATEGORIE[0].id, x = 0, y = 0, rand = Math.random }) {
+  const c = categoria(cat);
   return {
     id: newId(rand),
     t: 'nota',
     testo: cleanNote(testo),
-    colore: COLORI.includes(colore) ? colore : COLORI[0],
+    cat: c.id,
+    // Il colore resta nel dato invece di essere calcolato ogni volta: una tela
+    // salvata oggi deve restare com'era anche se domani cambiamo una tinta.
+    colore: c.colore,
     x: numero(x),
     y: numero(y),
     ...MISURE.nota,
@@ -122,6 +148,13 @@ export function aggiorna(items, id, patch) {
     if (o.id !== id) return o;
     const next = { ...o, ...patch };
     if ('colore' in patch && !COLORI.includes(patch.colore)) next.colore = o.colore;
+    // Cambiare categoria cambia il colore: sono la stessa scelta vista da due
+    // lati, e lasciarli scollegati produce una nota "Da fare" color idea.
+    if ('cat' in patch) {
+      const c = categoria(patch.cat);
+      next.cat = c.id;
+      next.colore = c.colore;
+    }
     if ('testo' in patch) next.testo = cleanNote(patch.testo);
     if ('titolo' in patch) next.titolo = cleanNote(patch.titolo);
     // Sotto una certa misura un oggetto non si riesce più ad afferrare per

@@ -1,36 +1,63 @@
+import { useState } from 'react';
 import { help } from '../i18n/help.js';
 
 /**
- * Un gruppo di comandi dentro il pannello.
+ * Un gruppo di comandi dentro il pannello, richiudibile.
  *
- * **Non è più richiudibile, ed è una decisione.** Lo era: ogni sezione
- * ricordava se stessa, e sei sezioni chiuse facevano una colonna corta. Ma un
- * comando chiuso è un comando che non esiste — chi non sa che c'è non va a
- * cercarlo dietro un triangolino, e la colonna corta nascondeva il problema
- * vero invece di risolverlo: i comandi erano troppi.
+ * **Questa decisione è stata ribaltata due volte, e vale la pena scrivere
+ * perché.** All'inizio le sezioni erano richiudibili; le ho rese fisse perché
+ * un comando chiuso è un comando che non esiste, e sei sezioni chiuse
+ * nascondevano il problema vero — i comandi erano troppi — invece di
+ * risolverlo. Il committente le ha richieste richiudibili, con una ragione
+ * diversa e migliore della mia: *«in modo da dare spazio al canva»*. Non si
+ * chiudono per far stare la lista, si chiudono per **guardare il lavoro**.
  *
- * La regola del committente è *tutto visibile, senza scorrere*. Il modo di
- * rispettarla non è chiudere: è **togliere**. Ciò che non serve al lavoro
- * normale di uno strumento sta dietro un solo «Avanzati» (`Advanced.jsx`),
- * non dietro sei.
+ * Le due cose convivono a queste condizioni, che sono ciò che mancava prima:
  *
- * L'API resta la stessa perché chi la usa non deve cambiare: `defaultOpen` e
- * `forceOpen` sono accettati e ignorati, e spariranno quando l'ultimo
- * chiamante avrà smesso di passarli.
+ * 1. **aperte di default**, sempre. Un comando si nasconde solo se sei tu a
+ *    nasconderlo;
+ * 2. **ricordano come le hai lasciate**, per servizio;
+ * 3. e la lista resta corta lo stesso: ciò che non serve al lavoro normale sta
+ *    in `Advanced.jsx`, non dentro una sezione chiusa.
  */
-export default function Section({ id, title, badge, helpKey, children }) {
+export default function Section({ id, title, badge, helpKey, children, defaultOpen = true, forceOpen = false }) {
+  const [aperta, setAperta] = useState(() => {
+    try {
+      const salvata = localStorage.getItem(`jayl.section.${id}`);
+      return salvata === null ? defaultOpen : salvata === '1';
+    } catch {
+      return defaultOpen;
+    }
+  });
+
+  function commuta() {
+    const prossima = !aperta;
+    setAperta(prossima);
+    try {
+      localStorage.setItem(`jayl.section.${id}`, prossima ? '1' : '0');
+    } catch {
+      // Archivio negato: vale per questa sessione.
+    }
+  }
+
+  // Quando una modalità richiede la sezione, si apre da sola: entrare nella
+  // modifica nodi e non vedere i comandi dei nodi sarebbe assurdo.
+  const mostra = aperta || forceOpen;
   const hint = helpKey ? help(helpKey) : null;
 
   return (
-    <section className="sect" data-open="true" data-id={id}>
-      <div className="sect-head">
+    <section className="sect" data-open={mostra} data-id={id}>
+      <button className="sect-head" aria-expanded={mostra} onClick={commuta}>
+        <span className="caret" aria-hidden="true">{mostra ? '▾' : '▸'}</span>
         <span className="sect-title">{title}</span>
         {badge && <b>{badge}</b>}
-      </div>
-      <div className="sect-body">
-        {hint && <p className="help">{hint}</p>}
-        {children}
-      </div>
+      </button>
+      {mostra && (
+        <div className="sect-body">
+          {hint && <p className="help">{hint}</p>}
+          {children}
+        </div>
+      )}
     </section>
   );
 }

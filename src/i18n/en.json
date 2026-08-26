@@ -588,6 +588,15 @@
     "reopen": "Reopen a pack",
     "packed": "Pack ready: {file}",
     "unpacked": "Reopened “{nome}”: {n} pieces back in.",
-    "packHelp": "Download the whole idea — files, notes, layout — as one pack you can put back."
+    "packHelp": "Download the whole idea — files, notes, layout — as one pack you can put back.",
+    "cat": {
+      "idea": "Idea",
+      "task": "To do",
+      "domanda": "To decide",
+      "riferimento": "Reference",
+      "fatto": "Done"
+    },
+    "arrowFrom": "Pick where the arrow starts",
+    "arrowTo": "Now pick where it lands — Esc to leave"
   }
 }
