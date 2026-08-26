@@ -18,6 +18,7 @@ import SoundLab from './components/SoundLab.jsx';
 import FinishPanel from './components/FinishPanel.jsx';
 import Advanced from './components/Advanced.jsx';
 import Brain from './components/Brain.jsx';
+import BatchGrid from './components/BatchGrid.jsx';
 import { kindFromFile } from './store/model.js';
 import { impacchetta, spacchetta } from './store/brainBundle.js';
 import StageBar from './components/StageBar.jsx';
@@ -399,6 +400,22 @@ export default function App() {
    * L'originale è la metà che conta: senza, «Recupera» non ha colori da
    * riportare. È il motivo per cui il blocco se li tiene entrambi.
    */
+  /** Rinomina un risultato del blocco, in archivio. */
+  async function rinominaRisultato(r, nome) {
+    if (!r.assetId || !nome) return;
+    await library.update(r.assetId, { name: nome });
+    setNotice(t('batch.renamed', { nome }));
+  }
+
+  /** Porta via un file solo, senza passare dallo zip di tutto. */
+  function scaricaRisultato(r, nome) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(r.blob);
+    a.download = `${nome || r.file.name.replace(/\.[^.]+$/, '')}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  }
+
   function fixFromBatch({ file: original, blob }) {
     setError(null);
     setNotice(null);
@@ -999,7 +1016,19 @@ export default function App() {
           {error && <div className="alert">{error}</div>}
           {notice && !error && <div className="alert">{notice}</div>}
 
-          {tool === 'brain' ? (
+          {tool === 'scontorna' && !batch.running && batch.results.length > 0 && !brushOpen ? (
+            /* I risultati del blocco stanno sulla TELA, non in un elenco di
+               francobolli nella colonna: l'errore del modello si vede per
+               differenza guardandoli insieme, non aprendoli a uno a uno. */
+            <BatchGrid
+              results={batch.results}
+              onFix={fixFromBatch}
+              onRename={rinominaRisultato}
+              onDownload={scaricaRisultato}
+              onDownloadAll={downloadAll}
+              onClose={() => batch.clear()}
+            />
+          ) : tool === 'brain' ? (
             <Brain
               items={tela}
               assets={library.assets}

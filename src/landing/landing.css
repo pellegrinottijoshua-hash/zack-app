@@ -575,3 +575,20 @@ body {
     padding: 48px 0;
   }
 }
+
+/* L'illustrazione di ogni blocco. Ferma per scelta: il video accanto è la
+   cosa che si muove, e due animazioni sullo stesso schermo si tolgono
+   attenzione a vicenda. */
+.home-figura {
+  width: min(210px, 42%);
+  height: auto;
+  margin-top: 10px;
+  mix-blend-mode: screen;
+  opacity: 0.95;
+}
+
+@media (max-width: 900px) {
+  .home-figura {
+    width: 150px;
+  }
+}

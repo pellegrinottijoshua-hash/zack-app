@@ -411,7 +411,13 @@
     "fixTitle": "Anything to fix?",
     "fixHelp": "Across forty files the model gets a few wrong. Click a bad one and the brush opens, with the starting file alongside so colours can be recovered.",
     "upscale": "Bring to print size",
-    "upscaleNote": "enlarges as needed, file by file"
+    "upscaleNote": "enlarges as needed, file by file",
+    "rename": "File name",
+    "download": "Download",
+    "downloadAll": "Download all",
+    "gridTitle": "{n} files cut out",
+    "close": "Close",
+    "renamed": "Renamed: {nome}"
   },
   "sound": {
     "record": "Record",

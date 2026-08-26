@@ -3100,3 +3100,115 @@ body {
 .brain-piano:has(~ * ) .brain-oggetto[data-collega] {
   box-shadow: 0 0 0 2px var(--oro);
 }
+
+/* ------------------------------------------------------------------ *
+ * I risultati del blocco, sulla tela.
+ *
+ * Su quaranta file l'errore del modello si vede per differenza guardandoli
+ * insieme: in un elenco di francobolli dentro la colonna non si vedeva.
+ * ------------------------------------------------------------------ */
+.batch-grid {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
+
+.bg-testa {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--linea);
+}
+
+.bg-testa h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--panna);
+}
+
+.bg-spazio {
+  flex: 1;
+}
+
+.bg-testa button,
+.bg-azioni button {
+  padding: 8px 13px;
+  background: var(--nero);
+  border: 1px solid var(--tasto-bordo);
+  color: var(--panna);
+  font-family: var(--display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.bg-testa button:hover,
+.bg-azioni button:hover {
+  border-color: var(--oro);
+  color: var(--oro);
+}
+
+.bg-elenco {
+  list-style: none;
+  margin: 0;
+  padding: 14px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 16px;
+  align-content: start;
+}
+
+.bg-cella {
+  display: grid;
+  gap: 7px;
+}
+
+/* Gli scacchi non sono decorazione: senza, un ritaglio con un buco nel mezzo
+   sembra riuscito, e il buco si scopre in stampa. */
+.bg-tela {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  border: 1px solid var(--linea-viva);
+  background:
+    conic-gradient(from 90deg, #2a2a28 25%, #1b1b19 0 50%, #2a2a28 0 75%, #1b1b19 0) 0 0 / 18px 18px;
+}
+
+.bg-tela img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Il nome si scrive qui, guardando il file: è l'unico momento in cui si sa
+   come chiamarlo. */
+.bg-nome {
+  padding: 7px 8px;
+  background: var(--nero-2);
+  border: 1px solid var(--linea-viva);
+  color: var(--panna);
+  font-family: var(--display);
+  font-size: 11px;
+}
+
+.bg-nome:focus {
+  outline: none;
+  border-color: var(--oro);
+}
+
+.bg-azioni {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}

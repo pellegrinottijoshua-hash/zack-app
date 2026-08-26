@@ -16,6 +16,7 @@ const APP_URL = '/app/';
 const BLOCCHI = [
   {
     id: 'problema',
+    figura: '/zack/sfere.webp',
     render: (c) => (
       <>
         <p className="kicker">{c.problem.kicker}</p>
@@ -26,6 +27,7 @@ const BLOCCHI = [
   },
   {
     id: 'strumenti',
+    figura: '/zack/vettoriale.webp',
     render: (c) => (
       <>
         <p className="kicker">{c.tools.kicker}</p>
@@ -44,6 +46,7 @@ const BLOCCHI = [
   },
   {
     id: 'libreria',
+    figura: '/zack/libreria.webp',
     render: (c) => (
       <>
         <p className="kicker">{c.library.kicker}</p>
@@ -55,6 +58,7 @@ const BLOCCHI = [
   },
   {
     id: 'generazione',
+    figura: '/zack/cornice.webp',
     render: (c) => (
       <>
         <p className="kicker">{c.generate.kicker}</p>
@@ -67,6 +71,7 @@ const BLOCCHI = [
   },
   {
     id: 'privacy',
+    figura: '/zack/piuma.webp',
     render: (c) => (
       <>
         <p className="kicker">{c.privacy.kicker}</p>
@@ -156,6 +161,10 @@ export default function Landing() {
               }}
             >
               {b.render(c)}
+              {/* L'illustrazione accompagna il testo e non lo sostituisce:
+                  è ferma, mentre il video accanto è la cosa che si muove.
+                  Due animazioni sullo stesso schermo si tolgono attenzione. */}
+              {b.figura && <img className="home-figura" src={b.figura} alt="" loading="lazy" />}
             </section>
           ))}
         </div>

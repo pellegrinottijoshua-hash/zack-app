@@ -411,7 +411,13 @@
     "fixTitle": "Da correggere?",
     "fixHelp": "Su quaranta file il modello ne sbaglia qualcuno. Clicca quello storto e si apre il pennello, con il file di partenza accanto per recuperare i colori.",
     "upscale": "Porta alla misura di stampa",
-    "upscaleNote": "ingrandisce quanto serve, file per file"
+    "upscaleNote": "ingrandisce quanto serve, file per file",
+    "rename": "Nome del file",
+    "download": "Scarica",
+    "downloadAll": "Scarica tutti",
+    "gridTitle": "{n} file scontornati",
+    "close": "Chiudi",
+    "renamed": "Rinominato: {nome}"
   },
   "sound": {
     "record": "Registra",

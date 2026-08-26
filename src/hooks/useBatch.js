@@ -73,12 +73,16 @@ export function useBatch({ engine, library, model }) {
             if (job.op === OPS.cutout) {
               const blob = await engine.cutout(job.file, model);
               latest.set(job.file, blob);
-              setResults((r) => [...r, { file: job.file, blob }]);
-              await library.save(blob, {
-                name: `${job.file.name.replace(/\.[^.]+$/, '')}-scontornato`,
+              // Il nome resta quello del file, senza suffisso. "-scontornato"
+              // era rumore: che sia scontornato lo dice `meta.op`, e su quaranta
+              // file quel suffisso si moltiplicava a ogni passaggio. Il nome si
+              // cambia dentro l'app, dove si guarda il risultato.
+              const asset = await library.save(blob, {
+                name: job.file.name.replace(/\.[^.]+$/, ''),
                 kind: 'png',
                 meta: { op: 'remove-bg', batch: true },
               });
+              setResults((r) => [...r, { file: job.file, blob, assetId: asset?.id }]);
             } else if (job.op === OPS.upscale) {
               // Il fattore lo decide il file, non l'utente: quaranta immagini
               // hanno quaranta misure, e chiedere un fattore unico vuol dire
@@ -98,11 +102,19 @@ export function useBatch({ engine, library, model }) {
               cv.getContext('2d').putImageData(new ImageData(up.rgba, up.width, up.height), 0, 0);
               const big = await new Promise((r) => cv.toBlob(r, 'image/png'));
               latest.set(job.file, big);
-              await library.save(big, {
-                name: `${job.file.name.replace(/\.[^.]+$/, '')}-stampa`,
+              const grande = await library.save(big, {
+                name: job.file.name.replace(/\.[^.]+$/, ''),
                 kind: 'png',
                 meta: { op: 'ready', scale: plan.scaleId, batch: true },
               });
+              // Il risultato mostrato è l'ULTIMO passaggio, non lo scontorno:
+              // chi guarda la griglia vuole vedere il file che si porterà via,
+              // e scaricare quello a metà catena sarebbe una trappola muta.
+              setResults((r) =>
+                r.map((x) =>
+                  x.file === job.file ? { ...x, blob: big, assetId: grande?.id ?? x.assetId } : x,
+                ),
+              );
             } else if (job.op === OPS.vector) {
               const { svg } = await traceToSvg(source, { preset: 'poster', clean: true });
               await library.save(new Blob([svg], { type: 'image/svg+xml' }), {
