@@ -327,10 +327,15 @@ esiste già prima di proporre qualunque cosa.**
 > 5. `src/engine/keying.js` + `scripts/clip-alpha.mjs` — fondo panna →
 >    trasparente, senza bucare i personaggi panna.
 >
-> **Non fatto**, e sono i pezzi grossi: §6.1 comandi visibili (la colonna di
-> destra è ancora quella di prima), il servizio **Brain**, «Zack può
-> ricordarlo», Spiegami profondo, e l'aggancio delle animazioni del cast agli
-> eventi. La scaletta completa è nel documento, §8.
+ 6. `Section.jsx` non è più richiudibile e c'è un solo `Advanced.jsx`. §6.1 è
+>    **fatto a metà, con la misura**: ad avanzati chiusi la colonna è 580 px in
+>    580 px di visuale e non scorre; ad avanzati aperti sono 2556 px. Restano
+>    due decisioni di prodotto — «Prima della stampa» come *momento* dopo il
+>    lavoro invece di tre sezioni, e il blocco come *modalità*.
+>
+> **Non fatto**: il servizio **Brain**, «Zack può ricordarlo», Spiegami
+> profondo, l'aggancio delle animazioni del cast agli eventi, l'hero della
+> presentazione. La scaletta completa è nel documento, §8.
 
 ### Dove sta il materiale
 
