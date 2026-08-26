@@ -6,8 +6,8 @@ la **sezione 6** (cosa manca) e
 [docs/2026-08-26-dove-siamo.md](docs/2026-08-26-dove-siamo.md) (dove sta il
 progetto fra gli altri, e la critica onesta di cosa non va).
 
-- **Repo:** `~/jayl-studio` — ramo `main`, **337 test verdi**
-- **Ultimo aggiornamento:** 26 agosto 2026
+- **Repo:** `~/jayl-studio` — ramo `main`, **358 test verdi**
+- **Ultimo aggiornamento:** 27 agosto 2026
 - **Il resto:** [README.md](README.md) descrive il prodotto;
   `docs/` contiene i disegni approvati e le analisi.
 
@@ -75,6 +75,11 @@ saldo ricaricato prima. Margine dichiarato: **14%**, in centesimi interi.
 
 **Il nome del modello è l'etichetta.** *Seedance 2.5*, non «video cinematico».
 
+**Una parola sola: «asset».** La cosa che sta in libreria si chiama così, in
+italiano e in inglese (scelta del committente, 2026-08-27). «File» nomina ciò
+che sta sul computer dell'utente, ed è l'unica altra parola ammessa. Un test
+fallisce se «lavoro», «work» o «piece» tornano dentro.
+
 **Modificare non è generare.** Il laboratorio audio e i tre gesti sul filmato
 stanno fra i servizi **gratuiti**.
 
@@ -112,7 +117,7 @@ Più:
 - **Blocco** con la griglia dei risultati sulla tela: nome modificabile,
   correggi a mano, scarica singolo.
 - **Libreria** in OPFS + IndexedDB, con porta d'ingresso per immagini, audio e
-  video.
+  video, e la **potatura**: selezione multipla e «scegli i doppioni».
 - **Presentazione** su `/`: un video a schermo intero che avanza a blocchi
   mentre scorrono solo le parole, con lo sfondo tolto.
 
@@ -151,27 +156,44 @@ Più:
 | **`sharp.joinChannel`** | 3 canali in silenzio, la maschera sparisce. Si interlaccia a mano. |
 | **`npm test` e `library/`** | richiede `JAYL_CRAFT_LIBRARY` o si rifiuta di partire. |
 | **Rasterizzare un SVG piccolo** | minimo 1200px, e sui vettori il controllo bordi non si fa. |
+| **`.btn.ghost:hover`** | diceva `color: var(--inchiostro)`, scritto quando i tasti secondari erano scuri su panna. Con la palette invertita il fondo è nero: **nero su nero su ogni tasto secondario**, a ogni passaggio del mouse (2026-08-27). Una regola scritta per una palette vecchia non fallisce: peggiora in silenzio. |
+| **Guardare la home in un'anteprima headless** | appena la pagina è scorsa dipinge solo il fondo del `body`: schermata nera, e la zona sticky non si compone mai. Alzare la finestra la annulla del tutto. La home si guarda **in un browser vero** (2026-08-27). |
 
 ---
 
 ## 6. Cosa manca, in ordine
 
-### Subito, e non dipende da nessuno
+### Fatto il 2026-08-27 (le cinque criticità «subito» di dove-siamo)
 
-1. **Il primo minuto.** Un file di prova già dentro allo studio. Vedi §3.1 di
-   [dove-siamo](docs/2026-08-26-dove-siamo.md): è il difetto che costa di più.
-2. **Le tendine su tutto**: il pannello vettoriale e quello del blocco non sono
-   ancora `Section`.
-3. **Le attese dichiarate** su blocco, taglio filmato e togli-sfondo, come già
-   fa il tasto Zack.
-4. **Potare la libreria**: selezione multipla e «togli i doppioni». In questa
-   sessione di prova sono finiti dentro 128 lavori e 645 MB di scarti.
-5. **Una parola sola** per «lavoro / asset / file», con un test che la protegge.
+1. ~~Il primo minuto.~~ Alla primissima apertura, e solo con la libreria vuota,
+   sul piano c'è già una maglietta JAYL, e il tasto Zack fa due battiti. Nel
+   riquadro vuoto resta «Prova con un esempio». La decisione sta in
+   `engine/prova.js`.
+2. ~~Le tendine su tutto.~~ Il tracciato e il blocco sono `Section`.
+3. ~~Le attese dichiarate.~~ Il blocco dice «almeno 55 min» su quaranta file
+   (`attesaJobs`, con `certo` che distingue «circa» da «almeno»), il filmato
+   dice l'attesa su taglio e togli-sfondo. **E il blocco gira mentre fai
+   altro**: il conto vive nella barra di stato, visibile da ogni servizio.
+4. ~~Potare la libreria.~~ «Pota» accende selezione multipla, conto dei MB e
+   «Scegli i doppioni» — che seleziona, non cancella, e non tocca mai
+   preferiti, note, tag, riferimenti e asset da cui ne sono nati altri.
+5. ~~Una parola sola.~~ È **asset**, scelta dal committente, in entrambe le
+   lingue; «file» resta per ciò che sta sul computer. Un test bandisce i nomi
+   vecchi, con due sole eccezioni dichiarate.
+
+Nello stesso giro, guardando i pixel: `.btn.ghost:hover` era **nero su nero**
+su ogni tasto secondario del prodotto, da quando la palette è stata invertita.
 
 ### Da guardare con occhi propri (i test non li vedono)
 
-6. **La home**: verificata coi numeri, mai con gli occhi — l'anteprima non
-   compone la zona sticky.
+6. **La home**: ancora **non verificata con gli occhi**. Ci ho provato il
+   2026-08-27 e il limite è dello strumento, non della pagina: l'anteprima
+   dipinge solo il fondo del `body` appena la pagina è scorsa, quindi la zona
+   sticky non si compone mai; alzando la finestra a 6600 px il meccanismo
+   sticky si annulla e si vede un blocco solo. **Va aperta in un browser vero.**
+   L'unica cosa vista in un colpo (finestra alta 3200 px, sticky già distorto):
+   fra l'apertura e il primo blocco c'è una fascia panna vuota di quasi uno
+   schermo, e nel primo blocco il testo passa sopra la piuma di Zack.
 7. **La soglia di `holes.js`**: provvisoria e non misurata. Servono cinque
    loghi veri, due con controforme aperte e due con buchi voluti.
 8. **Suoni e filmato**: funzionano, non sono mai stati usati per fare qualcosa

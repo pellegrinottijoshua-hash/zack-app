@@ -93,6 +93,16 @@ Sono giudizi da uso reale in questa sessione, non da lettura del codice.
 
 Le metto in ordine di quanto fanno male, non di quanto sono difficili.
 
+> **Aggiornamento del 2026-08-27.** Il committente è d'accordo con tutte le
+> criticità di questo capitolo. **Le cinque «subito» (§3.1–§3.5) sono state
+> fatte**: file di prova all'apertura, tendine su tutto, attese dichiarate
+> (con il blocco che gira mentre fai altro), potatura della libreria con
+> «scegli i doppioni», e una parola sola — **asset**, scelta da lui — protetta
+> da un test. Il §3.6 resta com'è, tranne le tendine: quelle sono chiuse.
+> La home (§3.6, primo punto) **non è ancora stata guardata con gli occhi**, e
+> il motivo è nella sezione 6 di `RIPRENDI-QUI.md`: nessuna anteprima headless
+> compone una zona sticky scorsa. Va aperta in un browser vero.
+
 ### 3.1 Non c'è un primo minuto
 
 Chi apre lo studio per la prima volta trova un fondo panna, una colonna di
