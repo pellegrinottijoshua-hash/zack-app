@@ -151,7 +151,8 @@
     "lineage": "Comes from",
     "folderLook": "Look",
     "expand": "Open large",
-    "shrink": "Shrink"
+    "shrink": "Shrink",
+    "resume": "Resume"
   },
   "status": {
     "file": "file",
@@ -160,11 +161,11 @@
     "none": "none"
   },
   "onboarding": {
-    "title": "Three things and you're set",
-    "step1": "Drop an image into the big panel, or click it to pick one from your computer.",
-    "step2": "Press Remove background. The work happens here, on your machine: no file is sent anywhere.",
-    "step3": "Pick a format and press Export. Everything also lands in the strip of work at the bottom.",
-    "hint": "If a control isn't clear, switch on «Explain» at the top right.",
+    "title": "Three things and you're working",
+    "step1": "Drop an image in the big frame, or click it to pick one from your computer.",
+    "step2": "Press “Print-ready”, top right: it removes the background and brings the file to the right size, in one go. The work happens here, on your computer: no file is sent anywhere.",
+    "step3": "If the automatic pass got something wrong, use the Eraser to fix it by hand. Then pick a format and press Export.",
+    "hint": "If a control isn't clear, switch on “Explain” at the top right.",
     "action": "Got it, let's start"
   },
   "vector": {
@@ -404,7 +405,9 @@
     "failed": "{n} failed",
     "fix": "Fix by hand",
     "fixTitle": "Anything to fix?",
-    "fixHelp": "Across forty files the model gets a few wrong. Click a bad one and the brush opens, with the starting file alongside so colours can be recovered."
+    "fixHelp": "Across forty files the model gets a few wrong. Click a bad one and the brush opens, with the starting file alongside so colours can be recovered.",
+    "upscale": "Bring to print size",
+    "upscaleNote": "enlarges as needed, file by file"
   },
   "sound": {
     "record": "Record",
@@ -505,5 +508,21 @@
     "download": "Download the mockup",
     "fill": "fills {pct}% of the printable area",
     "small": "On a real garment this will look like a postage stamp: enlarge it or change format."
+  },
+  "bar": {
+    "undo": "Undo",
+    "eraser": "Eraser",
+    "crop": "Crop",
+    "swap": "Swap file",
+    "clear": "Remove",
+    "ready": "Print-ready",
+    "readyNote": "{size} · {wait}",
+    "confirmClear": "Remove the file from the workspace? Saved works stay in the library."
+  },
+  "ready": {
+    "working": "Removing background and enlarging…",
+    "done": "Ready: {size}",
+    "short": "Reached {size}: the starting file is not enough for {target} px.",
+    "tooBig": "Already past the enlargeable size: background removed only."
   }
 }

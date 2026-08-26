@@ -303,6 +303,12 @@ export default function Library({ store, open, big, onToggleBig, onToggle, onOpe
                     </button>
 
                     <div className="acts">
+                      {/* Riprendere un lavoro è il gesto più frequente della
+                          libreria e non aveva un pulsante: si passava da
+                          «Scontorna», che pero' promette un'altra cosa. */}
+                      <button className="primary" onClick={() => onAssetAction('open', item)}>
+                        {t('library.resume')}
+                      </button>
                       <button onClick={() => download(item)}>{t('control.download.label')}</button>
                       <button onClick={() => setTagFor(item.id)}>{t('library.tag')}</button>
                       {item.kind === 'svg' && (

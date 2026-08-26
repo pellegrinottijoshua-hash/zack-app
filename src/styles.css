@@ -2144,7 +2144,9 @@ body {
    si scorre all'infinito e i comandi di ogni lavoro restano sotto il taglio.
    In grande diventa una griglia che scorre in basso. */
 .library[data-open='true'][data-size='grande'] {
-  grid-template-rows: auto minmax(0, 64vh);
+  /* Meta' schermo scarsa: piu' in la' la tela diventa una fessura e non si
+     lavora piu', si sfoglia soltanto. */
+  grid-template-rows: auto minmax(0, 52vh);
 }
 
 .library[data-size='grande'] .strip {
@@ -2179,4 +2181,112 @@ body {
 .library[data-size='grande'] .work .acts button {
   font-size: 9.5px;
   padding: 6px 2px;
+}
+
+/* ─── la barra sopra la tela ─────────────────────────────────────────────
+   I gesti che si fanno di continuo stanno dove si guarda: sull'immagine, non
+   in fondo a una colonna. A destra un solo pulsante pieno — l'unico che porta
+   a termine un lavoro intero — così si vede qual è senza doverlo cercare. */
+.stagebar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 0 10px;
+  border-bottom: 1px solid var(--linea);
+  margin-bottom: 10px;
+}
+
+.sb-file {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  max-width: 30%;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--grigio);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sb-file b {
+  color: var(--grigio-scuro);
+  font-weight: 400;
+  font-size: 10px;
+}
+
+.sb-tools {
+  display: flex;
+  gap: 2px;
+}
+
+.sb-tool {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 5px 9px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--grigio);
+  font: inherit;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.sb-tool svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sb-tool:hover:not(:disabled) {
+  border-color: var(--linea-viva);
+  color: var(--panna);
+}
+.sb-tool[aria-pressed='true'] {
+  border-color: var(--oro);
+  color: var(--oro);
+}
+.sb-tool:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.sb-ready {
+  margin-left: auto;
+  display: grid;
+  gap: 1px;
+  padding: 8px 16px;
+  text-align: center;
+}
+.sb-ready em {
+  font-style: normal;
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  opacity: 0.72;
+  text-transform: none;
+}
+
+@media (max-width: 720px) {
+  .sb-file {
+    max-width: 100%;
+  }
+  .sb-ready {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* «Riprendi» è il gesto più frequente della libreria: si vede che è lui. */
+.work .acts button.primary {
+  color: var(--oro);
+}
+.work .acts button.primary:hover {
+  background: var(--oro-velo);
+  color: var(--panna);
 }

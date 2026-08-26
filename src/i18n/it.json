@@ -151,7 +151,8 @@
     "lineage": "Viene da",
     "folderLook": "Aspetto",
     "expand": "Apri in grande",
-    "shrink": "Riduci"
+    "shrink": "Riduci",
+    "resume": "Riprendi"
   },
   "status": {
     "file": "file",
@@ -162,8 +163,8 @@
   "onboarding": {
     "title": "Tre cose e sei operativo",
     "step1": "Trascina un'immagine nel riquadro grande, o cliccaci sopra per sceglierla dal computer.",
-    "step2": "Premi Scontorna. Il lavoro avviene qui, sul tuo computer: nessun file viene spedito da nessuna parte.",
-    "step3": "Scegli un formato e premi Esporta. Trovi tutto anche in fondo, nella striscia dei lavori.",
+    "step2": "Premi «Pronto per la stampa», in alto a destra: toglie lo sfondo e porta il file alla misura giusta, in un colpo solo. Il lavoro avviene qui, sul tuo computer: nessun file viene spedito da nessuna parte.",
+    "step3": "Se l'automatico ha sbagliato in qualche punto, usa la Gomma per correggere a mano. Poi scegli un formato e premi Esporta.",
     "hint": "Se un comando non ti è chiaro, accendi «Spiegami» in alto a destra.",
     "action": "Ho capito, cominciamo"
   },
@@ -404,7 +405,9 @@
     "failed": "{n} non riusciti",
     "fix": "Correggi a mano",
     "fixTitle": "Da correggere?",
-    "fixHelp": "Su quaranta file il modello ne sbaglia qualcuno. Clicca quello storto e si apre il pennello, con il file di partenza accanto per recuperare i colori."
+    "fixHelp": "Su quaranta file il modello ne sbaglia qualcuno. Clicca quello storto e si apre il pennello, con il file di partenza accanto per recuperare i colori.",
+    "upscale": "Porta alla misura di stampa",
+    "upscaleNote": "ingrandisce quanto serve, file per file"
   },
   "sound": {
     "record": "Registra",
@@ -505,5 +508,21 @@
     "download": "Scarica il mockup",
     "fill": "riempie il {pct}% dell'area stampabile",
     "small": "Sul capo vero sembrerà un francobollo: ingrandiscila o cambia formato."
+  },
+  "bar": {
+    "undo": "Annulla",
+    "eraser": "Gomma",
+    "crop": "Ritaglia",
+    "swap": "Cambia file",
+    "clear": "Togli",
+    "ready": "Pronto per la stampa",
+    "readyNote": "{size} · {wait}",
+    "confirmClear": "Tolgo il file dal piano di lavoro? I lavori salvati restano nella libreria."
+  },
+  "ready": {
+    "working": "Scontorno e ingrandisco…",
+    "done": "Pronto: {size}",
+    "short": "Arrivato a {size}: il file di partenza non basta per {target} px.",
+    "tooBig": "Già oltre la misura ingrandibile: ho solo scontornato."
   }
 }

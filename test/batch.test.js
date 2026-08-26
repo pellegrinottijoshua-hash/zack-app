@@ -116,3 +116,15 @@ test('il riassunto nomina ogni file rotto una volta sola', () => {
   assert.deepEqual(s.failedFiles, ['rotto.png']);
   assert.equal(s.failed, 3);
 });
+
+test("l'ingrandimento viene dopo lo scontorno, sempre", () => {
+  // Ingrandire lo sfondo per poi buttarlo via è tempo speso su pixel che
+  // nessuno vedrà: su quaranta file diventano minuti regalati.
+  const jobs = planJobs([f('a.png')], { cutout: true, upscale: true });
+  assert.deepEqual(jobs.map((j) => j.op), [OPS.cutout, OPS.upscale]);
+});
+
+test('il solo ingrandimento è già un piano valido', () => {
+  assert.equal(isEmptyPlan({ upscale: true }), false);
+  assert.equal(planJobs(files, { upscale: true }).length, 3);
+});

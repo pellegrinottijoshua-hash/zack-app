@@ -10,6 +10,7 @@ import {
   OPS,
 } from '../engine/batch.js';
 import { renderExport } from '../engine/render.js';
+import { planReady } from '../engine/ready.js';
 import { traceToSvg } from '../engine/trace.js';
 
 /**
@@ -77,6 +78,30 @@ export function useBatch({ engine, library, model }) {
                 name: `${job.file.name.replace(/\.[^.]+$/, '')}-scontornato`,
                 kind: 'png',
                 meta: { op: 'remove-bg', batch: true },
+              });
+            } else if (job.op === OPS.upscale) {
+              // Il fattore lo decide il file, non l'utente: quaranta immagini
+              // hanno quaranta misure, e chiedere un fattore unico vuol dire
+              // sbagliarlo su quasi tutte.
+              const bmp = await createImageBitmap(source);
+              const plan = planReady({ w: bmp.width, h: bmp.height }, { cutout: false });
+              if (!plan.scaleId) {
+                bmp.close?.();
+                list = markJob(list, job.id, 'fatto');
+                setJobs(list);
+                continue;
+              }
+              const up = await engine.upscale(bmp, plan.scaleId);
+              const cv = document.createElement('canvas');
+              cv.width = up.width;
+              cv.height = up.height;
+              cv.getContext('2d').putImageData(new ImageData(up.rgba, up.width, up.height), 0, 0);
+              const big = await new Promise((r) => cv.toBlob(r, 'image/png'));
+              latest.set(job.file, big);
+              await library.save(big, {
+                name: `${job.file.name.replace(/\.[^.]+$/, '')}-stampa`,
+                kind: 'png',
+                meta: { op: 'ready', scale: plan.scaleId, batch: true },
               });
             } else if (job.op === OPS.vector) {
               const { svg } = await traceToSvg(source, { preset: 'poster', clean: true });

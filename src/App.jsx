@@ -16,9 +16,11 @@ import MaskBrush from './components/MaskBrush.jsx';
 import BatchPanel from './components/BatchPanel.jsx';
 import SoundLab from './components/SoundLab.jsx';
 import FinishPanel from './components/FinishPanel.jsx';
+import StageBar from './components/StageBar.jsx';
 import { useSound } from './hooks/useSound.js';
 import { useBatch } from './hooks/useBatch.js';
 import { canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
+import { planReady, readyLabel, TARGET_SIDE } from './engine/ready.js';
 import { getService, firstReady } from './services.js';
 import { bundleAll } from './store/bundle.js';
 import { useEngine } from './hooks/useEngine.js';
@@ -63,11 +65,14 @@ export default function App() {
   });
   // Aperta in grande resta grande: chi sfoglia ottanta lavori non vuole
   // riallargarla a ogni giro.
+  // In griglia per impostazione predefinita: la striscia orizzontale rende
+  // irraggiungibili tutti i lavori dopo il settimo, ed e' il modo sbagliato di
+  // guardare un archivio.
   const [libBig, setLibBig] = useState(() => {
     try {
-      return localStorage.getItem('jayl.libBig') === '1';
+      return localStorage.getItem('jayl.libBig') !== '0';
     } catch {
-      return false;
+      return true;
     }
   });
 
@@ -110,6 +115,25 @@ export default function App() {
   // L'ingrandimento ora puo' durare minuti: serve sapere quando e' in corso
   // per offrire di fermarlo.
   const [upscaling, setUpscaling] = useState(false);
+  // Un passo indietro, come in qualunque programma di disegno. Otto passi
+  // bastano: piu' in la' non si torna, si ricomincia.
+  const [history, setHistory] = useState([]);
+  const resultRef = useRef(null);
+  resultRef.current = result;
+
+  /** Sostituisce il risultato tenendo da parte quello di prima. */
+  const pushResult = (next) => {
+    setHistory((h) => [...h, resultRef.current].slice(-8));
+    setResult(next);
+  };
+
+  function undoResult() {
+    setHistory((h) => {
+      if (!h.length) return h;
+      setResult(h[h.length - 1]);
+      return h.slice(0, -1);
+    });
+  }
   // Cambia a ogni azione sull'editor per far rileggere al pannello la
   // posizione della selezione, che la libreria muta fuori da React.
   const [editorTick, setEditorTick] = useState(0);
@@ -235,6 +259,7 @@ export default function App() {
   function onFile(f) {
     setError(null);
     setNotice(null);
+    setHistory([]);
     setResult(null);
     setFile(f);
     setBeforeUrl(own(f));
@@ -251,6 +276,7 @@ export default function App() {
   }
 
   function reset() {
+    setHistory([]);
     setFile(null);
     setBeforeUrl(null);
     setResult(null);
@@ -272,7 +298,7 @@ export default function App() {
         // preme Scontorna si vedeva tornare il file piccolo, con
         // l'ingrandimento buttato via senza un avviso.
         const blob = await engine.cutout(result?.blob || file, s.model);
-        setResult({
+        pushResult({
           url: own(blob),
           blob,
           kind: 'png',
@@ -297,7 +323,7 @@ export default function App() {
         setBusyNote(null);
         const { svg: text, meta } = await traceToSvg(file, { preset: s.tracePreset, clean: s.clean });
         const blob = new Blob([text], { type: 'image/svg+xml' });
-        setResult({ url: own(blob), blob, text, kind: 'svg', meta });
+        pushResult({ url: own(blob), blob, text, kind: 'svg', meta });
         await library.save(blob, {
           name: `${file.name.replace(/\.[^.]+$/, '')}-vettoriale`,
           kind: 'svg',
@@ -331,6 +357,7 @@ export default function App() {
     setFile(original);
     setBeforeUrl(own(original));
     setSourceAssetId(null);
+    setHistory([]);
     setResult({ url: own(blob), blob, kind: 'png', meta: { strategy: 'browser', batch: true } });
     setBrushOpen(true);
   }
@@ -345,7 +372,7 @@ export default function App() {
       const blob = await applyCrop(measured, rect);
       // Meta proprio, non ereditato dal ritaglio dello sfondo: tenere i numeri
       // del passaggio precedente li farebbe leggere come se fossero di questo.
-      setResult({
+      pushResult({
         url: own(blob),
         blob,
         kind: 'png',
@@ -492,6 +519,96 @@ export default function App() {
     }
   }
 
+  /**
+   * Un pulsante solo: scontorna e porta il file alla misura di stampa.
+   *
+   * Scontornare e ingrandire sono due gesti separati soltanto per chi ha
+   * scritto il programma. Per chi stampa sono una cosa sola.
+   */
+  async function runReady() {
+    if (!stats?.image) return;
+    setError(null);
+    setNotice(null);
+
+    const plan = planReady(stats.image);
+    try {
+      let current = result?.blob || file;
+
+      if (plan.steps.includes('cutout')) {
+        setBusy(t('ready.working'));
+        setBusyNote(null);
+        const started = Date.now();
+        const cut = await engine.cutout(current, s.model);
+        current = cut;
+        pushResult({
+          url: own(cut),
+          blob: cut,
+          kind: 'png',
+          meta: { strategy: 'browser', model: s.model, ms: Date.now() - started },
+        });
+        await library.save(cut, {
+          name: `${(file?.name || 'immagine').replace(/\.[^.]+$/, '')}-scontornato`,
+          kind: 'png',
+          meta: { fromId: sourceAssetId, op: 'remove-bg', model: s.model, ready: true },
+        });
+      }
+
+      if (plan.steps.includes('upscale')) {
+        setBusy(t('ready.working'));
+        setUpscaling(true);
+        const bmp = await createImageBitmap(current);
+        const out = await engine.upscale(bmp, plan.scaleId, (phase, d) => {
+          if (d?.done) setBusyNote(`${d.done}/${d.total}`);
+        });
+        const cv = document.createElement('canvas');
+        cv.width = out.width;
+        cv.height = out.height;
+        cv.getContext('2d').putImageData(new ImageData(out.rgba, out.width, out.height), 0, 0);
+        const big = await new Promise((r) => cv.toBlob(r, 'image/png'));
+        pushResult({
+          url: own(big),
+          blob: big,
+          kind: 'png',
+          meta: { strategy: 'upscale', output: { w: out.width, h: out.height } },
+        });
+        await library.save(big, {
+          name: `${(file?.name || 'immagine').replace(/\.[^.]+$/, '')}-stampa`,
+          kind: 'png',
+          meta: { fromId: sourceAssetId, op: 'ready', scale: plan.scaleId },
+        });
+        setNotice(
+          plan.reached
+            ? t('ready.done', { size: `${out.width}×${out.height}` })
+            : t('ready.short', { size: `${out.width}×${out.height}`, target: TARGET_SIDE }),
+        );
+      } else if (plan.reason === 'troppo-grande') {
+        setNotice(t('ready.tooBig'));
+      } else {
+        setNotice(t('ready.done', { size: `${stats.image.w}×${stats.image.h}` }));
+      }
+    } catch (e) {
+      console.error(e);
+      if (e.code === 'upscale-stopped') setNotice(t('upscale.stopped'));
+      else setError(t('engine.error.body'));
+    } finally {
+      setUpscaling(false);
+      setBusy(null);
+      setBusyNote(null);
+    }
+  }
+
+  /** Cambia il file sul piano di lavoro senza passare dal cestino. */
+  function swapFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = () => {
+      const f = input.files?.[0];
+      if (f) onFile(f);
+    };
+    input.click();
+  }
+
   /** Ingrandimento: ricostruisce il dettaglio invece di interpolare. */
   async function runUpscale() {
     const src = result?.blob || file;
@@ -525,7 +642,7 @@ export default function App() {
       cv.height = out.height;
       cv.getContext('2d').putImageData(new ImageData(out.rgba, out.width, out.height), 0, 0);
       const blob = await new Promise((r) => cv.toBlob(r, 'image/png'));
-      setResult({ url: own(blob), blob, kind: 'png', meta: { strategy: 'upscale', output: { w: out.width, h: out.height } } });
+      pushResult({ url: own(blob), blob, kind: 'png', meta: { strategy: 'upscale', output: { w: out.width, h: out.height } } });
       await library.save(blob, {
         name: `${(file?.name || 'immagine').replace(/\.[^.]+$/, '')}-ingrandita`,
         kind: 'png',
@@ -565,10 +682,18 @@ export default function App() {
         return;
       }
 
+      setHistory([]);
       setResult(null);
       setFile(asFile);
       setBeforeUrl(own(asFile));
       setSourceAssetId(item.id);
+      // «Riprendi» rimette il lavoro sul piano e basta: non decide al posto di
+      // chi lo riapre cosa vorra' farci.
+      if (kind === 'open') {
+        if (item.kind === 'svg') setTool('editor');
+        setNotice(`${t('library.resume')}: ${item.name}`);
+        return;
+      }
       setTool(kind === 'cutout' ? 'scontorna' : 'vettorializza');
     } catch (e) {
       console.error(e);
@@ -650,6 +775,45 @@ export default function App() {
               onDismiss={() => setBannerOpen(false)}
             />
           )}
+          {!isEditor && tool !== 'suono' && (
+            <StageBar
+              file={file}
+              image={stats?.image}
+              hasResult={result?.kind === 'png'}
+              canUndo={history.length > 0}
+              brushOpen={brushOpen}
+              busy={Boolean(busy)}
+              plan={
+                stats?.image
+                  ? (() => {
+                      const p = planReady(stats.image);
+                      return { ...p, wait: readyLabel(p) };
+                    })()
+                  : null
+              }
+              onReady={runReady}
+              onUndo={undoResult}
+              onBrush={() => setBrushOpen((v) => !v)}
+              onCrop={() => {
+                const el = document.querySelector('.rail .sect[data-open] .sect-title');
+                setNotice(null);
+                // La sezione Ritaglio vive nel pannello: si apre e ci si porta.
+                const head = [...document.querySelectorAll('.rail .sect-head')].find(
+                  (h) => h.querySelector('.sect-title')?.textContent === t('crop.title'),
+                );
+                if (head) {
+                  if (head.getAttribute('aria-expanded') !== 'true') head.click();
+                  head.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                }
+                void el;
+              }}
+              onSwap={swapFile}
+              onClear={() => {
+                if (window.confirm(t('bar.confirmClear'))) reset();
+              }}
+            />
+          )}
+
           {error && <div className="alert">{error}</div>}
           {notice && !error && <div className="alert">{notice}</div>}
 
@@ -677,7 +841,7 @@ export default function App() {
               source={file}
               cutout={result.blob}
               onDone={async (blob) => {
-                setResult({ url: own(blob), blob, kind: 'png', meta: { ...result.meta, retouched: true } });
+                pushResult({ url: own(blob), blob, kind: 'png', meta: { ...result.meta, retouched: true } });
                 setBrushOpen(false);
                 await library.save(blob, {
                   name: `${(file?.name || 'immagine').replace(/\.[^.]+$/, '')}-corretto`,

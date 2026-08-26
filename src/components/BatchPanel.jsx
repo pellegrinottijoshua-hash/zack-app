@@ -11,7 +11,12 @@ import { isEmptyPlan } from '../engine/batch.js';
  * Scontornare quaranta file uno per uno è il lavoro che nessuno vuole fare.
  */
 export default function BatchPanel({ files, batch, onPickFiles, onClearFiles, onFix }) {
-  const [opts, setOpts] = useState({ cutout: true, vector: false, exportPresets: ['gelato-front'] });
+  const [opts, setOpts] = useState({
+    cutout: true,
+    upscale: true,
+    vector: false,
+    exportPresets: ['gelato-front-350'],
+  });
 
   const togglePreset = (id) =>
     setOpts((o) => ({
@@ -50,6 +55,13 @@ export default function BatchPanel({ files, batch, onPickFiles, onClearFiles, on
             active={opts.cutout}
             disabled={batch.running}
             onClick={() => setOpts((o) => ({ ...o, cutout: !o.cutout }))}
+          />
+          <Choice
+            label={t('batch.upscale')}
+            note={t('batch.upscaleNote')}
+            active={opts.upscale}
+            disabled={batch.running}
+            onClick={() => setOpts((o) => ({ ...o, upscale: !o.upscale }))}
           />
           <Choice
             label={t('tool.vector.label')}

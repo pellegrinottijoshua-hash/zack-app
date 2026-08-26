@@ -12,6 +12,7 @@
 
 export const OPS = {
   cutout: 'cutout',
+  upscale: 'upscale',
   vector: 'vector',
   export: 'export',
 };
@@ -24,10 +25,13 @@ export const OPS = {
  * quaranta ritagli e nessun export, e può fermarsi a metà portandosi a casa
  * qualcosa di finito.
  */
-export function planJobs(files, { cutout = false, vector = false, exportPresets = [] } = {}) {
+export function planJobs(files, { cutout = false, upscale = false, vector = false, exportPresets = [] } = {}) {
   const jobs = [];
   for (const file of files) {
     if (cutout) jobs.push({ file, op: OPS.cutout });
+    // L'ingrandimento viene DOPO lo scontorno, sempre: ingrandire lo sfondo
+    // per poi buttarlo via e' tempo speso su pixel che nessuno vedra'.
+    if (upscale) jobs.push({ file, op: OPS.upscale });
     if (vector) jobs.push({ file, op: OPS.vector });
     for (const preset of exportPresets) jobs.push({ file, op: OPS.export, preset });
   }
@@ -36,7 +40,12 @@ export function planJobs(files, { cutout = false, vector = false, exportPresets 
 
 /** Nessuna operazione scelta: non si avvia un blocco che non farebbe nulla. */
 export function isEmptyPlan(options) {
-  return !options?.cutout && !options?.vector && !(options?.exportPresets?.length > 0);
+  return (
+    !options?.cutout &&
+    !options?.upscale &&
+    !options?.vector &&
+    !(options?.exportPresets?.length > 0)
+  );
 }
 
 export function progressOf(jobs) {
