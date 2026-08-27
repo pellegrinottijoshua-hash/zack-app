@@ -1746,11 +1746,45 @@ body {
     overflow-y: hidden;
   }
 
+  /* Il nome dello strumento resta anche sul telefono, sotto l'icona.
+   *
+   * Nasconderlo lasciava otto cerchi neri con dentro un segno astratto, e su
+   * un touch non c'è il passaggio del mouse: `title` non compare mai, quindi
+   * non c'era NESSUN modo di sapere quale fosse Brain e quale Suono. Le
+   * etichette di gruppo e i prezzi sì che se ne vanno — sono contorno, il nome
+   * è la navigazione. */
   .toolrail .group-label,
-  .toolrail .tool-name,
   .toolrail .tool-price,
   .toolrail .tool-soon {
     display: none;
+  }
+
+  /* È il NOME a dettare la larghezza della pillola, non il contrario: con una
+     larghezza fissa «Vettorializza» sbordava sopra la pillola accanto. La
+     barra scorre già in orizzontale, quindi lo spazio non manca — mancava solo
+     il permesso di prenderselo. */
+  .toolrail .tool-item {
+    flex-direction: column;
+    gap: 5px;
+    padding: 8px 14px;
+    /* La barra scorre, quindi le pillole non devono restringersi per far stare
+       tutto: senza questo la pillola si stringeva sull'ICONA e il nome usciva
+       da entrambi i lati del nero (misurato: pillola 44 px, «Vettorializza»
+       58 px). */
+    flex: none;
+  }
+
+  .toolrail .tool-name {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    /* `flex: none` non è ridondante: `.tool-name` ha `overflow: hidden` per i
+       puntini di sospensione, e su un elemento flex un overflow diverso da
+       `visible` azzera la dimensione minima automatica. In colonna l'etichetta
+       si restringeva a zero — misurata alta 0 px, col testo dentro e
+       invisibile (2026-08-27). */
+    flex: none;
   }
 
   .rail-foot {
@@ -3732,12 +3766,30 @@ body {
   margin-bottom: 0;
 }
 
+/* Le due intestazioni richiudibili sono la stessa cosa e devono sembrarlo:
+ * pillola col contorno, non lastra nera.
+ *
+ * `color` va ridichiarato insieme al fondo, e non è pedanteria: `.avanzati-head`
+ * sta ANCHE nella lista dei tasti neri più su, che gli dà `color: var(--panna)`.
+ * Questa regola gli toglieva il fondo nero e gli lasciava l'inchiostro chiaro —
+ * cioè panna su panna. La parola «AVANZATI» era nel DOM e invisibile sullo
+ * schermo, su desktop e su telefono (misurato il 2026-08-27: il pulsante
+ * sembrava una pillola vuota con dentro un trattino).
+ *
+ * La regola generale: chi cambia il fondo si prende anche l'inchiostro. */
 .sect-head,
 .avanzati-head {
   border-radius: 999px;
   padding: 8px 14px;
   border: 1px solid var(--linea-viva);
   background: transparent;
+  color: var(--inchiostro-2);
+}
+
+.sect-head:hover,
+.avanzati-head:hover,
+.avanzati[data-open='true'] .avanzati-head {
+  color: var(--inchiostro);
 }
 
 .sect-head:hover,
