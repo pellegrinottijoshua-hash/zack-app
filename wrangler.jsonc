@@ -3,9 +3,9 @@
   // il perché" nei commenti — coerenza con come si scrive qui, non solo con
   // Cloudflare. Wrangler legge entrambi i formati allo stesso modo.
 
-  // Il nome del progetto Pages su Cloudflare. Va creato a mano nel pannello
-  // (o con `wrangler pages project create zack-app`) prima del primo deploy:
-  // questo file descrive la build, non la crea da solo — vedi
+  // Il nome del progetto su Cloudflare (sistema unificato Workers & Pages).
+  // Va creato a mano nel pannello prima del primo deploy: questo file
+  // descrive la build, non lo crea da solo — vedi
   // docs/2026-08-27-deploy-zack-app.md.
   "name": "zack-app",
 
@@ -13,6 +13,20 @@
   // nel tempo. Impostata alla data di stesura di questa configurazione.
   "compatibility_date": "2026-08-27",
 
-  // La cartella che `vite build` produce e che Pages deve pubblicare.
-  "pages_build_output_dir": "dist"
+  /**
+   * `pages_build_output_dir` è capita SOLO da `wrangler pages deploy`.
+   *
+   * Il progetto creato sul pannello Cloudflare è del tipo unificato
+   * "Workers & Pages", e il suo comando di pubblicazione è `wrangler deploy`
+   * — non `wrangler pages deploy`. Quel comando legge `assets.directory`, non
+   * `pages_build_output_dir`: con la chiave sbagliata, la fase "Deploying"
+   * falliva dicendo "you can either specify --assets=./dist or add assets to
+   * wrangler.jsonc" (misurato il 2026-08-27, build #2b133587). Nessuno
+   * "script" Worker qui: è un sito di soli file statici, e senza `main`
+   * Wrangler lo pubblica come Worker-di-soli-asset, che è esattamente cosa
+   * serve.
+   */
+  "assets": {
+    "directory": "./dist"
+  }
 }
