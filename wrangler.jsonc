@@ -28,5 +28,20 @@
    */
   "assets": {
     "directory": "./dist"
-  }
+  },
+
+  /**
+   * Il dominio vero, dichiarato qui e non fatto a mano dal pannello.
+   *
+   * `custom_domain: true` dice a Cloudflare di occuparsi lui di certificato
+   * e DNS — la stessa cosa che farebbe il pulsante "Connect Domain" nella UI,
+   * ma tracciata nel repository invece che persa in un clic. Senza questo il
+   * Worker resta pubblicato ma irraggiungibile: "No URLs enabled" nel
+   * pannello, zero domini collegati (misurato il 2026-08-27, versione
+   * cf0048bc — la build passava, il sito non rispondeva da nessun indirizzo).
+   */
+  "routes": [
+    { "pattern": "zack-app.com", "custom_domain": true },
+    { "pattern": "www.zack-app.com", "custom_domain": true }
+  ]
 }
