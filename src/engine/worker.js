@@ -14,8 +14,14 @@ import {
   MAX_OUTPUT_PIXELS,
 } from './upscale.js';
 import { bleedEdges, extractAlpha, hasAlpha } from './compose.js';
+import { origine } from './origine.js';
 
-ort.env.wasm.wasmPaths = '/ort/';
+// Stessa idea di models.js: in locale i file del runtime stanno sotto /ort/.
+// `stage-ort.js` li rigenera a ogni build da node_modules, e fra loro
+// ort-wasm-simd-threaded.jsep.wasm pesa 26,5 MiB — sopra il tetto di 25 MiB
+// di Cloudflare Pages anche se non fosse mai caricato dal browser. In
+// produzione va escluso da dist/ e servito da R2 con VITE_ORT_BASE.
+ort.env.wasm.wasmPaths = origine(import.meta.env, 'VITE_ORT_BASE', '/ort/');
 
 let session = null;
 let sessionModelId = null;

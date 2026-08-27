@@ -1,11 +1,17 @@
 /**
  * Registro dei modelli di segmentazione usabili nel browser.
  *
- * Il vincolo che conta qui non è tecnico ma commerciale: JAYL STUDIO è un
- * servizio a pagamento, e un modello con licenza non commerciale lo rende
- * illegale da vendere. Il test `test/engine.test.js` fallisce se questo file
- * smette di rispettare la regola.
+ * Il vincolo che conta qui non è tecnico ma commerciale: Zack è un servizio a
+ * pagamento, e un modello con licenza non commerciale lo rende illegale da
+ * vendere. Il test `test/engine.test.js` fallisce se questo file smette di
+ * rispettare la regola.
  */
+import { origine, risolviUrl } from './origine.js';
+
+// In locale sono file statici sotto /models/. In produzione, dove Cloudflare
+// Pages rifiuta un file sopra 25 MiB e questi ne pesano fino a 179M, la base
+// punta a un bucket R2 impostando VITE_MODELS_BASE — vedi src/engine/origine.js.
+const MODELS_BASE = origine(import.meta.env, 'VITE_MODELS_BASE', '/models/');
 
 /**
  * Modelli mai ammessi, con la ragione.
@@ -39,7 +45,7 @@ export const MODELS = [
     norm: IMAGENET,
     tier: TIERS.compatibilita,
     bytes: 175_000_000,
-    url: '/models/u2net.onnx',
+    url: risolviUrl(MODELS_BASE, 'u2net.onnx'),
   },
   {
     id: 'isnet-general-use',
@@ -50,7 +56,7 @@ export const MODELS = [
     norm: HALF,
     tier: TIERS.accelerato,
     bytes: 179_000_000,
-    url: '/models/isnet-general-use.onnx',
+    url: risolviUrl(MODELS_BASE, 'isnet-general-use.onnx'),
   },
   {
     id: 'isnet-anime',
@@ -61,7 +67,7 @@ export const MODELS = [
     norm: HALF,
     tier: TIERS.accelerato,
     bytes: 176_000_000,
-    url: '/models/isnet-anime.onnx',
+    url: risolviUrl(MODELS_BASE, 'isnet-anime.onnx'),
   },
 ];
 

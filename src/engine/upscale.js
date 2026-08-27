@@ -9,6 +9,12 @@
  * i transformer come BiRefNet o Swin2SR sforano il limite di storage buffer di
  * WebGPU su Metal, verificato il 2026-08-25.
  */
+import { origine, risolviUrl } from './origine.js';
+
+// Stessa base configurabile di models.js: i 28 MB del modello superano di
+// poco il tetto di 25 MiB di Cloudflare Pages, quindi in produzione vengono
+// da R2 come tutto il resto — vedi src/engine/origine.js.
+const MODELS_BASE = origine(import.meta.env, 'VITE_MODELS_BASE', '/models/');
 
 /**
  * `tile` è una proprietà DEL MODELLO, non una costante globale: l'ingresso è di
@@ -25,9 +31,11 @@
  */
 export const MODEL_FACTOR = 4;
 
+const UPSCALE_URL = risolviUrl(MODELS_BASE, 'upscale-x4.onnx');
+
 export const SCALES = [
-  { id: 'x2', factor: 2, tile: 256, url: '/models/upscale-x4.onnx', labelKey: 'upscale.x2' },
-  { id: 'x4', factor: 4, tile: 256, url: '/models/upscale-x4.onnx', labelKey: 'upscale.x4' },
+  { id: 'x2', factor: 2, tile: 256, url: UPSCALE_URL, labelKey: 'upscale.x2' },
+  { id: 'x4', factor: 4, tile: 256, url: UPSCALE_URL, labelKey: 'upscale.x4' },
 ];
 
 /** Di quanto va ridotta l'uscita del modello per consegnare il fattore chiesto. */
