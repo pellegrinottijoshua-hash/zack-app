@@ -1,4 +1,4 @@
-# RIPRENDI QUI — JAYL STUDIO
+# RIPRENDI QUI — ZACK APP
 
 Documento di passaggio. Serve ad aprire una chat nuova e ripartire senza
 ricostruire il contesto. Se leggi solo tre cose: la **sezione 2** (le regole),
@@ -6,7 +6,7 @@ la **sezione 6** (cosa manca) e
 [docs/2026-08-26-dove-siamo.md](docs/2026-08-26-dove-siamo.md) (dove sta il
 progetto fra gli altri, e la critica onesta di cosa non va).
 
-- **Repo:** `~/jayl-studio` — ramo `main`, **358 test verdi**
+- **Repo:** `~/jayl-studio` — ramo `main`, **382 test verdi**
 - **Ultimo aggiornamento:** 27 agosto 2026
 - **Il resto:** [README.md](README.md) descrive il prodotto;
   `docs/` contiene i disegni approvati e le analisi.
@@ -35,7 +35,18 @@ preparato per finire su qualcosa di fisico.
 **3,99 €/mese**, la generazione a consumo separata. Il cliente: designer, movie
 maker, AI director. L'alternativa cheap a Canva e Adobe.
 
-**Dominio previsto:** `jaylstudio` — `.io`, `.ai` o `.com`, non ancora scelto.
+**Dominio: `zack-app.com`**, comprato su Cloudflare il 2026-08-27. Il prodotto
+si chiama **Zack App**, come la mascotte: «Zack» da solo è impossibile da
+cercare, «zack app» no — quindi il trattino nell'indirizzo non è un ripiego, è
+il nome. **JAYL non sparisce, cambia mestiere:** resta il marchio del negozio
+(jayl.store, i capi, «Art finds a way») e l'etichetta della palette nell'editor
+vettoriale. Il **personaggio** resta Zack, e con lui il tasto: le chiavi
+`zack.*` sono lui che fa il lavoro, non il prodotto.
+
+Il deploy: [docs/2026-08-27-deploy-zack-app.md](docs/2026-08-27-deploy-zack-app.md).
+**Cloudflare Pages rifiuta i file oltre 25 MiB e i modelli ne pesano 176-179
+l'uno**: vanno su R2, che ha egress gratuito — non è infrastruttura, è il
+margine.
 
 ---
 
@@ -166,12 +177,24 @@ Più:
 | **`sharp.joinChannel`** | 3 canali in silenzio, la maschera sparisce. Si interlaccia a mano. |
 | **`npm test` e `library/`** | richiede `JAYL_CRAFT_LIBRARY` o si rifiuta di partire. |
 | **Rasterizzare un SVG piccolo** | minimo 1200px, e sui vettori il controllo bordi non si fa. |
+| **Cambiare il fondo e non l'inchiostro** | due difetti in una sessione. `--inchiostro` porta il nome del RUOLO: usarlo dove il colore è fisso *perché il fondo è fisso* dà nero su nero (il velo dell'attesa, contrasto 1.00) o panna su panna («Avanzati»). **Chi cambia il fondo si prende anche l'inchiostro.** |
+| **`overflow: hidden` su un elemento flex** | azzera la dimensione minima automatica. In colonna l'etichetta si restringe a **0 px**, col testo dentro e invisibile. Serve `flex: none`. |
+| **Una pillola che può restringersi** | si stringe sull'icona e il testo esce da entrambi i lati del nero. In una barra che scorre, `flex: none`. |
+| **`git add <file>` non basta** | `git commit` committa **tutto l'indice**, non solo ciò che hai appena aggiunto. Con una sessione parallela che ha già i suoi file in staging, il commit se li porta dietro e il messaggio non li nomina (successo il 2026-08-27, riparato spaccando il commit). |
+| **File oltre 25 MiB su Cloudflare Pages** | rifiutati. Sono **5**, e il quinto — il runtime WASM in `public/ort/` — è quello che ci si dimentica di contare perché non sta fra i modelli. |
 | **`.btn.ghost:hover`** | diceva `color: var(--inchiostro)`, scritto quando i tasti secondari erano scuri su panna. Con la palette invertita il fondo è nero: **nero su nero su ogni tasto secondario**, a ogni passaggio del mouse (2026-08-27). Una regola scritta per una palette vecchia non fallisce: peggiora in silenzio. |
 | **Guardare la home in un'anteprima headless** | appena la pagina è scorsa dipinge solo il fondo del `body`: schermata nera, e la zona sticky non si compone mai. Alzare la finestra la annulla del tutto. La home si guarda **in un browser vero** (2026-08-27). |
 
 ---
 
 ## 6. Cosa manca, in ordine
+
+### Subito, e dipende solo da te
+
+**I passi dentro Cloudflare**: progetto Pages, bucket R2 `zack-assets`,
+dominio, DNS, caricamento dei modelli. Richiedono il tuo accesso e non li può
+fare nessun altro — né io né un agente. Scritti uno per riga in
+[docs/2026-08-27-deploy-zack-app.md](docs/2026-08-27-deploy-zack-app.md) §4-5.
 
 ### Fatto il 2026-08-27 (le cinque criticità «subito» di dove-siamo)
 
