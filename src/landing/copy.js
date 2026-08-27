@@ -13,6 +13,68 @@ export const COPY = {
   it: {
     nav: { app: 'Apri lo studio', price: '3,99 €/mese' },
 
+    piu: 'Con 3,99 € al mese hai lo scontorno senza limiti, e tutto il resto dello studio \u2192',
+
+    // Brain, che il committente chiama «web organizer»: la cosa che nessun
+    // concorrente può copiare, perché nessuno tiene i .md accanto alle immagini.
+    brain: {
+      kicker: 'Brain',
+      title: 'Il posto dove il tuo progetto sta tutto insieme.',
+      body:
+        'Immagini, video, voci registrate e i tuoi appunti .md sulla stessa tela. Li raggruppi per progetto, tiri due frecce, e il progetto smette di essere sparso in otto cartelle.',
+      pitch:
+        'Poi scarichi il pacco e lo dai in pasto a Claude: dentro c\u2019\u00e8 IDEE.md, la panoramica che gli fa ritrovare i tuoi progetti invece di ricominciare da capo ogni volta.',
+      note: 'Nessuna sincronizzazione, nessun server. \u00c8 uno zip.',
+    },
+
+    cast: {
+      kicker: 'Il cast',
+      title: 'Zack non lavora da solo.',
+      body: 'Ognuno fa una cosa sola, e la fa in silenzio.',
+    },
+
+    firma: {
+      studio: 'Uno studio JAYL',
+      payoff: 'Art finds a way.',
+    },
+
+    // Lo strumento gratuito, che è la prima cosa che si vede. Le frasi sono in
+    // inglese anche in italiano dove sono un'insegna e non una spiegazione:
+    // «use Zack for free» è il claim, e un claim non si traduce a metà.
+    tool: {
+      claim: 'Use Zack for free — remove the background in just one click.',
+      pick: 'Scegli le immagini',
+      orDrop: 'o trascinale qui. Fino a tre per volta.',
+      reading: 'Leggo i file…',
+      preparing: 'Preparo Zack…',
+      working: 'Zack sta togliendo lo sfondo…',
+      downloading: 'Scarico Zack. Succede una volta sola.',
+      progress: '{fatti} di {totale}',
+      instant: 'istantaneo',
+      viaModel: 'col modello',
+      download: 'Scarica',
+      brush: 'Correggi a mano:',
+      rimetti: 'Rimetti',
+      togli: 'Togli',
+      unreadable: 'Uno dei file non si legge come immagine.',
+      failed: 'Qualcosa è andato storto. Riprova con un file solo.',
+      whatDoes: 'Cosa farà',
+      yours: 'Questo tasto lo puoi cambiare: resta tuo anche dentro lo studio.',
+      stepCutout: 'Toglie lo sfondo',
+      steps: {
+        x4: 'Ingrandisce ×4',
+        x2: 'Ingrandisce ×2',
+        d2: 'Rimpicciolisce a metà',
+        d4: 'Rimpicciolisce a un quarto',
+        scarica: 'Scarica il risultato',
+      },
+      makeYours: 'Fai tuo il tasto Zack: scegli cosa fa, e da adesso fa quello.',
+      addDownload: '+ scarica',
+      onlyThree: 'Tre per volta qui. Nello studio quaranta insieme — e tutto il resto.',
+      toStudio: 'Apri lo studio',
+      close: 'Va bene così',
+    },
+
     hero: {
       kicker: 'Per chi crea con l’AI',
       title: 'Genera dove vuoi.\nRifinisci qui.',
@@ -85,6 +147,63 @@ export const COPY = {
 
   en: {
     nav: { app: 'Open the studio', price: '€3.99/month' },
+
+    piu: 'For \u20ac3.99 a month you get the bg remover unlimited, and the whole studio \u2192',
+
+    brain: {
+      kicker: 'Brain',
+      title: 'Where your whole project finally sits together.',
+      body:
+        'Images, video, voice notes and your own .md files on one canvas. Group them by project, draw a couple of arrows, and the project stops being scattered across eight folders.',
+      pitch:
+        'Then you download the bundle and hand it to Claude: inside is IDEE.md, the overview that lets it pick your projects back up instead of starting over every time.',
+      note: 'No syncing, no server. It\u2019s a zip.',
+    },
+
+    cast: {
+      kicker: 'The cast',
+      title: 'Zack doesn\u2019t work alone.',
+      body: 'Each one does a single thing, and does it without a word.',
+    },
+
+    firma: {
+      studio: 'A JAYL studio',
+      payoff: 'Art finds a way.',
+    },
+
+    tool: {
+      claim: 'Use Zack for free — remove the background in just one click.',
+      pick: 'Choose your images',
+      orDrop: 'or drop them here. Up to three at a time.',
+      reading: 'Reading your files…',
+      preparing: 'Getting Zack ready…',
+      working: 'Zack is removing the background…',
+      downloading: 'Downloading Zack. This happens once.',
+      progress: '{fatti} of {totale}',
+      instant: 'instant',
+      viaModel: 'with the model',
+      download: 'Download',
+      brush: 'Fix by hand:',
+      rimetti: 'Bring back',
+      togli: 'Take away',
+      unreadable: "One of those files doesn't read as an image.",
+      failed: 'Something went wrong. Try again with a single file.',
+      whatDoes: 'What it will do',
+      yours: 'You can change this button. It stays yours inside the studio too.',
+      stepCutout: 'Removes the background',
+      steps: {
+        x4: 'Enlarges ×4',
+        x2: 'Enlarges ×2',
+        d2: 'Halves the size',
+        d4: 'Quarters the size',
+        scarica: 'Downloads the result',
+      },
+      makeYours: 'Make the Zack button yours: pick what it does, and it does that from now on.',
+      addDownload: '+ download',
+      onlyThree: 'Three at a time here. Forty together in the studio — and everything else.',
+      toStudio: 'Open the studio',
+      close: "That's fine",
+    },
 
     hero: {
       kicker: 'For people who create with AI',

@@ -657,3 +657,477 @@ body {
 .lp-cta {
   border: 2px solid var(--oro, #c4a35a);
 }
+
+/* ─── Il primo schermo: lo strumento ────────────────────────────────────
+   Quasi vuoto di proposito. Il tasto è grosso perché intorno non c'è
+   nient'altro: è la stessa richiesta di «più spazio negativo», applicata
+   dove pesa di più. */
+
+.lp-primo {
+  position: relative;
+  /* Il primo schermo e' PANNA, mentre il racconto sotto resta scuro.
+     Non e' un capriccio: la palette invertita del 2026-08-26 dice panna 60,
+     nero 30, oro 10, e la superficie piu' grande che qualcuno vede e' questa.
+     Il tasto nero ovale esiste PERCHE' il fondo e' chiaro.
+
+     E vale la trappola gia' pagata: chi cambia il fondo si prende anche
+     l'inchiostro. Qui il fondo cambia rispetto al `body`, quindi il colore
+     del testo va ridichiarato o si eredita panna su panna. */
+  background: var(--panna);
+  color: var(--nero);
+  min-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  padding: 96px 24px 64px;
+  text-align: center;
+}
+
+.lp-zack {
+  width: clamp(150px, 22vw, 290px);
+  height: auto;
+  /* Non spinge il tasto in basso: Zack sta a fianco, e su schermo stretto
+     sopra. Un'immagine decorativa non deve mai rubare la piega. */
+  margin-bottom: -18px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.lp-piu {
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+.lp-piu a {
+  color: var(--grigio-scuro);
+  text-decoration: none;
+  border-bottom: 1px solid var(--oro);
+  padding-bottom: 2px;
+}
+.lp-piu a:hover {
+  color: var(--nero);
+}
+
+/* ─── Il tasto, che è un logo che si preme ──────────────────────────── */
+
+.rit {
+  width: 100%;
+  max-width: 940px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  border-radius: 20px;
+  transition: background 0.15s ease;
+}
+.rit[data-sopra] {
+  background: var(--oro-velo);
+  outline: 2px dashed var(--oro);
+  outline-offset: 12px;
+}
+
+.rit-tasto {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.zack-oval {
+  min-width: 268px;
+  padding: 22px 54px;
+  border: 1px solid var(--nero);
+  border-radius: 999px;
+  background: var(--nero);
+  color: var(--panna);
+  font-family: 'Fredoka', var(--display);
+  font-weight: 600;
+  font-size: 34px;
+  letter-spacing: 0.06em;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.15s ease;
+}
+.zack-oval:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(17, 17, 17, 0.22);
+}
+.zack-oval:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.rit-info {
+  position: relative;
+}
+.tondo {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--grigio);
+  background: transparent;
+  color: var(--grigio-scuro);
+  font-family: var(--editoriale);
+  font-style: italic;
+  font-size: 16px;
+  cursor: pointer;
+}
+.tondo:hover,
+.tondo[aria-expanded='true'] {
+  border-color: var(--nero);
+  color: var(--nero);
+}
+
+.rit-bolla {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  width: 268px;
+  padding: 14px 16px;
+  background: var(--nero);
+  color: var(--panna);
+  border-radius: 12px;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.rit-bolla strong {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--oro);
+  margin-bottom: 8px;
+}
+.rit-bolla ol {
+  margin: 0 0 10px;
+  padding-left: 18px;
+}
+.rit-bolla p {
+  margin: 0;
+  color: var(--grigio);
+}
+
+.rit-claim {
+  margin: 0;
+  max-width: 30ch;
+  font-size: clamp(15px, 1.9vw, 19px);
+  line-height: 1.45;
+  color: var(--nero);
+}
+.rit-trascina {
+  margin: 0;
+  font-size: 14px;
+  color: var(--grigio-scuro);
+}
+.comelink {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--nero);
+  border-bottom: 1px solid var(--oro);
+  cursor: pointer;
+}
+
+/* ─── L'attesa, detta in megabyte ───────────────────────────────────── */
+
+.rit-attesa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--grigio-scuro);
+}
+.rit-attesa p {
+  margin: 0;
+}
+
+.piuma {
+  width: 200px;
+  height: 60px;
+}
+.piuma path {
+  /* Il tratto si disegna e si cancella, in loop. Due kilobyte: un solo
+     fotogramma dello stesso gesto vettorializzato da un video ne pesa 232,
+     e il video intero 229 (misurato il 2026-08-27). */
+  stroke-dasharray: 320;
+  animation: scrivi 2.8s ease-in-out infinite;
+}
+@keyframes scrivi {
+  0% { stroke-dashoffset: 320; }
+  45% { stroke-dashoffset: 0; }
+  70% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .piuma path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+.rit-barra {
+  width: 260px;
+  height: 4px;
+  background: rgba(17, 17, 17, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.rit-barra span {
+  display: block;
+  height: 100%;
+  background: var(--oro);
+  transition: width 0.2s linear;
+}
+
+.rit-avviso {
+  margin: 0;
+  color: var(--nero);
+  border-left: 2px solid var(--oro);
+  padding-left: 10px;
+  font-size: 14px;
+}
+
+/* ─── Le tele: tre risultati, un pennello solo ──────────────────────── */
+
+.rit-tele {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+.rit-tela {
+  margin: 0;
+  width: min(260px, 40vw);
+  border: 1px solid rgba(17, 17, 17, 0.18);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--panna);
+}
+.rit-tela[data-scelto] {
+  border-color: var(--oro);
+  box-shadow: 0 0 0 2px var(--oro-velo);
+}
+.rit-tela canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: crosshair;
+  touch-action: none;
+  /* Gli scacchi dicono «trasparente» meglio di qualunque etichetta. */
+  background-image:
+    linear-gradient(45deg, rgba(17, 17, 17, 0.09) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(17, 17, 17, 0.09) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(17, 17, 17, 0.09) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(17, 17, 17, 0.09) 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+.rit-tela figcaption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  border-top: 1px solid rgba(17, 17, 17, 0.12);
+}
+.rit-nome {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+.rit-via {
+  flex: none;
+  padding: 2px 6px;
+  border: 1px solid var(--oro);
+  border-radius: 999px;
+  color: var(--grigio-scuro);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rit-pennello {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--grigio-scuro);
+}
+.rit-pennello button {
+  padding: 5px 14px;
+  border: 1px solid var(--grigio);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--grigio-scuro);
+  font: inherit;
+  cursor: pointer;
+}
+.rit-pennello button[aria-pressed='true'] {
+  border-color: var(--nero);
+  background: var(--nero);
+  color: var(--panna);
+}
+
+/* ─── «Fai tuo il tasto Zack» ───────────────────────────────────────── */
+
+.rit-tuo {
+  width: 100%;
+  padding: 16px;
+  border-top: 1px solid rgba(17, 17, 17, 0.14);
+  text-align: center;
+}
+.rit-tuo p {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+.rit-pastiglie {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.pastiglia {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  flex: none;
+  padding: 8px 18px;
+  border: 1px solid var(--nero);
+  border-radius: 999px;
+  background: var(--nero);
+  color: var(--panna);
+  font-family: 'Fredoka', var(--display);
+  font-size: 15px;
+  cursor: pointer;
+}
+.pastiglia[aria-pressed='true'] {
+  background: var(--oro);
+  border-color: var(--oro);
+  color: var(--nero);
+}
+/* Il colore non è mai l'unico segnale: la scelta accesa porta anche il suo
+   posto nella catena, che è informazione — dice in che ordine succederà. */
+.pastiglia .posto {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* ─── «Perché solo tre?», quando il limite lo tocca davvero ─────────── */
+
+.rit-tre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--nero);
+  color: var(--panna);
+  border-radius: 14px;
+  font-size: 14px;
+}
+.rit-tre p {
+  margin: 0;
+}
+.rit-tre .comelink {
+  color: var(--grigio);
+}
+
+/* ─── Brain, il cast, la firma ──────────────────────────────────────── */
+
+.lp-brain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  padding: 80px 24px;
+  max-width: 1040px;
+  margin: 0 auto;
+}
+.lp-brain img {
+  width: min(340px, 70vw);
+  height: auto;
+  border-radius: 50%;
+}
+.lp-brain > div {
+  flex: 1 1 340px;
+  max-width: 46ch;
+}
+
+.lp-cast {
+  padding: 40px 24px 72px;
+  text-align: center;
+}
+.lp-facce {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  margin: 26px 0 0;
+  padding: 0;
+}
+.lp-facce img {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  /* Il fondo panna degli asset non si taglia: metà del cast È panna, e
+     tagliarlo lo trapanerebbe (misurato: uniformità 0.64 sul piccione).
+     Il cerchio risolve il bordo senza toccare i pixel. */
+  object-fit: cover;
+  border: 1px solid rgba(17, 17, 17, 0.14);
+}
+
+.lp-firma {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin: 34px 0 0;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--grigio-scuro);
+}
+.lp-firma img {
+  width: 26px;
+  height: 26px;
+}
+
+@media (max-width: 700px) {
+  .lp-primo {
+    min-height: auto;
+    padding: 64px 18px 48px;
+  }
+  .zack-oval {
+    min-width: 0;
+    width: 100%;
+    max-width: 300px;
+    font-size: 28px;
+    padding: 18px 32px;
+  }
+  .rit-tela {
+    width: min(320px, 86vw);
+  }
+}
+
+/* L'insegna della serie: la soglia fra il primo schermo panna e il racconto
+   scuro. Il fondo dell'immagine e quello della pagina sono lo stesso nero,
+   quindi il bordo non si vede e non serve scontornare niente. */
+.lp-insegna {
+  display: block;
+  width: 100%;
+  max-width: 1100px;
+  height: auto;
+  margin: 0 auto;
+}
