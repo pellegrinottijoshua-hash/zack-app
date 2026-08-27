@@ -100,6 +100,96 @@ export function alphaFromCreamVoid(rgb, w, h, {
 }
 
 /**
+ * Il colore del fondo, campionato dal bordo dell'immagine — e quanto è piatto.
+ *
+ * La **mediana** di ogni canale, non la media: se il soggetto tocca il bordo,
+ * la media si sposta verso il soggetto e il fondo campionato non è più il
+ * fondo. La mediana regge finché il soggetto non occupa più di metà del bordo,
+ * e a quel punto non c'è più un fondo da campionare.
+ *
+ * `uniformita` è la frazione di pixel del bordo che stanno davvero vicini a
+ * quel colore. Su uno sticker è 1; su una fotografia crolla. Serve a **poter
+ * rifiutare**: questo metodo è esatto su un fondo piatto e sbagliato su tutto
+ * il resto, e sbagliato in silenzio è la cosa peggiore che possa fare — l'
+ * utente vedrebbe un ritaglio orrendo senza sapere che ha scelto lo strumento
+ * sbagliato.
+ *
+ * @param {Uint8ClampedArray} rgba  quattro byte per pixel
+ * @returns {{colore: number[], uniformita: number}}
+ */
+export function coloreDelBordo(rgba, w, h, { dentro = DENTRO } = {}) {
+  const total = w * h;
+  if (!rgba || !w || !h || rgba.length < total * 4) {
+    throw new Error('Immagine non leggibile: dimensioni e byte non coincidono.');
+  }
+
+  const indici = [];
+  for (let x = 0; x < w; x++) {
+    indici.push(x, (h - 1) * w + x);
+  }
+  for (let y = 1; y < h - 1; y++) {
+    indici.push(y * w, y * w + w - 1);
+  }
+
+  const canale = (k) => {
+    const v = indici.map((i) => rgba[i * 4 + k]).sort((a, b) => a - b);
+    return v[Math.floor(v.length / 2)];
+  };
+  const colore = [canale(0), canale(1), canale(2)];
+
+  let vicini = 0;
+  for (const i of indici) {
+    if (distanzaDalPanna(rgba[i * 4], rgba[i * 4 + 1], rgba[i * 4 + 2], colore) <= dentro) vicini++;
+  }
+
+  return { colore, uniformita: indici.length ? vicini / indici.length : 0 };
+}
+
+/**
+ * Scontorno per fondo piatto: nessun modello, nessun download.
+ *
+ * È `alphaFromCreamVoid` con il colore campionato invece che fissato al panna
+ * del canone. La logica è identica e lo è per una ragione, non per pigrizia:
+ * il problema del becco panna di Zack dentro un vuoto panna e il problema del
+ * disco verde dentro un fondo bianco **sono lo stesso problema**, e hanno la
+ * stessa soluzione — si toglie il fondo *raggiungibile dal bordo*, non il
+ * fondo per colore.
+ *
+ * Quando è lo strumento giusto: illustrazioni, sticker, loghi, tutto ciò che
+ * è generato o disegnato su una tinta unita. Su una fotografia non lo è, ed è
+ * `uniformita` a dirlo.
+ *
+ * @returns {{alpha: Uint8ClampedArray, isole: number, uniformita: number, colore: number[]}}
+ *   `isole` sono le regioni del colore di fondo circondate dal disegno e
+ *   salvate: se è 0 su un'immagine che ne ha, il key se le è mangiate.
+ */
+export function alphaDaFondoPiatto(rgba, w, h, { dentro = DENTRO, fuori = FUORI, colore } = {}) {
+  const total = w * h;
+  if (!rgba || !w || !h || rgba.length < total * 4) {
+    throw new Error('Immagine non leggibile: dimensioni e byte non coincidono.');
+  }
+  if (!(fuori > dentro)) {
+    throw new Error('La banda morbida è al contrario: "fuori" deve superare "dentro".');
+  }
+
+  const bordo = coloreDelBordo(rgba, w, h, { dentro });
+  const fondo = colore || bordo.colore;
+
+  // Il canale RGB da solo, perché `alphaFromCreamVoid` lavora su tre byte: la
+  // conversione sta qui e non nel chiamante, che altrimenti dovrebbe conoscere
+  // un dettaglio interno di questo file.
+  const rgb = new Uint8ClampedArray(total * 3);
+  for (let i = 0; i < total; i++) {
+    rgb[i * 3] = rgba[i * 4];
+    rgb[i * 3 + 1] = rgba[i * 4 + 1];
+    rgb[i * 3 + 2] = rgba[i * 4 + 2];
+  }
+
+  const { alpha, isole } = alphaFromCreamVoid(rgb, w, h, { panna: fondo, dentro, fuori });
+  return { alpha, isole, uniformita: bordo.uniformita, colore: fondo };
+}
+
+/**
  * Interlaccia RGB e alfa in RGBA.
  *
  * A mano, un byte alla volta: `sharp.joinChannel` restituisce tre canali in
