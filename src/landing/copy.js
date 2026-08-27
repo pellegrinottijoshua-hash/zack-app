@@ -71,7 +71,7 @@ export const COPY = {
       rows: [
         { name: 'Canva Pro', price: '~12 €/mese', note: 'a prescindere da quanto lo usi' },
         { name: 'Adobe', price: '~24 €/mese', note: 'a prescindere da quanto lo usi' },
-        { name: 'JAYL STUDIO', price: '3,99 €/mese', note: 'strumenti illimitati, generazione a consumo' },
+        { name: 'Zack App', price: '3,99 €/mese', note: 'strumenti illimitati, generazione a consumo' },
       ],
     },
 
@@ -144,7 +144,7 @@ export const COPY = {
       rows: [
         { name: 'Canva Pro', price: '~€12/month', note: 'no matter how much you use it' },
         { name: 'Adobe', price: '~€24/month', note: 'no matter how much you use it' },
-        { name: 'JAYL STUDIO', price: '€3.99/month', note: 'unlimited tools, generation pay per use' },
+        { name: 'Zack App', price: '€3.99/month', note: 'unlimited tools, generation pay per use' },
       ],
     },
 

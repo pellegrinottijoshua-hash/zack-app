@@ -1083,7 +1083,7 @@ export default function App() {
       <div className="shell">
         <header className="topbar">
           <span className="wordmark">
-            JAYL <em>STUDIO</em>
+            ZACK <em>app</em>
           </span>
           <span className="spacer" />
           <LanguageSwitch />
@@ -1101,8 +1101,11 @@ export default function App() {
   return (
     <div className="shell" data-working={isEditor}>
       <header className="topbar">
+        {/* Il marchio del prodotto, non quello del negozio: JAYL resta di
+            jayl.store e dei capi, Zack App è il software. Erano la stessa
+            parola su due modelli di business con ritmi incompatibili. */}
         <span className="wordmark">
-          JAYL <em>STUDIO</em>
+          ZACK <em>app</em>
         </span>
         <span className="spacer" />
         <HelpToggle />
