@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import {
   planJobs,
+  sostituisciRisultato,
   isEmptyPlan,
   markJob,
   nextJob,
@@ -156,5 +157,28 @@ export function useBatch({ engine, library, model }) {
     [engine, library, model],
   );
 
-  return { jobs, running, current, eta, results, run, stop, clear, summary: summarize(jobs) };
+  /**
+   * Rimette dentro il Blocco un risultato corretto a mano.
+   *
+   * Senza questa, «correggi a mano» era una porta a senso unico: la
+   * correzione finiva nel banco a file singolo e in libreria, e la piastrella
+   * qui restava quella sbagliata.
+   */
+  const correggi = useCallback(
+    (file, blob) => setResults((r) => sostituisciRisultato(r, file, blob)),
+    [],
+  );
+
+  return {
+    jobs,
+    running,
+    current,
+    eta,
+    results,
+    run,
+    stop,
+    clear,
+    correggi,
+    summary: summarize(jobs),
+  };
 }

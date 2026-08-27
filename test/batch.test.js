@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   planJobs,
+  sostituisciRisultato,
   isEmptyPlan,
   progressOf,
   estimateRemaining,
@@ -169,4 +170,42 @@ test('ogni operazione del piano ha un costo dichiarato', () => {
   for (const op of Object.values(OPS)) {
     assert.ok(Number.isFinite(SECONDI_PER_OP[op]), `manca il costo di ${op}`);
   }
+});
+
+/*
+ * La correzione a mano torna nel Blocco, non solo in libreria.
+ *
+ * Il difetto raccontato dal committente il 2026-08-27: «quando faccio
+ * correggi a mano e poi recupera e applica mi ritorna come prima… quello
+ * corretto va in libreria quando in realtà voglio vada direttamente nel
+ * canva».
+ *
+ * `fixFromBatch` era una porta a senso unico: copiava il risultato nel banco
+ * a file singolo e si dimenticava da dove veniva, quindi al momento di
+ * applicare non c'era piu' nessun posto a cui restituire il file. La
+ * piastrella restava quella di prima e nasceva un doppione `-corretto`.
+ *
+ * L'identita' e' il FILE di partenza, non l'indice: fra l'apertura del
+ * pennello e l'applicazione il blocco puo' aver finito altri lavori e
+ * riordinato la lista.
+ */
+test('la correzione sostituisce il risultato di quel file, e solo quello', () => {
+  const a = { name: 'uno.png' };
+  const b = { name: 'due.png' };
+  const results = [
+    { file: a, blob: 'vecchio-a', assetId: 'A' },
+    { file: b, blob: 'vecchio-b', assetId: 'B' },
+  ];
+  const dopo = sostituisciRisultato(results, a, 'corretto-a');
+  assert.equal(dopo[0].blob, 'corretto-a');
+  assert.equal(dopo[0].assetId, 'A', "l'identita' in libreria non cambia: e' lo stesso asset un minuto dopo");
+  assert.equal(dopo[1].blob, 'vecchio-b', "gli altri risultati non si toccano");
+});
+
+test('correggere un file che non e nella lista non inventa una riga', () => {
+  // Puo' succedere se il blocco e' stato svuotato mentre il pennello era
+  // aperto: meglio non fare niente che far comparire un risultato orfano.
+  const results = [{ file: { name: 'uno.png' }, blob: 'x', assetId: 'A' }];
+  const dopo = sostituisciRisultato(results, { name: 'altro.png' }, 'y');
+  assert.deepEqual(dopo, results);
 });

@@ -172,6 +172,8 @@ export default function App() {
   // provenienza, che è ciò che rende ritrovabile un file di cui non si
   // ricorda il nome.
   const [sourceAssetId, setSourceAssetId] = useState(null);
+  /** Da quale risultato del Blocco viene il file in correzione, se ne viene. */
+  const [daBlocco, setDaBlocco] = useState(null);
   // Le misure del file aperto: le leggono tutte e tre le rifiniture, e leggerle
   // una volta sola costa una passata invece di tre su milioni di pixel.
   const [stats, setStats] = useState(null);
@@ -479,15 +481,25 @@ export default function App() {
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
   }
 
-  function fixFromBatch({ file: original, blob }) {
+  /**
+   * Apre il pennello su un risultato del Blocco, **ricordandosi da dove viene**.
+   *
+   * Prima non se lo ricordava, e all'APPLICA la correzione non aveva più un
+   * posto a cui tornare: finiva nel banco a file singolo e in libreria come
+   * `-corretto`, mentre la piastrella nel Blocco restava quella sbagliata.
+   * Chi corregge quaranta file vuole vedere la griglia aggiustarsi, non
+   * collezionare doppioni.
+   */
+  function fixFromBatch({ file: original, blob, assetId }) {
     setError(null);
     setNotice(null);
     setTool('scontorna');
     setFile(original);
     setBeforeUrl(own(original));
-    setSourceAssetId(null);
+    setSourceAssetId(assetId ?? null);
     setHistory([]);
     setResult({ url: own(blob), blob, kind: 'png', meta: { strategy: 'browser', batch: true } });
+    setDaBlocco({ file: original, assetId: assetId ?? null });
     setBrushOpen(true);
   }
 
@@ -1253,6 +1265,19 @@ export default function App() {
               onDone={async (blob) => {
                 pushResult({ url: own(blob), blob, kind: 'png', meta: { ...result.meta, retouched: true } });
                 setBrushOpen(false);
+
+                if (daBlocco) {
+                  // La correzione torna DOVE STAVA. E sovrascrive l'asset
+                  // invece di crearne uno: correggere a mano non e' un lavoro
+                  // nuovo, e' lo stesso asset un minuto dopo — lo stesso
+                  // ragionamento gia' scritto in `sovrascriviAsset` per i .md.
+                  batch.correggi(daBlocco.file, blob);
+                  if (daBlocco.assetId) await library.sovrascrivi(daBlocco.assetId, blob);
+                  setDaBlocco(null);
+                  setNotice(t('brush.backToBatch'));
+                  return;
+                }
+
                 await library.save(blob, {
                   name: `${(file?.name || 'immagine').replace(/\.[^.]+$/, '')}-corretto`,
                   kind: 'png',

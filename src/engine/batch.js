@@ -152,3 +152,29 @@ export function summarize(jobs) {
     failedFiles: [...new Set(failed.map((j) => j.file?.name).filter(Boolean))],
   };
 }
+
+/**
+ * Rimette nel Blocco un risultato corretto a mano.
+ *
+ * Il difetto che questa funzione chiude (2026-08-27): «correggi a mano» apriva
+ * il pennello copiando il risultato nel banco a file singolo e **dimenticando
+ * da dove veniva**. All'APPLICA non c'era più nessun posto a cui restituire il
+ * file: la piastrella nel Blocco restava quella sbagliata, e in libreria
+ * compariva un doppione col suffisso `-corretto`.
+ *
+ * Due decisioni dentro tre righe:
+ *
+ * - **l'identità è il file di partenza, non l'indice.** Fra l'apertura del
+ *   pennello e l'applicazione il blocco può aver finito altri lavori e
+ *   riordinato la lista; un indice memorizzato punterebbe a un altro file;
+ * - **`assetId` non cambia.** Correggere a mano non è un lavoro nuovo: è lo
+ *   stesso asset un minuto dopo, ed è lo stesso ragionamento già scritto in
+ *   `sovrascriviAsset` per i documenti. Un asset nuovo a ogni pennellata
+ *   disfa in una sessione la potatura che abbiamo costruito.
+ *
+ * Un file che non è nella lista non aggiunge una riga: se il blocco è stato
+ * svuotato mentre il pennello era aperto, meglio niente che un orfano.
+ */
+export function sostituisciRisultato(results = [], file, blob) {
+  return results.map((r) => (r.file === file ? { ...r, blob } : r));
+}
