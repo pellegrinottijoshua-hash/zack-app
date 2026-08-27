@@ -404,6 +404,32 @@ export function intoccabile(asset, derivati = new Set()) {
 }
 
 /**
+ * L'asset che contiene già esattamente questo, sotto questo nome.
+ *
+ * Serve a non scrivere due volte la stessa cosa. `doppioni()` **propone** e
+ * l'utente decide; questa invece **decide da sola**, quindi la domanda che si
+ * pone è più stretta: non «si somigliano?» ma «sono lo stesso file?».
+ *
+ * Due condizioni, e servono entrambe:
+ *
+ * - **il contenuto**, per impronta e non per peso. Due immagini diverse
+ *   possono pesare uguale, e qui si sta decidendo di NON scrivere: sbagliare
+ *   significa perdere il lavoro di qualcuno senza dirglielo;
+ * - **il nome.** Gli stessi byte chiesti sotto un altro nome sono una cosa che
+ *   l'utente ha voluto: restituirgli il nome vecchio lo manderebbe a cercare
+ *   un file che non trova.
+ *
+ * Senza impronta non si deduplica mai. Gli asset salvati prima di questa
+ * regola non ce l'hanno, e trattare «nessuna impronta» come «impronta uguale»
+ * li farebbe collassare tutti su uno.
+ */
+export function giaInLibreria(assets = [], { name, hash } = {}) {
+  if (!hash || !name) return null;
+  const atteso = safeName(name);
+  return assets.find((a) => a.hash && a.hash === hash && a.name === atteso) || null;
+}
+
+/**
  * I doppioni da proporre, raggruppati.
  *
  * Di ogni gruppo si **tiene il più vecchio** e si propongono gli altri: il più

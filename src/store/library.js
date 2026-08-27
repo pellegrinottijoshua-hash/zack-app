@@ -3,6 +3,7 @@ import { normalizzaTela } from '../engine/brain.js';
 import * as files from './files.js';
 import {
   makeAsset,
+  giaInLibreria,
   makeFolder,
   makeMoodboard,
   uniqueName,
@@ -47,12 +48,50 @@ export async function snapshot() {
 }
 
 /**
+ * L'impronta del contenuto, per decidere se un file è già in libreria.
+ *
+ * SHA-256 su tutti i byte: su un PNG da 8,8 MB costa qualche decina di
+ * millisecondi, contro i secondi o i minuti dell'operazione che l'ha
+ * prodotto. Non è il posto dove si risparmia.
+ *
+ * Se `crypto.subtle` non c'è — contesti non sicuri, browser vecchi —
+ * restituisce `null`, e a quel punto **non si deduplica**. Una libreria con
+ * qualche copia di troppo resta usabile; una che unisce due file diversi
+ * perché non sapeva distinguerli, no.
+ */
+async function impronta(blob) {
+  if (!globalThis.crypto?.subtle) return null;
+  try {
+    const digest = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Salva un lavoro. Il file prima, il record dopo: se il disco è pieno l'utente
  * vede un errore invece di ritrovarsi una voce che non apre nulla.
+ *
+ * **Rifare la stessa operazione non crea un asset nuovo.** Misurato il
+ * 2026-08-27 su una libreria vera: tre voci `maglietta-jayl-zack` da
+ * 8.875.116 byte l'una, cioè il tasto Zack premuto tre volte sullo stesso
+ * file con le stesse impostazioni. Stesso ingresso, stessa catena, stessi
+ * byte — e 17 MB buttati per niente. Chi rifà un'operazione vuole *rivedere*
+ * il risultato, non collezionarlo.
+ *
+ * L'asset restituito porta `riusato: true` quando è quello di prima, così chi
+ * chiama può dirlo invece di far finta che sia successo qualcosa.
  */
 export async function saveAsset(blob, { name, kind, meta = {}, folderId = null } = {}) {
   const existing = await db.all('assets');
+
+  const hash = await impronta(blob);
+  const gia = giaInLibreria(existing, { name, hash });
+  if (gia) return { ...gia, riusato: true };
+
   const asset = makeAsset({ name, kind, bytes: blob.size, meta, folderId });
+  asset.hash = hash;
   asset.file = uniqueName(asset.file, existing.map((a) => a.file));
 
   await files.writeFile(asset.file, blob);

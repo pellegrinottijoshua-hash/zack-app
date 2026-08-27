@@ -15,6 +15,7 @@ import {
   newId,
   doppioni,
   pesoDi,
+  giaInLibreria,
 } from '../src/store/model.js';
 
 // Sorgenti deterministiche: un test che dipende dal caso non è un test.
@@ -339,4 +340,51 @@ test('il peso di una selezione è la somma dei suoi lavori', () => {
   assert.equal(pesoDi(assets, ['a', 'b']), 42);
   assert.equal(pesoDi(assets, []), 0);
   assert.equal(pesoDi(assets, new Set(['c'])), 5);
+});
+
+/*
+ * Rifare la stessa operazione non crea un asset nuovo.
+ *
+ * Il difetto misurato il 2026-08-27 sulla libreria vera: tre voci
+ * `maglietta-jayl-zack`, `op: 'zack'`, **8.875.116 byte tutte e tre**, create
+ * alle 09:19, 09:27 e 09:29. Non era un doppio salvataggio: era il tasto Zack
+ * premuto tre volte sullo stesso file con le stesse impostazioni. Stesso
+ * ingresso, stessa catena, stessi byte in uscita — e la libreria li accettava
+ * come tre cose diverse.
+ *
+ * Il confronto è sul CONTENUTO, non sul peso: due immagini diverse possono
+ * pesare uguale, e `chiaveDoppione` lo sa già (raggruppa per proporre, non per
+ * decidere). Qui si decide di non scrivere, quindi serve certezza.
+ *
+ * E il nome deve coincidere: gli stessi byte salvati sotto un nome diverso
+ * sono una cosa che l'utente ha chiesto, e nasconderla sotto il nome vecchio
+ * lo farebbe cercare un file che non trova.
+ */
+test('lo stesso contenuto con lo stesso nome è già in libreria', () => {
+  const assets = [
+    lav({ id: 'a', name: 'zack', hash: 'aaa' }),
+    lav({ id: 'b', name: 'altro', hash: 'bbb' }),
+  ];
+  assert.equal(giaInLibreria(assets, { name: 'zack', hash: 'aaa' })?.id, 'a');
+});
+
+test('lo stesso contenuto sotto un altro nome è un asset nuovo', () => {
+  const assets = [lav({ id: 'a', name: 'zack', hash: 'aaa' })];
+  assert.equal(giaInLibreria(assets, { name: 'zack-per-la-stampa', hash: 'aaa' }), null);
+});
+
+test('lo stesso nome con contenuto diverso è un asset nuovo', () => {
+  // È il caso di chi rifà lo scontorno cambiando modello: stesso nome, byte
+  // diversi, ed è esattamente il confronto che l'utente vuole tenere.
+  const assets = [lav({ id: 'a', name: 'zack', hash: 'aaa' })];
+  assert.equal(giaInLibreria(assets, { name: 'zack', hash: 'zzz' }), null);
+});
+
+test('senza impronta non si deduplica mai', () => {
+  // Gli asset salvati prima di questa regola non hanno `hash`. Trattare
+  // "nessuna impronta" come "impronta uguale" li farebbe collassare tutti su
+  // uno solo, cioè cancellerebbe lavoro vero per una regola di igiene.
+  const assets = [lav({ id: 'a', name: 'zack' }), lav({ id: 'b', name: 'zack' })];
+  assert.equal(giaInLibreria(assets, { name: 'zack', hash: null }), null);
+  assert.equal(giaInLibreria(assets, { name: 'zack', hash: 'aaa' }), null);
 });
