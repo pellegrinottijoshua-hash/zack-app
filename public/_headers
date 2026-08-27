@@ -1,0 +1,35 @@
+# Cloudflare Pages legge questo file per aggiungere header alla risposta.
+# Vedi docs/2026-08-27-deploy-zack-app.md per il perché di ogni scelta.
+
+# Asset con hash nel nome (bundle JS/CSS di Vite): il contenuto cambia solo
+# se cambia il nome, quindi la cache può fidarsi per un anno senza mai dover
+# ricontrollare.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# .onnx e .wasm sono la parte pesante del sito e non cambiano mai a nome di
+# file invariato (i modelli non si aggiornano in place): stessa cache lunga.
+# In produzione questi file vivono su R2, non qui — VITE_MODELS_BASE e
+# VITE_ORT_BASE li puntano altrove — ma la regola resta valida per chi guarda
+# una preview di Pages che li serve ancora in locale.
+/*.onnx
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.wasm
+  Cache-Control: public, max-age=31536000, immutable
+  # Alcuni host servono i .wasm come application/octet-stream: ORT li carica
+  # con `instantiateStreaming`, che pretende esattamente questo content-type
+  # e altrimenti ripiega su un caricamento più lento (o fallisce, a seconda
+  # del browser). Non è un'ipotesi: è nella documentazione di ORT Web.
+  Content-Type: application/wasm
+
+# NIENTE Cross-Origin-Opener-Policy / Cross-Origin-Embedder-Policy qui.
+# Servirebbero solo per il WASM multi-thread (il livello "compatibilità",
+# senza WebGPU): onnxruntime-web li rileva da solo — vedi
+# node_modules/onnxruntime-web/dist/ort.webgpu.mjs, il controllo su
+# `crossOriginIsolated` — e se mancano ripiega su un solo thread invece di
+# rompersi. Il livello "accelerato" (WebGPU) non li usa comunque. Il costo di
+# metterli supera il guadagno: COEP: require-corp romperebbe silenziosamente
+# ogni risorsa cross-origin priva di Cross-Origin-Resource-Policy — inclusi i
+# modelli su R2 e, salvo verifica, i font di Google Fonts caricati in
+# index.html e app/index.html.
