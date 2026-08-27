@@ -2440,7 +2440,10 @@ body {
   position: absolute;
   top: 6px;
   left: 6px;
-  z-index: 2;
+  /* Sopra il pannello delle azioni (2), come la stella. A parità vincerebbe
+     il pannello, che viene dopo nel DOM, e coprirebbe la spunta proprio
+     mentre il mouse ci va sopra. */
+  z-index: 3;
   display: grid;
   place-items: center;
   width: 22px;
