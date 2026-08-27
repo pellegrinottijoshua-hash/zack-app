@@ -7,6 +7,8 @@ la **sezione 6** (cosa manca) e
 progetto fra gli altri, e la critica onesta di cosa non va).
 
 - **Repo:** `~/jayl-studio` — ramo `main`, **382 test verdi**
+- **Online:** [zack-app.com](https://zack-app.com) dal 2026-08-27, modelli su R2
+- **Remoto:** `github.com/pellegrinottijoshua-hash/zack-app` (push = deploy)
 - **Ultimo aggiornamento:** 27 agosto 2026
 - **Il resto:** [README.md](README.md) descrive il prodotto;
   `docs/` contiene i disegni approvati e le analisi.
@@ -189,62 +191,109 @@ Più:
 
 ## 6. Cosa manca, in ordine
 
-### Subito, e dipende solo da te
+> Rifatta il 2026-08-27, **dopo che il sito è andato online**. La domanda che
+> ordina questa lista non è più «cosa manca al prodotto»: è **«cosa perde un
+> utente che apre zack-app.com adesso»**. È un criterio diverso e cambia le
+> priorità: quello che nessuno vede può aspettare.
 
-**I passi dentro Cloudflare**: progetto Pages, bucket R2 `zack-assets`,
-dominio, DNS, caricamento dei modelli. Richiedono il tuo accesso e non li può
-fare nessun altro — né io né un agente. Scritti uno per riga in
-[docs/2026-08-27-deploy-zack-app.md](docs/2026-08-27-deploy-zack-app.md) §4-5.
+### Fatto, e non si riapre
 
-### Fatto il 2026-08-27 (le cinque criticità «subito» di dove-siamo)
+- **Il deploy.** `zack-app.com` risponde, i modelli stanno su R2 con egress
+  gratuito, il CORS è impostato, il dominio è dichiarato in `wrangler.jsonc`
+  invece che cliccato a mano. Verificato con uno scontorno vero sul sito
+  pubblico: modello da 176 MB scaricato da `assets.zack-app.com`, risultato a
+  schermo. Vedi [docs/2026-08-27-deploy-zack-app.md](docs/2026-08-27-deploy-zack-app.md).
+- **Il nome.** Zack App ovunque sulle superfici che l'utente vede.
+- **Le cinque criticità «subito»** di dove-siamo: il primo minuto, le tendine,
+  le attese dichiarate, la potatura della libreria, una parola sola.
+- **I documenti in Brain**, e il pacco come ponte verso un modello.
+- **Sei difetti trovati usando l'app** (contrasto 1.00, la catena che
+  raccontava meno del suo passo, la famiglia di suono invisibile, la barra di
+  Filmato, «Avanzati» panna su panna, la barra strumenti muta sul telefono).
 
-1. ~~Il primo minuto.~~ Alla primissima apertura, e solo con la libreria vuota,
-   sul piano c'è già una maglietta JAYL, e il tasto Zack fa due battiti. Nel
-   riquadro vuoto resta «Prova con un esempio». La decisione sta in
-   `engine/prova.js`.
-2. ~~Le tendine su tutto.~~ Il tracciato e il blocco sono `Section`.
-3. ~~Le attese dichiarate.~~ Il blocco dice «almeno 55 min» su quaranta file
-   (`attesaJobs`, con `certo` che distingue «circa» da «almeno»), il filmato
-   dice l'attesa su taglio e togli-sfondo. **E il blocco gira mentre fai
-   altro**: il conto vive nella barra di stato, visibile da ogni servizio.
-4. ~~Potare la libreria.~~ «Pota» accende selezione multipla, conto dei MB e
-   «Scegli i doppioni» — che seleziona, non cancella, e non tocca mai
-   preferiti, note, tag, riferimenti e asset da cui ne sono nati altri.
-5. ~~Una parola sola.~~ È **asset**, scelta dal committente, in entrambe le
-   lingue; «file» resta per ciò che sta sul computer. Un test bandisce i nomi
-   vecchi, con due sole eccezioni dichiarate.
+### 1. Adesso conta questo: il primo caricamento
 
-Nello stesso giro, guardando i pixel: `.btn.ghost:hover` era **nero su nero**
-su ogni tasto secondario del prodotto, da quando la palette è stata invertita.
+**235 MB prima di vedere qualcosa.** È il numero che decide se il prodotto
+esiste per qualcuno che non sei tu: un modello di scontorno (176 MB), il
+modello di ingrandimento (30 MB) e il runtime (27 MB). Su una connessione
+normale è più di un minuto in cui la pagina non fa niente di visibile.
 
-### Da guardare con occhi propri (i test non li vedono)
+Tre leve, in ordine di quanto rendono:
 
-6. **La home**: ancora **non verificata con gli occhi**. Ci ho provato il
-   2026-08-27 e il limite è dello strumento, non della pagina: l'anteprima
-   dipinge solo il fondo del `body` appena la pagina è scorsa, quindi la zona
-   sticky non si compone mai; alzando la finestra a 6600 px il meccanismo
-   sticky si annulla e si vede un blocco solo. **Va aperta in un browser vero.**
-   L'unica cosa vista in un colpo (finestra alta 3200 px, sticky già distorto):
-   fra l'apertura e il primo blocco c'è una fascia panna vuota di quasi uno
-   schermo, e nel primo blocco il testo passa sopra la piuma di Zack.
-7. **La soglia di `holes.js`**: provvisoria e non misurata. Servono cinque
-   loghi veri, due con controforme aperte e due con buchi voluti.
-8. **Suoni e filmato**: funzionano, non sono mai stati usati per fare qualcosa
-   di vero. Il primo uso serio troverà cose.
+1. **Dire quanto manca mentre scarica.** Non riduce i megabyte, elimina
+   l'abbandono da incertezza — ed è la lezione già pagata con l'attesa di
+   Zack. È anche la più economica delle tre.
+2. **Un modello solo invece di tre.** «Rapido / Qualità / Illustrazioni» sono
+   tre scelte che l'utente nuovo non sa fare. Toglierne due dal primo
+   caricamento (restano negli avanzati, scaricati su richiesta) dimezza
+   l'attesa e semplifica la schermata.
+3. **fp16.** Dimezza i pesi. È la più lenta da fare e va misurata sulla
+   qualità del bordo prima di prometterla.
 
-### Le cose grosse
+### 2. Il cast non esiste come asset
 
-9. **Le altre quattro clip della home.** Si aggiungono a `CLIP` in
-   `Landing.jsx` una alla volta; i blocchi senza clip restano sull'ultima.
-   Prompt in [docs/zack-asset-plan.md](docs/zack-asset-plan.md).
-10. **«Zack può ricordarlo»** — la ricetta imparata guardando cosa rifai a mano.
-11. **Immagine e Video a consumo.** Architettura in
-    `docs/superpowers/specs/2026-08-25-generazione-design.md`. Modelli scelti:
-    Nano Banana Pro, GPT Image 2, Seedance 2.5, Kling 3.0.
-12. **La tela di composizione** (immagine + testo + posizione + colore).
-13. **Ricerca e storico in Brain**, poi la **cartella vera su disco**. Vedi
-    [docs/2026-08-26-brain-ai-e-cervello.md](docs/2026-08-26-brain-ai-e-cervello.md).
-14. **Modelli a fp16**, per dimezzare i 170 MB del primo scaricamento.
+In `public/zack/` ci sono sette file e sono **tutti Zack**. Piccione, Gabbiano,
+Falena, Gatto e Formica hanno canone e prompt di animazione pronti, e zero
+pixel. Tutta la tesi di marketing — «Zack è la campagna, non la mascotte» —
+poggia su un cast che nel prodotto non si è mai visto.
+
+Prompt pronti in [docs/2026-08-27-iconcine-cast.md](docs/2026-08-27-iconcine-cast.md):
+sei ritratti, sette fermi immagine (che oggi mancano del tutto sotto
+`prefers-reduced-motion`) e i due stati vuoti rimasti.
+
+### 3. Lo strumento gratuito senza account
+
+Una pagina sola che fa **una** cosa: togli lo sfondo, gratis, illimitato. È già
+metà costruita, il costo d'esercizio è zero ora che i modelli stanno su R2, e
+chi la usa due volte capisce da solo cosa gli manca. È il canale d'acquisizione
+più economico che esista per questo prodotto.
+
+### 4. Il «prima e dopo» come immagine sola
+
+Si costruisce una volta e fa marketing per sempre: i designer pubblicano da
+soli i propri prima-dopo, e ogni immagine porta il marchio. Il confronto a
+tendina esiste già in `Compare.jsx` — manca solo esportarlo.
+
+### 5. Da guardare con occhi propri (i test non li vedono)
+
+- **La home**, ancora **non verificata con gli occhi**. Il limite è dello
+  strumento, non della pagina: l'anteprima non compone la zona sticky. **Va
+  aperta in un browser vero, adesso che è online.** L'unica cosa vista in un
+  colpo: fra l'apertura e il primo blocco c'è una fascia panna vuota di quasi
+  uno schermo, e nel primo blocco il testo passa sopra la piuma di Zack.
+- **La soglia di `holes.js`**: provvisoria e non misurata. Servono cinque loghi
+  veri, due con controforme aperte e due con buchi voluti.
+- **Suoni e Filmato**: venti minuti d'uso hanno trovato tre difetti su sei.
+  Un episodio intero prodotto con quei due servizi ne troverà altri dieci, e
+  sono i dieci che vedrebbe il primo cliente.
+- **Il telefono**: l'impaginazione a 375 px regge e la navigazione adesso si
+  legge. Resta ignoto se la memoria di un telefono regga 235 MB di modelli.
+
+### 6. Le cose grosse, quando le prime cinque sono chiuse
+
+- **Le altre quattro clip della home.** Si aggiungono a `CLIP` in
+  `Landing.jsx` una alla volta; i blocchi senza clip restano sull'ultima.
+- **Ricerca e storico in Brain**, adesso che i documenti ci vivono dentro:
+  «trovami dove ho scritto preventivo» è la funzione che tiene vivo l'archivio.
+  Piccola, locale, gratis.
+- **«Zack può ricordarlo»** — la ricetta imparata guardando cosa rifai a mano.
+- **Immagine e Video a consumo.** Due voci spente che promettono da settimane
+  sono peggio di due voci assenti: o si fanno, o si tolgono dalla vista.
+  Architettura in `docs/superpowers/specs/2026-08-25-generazione-design.md`.
+- **La tela di composizione** (immagine + testo + posizione + colore).
+- **La cartella vera su disco** (Chrome/Edge). Vedi
+  [docs/2026-08-26-brain-ai-e-cervello.md](docs/2026-08-26-brain-ai-e-cervello.md).
+
+### 7. Cosa NON farei, e costa dirlo
+
+- **Niente sincronizzazione.** «I tuoi file ovunque» significa pagare banda e
+  prendersi responsabilità legale su contenuti che non controlli.
+- **Niente timeline video.** Il confine dei tre gesti è ciò che tiene in piedi
+  il progetto.
+- **Niente abbonamento prima di cento persone che usano lo studio gratis.**
+  Misurerebbe quanto sei convincente, non quanto è buono il prodotto.
+- **Niente altri modelli, altri formati, altri preimpostati.** Allungano la
+  lista senza cambiare cosa il prodotto *è*.
 
 ---
 
@@ -283,6 +332,10 @@ canone: leggerlo.**
   tutorial, stati vuoti, marchio.
 - [docs/zack-animazioni-cast.md](docs/zack-animazioni-cast.md) — prompt Seedance
   del cast che reagisce alle azioni (4s, tagliate a 2/3s).
+- [docs/2026-08-27-iconcine-cast.md](docs/2026-08-27-iconcine-cast.md) — le
+  **immagini ferme piccole**: sei ritratti del cast, i sette fermi che mancano
+  sotto `prefers-reduced-motion`, e i due stati vuoti rimasti. È la famiglia da
+  cui esce il cast come asset, che oggi non esiste.
 - [docs/prompt-tasti-nbp.md](docs/prompt-tasti-nbp.md) — la tavola dei tasti, e
   perché non entrano nell'app.
 
