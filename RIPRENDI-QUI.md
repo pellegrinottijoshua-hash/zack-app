@@ -213,10 +213,11 @@ Più:
 
 ### 1. Adesso conta questo: il primo caricamento
 
-**235 MB prima di vedere qualcosa.** È il numero che decide se il prodotto
-esiste per qualcuno che non sei tu: un modello di scontorno (176 MB), il
-modello di ingrandimento (30 MB) e il runtime (27 MB). Su una connessione
-normale è più di un minuto in cui la pagina non fa niente di visibile.
+**225 MB prima di vedere qualcosa** (misurato il 2026-08-27 sul percorso
+«Qualità»: modello di scontorno 170,4 + ingrandimento 28,3 + runtime 26,5).
+È il numero che decide se il prodotto esiste per qualcuno che non sei tu: su
+una connessione normale è più di un minuto in cui la pagina non fa niente di
+visibile.
 
 Tre leve, in ordine di quanto rendono:
 
@@ -267,7 +268,7 @@ tendina esiste già in `Compare.jsx` — manca solo esportarlo.
   Un episodio intero prodotto con quei due servizi ne troverà altri dieci, e
   sono i dieci che vedrebbe il primo cliente.
 - **Il telefono**: l'impaginazione a 375 px regge e la navigazione adesso si
-  legge. Resta ignoto se la memoria di un telefono regga 235 MB di modelli.
+  legge. Resta ignoto se la memoria di un telefono regga 225 MB di modelli.
 
 ### 6. Le cose grosse, quando le prime cinque sono chiuse
 
