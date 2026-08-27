@@ -550,6 +550,21 @@ body {
   animation: sweep 1.5s ease-in-out infinite;
 }
 
+/* Quando sappiamo quanto manca la barra si riempie invece di strisciare, ed
+   è più alta: su ottanta secondi la differenza fra «sta lavorando» e «è a
+   metà» è la differenza fra aspettare e ricaricare la pagina. */
+.scanner .bar[data-quanto] {
+  height: 3px;
+  width: 260px;
+  background: rgba(245, 240, 232, 0.18);
+}
+
+.scanner .bar[data-quanto]::after {
+  width: var(--quanto, 0%);
+  animation: none;
+  transition: width 0.4s ease-out;
+}
+
 @keyframes sweep {
   0% {
     transform: translateX(-100%);
@@ -559,19 +574,29 @@ body {
   }
 }
 
+/* Il velo dell'attesa è SEMPRE scuro — `rgba(17, 17, 17, 0.86)`, poche righe
+ * più su — quindi il testo che ci sta sopra è sempre chiaro. Va detto a
+ * colori letterali, non con `--inchiostro`: quella variabile porta il nome del
+ * RUOLO e con la palette invertita (2026-08-26) è diventata scura, cioè nera
+ * su nero. Contrasto misurato prima della correzione: **1.00**, il testo che
+ * dice cosa sta succedendo era letteralmente invisibile per tutti gli ottanta
+ * secondi dell'attesa più lunga del prodotto (2026-08-27).
+ *
+ * È la stessa trappola della tabella in RIPRENDI-QUI: una variabile di ruolo
+ * usata dove il colore è fisso perché il fondo è fisso. */
 .scanner p {
   margin: 0;
   font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--inchiostro);
+  color: var(--panna);
 }
 
 .scanner small {
   max-width: 44ch;
   font-size: 11px;
   line-height: 1.7;
-  color: var(--inchiostro-3);
+  color: rgba(245, 240, 232, 0.72);
 }
 
 /* ─── alerts + meta ─────────────────────────────────────────────────────── */
@@ -3770,6 +3795,19 @@ body {
   opacity: 1;
 }
 
+/* Un tasto premuto si vede, in tutte e quattro le famiglie.
+ *
+ * `.btn` mancava da questa lista, e il difetto non era estetico: nel
+ * laboratorio dei suoni le sei famiglie e in Filmato i cinque formati usano
+ * `.btn`, quindi **la scelta attiva aveva lo stile identico alle altre**
+ * (misurato nel browser il 2026-08-27: stesso `color`, stesso `border-color`,
+ * stesso sfondo). Sei tasti uguali e nessun modo di sapere quale suono stavi
+ * modificando — e la regola «il colore non è mai l'unico segnale» era violata
+ * al contrario: non c'era nessun segnale.
+ *
+ * Sono proprio i due servizi che il documento di passaggio segnava come
+ * «fatto, mai usato sul serio». È quello che il primo uso serio trova. */
+.btn[aria-pressed='true'],
 .opt[aria-pressed='true'],
 .tool-item[aria-pressed='true'],
 .langswitch button[aria-pressed='true'] {

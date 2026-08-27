@@ -107,6 +107,14 @@ export default function App() {
   const [result, setResult] = useState(null); // { blob|text, url, kind, meta }
   const [busy, setBusy] = useState(null);
   const [busyNote, setBusyNote] = useState(null);
+  /**
+   * Quanto è fatto, da 0 a 1, quando lo sappiamo.
+   *
+   * `null` quando non c'è niente da contare: una barra che finge di sapere è
+   * peggio di una che striscia dicendo «sto lavorando». Dove non c'è una
+   * misura non c'è un avviso — vale anche per l'avanzamento.
+   */
+  const [quanto, setQuanto] = useState(null);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
 
@@ -670,9 +678,30 @@ export default function App() {
       // che l'utente non ha modo di ricavare guardando l'immagine.
       const detto = [];
 
-      if (piano.passi.includes('scontorna')) {
+      /*
+       * Dire dove siamo nella catena.
+       *
+       * L'attesa del tasto Zack è la più lunga del prodotto — 84 secondi
+       * misurati su un file di stampa il 2026-08-27 — ed era anche la meno
+       * raccontata: usciva un «34/81» senza unità, cioè un numero che non
+       * significa niente per chi non sa cosa sia una piastrella. Il passo
+       * singolo dell'ingrandimento lo faceva già meglio del tasto che lo
+       * contiene.
+       *
+       * Ora ogni passo si annuncia col nome che l'utente ha spuntato in
+       * «Cosa farà», e con la sua posizione nella catena: dopo un minuto la
+       * domanda non è «quanto manca», è «si è piantato?».
+       */
+      const passi = piano.passi;
+      const annuncia = (passo, coda) => {
+        const i = passi.indexOf(passo) + 1;
         setBusy(t('zack.working'));
-        setBusyNote(null);
+        setBusyNote([`${i}/${passi.length} · ${t(`zack.step.${passo}`)}`, coda].filter(Boolean).join(' · '));
+      };
+
+      if (piano.passi.includes('scontorna')) {
+        annuncia('scontorna');
+        setQuanto(null);
         const started = Date.now();
         current = await engine.cutout(current, s.model);
         pushResult({
@@ -684,7 +713,8 @@ export default function App() {
       }
 
       if (piano.passi.includes('buchi')) {
-        setBusy(t('zack.working'));
+        annuncia('buchi');
+        setQuanto(null);
         const esito = await closeHoles(current);
         if (esito.richiusi > 0) {
           current = esito.blob;
@@ -701,11 +731,18 @@ export default function App() {
       }
 
       if (piano.passi.includes('ingrandisci')) {
-        setBusy(t('zack.working'));
+        annuncia('ingrandisci');
         setUpscaling(true);
         const bmp = await createImageBitmap(current);
+        // I secondi che restano davvero, ricalcolati sulle piastrelle già
+        // fatte: è la stessa cosa che fa l'ingrandimento da solo, e non c'era
+        // ragione perché la catena che lo contiene ne dicesse di meno.
+        const totali = piano.secondi;
         const out = await engine.upscale(bmp, piano.scaleId, (phase, d) => {
-          if (d?.done) setBusyNote(`${d.done}/${d.total}`);
+          if (!d?.done) return;
+          const fatto = d.done / d.total;
+          setQuanto(fatto);
+          annuncia('ingrandisci', t('upscale.estimate', { sec: Math.round((1 - fatto) * totali) }));
         });
         const cv = document.createElement('canvas');
         cv.width = out.width;
@@ -752,6 +789,7 @@ export default function App() {
       setUpscaling(false);
       setBusy(null);
       setBusyNote(null);
+      setQuanto(null);
     }
   }
 
@@ -1101,7 +1139,13 @@ export default function App() {
               file sul piano: c'è una tela, e i suoi comandi stanno sopra di
               lei. Lasciarla visibile faceva credere che il tasto Zack agisse
               su ciò che si stava guardando. */}
-          {!isEditor && tool !== 'suono' && tool !== 'brain' && (
+          {/* La barra sopra la tela parla del file sul piano di lavoro, che è
+              un'immagine. Nei servizi che lavorano su altro non ha senso, e
+              `filmato` era rimasto fuori dalla lista mentre veniva aggiunto
+              dappertutto: chi apriva Filmato si trovava sopra il nome di un
+              JPG e il tasto Zack, che avrebbe scontornato l'immagine mentre
+              lui guardava una clip. */}
+          {!isEditor && !['suono', 'brain', 'filmato'].includes(tool) && (
             <StageBar
               file={file}
               image={stats?.image}
@@ -1219,6 +1263,7 @@ export default function App() {
               after={result?.url}
               busy={busy}
               busyNote={busyNote}
+              quanto={quanto}
               labels={['originale', tool === 'scontorna' ? 'scontornato' : 'vettoriale']}
             />
           ) : (
