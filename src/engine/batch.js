@@ -178,3 +178,29 @@ export function summarize(jobs) {
 export function sostituisciRisultato(results = [], file, blob) {
   return results.map((r) => (r.file === file ? { ...r, blob } : r));
 }
+
+/**
+ * Un file lavorato in blocco produce UN asset, non uno per passo.
+ *
+ * Nel Blocco scontorno e ingrandimento salvavano entrambi — e con lo STESSO
+ * nome, perché il suffisso l'abbiamo tolto apposta. Il risultato: due voci
+ * identiche in elenco, di cui una invisibile, visto che la griglia mostra solo
+ * l'ultimo passaggio. Misurato sui file del committente il 2026-08-27: 45,9 MB
+ * l'uno, cioè un paio di gigabyte su quaranta file che nessuno guarderà mai.
+ *
+ * Ora l'ingrandimento **sovrascrive** l'asset dello scontorno. Non si salta il
+ * primo salvataggio: la differenza conta se il blocco viene fermato a metà —
+ * chi si ferma dopo lo scontorno deve trovarselo in libreria, non scoprire che
+ * era un passo intermedio e non è stato tenuto.
+ *
+ * Questa funzione esiste perché quella sovrascrittura **dipende dall'ordine**:
+ * regge solo finché `planJobs` mette lo scontorno prima dell'ingrandimento
+ * sullo stesso file. Invertirli farebbe sovrascrivere l'ingrandito con lo
+ * scontorno, in silenzio, e il file buono sparirebbe.
+ */
+export function scontornoPrimaDiIngrandire(jobs, file) {
+  const suQuelFile = jobs.filter((j) => j.file === file).map((j) => j.op);
+  const i = suQuelFile.indexOf(OPS.cutout);
+  const j = suQuelFile.indexOf(OPS.upscale);
+  return i === -1 || j === -1 || i < j;
+}

@@ -61,6 +61,16 @@ export function useBatch({ engine, library, model }) {
       // non l'originale. È il motivo per cui l'ordine è per file.
       const latest = new Map();
 
+      /**
+       * L'asset che ogni file ha già in libreria, dentro QUESTO giro.
+       *
+       * Una mappa locale e non lo stato `results`: dentro un ciclo asincrono
+       * `results` è il valore catturato alla partenza, e a metà blocco sarebbe
+       * sempre vuoto. Serve a far sovrascrivere all'ingrandimento l'asset
+       * dello scontorno invece di crearne un secondo con lo stesso nome.
+       */
+      const assetiDelGiro = new Map();
+
       try {
         for (;;) {
           const job = nextJob(list);
@@ -83,6 +93,7 @@ export function useBatch({ engine, library, model }) {
                 kind: 'png',
                 meta: { op: 'remove-bg', batch: true },
               });
+              assetiDelGiro.set(job.file, asset?.id ?? null);
               setResults((r) => [...r, { file: job.file, blob, assetId: asset?.id }]);
             } else if (job.op === OPS.upscale) {
               // Il fattore lo decide il file, non l'utente: quaranta immagini
@@ -103,11 +114,37 @@ export function useBatch({ engine, library, model }) {
               cv.getContext('2d').putImageData(new ImageData(up.rgba, up.width, up.height), 0, 0);
               const big = await new Promise((r) => cv.toBlob(r, 'image/png'));
               latest.set(job.file, big);
-              const grande = await library.save(big, {
-                name: job.file.name.replace(/\.[^.]+$/, ''),
-                kind: 'png',
-                meta: { op: 'ready', scale: plan.scaleId, batch: true },
-              });
+              /*
+               * L'ingrandimento SOVRASCRIVE l'asset dello scontorno.
+               *
+               * Prima ne salvava un secondo, con lo stesso identico nome — il
+               * suffisso l'abbiamo tolto apposta — e la griglia mostra solo
+               * l'ultimo passaggio: quello di mezzo restava in libreria,
+               * invisibile, a pesare 45 MB per file. Su quaranta erano un paio
+               * di gigabyte che nessuno avrebbe mai guardato.
+               *
+               * Si sovrascrive invece di saltare il primo salvataggio, perché
+               * il blocco si può fermare a metà: chi si ferma dopo lo scontorno
+               * deve trovarselo in libreria, non scoprire che era un passo
+               * intermedio e non è stato tenuto.
+               */
+              const gia = assetiDelGiro.get(job.file) ?? null;
+              const meta = { op: 'ready', scale: plan.scaleId, batch: true };
+              let grande;
+              if (gia) {
+                await library.sovrascrivi(gia, big);
+                // `sovrascriviAsset` cambia i byte e il peso, non il `meta`:
+                // senza questa riga l'asset resterebbe etichettato `remove-bg`
+                // dopo essere stato ingrandito. Un'etichetta sbagliata non
+                // rompe niente oggi e si scopre mesi dopo.
+                grande = await library.update(gia, { meta });
+              } else {
+                grande = await library.save(big, {
+                  name: job.file.name.replace(/\.[^.]+$/, ''),
+                  kind: 'png',
+                  meta,
+                });
+              }
               // Il risultato mostrato è l'ULTIMO passaggio, non lo scontorno:
               // chi guarda la griglia vuole vedere il file che si porterà via,
               // e scaricare quello a metà catena sarebbe una trappola muta.

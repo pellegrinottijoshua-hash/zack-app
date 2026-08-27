@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   planJobs,
   sostituisciRisultato,
+  scontornoPrimaDiIngrandire,
   isEmptyPlan,
   progressOf,
   estimateRemaining,
@@ -208,4 +209,20 @@ test('correggere un file che non e nella lista non inventa una riga', () => {
   const results = [{ file: { name: 'uno.png' }, blob: 'x', assetId: 'A' }];
   const dopo = sostituisciRisultato(results, { name: 'altro.png' }, 'y');
   assert.deepEqual(dopo, results);
+});
+
+test('lo scontorno viene sempre prima dell ingrandimento, sullo stesso file', () => {
+  // L'ingrandimento SOVRASCRIVE l'asset dello scontorno invece di crearne un
+  // secondo con lo stesso nome. Regge solo grazie a quest'ordine: invertirlo
+  // farebbe sovrascrivere l'ingrandito con lo scontorno, in silenzio, e il
+  // file buono sparirebbe senza che niente si lamenti.
+  const files = [{ name: 'a.png' }, { name: 'b.png' }];
+  const jobs = planJobs(files, { cutout: true, upscale: true, exportPresets: ['gelato-front'] });
+  for (const f of files) assert.equal(scontornoPrimaDiIngrandire(jobs, f), true);
+});
+
+test('un piano senza uno dei due passi non ha un ordine da rompere', () => {
+  const f = { name: 'a.png' };
+  assert.equal(scontornoPrimaDiIngrandire(planJobs([f], { cutout: true }), f), true);
+  assert.equal(scontornoPrimaDiIngrandire(planJobs([f], { upscale: true }), f), true);
 });
