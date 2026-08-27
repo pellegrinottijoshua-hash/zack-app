@@ -10,7 +10,30 @@ import {
   RESTORE,
 } from '../engine/brush.js';
 
-const SIZES = [10, 25, 60, 120];
+/**
+ * Le misure del pennello, in pixel DELLO SCHERMO.
+ *
+ * Il 4 non c'era, e il committente ci ha sbattuto contro (2026-08-27): quando
+ * lo scontorno fallisce del tutto — non vede nemmeno il disco colorato dietro
+ * il soggetto — rifare il bordo col 10 e' come disegnare un contorno con un
+ * pennarello. Il 4 e' il piu' piccolo che resti visibile e afferrabile col
+ * dito su un telefono.
+ *
+ * Sono pixel dello SCHERMO, non dell'immagine: `raggio = (size / 2) * scale`
+ * converte, quindi zoomando lo stesso tasto copre meno pixel veri. Le due
+ * lamentele — «la matita non e' abbastanza piccola» e «non si puo' zoomare» —
+ * sono la stessa lamentela, e lo zoom e' la meta' che mancava.
+ */
+const SIZES = [4, 10, 25, 60, 120];
+
+/**
+ * Quanto si puo' ingrandire la tela.
+ *
+ * Otto volte: su un file da 4096 px mostrato a 800 significa arrivare a circa
+ * 1,6 pixel dell'immagine per pixel dello schermo, cioe' vedere il bordo per
+ * quello che e'. Oltre si guarda l'interpolazione, non il file.
+ */
+const ZOOM_MAX = 8;
 const MAX_UNDO = 12;
 
 /**
@@ -70,6 +93,7 @@ export default function MaskBrush({ source, cutout, onChange, onDone }) {
   const [mode, setMode] = useState('erase');
   const [size, setSize] = useState(25);
   const [dirty, setDirty] = useState(false);
+  const [zoom, setZoom] = useState(1);
   const [canUndo, setCanUndo] = useState(false);
   // Vero quando la sorgente non è utilizzabile: il recupero funziona ancora
   // dove il colore è sopravvissuto, ma va detto prima, non scoperto dipingendo.
@@ -210,6 +234,26 @@ export default function MaskBrush({ source, cutout, onChange, onDone }) {
           {t('brush.restore')}
         </button>
 
+        <span className="brush-zoom">
+          <button
+            onClick={() => setZoom((z) => Math.max(1, Math.round(z / 1.5)))}
+            disabled={zoom <= 1}
+            aria-label={t('brush.zoomOut')}
+          >
+            −
+          </button>
+          {/* Il numero, non un'icona: chi corregge un bordo vuole sapere DOVE
+              sta, e «3x» lo dice mentre una lente non lo dice. */}
+          <b>{zoom}×</b>
+          <button
+            onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z < 2 ? 2 : z + 2))}
+            disabled={zoom >= ZOOM_MAX}
+            aria-label={t('brush.zoomIn')}
+          >
+            +
+          </button>
+        </span>
+
         <span className="brush-sizes">
           {SIZES.map((s) => (
             <button key={s} aria-pressed={size === s} onClick={() => setSize(s)} aria-label={`${s}px`}>
@@ -228,14 +272,24 @@ export default function MaskBrush({ source, cutout, onChange, onDone }) {
 
       {limited && mode === 'restore' && <p className="verdict" data-level="attenzione">{t('brush.limited')}</p>}
 
-      <div className="brush-stage">
+      {/* Ingrandire la tela e' l'altra meta' del pennello piccolo: il raggio e'
+          in pixel dello schermo, quindi a 8x lo stesso tasto copre otto volte
+          meno pixel veri. Lo spostamento e' lo SCORRIMENTO nativo del
+          contenitore — niente trascinamenti da reinventare, e funziona gia'
+          con trackpad, dita e barre. */}
+      <div className="brush-stage" data-zoom={zoom > 1 || undefined}>
         <canvas
           ref={canvasRef}
           onPointerDown={begin}
           onPointerMove={(e) => e.buttons && move(e)}
           onPointerUp={end}
           onPointerLeave={end}
-          style={{ cursor: 'crosshair', touchAction: 'none' }}
+          style={{
+            cursor: 'crosshair',
+            touchAction: 'none',
+            width: zoom > 1 ? `${zoom * 100}%` : undefined,
+            maxWidth: zoom > 1 ? 'none' : undefined,
+          }}
         />
       </div>
     </div>

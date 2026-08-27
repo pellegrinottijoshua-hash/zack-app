@@ -4167,3 +4167,47 @@ body {
   height: 17px;
   flex: none;
 }
+
+/* Lo zoom del pennello. Il contenitore scorre invece di trasformare la tela:
+   lo spostamento diventa lo scorrimento nativo, che funziona già con dita,
+   trackpad e barre — e `getBoundingClientRect()` lo tiene in conto da solo,
+   quindi la conversione punto→pixel non cambia di una riga. */
+.brush-stage[data-zoom] {
+  overflow: auto;
+  /* `flex: none` e un'altezza VERA, non `flex: 1`.
+     La trappola era già scritta e l'ho ripresa in pieno (2026-08-27):
+     `overflow` su un elemento flex azzera la dimensione minima automatica, e
+     con `flex: 1 1 0%` la tela è collassata a 15 px di altezza col disegno
+     dentro. Vale per `auto` esattamente come per `hidden`. */
+  flex: none;
+  height: min(68vh, 560px);
+}
+
+.brush-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+.brush-zoom button {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--linea-viva);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--inchiostro-2);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.brush-zoom button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.brush-zoom b {
+  min-width: 26px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--inchiostro-2);
+}

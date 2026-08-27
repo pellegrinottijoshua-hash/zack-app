@@ -395,7 +395,10 @@
     "restoreHelp": "Restores parts of the subject the automatic pass removed by mistake.",
     "apply": "Apply",
     "open": "Fix by hand",
-    "limited": "Limited recovery: the starting file has different dimensions, so the colour in the already-erased areas is gone. Reopen the original file to get it back."
+    "limited": "Limited recovery: the starting file has different dimensions, so the colour in the already-erased areas is gone. Reopen the original file to get it back.",
+    "backToBatch": "Fixed, and it went back into the batch.",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out"
   },
   "upscale": {
     "title": "Enlarge",

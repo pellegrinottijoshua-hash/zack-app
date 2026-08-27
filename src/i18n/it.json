@@ -395,7 +395,10 @@
     "restoreHelp": "Riporta indietro le parti del soggetto che l'automatico ha tolto per errore.",
     "apply": "Applica",
     "open": "Correggi a mano",
-    "limited": "Recupero limitato: il file di partenza ha un'altra dimensione, quindi nelle zone già cancellate il colore non c'è più. Riapri il file originale per recuperarle."
+    "limited": "Recupero limitato: il file di partenza ha un'altra dimensione, quindi nelle zone già cancellate il colore non c'è più. Riapri il file originale per recuperarle.",
+    "backToBatch": "Corretto, ed è tornato nel blocco.",
+    "zoomIn": "Ingrandisci",
+    "zoomOut": "Rimpicciolisci"
   },
   "upscale": {
     "title": "Ingrandisci",
