@@ -232,7 +232,7 @@ export default function Landing() {
             prodotto e' Zack App e lo dice il tasto al centro; qui sta il
             marchio di chi lo fa. */}
         <a className="lp-marchio" href="/" aria-label="JAYL">
-          <img src="/jayl-mark.svg" alt="" aria-hidden="true" width="34" height="34" />
+          <img src="/jayl-mark-oro.svg" alt="" aria-hidden="true" width="46" height="46" />
         </a>
         <span className="spacer" />
         <div className="langswitch">
@@ -255,20 +255,6 @@ export default function Landing() {
         <Ritaglio c={c} ricetta={ricetta} onRicetta={commuta} />
 
       </section>
-
-      {/* ─── l'insegna: dove il panna finisce e comincia il racconto ─────
-          Il fondo scuro dell'immagine È il disegno, quindi non si scontorna e
-          non si mette sul panna: fa da soglia fra i due mondi della pagina. */}
-      <img
-        className="lp-insegna"
-        src="/zack/hero.webp"
-        srcSet="/zack/hero-800.webp 800w, /zack/hero.webp 1600w"
-        sizes="100vw"
-        alt="Zack the Duck"
-        width="1600"
-        height="1195"
-        loading="lazy"
-      />
 
       {/* ─── apertura ────────────────────────────────────────────────── */}
       <section className="lp-hero">

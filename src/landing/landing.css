@@ -49,15 +49,17 @@ body {
 
 /* ─── barra in alto ─────────────────────────────────────────────────────── */
 
+/* Il marchio in oro, e piu' grande: sul nero l'oro e' l'unico dei tre colori
+   che si vede da lontano, ed e' il 10% della palette speso dove conta. */
 .lp-marchio {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
 }
 .lp-marchio img {
-  width: 34px;
-  height: 34px;
+  width: 46px;
+  height: 46px;
 }
 
 .lp-nav {
@@ -68,11 +70,9 @@ body {
   align-items: center;
   gap: 14px;
   padding: 14px clamp(16px, 4vw, 48px);
-  /* Niente barra nera sopra un primo schermo panna: era una riga scura che
-     tagliava la pagina in due prima ancora che cominciasse. Il velo panna
-     serve solo a tenere leggibili i comandi quando sotto scorre il racconto
-     scuro. */
-  background: rgba(245, 240, 232, 0.9);
+  /* Nera sopra, panna sotto. Il nero da togliere era la banda SOTTO il primo
+     schermo, non questa barra. */
+  background: rgba(17, 17, 17, 0.92);
   backdrop-filter: blur(10px);
   border-bottom: 0;
 }
@@ -690,7 +690,9 @@ body {
      del testo va ridichiarato o si eredita panna su panna. */
   background: var(--panna);
   color: var(--nero);
-  min-height: 82vh;
+  /* Tutta la finestra meno la barra: cosi' il nero del racconto comincia
+     DOPO il primo schermo, e non ne mangia l'ultimo pezzo. */
+  min-height: calc(100vh - 72px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -708,6 +710,9 @@ body {
    file, che saran ben visibili grandi a sinistra». */
 
 .rit-lato {
+  /* Larga quanto la pagina, o la mascotte — che si appoggia al bordo DESTRO
+     del gruppo — si appoggerebbe al bordo del tasto e gli finirebbe sopra. */
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -717,12 +722,38 @@ body {
 /* Il tasto al centro e la mascotte SUBITO a destra, alta quasi quanto lui.
    `align-items: flex-end` perche' Zack sta in piedi: allineare i due centri
    lo farebbe galleggiare sopra la base del tasto. */
+/* Il tasto e' centrato dal flusso, la mascotte e' FUORI dal flusso.
+   Le tre colonne non bastavano: una colonna `1fr` ha comunque una larghezza
+   minima pari al suo contenuto, quindi quella della mascotte (400 px) spingeva
+   la colonna di mezzo a sinistra — misurato, 212 px fuori centro. Togliendo la
+   mascotte dal flusso, il centro del tasto e' il centro della pagina e resta
+   tale qualunque cosa le stia accanto. */
 .rit-riga {
+  position: relative;
   display: flex;
-  flex-direction: row;
-  align-items: flex-end;
   justify-content: center;
-  gap: clamp(4px, 1.5vw, 24px);
+  align-items: flex-end;
+  width: 100%;
+}
+.rit-riga > .rit-zack {
+  position: absolute;
+  /* Fino al margine del gruppo: piu' a destra non puo' andare senza uscire
+     dalla pagina, ed e' li' che il committente la vuole. */
+  right: 0;
+  bottom: 0;
+}
+
+/* Su schermo stretto la mascotte tornerebbe sopra il tasto: li' rientra nel
+   flusso e si mette sotto, piu' piccola. */
+@media (max-width: 900px) {
+  .rit-riga {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .rit-riga > .rit-zack {
+    position: static;
+    height: clamp(120px, 26vw, 200px);
+  }
 }
 
 /* Senza file il tasto e il claim stanno in colonna, e Zack di fianco. */
@@ -737,7 +768,7 @@ body {
 .rit-zack {
   flex: none;
   width: auto;
-  height: clamp(150px, 24vw, 340px);
+  height: clamp(160px, 28vw, 400px);
   pointer-events: none;
   user-select: none;
 }
@@ -829,7 +860,7 @@ body {
 .zack-oval {
   display: block;
   padding: 0;
-  width: clamp(260px, 42vw, 620px);
+  width: clamp(300px, 52vw, 820px);
   /* Il tasto e' un'IMMAGINE: niente fondo, niente cornice, niente testo. Il
      filo d'oro e l'ovale li disegna il file, ed e' quello che il committente
      ha fatto. Un bordo CSS sopra ne disegnerebbe un secondo. */
@@ -1384,18 +1415,31 @@ body {
 }
 
 
-/* Cambiato il fondo della barra da nero a panna, va cambiato anche
-   l'inchiostro: e' la trappola gia' pagata due volte in questo progetto —
-   chi cambia il fondo si prende anche l'inchiostro. */
+
+/* IT / EN come cerchi: sono due, sono corti, e un cerchio dice «scelta» meglio
+   di un rettangolo — la stessa forma dei servizi nello studio. */
+.lp-nav .langswitch {
+  display: flex;
+  gap: 6px;
+  border: 0;
+  padding: 0;
+  background: none;
+}
 .lp-nav .langswitch button {
-  color: var(--grigio-scuro);
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid var(--linea-viva);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--grigio);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
 }
 .lp-nav .langswitch button[aria-pressed='true'] {
-  color: var(--nero);
-  border-color: var(--nero);
-}
-.lp-nav .lp-cta.small {
-  background: var(--nero);
-  color: var(--panna);
-  border-color: var(--nero);
+  border-color: var(--oro);
+  color: var(--oro);
 }
