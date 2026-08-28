@@ -1,14 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  MAX_FILE,
-  aPng,
-  applicaAlfa,
-  mb,
-  pennella,
-  pixelDaFile,
-  ritaglioIstantaneo,
-  scaricaModello,
-} from './ritaglio.js';
+import { MAX_FILE, aPng, applicaAlfa, mb, pixelDaFile, ritaglioIstantaneo, scaricaModello } from './ritaglio.js';
+import { guidaDritta, maniglia, pennellaGuidato, puntoDellaGuida, spostaManiglia } from '../engine/righello.js';
 
 /**
  * Lo strumento gratuito della home: togli lo sfondo, fino a tre per volta.
@@ -20,22 +12,36 @@ import {
  * 1. **Il motore non si carica finché non serve.** ONNX e i modelli entrano
  *    con un `import()` solo quando un file trascinato ne ha davvero bisogno —
  *    chi arriva, legge e se ne va non scarica un byte, e nemmeno chi porta uno
- *    sticker. È la regola scritta in `vite.config.js`, e continua a valere
- *    adesso che la home lavora;
+ *    sticker;
  * 2. **Prima si prova senza modello.** Uno sticker, un logo, un'illustrazione
- *    su tinta unita si ritagliano in venti millisecondi con `keying.js`. Il
- *    modello da 175 MB si scarica solo per le immagini che ne hanno davvero
- *    bisogno, ed è la differenza fra «un clic» e «un minuto e mezzo»;
+ *    su tinta unita si ritagliano in venti millisecondi con `keying.js`;
  * 3. **L'attesa si dice in megabyte.** Dove non c'è una misura non c'è un
  *    avviso.
+ *
+ * L'impianto segue `docs/2026-08-28-contratto-ux.md`: gli strumenti compaiono
+ * **dopo** il risultato, e la misura del tratto compare quando si sceglie uno
+ * strumento — prima non c'è niente da correggere e niente da misurare.
  */
 
-/** Da coordinate del mouse a coordinate dell'immagine, che non è la stessa cosa. */
-function puntoSuImmagine(e, canvas, w, h) {
-  const box = canvas.getBoundingClientRect();
+/**
+ * Le misure del tratto, in pixel dello SCHERMO.
+ *
+ * Le stesse del pennello dello studio, e per la stessa ragione misurata il
+ * 2026-08-27: il raggio si converte in pixel dell'immagine dividendo per lo
+ * zoom, quindi a 8× la più fine copre 3 pixel veri invece di 24.
+ */
+const MISURE = [4, 10, 25, 60, 120];
+const ZOOM_MAX = 8;
+
+/** I tre strumenti del contratto. Il righello non dipinge: guida chi dipinge. */
+const STRUMENTI = ['righello', 'ripristina', 'cancella'];
+
+/** Da punto sullo schermo a pixel dell'immagine, qualunque sia lo zoom. */
+function suImmagine(e, canvas) {
+  const r = canvas.getBoundingClientRect();
   return {
-    x: ((e.clientX - box.left) / box.width) * w,
-    y: ((e.clientY - box.top) / box.height) * h,
+    x: ((e.clientX - r.left) / r.width) * canvas.width,
+    y: ((e.clientY - r.top) / r.height) * canvas.height,
   };
 }
 
@@ -45,29 +51,17 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
   const [scarico, setScarico] = useState(null);
   const [avviso, setAvviso] = useState(null);
   const [troppi, setTroppi] = useState(false);
-  const [scelto, setScelto] = useState(null);
-  const [modo, setModo] = useState('rimetti');
+  const [strumento, setStrumento] = useState(null);
+  const [misura, setMisura] = useState(25);
+  const [zoom, setZoom] = useState({});
+  const [guide, setGuide] = useState({});
   const [personalizza, setPersonalizza] = useState(false);
   const [sopra, setSopra] = useState(false);
 
   const motore = useRef(null);
   const tele = useRef({});
-  const disegna = useRef(false);
+  const trascino = useRef(null);
 
-  /**
-   * Il motore, caricato solo quando si sa che serve davvero.
-   *
-   * La prima versione lo scaricava al passaggio del mouse sul tasto, per
-   * guadagnare i secondi del finder. Sbagliata: scaricava 175 MB anche per
-   * un'immagine che si ritaglia in venti millisecondi senza modello, cioè
-   * annullava esattamente il vantaggio di `keying.js`.
-   *
-   * La regola giusta è più tardi e più mirata: **appena i file entrano** si
-   * prova l'istantaneo — costa venti millisecondi — e il modello parte solo se
-   * almeno uno non ce l'ha fatta. Chi porta sticker e illustrazioni non
-   * scarica niente, mai; chi porta una fotografia trova il modello già a metà
-   * strada quando preme.
-   */
   const preparaMotore = useCallback(async () => {
     if (motore.current) return motore.current;
     const [{ createEngine }, cap] = await Promise.all([
@@ -75,40 +69,30 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
       import('../engine/capabilities.js'),
     ]);
     const tier = cap.pickTier(await cap.detectWebGpu(navigator.gpu));
-    // `defaultModelFor` restituisce il MODELLO, non il suo id: passarlo a
-    // `getModel` dava «Modello sconosciuto: [object Object]» (2026-08-27).
-    // Il modello lo sceglie il prodotto, non questa pagina: un secondo posto
-    // dove si decide quale rete usare è un secondo posto dove sbagliare.
+    // `defaultModelFor` restituisce il MODELLO, non il suo id: il modello lo
+    // sceglie il prodotto, non questa pagina.
     const model = cap.defaultModelFor(tier);
-    const modelId = model.id;
-
-    // Prima i byte, con la barra. Poi il motore, che li ritrova in cache.
-    await scaricaModello(model.url, ({ fatti, totale, frazione }) =>
-      setScarico({ fatti, totale, frazione }),
-    );
+    await scaricaModello(model.url, (d) => setScarico(d));
     setScarico(null);
-
     const engine = createEngine();
     await engine.init(tier);
-    motore.current = { engine, modelId };
+    motore.current = { engine, modelId: model.id };
     return motore.current;
   }, []);
 
   useEffect(() => () => motore.current?.engine.dispose(), []);
 
-  /** Accetta i file, e il quarto diventa l'invito allo studio. */
   const accetta = useCallback(
     async (lista) => {
       const immagini = [...lista].filter((f) => /^image\//.test(f.type));
       if (!immagini.length) return;
       if (immagini.length > MAX_FILE) setTroppi(true);
 
-      const presi = immagini.slice(0, MAX_FILE);
       setAvviso(null);
       setBusy(c.tool.reading);
       try {
         const nuovi = [];
-        for (const f of presi) {
+        for (const f of immagini.slice(0, MAX_FILE)) {
           const src = await pixelDaFile(f);
           // Venti millisecondi per sapere se il modello servirà: si paga qui,
           // una volta, invece di far pagare a tutti lo scaricamento.
@@ -119,16 +103,12 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
             src,
             alpha: null,
             pronto: istante ? istante.alpha : null,
-            url: null,
             via: null,
           });
         }
         setLavori(nuovi);
-        setScelto(null);
-
-        // Se anche uno solo ha bisogno del modello, i byte partono adesso:
-        // l'utente sta ancora guardando le miniature, e quei secondi sono
-        // gratis. Se nessuno ne ha bisogno, non parte niente. Mai.
+        setStrumento(null);
+        setGuide({});
         if (nuovi.some((l) => !l.pronto)) preparaMotore().catch(() => {});
       } catch {
         setAvviso(c.tool.unreadable);
@@ -139,21 +119,16 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
     [c, preparaMotore],
   );
 
-  /** Il tasto Zack: prova l'istantaneo, e scende al modello solo se serve. */
   async function premiZack() {
     if (!lavori.length || busy) return;
     setAvviso(null);
     const fatti = [];
-
     try {
-      // La prova istantanea è già stata fatta quando i file sono entrati:
-      // qui si raccoglie soltanto il risultato.
       const restano = [];
       for (const l of lavori) {
         if (l.pronto) fatti.push({ ...l, alpha: l.pronto, via: 'istante' });
         else restano.push(l);
       }
-
       if (restano.length) {
         setBusy(c.tool.preparing);
         const { engine, modelId } = await preparaMotore();
@@ -168,19 +143,10 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
           fatti.push({ ...l, alpha, via: 'modello' });
         }
       }
-
-      const conUrl = await Promise.all(
-        fatti.map(async (l) => {
-          const blob = await aPng(applicaAlfa(l.src, l.alpha));
-          return { ...l, blob, url: URL.createObjectURL(blob) };
-        }),
-      );
-      // L'ordine di partenza, non quello di arrivo: chi ha trascinato tre file
-      // se li aspetta nell'ordine in cui li ha trascinati.
+      // L'ordine di partenza, non quello di arrivo.
       const ordine = lavori.map((l) => l.id);
-      conUrl.sort((a, b) => ordine.indexOf(a.id) - ordine.indexOf(b.id));
-
-      setLavori(conUrl);
+      fatti.sort((a, b) => ordine.indexOf(a.id) - ordine.indexOf(b.id));
+      setLavori(fatti);
       setPersonalizza(true);
     } catch (e) {
       console.error(e);
@@ -191,34 +157,124 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
     }
   }
 
-  /** Ridisegna una tela dopo una pennellata. */
-  const ridipingi = useCallback(async (l) => {
-    const cv = tele.current[l.id];
-    if (!cv) return;
-    cv.getContext('2d').putImageData(applicaAlfa(l.src, l.alpha), 0, 0);
-  }, []);
+  /**
+   * Ridisegna una tela: prima i pixel, poi la guida sopra.
+   *
+   * La guida si disegna qui e non in un livello a parte perché deve stare
+   * **sopra il risultato ma sotto niente**: un elemento separato allineato al
+   * canvas si scollerebbe al primo zoom.
+   */
+  const ridipingi = useCallback(
+    (l) => {
+      const cv = tele.current[l.id];
+      if (!cv) return;
+      const cx = cv.getContext('2d');
+      cx.putImageData(
+        l.alpha ? applicaAlfa(l.src, l.alpha) : new ImageData(new Uint8ClampedArray(l.src.rgba), l.src.w, l.src.h),
+        0,
+        0,
+      );
+
+      const g = guide[l.id];
+      if (!g) return;
+      const spessore = Math.max(2, l.src.w / 400);
+      cx.save();
+      cx.strokeStyle = '#c4a35a';
+      cx.lineWidth = spessore;
+      cx.beginPath();
+      cx.moveTo(g.a.x, g.a.y);
+      cx.quadraticCurveTo(g.c.x, g.c.y, g.b.x, g.b.y);
+      cx.stroke();
+      // Le tre maniglie: due estremi e quella di curvatura. Senza un pallino
+      // suo, la curvatura non si scopre mai.
+      cx.fillStyle = '#c4a35a';
+      for (const p of [g.a, g.b, puntoDellaGuida(g, 0.5)]) {
+        cx.beginPath();
+        cx.arc(p.x, p.y, spessore * 3, 0, Math.PI * 2);
+        cx.fill();
+      }
+      cx.restore();
+    },
+    [guide],
+  );
 
   useEffect(() => {
-    for (const l of lavori) if (l.alpha) ridipingi(l);
+    for (const l of lavori) ridipingi(l);
   }, [lavori, ridipingi]);
 
-  function pennellata(e, l) {
+  function giu(e, l) {
+    if (!l.alpha || !strumento) return;
+    const cv = tele.current[l.id];
+    // La cattura del puntatore serve a non perdere il tratto se il dito esce
+    // dalla tela, ma NON deve poter interrompere il gesto: su un puntatore che
+    // il browser non riconosce solleva, e senza questo `try` la pennellata non
+    // partiva affatto (2026-08-28).
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* si dipinge lo stesso, si perde solo il tratto fuori dalla tela */
+    }
+    const p = suImmagine(e, cv);
+
+    if (strumento === 'righello') {
+      const g = guide[l.id];
+      const presa = Math.max(14, l.src.w / 40);
+      const quale = g ? maniglia(g, p, { presa }) : null;
+      // Senza guida, il primo trascinamento la crea. Con guida, si afferra
+      // una maniglia; toccando lontano se ne ricomincia una nuova.
+      trascino.current = quale
+        ? { id: l.id, quale, ultimo: p }
+        : { id: l.id, quale: 'nuova', da: p };
+      if (!quale) setGuide((g0) => ({ ...g0, [l.id]: guidaDritta(p, p) }));
+      return;
+    }
+
+    trascino.current = { id: l.id, quale: 'pennello' };
+    pennellata(p, l);
+  }
+
+  function muovi(e, l) {
+    const t = trascino.current;
+    if (!t || t.id !== l.id || !e.buttons) return;
+    const p = suImmagine(e, tele.current[l.id]);
+
+    if (t.quale === 'pennello') return pennellata(p, l);
+
+    if (t.quale === 'nuova') {
+      setGuide((g0) => ({ ...g0, [l.id]: guidaDritta(t.da, p) }));
+      return;
+    }
+    setGuide((g0) => ({
+      ...g0,
+      [l.id]: spostaManiglia(g0[l.id], t.quale, { x: p.x - t.ultimo.x, y: p.y - t.ultimo.y }),
+    }));
+    trascino.current = { ...t, ultimo: p };
+  }
+
+  /**
+   * Una pennellata, eventualmente fermata dalla guida.
+   *
+   * Il raggio è in pixel dell'IMMAGINE: la misura scelta è in pixel dello
+   * schermo, e si divide per lo zoom — è il motivo per cui a 8× la matita più
+   * fine copre 3 pixel veri invece di 24.
+   */
+  function pennellata(p, l) {
     if (!l.alpha) return;
     const cv = tele.current[l.id];
-    const p = puntoSuImmagine(e, cv, l.src.w, l.src.h);
-    // Il raggio in pixel dell'IMMAGINE, non dello schermo: su un file di
-    // stampa un pennello di 24 px a schermo tocca quattro pixel veri.
-    const raggio = Math.max(8, Math.round(l.src.w / 40));
-    pennella(l.alpha, l.src.w, l.src.h, {
-      ...p,
-      raggio,
-      valore: modo === 'rimetti' ? 255 : 0,
-    });
+    const scala = l.src.w / cv.getBoundingClientRect().width;
+    pennellaGuidato(
+      l.alpha,
+      l.src.w,
+      l.src.h,
+      { ...p, raggio: Math.max(1, (misura / 2) * scala), valore: strumento === 'ripristina' ? 255 : 0 },
+      guide[l.id] || null,
+      { modo: 'barriera' },
+    );
     ridipingi(l);
   }
 
   async function scarica(l) {
-    const blob = l.blob || (await aPng(applicaAlfa(l.src, l.alpha)));
+    const blob = await aPng(applicaAlfa(l.src, l.alpha));
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `${l.nome}-zack.png`;
@@ -226,8 +282,10 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
     setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
   }
 
-  const pronti = lavori.filter((l) => l.alpha);
-  const passo = (id) => ricetta.includes(id);
+  const pronti = lavori.some((l) => l.alpha);
+  const z = (id) => zoom[id] || 1;
+  const cambiaZoom = (id, d) =>
+    setZoom((s) => ({ ...s, [id]: Math.min(ZOOM_MAX, Math.max(1, (s[id] || 1) + d)) }));
 
   return (
     <div
@@ -252,7 +310,17 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
         >
           ZACK
         </button>
-        <ChePuoiFare c={c} ricetta={ricetta} />
+        {/* Il punto oro: piccolo da vedere, 44 px da premere. Sotto quella
+            misura un polpastrello sbaglia — la zona premibile sta nel CSS,
+            attorno al pallino, ed è trasparente. */}
+        <button
+          className="punto-oro"
+          aria-expanded={personalizza}
+          aria-label={c.tool.customise}
+          onClick={() => setPersonalizza((v) => !v)}
+        >
+          <i />
+        </button>
       </div>
 
       <p className="rit-claim">{c.tool.claim}</p>
@@ -266,16 +334,14 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
         onChange={(e) => accetta(e.target.files)}
       />
 
-      {!lavori.length && (
-        <p className="rit-trascina">
-          <button className="comelink" onClick={() => document.getElementById('rit-input').click()}>
-            {c.tool.pick}
-          </button>{' '}
-          {c.tool.orDrop}
-        </p>
+      {/* Il `+` si vede con uno o due file, e sparisce al terzo. */}
+      {lavori.length < MAX_FILE && (
+        <button className="rit-piu" onClick={() => document.getElementById('rit-input').click()}>
+          <b>+</b>
+          <span>{lavori.length ? c.tool.addMore : c.tool.orDrop}</span>
+        </button>
       )}
 
-      {/* ── l'attesa, detta in megabyte ─────────────────────────────────── */}
       {(busy || scarico) && (
         <div className="rit-attesa">
           <PiumaCheScrive />
@@ -293,9 +359,7 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
               </div>
               <small>
                 {scarico.totale
-                  ? c.tool.progress
-                      .replace('{fatti}', mb(scarico.fatti))
-                      .replace('{totale}', mb(scarico.totale))
+                  ? c.tool.progress.replace('{fatti}', mb(scarico.fatti)).replace('{totale}', mb(scarico.totale))
                   : mb(scarico.fatti)}
               </small>
             </>
@@ -305,65 +369,91 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
 
       {avviso && <p className="rit-avviso">{avviso}</p>}
 
-      {/* ── i risultati, e un pennello solo per tutti ────────────────────── */}
-      {lavori.length > 0 && (
-        <>
-          <div className="rit-tele">
-            {lavori.map((l) => (
-              <figure key={l.id} className="rit-tela" data-scelto={scelto === l.id || undefined}>
-                <canvas
-                  ref={(el) => {
-                    if (el) {
-                      tele.current[l.id] = el;
-                      el.width = l.src.w;
-                      el.height = l.src.h;
-                      if (l.alpha) el.getContext('2d').putImageData(applicaAlfa(l.src, l.alpha), 0, 0);
-                      else el.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(l.src.rgba), l.src.w, l.src.h), 0, 0);
-                    }
-                  }}
-                  onPointerDown={(e) => {
-                    if (!l.alpha) return;
-                    setScelto(l.id);
-                    disegna.current = true;
-                    e.currentTarget.setPointerCapture(e.pointerId);
-                    pennellata(e, l);
-                  }}
-                  onPointerMove={(e) => disegna.current && pennellata(e, l)}
-                  onPointerUp={() => {
-                    disegna.current = false;
-                  }}
-                />
-                <figcaption>
-                  <span className="rit-nome">{l.nome}</span>
-                  {l.via && (
-                    <span className="rit-via">
-                      {l.via === 'istante' ? c.tool.instant : c.tool.viaModel}
-                    </span>
-                  )}
-                  {l.alpha && (
-                    <button className="comelink" onClick={() => scarica(l)}>
-                      {c.tool.download}
-                    </button>
-                  )}
-                </figcaption>
-              </figure>
-            ))}
-          </div>
+      {/* ── gli strumenti, che compaiono DOPO il risultato ───────────────── */}
+      {pronti && (
+        <div className="rit-strumenti">
+          {STRUMENTI.map((s) => (
+            <button key={s} aria-pressed={strumento === s} onClick={() => setStrumento(strumento === s ? null : s)}>
+              {c.tool[s]}
+            </button>
+          ))}
+          {guide && Object.keys(guide).length > 0 && (
+            <button className="comelink" onClick={() => setGuide({})}>
+              {c.tool.clearGuide}
+            </button>
+          )}
 
-          {pronti.length > 0 && (
-            <div className="rit-pennello">
-              <span>{c.tool.brush}</span>
-              {['rimetti', 'togli'].map((m) => (
-                <button key={m} aria-pressed={modo === m} onClick={() => setModo(m)}>
-                  {c.tool[m]}
+          {/* La misura del tratto compare quando si sceglie uno strumento:
+              prima non c'è niente da misurare. Il righello non dipinge, quindi
+              non ha una misura sua. */}
+          {strumento && strumento !== 'righello' && (
+            <span className="rit-misure">
+              {MISURE.map((m) => (
+                <button key={m} aria-pressed={misura === m} onClick={() => setMisura(m)} aria-label={`${m}px`}>
+                  <i style={{ width: Math.min(18, m / 6), height: Math.min(18, m / 6) }} />
                 </button>
               ))}
-            </div>
+            </span>
           )}
-        </>
+        </div>
       )}
 
-      {/* ── prima notifica: fai tuo il tasto ────────────────────────────── */}
+      {lavori.length > 0 && (
+        <div className="rit-tele">
+          {lavori.map((l) => (
+            <figure key={l.id} className="rit-tela">
+              <div className="rit-vista" data-zoom={z(l.id) > 1 || undefined}>
+                <canvas
+                  ref={(el) => {
+                    if (!el) return;
+                    tele.current[l.id] = el;
+                    el.width = l.src.w;
+                    el.height = l.src.h;
+                    ridipingi(l);
+                  }}
+                  style={{
+                    cursor: strumento ? 'crosshair' : 'default',
+                    touchAction: 'none',
+                    width: z(l.id) > 1 ? `${z(l.id) * 100}%` : undefined,
+                    maxWidth: z(l.id) > 1 ? 'none' : undefined,
+                  }}
+                  onPointerDown={(e) => giu(e, l)}
+                  onPointerMove={(e) => muovi(e, l)}
+                  onPointerUp={() => {
+                    trascino.current = null;
+                  }}
+                />
+              </div>
+
+              {/* La barra dello zoom, accanto a ogni file. Senza, un bordo non
+                  si corregge: misurato, a 8× la matita più fine passa da 24
+                  pixel veri a 3. */}
+              {l.alpha && (
+                <div className="rit-zoom">
+                  <button onClick={() => cambiaZoom(l.id, 1)} disabled={z(l.id) >= ZOOM_MAX} aria-label={c.tool.zoomIn}>
+                    +
+                  </button>
+                  <b>{z(l.id)}×</b>
+                  <button onClick={() => cambiaZoom(l.id, -1)} disabled={z(l.id) <= 1} aria-label={c.tool.zoomOut}>
+                    −
+                  </button>
+                </div>
+              )}
+
+              <figcaption>
+                <span className="rit-nome">{l.nome}</span>
+                {l.via && <span className="rit-via">{l.via === 'istante' ? c.tool.instant : c.tool.viaModel}</span>}
+                {l.alpha && (
+                  <button className="comelink" onClick={() => scarica(l)}>
+                    {c.tool.download}
+                  </button>
+                )}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      )}
+
       {personalizza && (
         <div className="rit-tuo">
           <p>{c.tool.makeYours}</p>
@@ -373,6 +463,7 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
               { id: 'x2', label: '×2' },
               { id: 'd2', label: ':2' },
               { id: 'd4', label: ':4' },
+              { id: 'scarica', label: c.tool.addDownload },
             ].map((p) => (
               <button
                 key={p.id}
@@ -380,28 +471,16 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
                 aria-pressed={ricetta.includes(p.id)}
                 onClick={() => onRicetta(p.id)}
               >
-                {/* Il colore non è mai l'unico segnale: la scelta accesa prende
-                    anche il numero del suo posto nella catena, che è oro E
-                    informazione — dice in che ordine succederà. */}
-                {ricetta.includes(p.id) && (
-                  <b className="posto">{ricetta.indexOf(p.id) + 2}.</b>
-                )}
+                {/* Il colore non è mai l'unico segnale: l'accesa porta anche il
+                    numero del suo posto, che è oro E informazione. */}
+                {ricetta.includes(p.id) && <b className="posto">{ricetta.indexOf(p.id) + 2}.</b>}
                 {p.label}
               </button>
             ))}
-            <button
-              className="pastiglia"
-              aria-pressed={passo('scarica')}
-              onClick={() => onRicetta('scarica')}
-            >
-              {passo('scarica') && <b className="posto">{ricetta.length + 1}.</b>}
-              {c.tool.addDownload}
-            </button>
           </div>
         </div>
       )}
 
-      {/* ── seconda notifica: solo quando il limite lo tocca davvero ─────── */}
       {troppi && (
         <div className="rit-tre">
           <p>{c.tool.onlyThree}</p>
@@ -418,62 +497,11 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
 }
 
 /**
- * Il cerchietto che spiega.
- *
- * Un tasto che fa quattro cose senza dirlo è una scatola nera, e la prima
- * volta che sbaglia non lo si preme più. Dice cosa farà **e** che è tuo.
- */
-function ChePuoiFare({ c, ricetta }) {
-  const [aperto, setAperto] = useState(false);
-  const box = useRef(null);
-
-  useEffect(() => {
-    if (!aperto) return undefined;
-    const fuori = (e) => box.current && !box.current.contains(e.target) && setAperto(false);
-    const esc = (e) => e.key === 'Escape' && setAperto(false);
-    document.addEventListener('pointerdown', fuori);
-    document.addEventListener('keydown', esc);
-    return () => {
-      document.removeEventListener('pointerdown', fuori);
-      document.removeEventListener('keydown', esc);
-    };
-  }, [aperto]);
-
-  const passi = [c.tool.stepCutout, ...ricetta.map((r) => c.tool.steps[r]).filter(Boolean)];
-
-  return (
-    <span className="rit-info" ref={box}>
-      <button
-        className="tondo"
-        aria-expanded={aperto}
-        aria-label={c.tool.whatDoes}
-        onClick={() => setAperto((v) => !v)}
-      >
-        i
-      </button>
-      {aperto && (
-        <div className="rit-bolla">
-          <strong>{c.tool.whatDoes}</strong>
-          <ol>
-            {passi.map((p, i) => (
-              <li key={i}>{p}</li>
-            ))}
-          </ol>
-          <p>{c.tool.yours}</p>
-        </div>
-      )}
-    </span>
-  );
-}
-
-/**
  * La piuma che scrive in oro, e si cancella.
  *
- * Un `<path>` solo, disegnato e cancellato in loop: **circa 2 KB**. Misurato
- * il 2026-08-27, un solo fotogramma dello stesso gesto vettorializzato da un
- * video ne pesa 232 — e il video intero 229. Un formato vettoriale non ha
- * nozione di «fotogramma precedente»: qui il disegno lo fa il browser, e
- * costa un attributo.
+ * Un `<path>` solo: **circa 2 KB**. Misurato il 2026-08-27, un solo fotogramma
+ * dello stesso gesto vettorializzato da un video ne pesa 232 — e il video
+ * intero 229.
  */
 function PiumaCheScrive() {
   return (

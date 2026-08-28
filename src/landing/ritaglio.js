@@ -117,36 +117,3 @@ export async function scaricaModello(url, onProgress, signal) {
 export function mb(bytes) {
   return `${(bytes / 1_000_000).toFixed(0)} MB`;
 }
-
-/**
- * Un pennello tondo sul canale alfa.
- *
- * Puro sui byte: prende un alfa, restituisce un alfa. Non conosce il canvas,
- * quindi si prova senza browser — ed è il posto dove un errore di segno
- * cancella il lavoro di qualcuno senza sollevare niente.
- *
- * `valore` è 255 per rimettere e 0 per togliere: un pennello solo, due
- * direzioni, invece di due funzioni che possono divergere.
- */
-export function pennella(alpha, w, h, { x, y, raggio, valore }) {
-  const r2 = raggio * raggio;
-  const x0 = Math.max(0, Math.floor(x - raggio));
-  const x1 = Math.min(w - 1, Math.ceil(x + raggio));
-  const y0 = Math.max(0, Math.floor(y - raggio));
-  const y1 = Math.min(h - 1, Math.ceil(y + raggio));
-
-  for (let yy = y0; yy <= y1; yy++) {
-    for (let xx = x0; xx <= x1; xx++) {
-      const d2 = (xx - x) * (xx - x) + (yy - y) * (yy - y);
-      if (d2 > r2) continue;
-      // Bordo sfumato: un pennello a gradino lascia una scalinata che si vede
-      // sul contorno di un ritaglio più di quanto si veda l'errore che stava
-      // correggendo.
-      const t = 1 - Math.sqrt(d2) / raggio;
-      const peso = Math.min(1, t * 3);
-      const i = yy * w + xx;
-      alpha[i] = Math.round(alpha[i] * (1 - peso) + valore * peso);
-    }
-  }
-  return alpha;
-}

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pennella, ritaglioIstantaneo, UNIFORMITA_MIN, MAX_FILE } from '../src/landing/ritaglio.js';
+import { ritaglioIstantaneo, UNIFORMITA_MIN, MAX_FILE } from '../src/landing/ritaglio.js';
+import { pennellaGuidato } from '../src/engine/righello.js';
 
 /*
  * Lo strumento gratuito della home.
@@ -53,42 +54,37 @@ test('la home accetta tre file, e tre è scritto in un posto solo', () => {
   assert.equal(MAX_FILE, 3);
 });
 
-test('il pennello rimette al centro e non tocca lontano', () => {
-  const w = 20;
-  const h = 20;
-  const alpha = new Uint8ClampedArray(w * h); // tutto trasparente
-  pennella(alpha, w, h, { x: 10, y: 10, raggio: 4, valore: 255 });
-  assert.equal(alpha[10 * w + 10], 255, 'il centro del tratto è pieno');
+/*
+ * Il pennello della home è quello del motore.
+ *
+ * Fino al 2026-08-28 ce n'erano DUE: `stamp` in engine/brush.js e una
+ * `pennella` scritta per la home. Due pennelli divergono al primo ritocco di
+ * uno solo, e i bordi smettono di combaciare fra studio e home. Adesso la
+ * home passa da `pennellaGuidato`, che dentro usa `stamp`.
+ */
+const tela = (w, h) => ({ alpha: new Uint8ClampedArray(w * h), w, h });
+
+test('senza guida il pennello dipinge dove sta la mano', () => {
+  const { alpha, w, h } = tela(40, 40);
+  pennellaGuidato(alpha, w, h, { x: 20, y: 20, raggio: 6, valore: 255 }, null);
+  assert.ok(alpha[20 * w + 20] > 200, 'il centro del tratto e pieno');
   assert.equal(alpha[0], 0, 'un angolo lontano non si tocca');
 });
 
 test('il pennello toglie con lo stesso codice con cui rimette', () => {
   // Due funzioni separate per «togli» e «rimetti» divergono: la seconda volta
-  // che si corregge una, l'altra resta indietro e i due bordi non combaciano.
-  const w = 20;
-  const h = 20;
-  const alpha = new Uint8ClampedArray(w * h).fill(255);
-  pennella(alpha, w, h, { x: 10, y: 10, raggio: 4, valore: 0 });
-  assert.equal(alpha[10 * w + 10], 0);
+  // che se ne corregge una, l'altra resta indietro e i due bordi non
+  // combaciano.
+  const { alpha, w, h } = tela(40, 40);
+  alpha.fill(255);
+  pennellaGuidato(alpha, w, h, { x: 20, y: 20, raggio: 6, valore: 0 }, null);
+  assert.ok(alpha[20 * w + 20] < 40);
   assert.equal(alpha[0], 255);
 });
 
-test('il bordo del tratto è sfumato, non a gradino', () => {
-  // Un pennello a gradino lascia una scalinata che si vede più dell'errore
-  // che stava correggendo.
-  const w = 40;
-  const h = 40;
-  const alpha = new Uint8ClampedArray(w * h);
-  pennella(alpha, w, h, { x: 20, y: 20, raggio: 10, valore: 255 });
-  const bordo = alpha[20 * w + 29]; // quasi sul raggio
-  assert.ok(bordo > 0 && bordo < 255, `il bordo dovrebbe essere parziale, è ${bordo}`);
-});
-
-test('il pennello sul bordo dell’immagine non esce dai byte', () => {
-  const w = 16;
-  const h = 16;
-  const alpha = new Uint8ClampedArray(w * h);
-  assert.doesNotThrow(() => pennella(alpha, w, h, { x: 0, y: 0, raggio: 9, valore: 255 }));
-  assert.doesNotThrow(() => pennella(alpha, w, h, { x: 15, y: 15, raggio: 9, valore: 255 }));
+test('il pennello sul bordo dell immagine non esce dai byte', () => {
+  const { alpha, w, h } = tela(16, 16);
+  assert.doesNotThrow(() => pennellaGuidato(alpha, w, h, { x: 0, y: 0, raggio: 9, valore: 255 }, null));
+  assert.doesNotThrow(() => pennellaGuidato(alpha, w, h, { x: 15, y: 15, raggio: 9, valore: 255 }, null));
   assert.equal(alpha.length, w * h, 'la maschera non cambia misura');
 });

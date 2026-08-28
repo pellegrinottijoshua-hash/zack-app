@@ -728,9 +728,9 @@ body {
 }
 
 .rit-tasto {
-  display: flex;
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
 }
 
 .zack-oval {
@@ -755,6 +755,44 @@ body {
 .zack-oval:disabled {
   opacity: 0.55;
   cursor: progress;
+}
+
+/* Il punto oro: PICCOLO da vedere, 44 px da premere.
+   Sotto i 44 px un polpastrello sbaglia — e' la larghezza media di un dito, ed
+   e' la misura minima che tutti usano. Quindi il pallino resta a 13 px
+   (altrimenti compete col tasto Zack) e la zona premibile e' un quadrato
+   trasparente attorno. */
+.punto-oro {
+  /* Sull'ANGOLO del tasto, non di fianco: il contratto dice «in alto a destra
+     del tasto Zack», e di fianco a mezz'altezza sembra un secondo comando. */
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  display: grid;
+  place-items: center;
+  /* `flex: none` anche se qui e' assoluto: la prima versione stava nel flusso
+     flex e si e' ristretta a 31 px invece di 44 — la stessa trappola gia'
+     pagata, un elemento flex che si stringe sul contenuto. */
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.punto-oro i {
+  display: block;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--oro);
+  box-shadow: 0 0 0 2px var(--panna);
+  transition: transform 0.12s ease;
+}
+.punto-oro:hover i,
+.punto-oro[aria-expanded='true'] i {
+  transform: scale(1.35);
 }
 
 .rit-info {
@@ -892,7 +930,7 @@ body {
   font-size: 14px;
 }
 
-/* ─── Le tele: tre risultati, un pennello solo ──────────────────────── */
+/* ─── Le tele, lo zoom, gli strumenti ───────────────────────────────── */
 
 .rit-tele {
   display: flex;
@@ -902,22 +940,29 @@ body {
   width: 100%;
 }
 .rit-tela {
+  position: relative;
   margin: 0;
-  width: min(260px, 40vw);
+  width: min(300px, 44vw);
   border: 1px solid rgba(17, 17, 17, 0.18);
   border-radius: 12px;
   overflow: hidden;
   background: var(--panna);
 }
-.rit-tela[data-scelto] {
-  border-color: var(--oro);
-  box-shadow: 0 0 0 2px var(--oro-velo);
+
+/* Il contenitore scorre invece di trasformare la tela: lo spostamento diventa
+   lo scorrimento nativo, e `getBoundingClientRect()` lo tiene in conto da
+   solo — la conversione punto→pixel non cambia di una riga.
+   `flex: none` e un'altezza vera: `overflow` su un elemento flex azzera la
+   dimensione minima automatica, e la tela collasserebbe col disegno dentro. */
+.rit-vista[data-zoom] {
+  overflow: auto;
+  flex: none;
+  height: min(52vh, 420px);
 }
 .rit-tela canvas {
   display: block;
   width: 100%;
   height: auto;
-  cursor: crosshair;
   touch-action: none;
   /* Gli scacchi dicono «trasparente» meglio di qualunque etichetta. */
   background-image:
@@ -928,6 +973,43 @@ body {
   background-size: 16px 16px;
   background-position: 0 0, 0 8px, 8px -8px, -8px 0;
 }
+
+/* La barra dello zoom accanto a OGNI file, come da contratto: verticale, sul
+   fianco, dove non copre il disegno. */
+.rit-zoom {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(245, 240, 232, 0.92);
+  border: 1px solid rgba(17, 17, 17, 0.18);
+  border-radius: 999px;
+}
+.rit-zoom button {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--nero);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.rit-zoom button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.rit-zoom b {
+  font-size: 10px;
+  color: var(--grigio-scuro);
+}
+
 .rit-tela figcaption {
   display: flex;
   align-items: center;
@@ -955,15 +1037,19 @@ body {
   text-transform: uppercase;
 }
 
-.rit-pennello {
+/* Gli strumenti compaiono DOPO il risultato: prima non c'e' niente da
+   correggere. */
+.rit-strumenti {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   font-size: 13px;
-  color: var(--grigio-scuro);
 }
-.rit-pennello button {
-  padding: 5px 14px;
+.rit-strumenti > button {
+  flex: none;
+  padding: 7px 16px;
   border: 1px solid var(--grigio);
   border-radius: 999px;
   background: transparent;
@@ -971,8 +1057,66 @@ body {
   font: inherit;
   cursor: pointer;
 }
-.rit-pennello button[aria-pressed='true'] {
+.rit-strumenti > button[aria-pressed='true'] {
   border-color: var(--nero);
+  background: var(--nero);
+  color: var(--panna);
+}
+
+/* La misura del tratto compare quando si sceglie uno strumento. */
+.rit-misure {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 8px;
+  border-left: 1px solid rgba(17, 17, 17, 0.18);
+}
+.rit-misure button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+.rit-misure button[aria-pressed='true'] {
+  border-color: var(--oro);
+  background: var(--oro-velo);
+}
+.rit-misure i {
+  display: block;
+  min-width: 3px;
+  min-height: 3px;
+  border-radius: 50%;
+  background: var(--nero);
+}
+
+/* Il `+`: si vede con uno o due file, sparisce al terzo. */
+.rit-piu {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  color: var(--grigio-scuro);
+  cursor: pointer;
+}
+.rit-piu b {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--nero);
+  border-radius: 50%;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--nero);
+}
+.rit-piu:hover b {
   background: var(--nero);
   color: var(--panna);
 }
