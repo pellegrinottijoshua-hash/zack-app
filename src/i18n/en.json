@@ -398,7 +398,10 @@
     "limited": "Limited recovery: the starting file has different dimensions, so the colour in the already-erased areas is gone. Reopen the original file to get it back.",
     "backToBatch": "Fixed, and it went back into the batch.",
     "zoomIn": "Zoom in",
-    "zoomOut": "Zoom out"
+    "zoomOut": "Zoom out",
+    "ruler": "Ruler",
+    "rulerOff": "remove the ruler",
+    "rulerHelp": "Draw a guide: from then on Erase and Restore will not cross it. Grab the ends to stretch and rotate it, the middle dot to bend it, the body to move it."
   },
   "upscale": {
     "title": "Enlarge",

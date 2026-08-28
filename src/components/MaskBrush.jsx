@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
+import { guidaDritta, maniglia, puntoDellaGuida, spostaManiglia, tracciaGuidata } from '../engine/righello.js';
 import {
   stroke,
   maskFromRgba,
@@ -94,6 +95,16 @@ export default function MaskBrush({ source, cutout, onChange, onDone }) {
   const [size, setSize] = useState(25);
   const [dirty, setDirty] = useState(false);
   const [zoom, setZoom] = useState(1);
+  /**
+   * La guida del righello, e cosa si sta trascinando.
+   *
+   * Il righello non dipinge: guida chi dipinge. Con una guida attiva, Gomma e
+   * Recupera lavorano in BARRIERA — il colore non passa dall'altra parte — ed
+   * e' la risposta al bordo che il modello ha sbagliato: si mette la guida dove
+   * dovrebbe stare e si riempie di getto, invece di ricalcarlo.
+   */
+  const [guida, setGuida] = useState(null);
+  const presa = useRef(null);
   const [canUndo, setCanUndo] = useState(false);
   // Vero quando la sorgente non è utilizzabile: il recupero funziona ancora
   // dove il colore è sopravvissuto, ma va detto prima, non scoperto dipingendo.
@@ -146,8 +157,34 @@ export default function MaskBrush({ source, cutout, onChange, onDone }) {
     cv.height = s.h;
     const copy = new Uint8ClampedArray(s.rgba);
     applyMask(copy, s.mask, s.w * s.h);
-    cv.getContext('2d').putImageData(new ImageData(copy, s.w, s.h), 0, 0);
-  }, []);
+    const cx = cv.getContext('2d');
+    cx.putImageData(new ImageData(copy, s.w, s.h), 0, 0);
+
+    // La guida si disegna QUI, dentro la tela, e non in un livello sopra: un
+    // elemento allineato a parte si scollerebbe al primo zoom. Non finisce nel
+    // file salvato, che `commit` ricostruisce dai pixel piu' la maschera.
+    if (!guida) return;
+    const sp = Math.max(2, s.w / 400);
+    cx.save();
+    cx.strokeStyle = '#c4a35a';
+    cx.lineWidth = sp;
+    cx.beginPath();
+    cx.moveTo(guida.a.x, guida.a.y);
+    cx.quadraticCurveTo(guida.c.x, guida.c.y, guida.b.x, guida.b.y);
+    cx.stroke();
+    cx.fillStyle = '#c4a35a';
+    for (const q of [guida.a, guida.b, puntoDellaGuida(guida, 0.5)]) {
+      cx.beginPath();
+      cx.arc(q.x, q.y, sp * 3, 0, Math.PI * 2);
+      cx.fill();
+    }
+    cx.restore();
+  }, [guida]);
+
+  // Ridisegna quando la guida cambia: senza, la si trascina e non si vede.
+  useEffect(() => {
+    paint();
+  }, [guida, paint]);
 
   /** Dal punto sullo schermo al pixel dell'immagine, qualunque sia lo zoom. */
   const toImage = (ev) => {
@@ -164,6 +201,18 @@ export default function MaskBrush({ source, cutout, onChange, onDone }) {
     const s = stateRef.current;
     if (!s) return;
     ev.preventDefault();
+
+    if (mode === 'righello') {
+      const p = toImage(ev);
+      const raggio = Math.max(14, s.w / 40);
+      const quale = guida ? maniglia(guida, p, { presa: raggio }) : null;
+      // Senza guida il primo trascinamento la crea; con guida si afferra una
+      // maniglia, e toccando lontano se ne ricomincia una nuova.
+      presa.current = quale ? { quale, ultimo: p } : { quale: 'nuova', da: p };
+      if (!quale) setGuida(guidaDritta(p, p));
+      return;
+    }
+
     // La cronologia si limita: dodici passi bastano e non mangiano memoria.
     s.undo.push(s.mask.slice());
     if (s.undo.length > MAX_UNDO) s.undo.shift();
@@ -174,19 +223,43 @@ export default function MaskBrush({ source, cutout, onChange, onDone }) {
 
   const move = (ev) => {
     const s = stateRef.current;
+
+    if (mode === 'righello') {
+      const g = presa.current;
+      if (!g) return;
+      ev.preventDefault();
+      const p = toImage(ev);
+      if (g.quale === 'nuova') setGuida(guidaDritta(g.da, p));
+      else {
+        setGuida((v) => spostaManiglia(v, g.quale, { x: p.x - g.ultimo.x, y: p.y - g.ultimo.y }));
+        presa.current = { ...g, ultimo: p };
+      }
+      return;
+    }
+
     if (!s || !s.last) return;
     ev.preventDefault();
     const p = toImage(ev);
     // Il raggio è in pixel dell'immagine, così il pennello ha la stessa
     // dimensione percepita a qualsiasi zoom.
     const scale = s.w / canvasRef.current.getBoundingClientRect().width;
-    stroke(s.mask, s.w, s.h, s.last, p, (size / 2) * scale, mode === 'erase' ? ERASE : RESTORE, 0.55);
+    tracciaGuidata(
+      s.mask,
+      s.w,
+      s.h,
+      s.last,
+      p,
+      { raggio: (size / 2) * scale, valore: mode === 'erase' ? ERASE : RESTORE },
+      guida,
+      { modo: 'barriera' },
+    );
     s.last = p;
     paint();
     setDirty(true);
   };
 
   const end = () => {
+    presa.current = null;
     const s = stateRef.current;
     if (!s) return;
     s.last = null;
@@ -233,6 +306,20 @@ export default function MaskBrush({ source, cutout, onChange, onDone }) {
         >
           {t('brush.restore')}
         </button>
+
+        <button
+          className="opt"
+          aria-pressed={mode === 'righello'}
+          onClick={() => setMode(mode === 'righello' ? 'erase' : 'righello')}
+          title={t('brush.rulerHelp')}
+        >
+          {t('brush.ruler')}
+        </button>
+        {guida && (
+          <button className="btn ghost small" onClick={() => setGuida(null)}>
+            {t('brush.rulerOff')}
+          </button>
+        )}
 
         <span className="brush-zoom">
           <button

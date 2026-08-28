@@ -7,6 +7,7 @@ import {
   pennellaGuidato,
   maniglia,
   spostaManiglia,
+  tracciaGuidata,
 } from '../src/engine/righello.js';
 
 /*
@@ -135,4 +136,30 @@ test('spostare una maniglia non muta la guida di partenza', () => {
   const g = guidaDritta(A, B);
   spostaManiglia(g, 'a', { x: 100, y: 100 });
   assert.deepEqual(g.a, A);
+});
+
+test('un tratto guidato non lascia buchi fra un punto e l altro', () => {
+  // Il pennello dello studio traccia una LINEA fra due posizioni del dito:
+  // timbrare solo i due estremi lascerebbe buchi appena si muove veloce.
+  const w = 100;
+  const h = 100;
+  const alpha = new Uint8ClampedArray(w * h);
+  tracciaGuidata(alpha, w, h, { x: 10, y: 80 }, { x: 90, y: 80 }, { raggio: 6, valore: 255 }, null);
+  for (const x of [10, 30, 50, 70, 90]) {
+    assert.ok(alpha[80 * w + x] > 200, `buco a x=${x}: ${alpha[80 * w + x]}`);
+  }
+});
+
+test('un tratto guidato rispetta la barriera per tutta la sua lunghezza', () => {
+  const w = 100;
+  const h = 100;
+  const alpha = new Uint8ClampedArray(w * h);
+  const g = guidaDritta({ x: 0, y: 50 }, { x: 99, y: 50 });
+  tracciaGuidata(alpha, w, h, { x: 10, y: 60 }, { x: 90, y: 60 }, { raggio: 20, valore: 255 }, g, {
+    modo: 'barriera',
+  });
+  for (const x of [20, 50, 80]) {
+    assert.ok(alpha[60 * w + x] > 200, `dalla parte giusta manca colore a x=${x}`);
+    assert.equal(alpha[38 * w + x], 0, `il colore ha passato la guida a x=${x}`);
+  }
 });

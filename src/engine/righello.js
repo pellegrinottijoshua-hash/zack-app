@@ -23,13 +23,10 @@
  * sollevare niente.
  */
 
-// `stamp` e non la `pennella` della home: il motore non deve dipendere dalla
-// pagina che lo usa, e quel timbro esiste già qui da prima — con durezza e
-// flusso, che la versione della home non ha.
-//
-// ⚠️ Restano due pennelli nel prodotto: `stamp` qui e `pennella` in
-// `landing/ritaglio.js`. Vanno collassati in uno, ma non oggi: l'interfaccia
-// della home sta per essere ridisegnata e il lavoro andrebbe rifatto.
+// `stamp` del motore: e' l'unico pennello del prodotto. Ce n'erano due — questo
+// e una `pennella` scritta per la home — e sono stati collassati il 2026-08-28,
+// perche' due pennelli divergono al primo ritocco di uno solo e i bordi
+// smettono di combaciare fra studio e home.
 import { stamp } from './brush.js';
 
 /**
@@ -210,4 +207,28 @@ export function spostaManiglia(guida, quale, d) {
     default:
       return guida;
   }
+}
+
+/**
+ * Un tratto guidato: dal punto precedente a quello attuale.
+ *
+ * Il pennello dello studio non timbra un punto, traccia una linea fra due
+ * posizioni del dito — altrimenti muovendo veloce restano buchi. Questa è la
+ * stessa cosa, con la guida che vale a ogni passo.
+ *
+ * Il passo è **un quarto del raggio**, lo stesso di `stroke` in `brush.js`:
+ * più fitto è tempo sprecato, più rado si vede. Tenerlo uguale non è
+ * pignoleria — due pennelli che avanzano a passi diversi lasciano due bordi
+ * diversi sulla stessa immagine.
+ */
+export function tracciaGuidata(alpha, w, h, da, a, tratto, guida, opts) {
+  const dx = a.x - da.x;
+  const dy = a.y - da.y;
+  const passo = Math.max(1, tratto.raggio / 4);
+  const n = Math.max(1, Math.ceil(Math.hypot(dx, dy) / passo));
+  for (let i = 0; i <= n; i++) {
+    const k = i / n;
+    pennellaGuidato(alpha, w, h, { ...tratto, x: da.x + dx * k, y: da.y + dy * k }, guida, opts);
+  }
+  return alpha;
 }
