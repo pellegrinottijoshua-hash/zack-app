@@ -308,13 +308,25 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
           arrivano i file diventa la COLONNA DESTRA, il tasto trasla sopra la
           mascotte e le tele si prendono tutta la sinistra. */}
       <div className="rit-lato">
+      <div className="rit-riga">
       <div className="rit-tasto">
+        {/* Il tasto E' l'immagine: l'ovale nero col filo d'oro disegnato dal
+            committente, scontornato col motore del prodotto. Il nome resta
+            nell'`aria-label`, o per chi legge con la voce il tasto e' muto. */}
         <button
           className="zack-oval"
+          aria-label="Zack"
           onClick={() => (lavori.length ? premiZack() : document.getElementById('rit-input').click())}
           disabled={Boolean(busy)}
         >
-          ZACK
+          <img
+            src="/zack/tasto-zack.webp"
+            srcSet="/zack/tasto-zack-600.webp 600w, /zack/tasto-zack.webp 1200w"
+            sizes="(max-width: 700px) 300px, 560px"
+            alt=""
+            width="1200"
+            height="670"
+          />
         </button>
         {/* Il punto oro: piccolo da vedere, 44 px da premere. Sotto quella
             misura un polpastrello sbaglia — la zona premibile sta nel CSS,
@@ -329,7 +341,17 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
         </button>
       </div>
 
-      <p className="rit-claim">{c.tool.claim}</p>
+        <img
+          className="rit-zack"
+          src="/zack/zack-disegna.webp"
+          srcSet="/zack/zack-disegna-360.webp 360w, /zack/zack-disegna.webp 720w"
+          sizes="(max-width: 700px) 150px, 300px"
+          alt=""
+          aria-hidden="true"
+          width="720"
+          height="720"
+        />
+      </div>
 
       <input
         id="rit-input"
@@ -340,24 +362,21 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
         onChange={(e) => accetta(e.target.files)}
       />
 
-      {/* Il `+` si vede con uno o due file, e sparisce al terzo. */}
-      {lavori.length < MAX_FILE && (
-        <button className="rit-piu" onClick={() => document.getElementById('rit-input').click()}>
-          <b>+</b>
-          <span>{lavori.length ? c.tool.addMore : c.tool.orDrop}</span>
-        </button>
-      )}
+      {/* Il `+` sta SOTTO il tasto, e sotto di lui la frase — l'unica rimasta.
+          Si vede con uno o due file e sparisce al terzo. */}
+      <div className="rit-sotto">
+        {lavori.length < MAX_FILE && (
+          <button
+            className="rit-piu"
+            aria-label={c.tool.orDrop}
+            onClick={() => document.getElementById('rit-input').click()}
+          >
+            +
+          </button>
+        )}
+        <p className="rit-claim">{c.tool.claim}</p>
+      </div>
 
-        <img
-          className="rit-zack"
-          src="/zack/zack-disegna.webp"
-          srcSet="/zack/zack-disegna-360.webp 360w, /zack/zack-disegna.webp 720w"
-          sizes="(max-width: 700px) 150px, 260px"
-          alt=""
-          aria-hidden="true"
-          width="720"
-          height="720"
-        />
       </div>
 
       {(busy || scarico) && (

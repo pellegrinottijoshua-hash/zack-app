@@ -228,12 +228,12 @@ export default function Landing() {
   return (
     <div className="landing">
       <header className="lp-nav">
-        {/* Il prodotto si chiama Zack App dal 2026-08-27. Qui c'era ancora
-            «JAYL STUDIO»: JAYL non sparisce, cambia mestiere — resta il
-            marchio di chi lo fa, e sta in fondo, firmato. */}
-        <span className="wordmark">
-          ZACK <em>app</em>
-        </span>
+        {/* Il marchio JAYL in alto a sinistra, al posto della scritta. Il
+            prodotto e' Zack App e lo dice il tasto al centro; qui sta il
+            marchio di chi lo fa. */}
+        <a className="lp-marchio" href="/" aria-label="JAYL">
+          <img src="/jayl-mark.svg" alt="" aria-hidden="true" width="34" height="34" />
+        </a>
         <span className="spacer" />
         <div className="langswitch">
           {['it', 'en'].map((l) => (
@@ -254,9 +254,6 @@ export default function Landing() {
       <section className="lp-primo">
         <Ritaglio c={c} ricetta={ricetta} onRicetta={commuta} />
 
-        <p className="lp-piu">
-          <a href={APP_URL}>{c.piu}</a>
-        </p>
       </section>
 
       {/* ─── l'insegna: dove il panna finisce e comincia il racconto ─────

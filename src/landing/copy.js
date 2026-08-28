@@ -13,7 +13,6 @@ export const COPY = {
   it: {
     nav: { app: 'Apri lo studio', price: '3,99 €/mese' },
 
-    piu: 'Con 3,99 € al mese hai lo scontorno senza limiti, e tutto il resto dello studio \u2192',
 
     // Brain, che il committente chiama «web organizer»: la cosa che nessun
     // concorrente può copiare, perché nessuno tiene i .md accanto alle immagini.
@@ -42,7 +41,7 @@ export const COPY = {
     // inglese anche in italiano dove sono un'insegna e non una spiegazione:
     // «use Zack for free» è il claim, e un claim non si traduce a metà.
     tool: {
-      claim: 'Use Zack for free — remove the background in just one click.',
+      claim: 'Remove up to three backgrounds in just one click.',
       pick: 'Scegli le immagini',
       orDrop: 'o trascinale qui. Fino a tre per volta.',
       reading: 'Leggo i file…',
@@ -153,7 +152,6 @@ export const COPY = {
   en: {
     nav: { app: 'Open the studio', price: '€3.99/month' },
 
-    piu: 'For \u20ac3.99 a month you get the bg remover unlimited, and the whole studio \u2192',
 
     brain: {
       kicker: 'Brain',
@@ -177,7 +175,7 @@ export const COPY = {
     },
 
     tool: {
-      claim: 'Use Zack for free — remove the background in just one click.',
+      claim: 'Remove up to three backgrounds in just one click.',
       pick: 'Choose your images',
       orDrop: 'or drop them here. Up to three at a time.',
       reading: 'Reading your files…',

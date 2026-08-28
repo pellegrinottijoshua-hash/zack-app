@@ -49,6 +49,17 @@ body {
 
 /* ─── barra in alto ─────────────────────────────────────────────────────── */
 
+.lp-marchio {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+}
+.lp-marchio img {
+  width: 34px;
+  height: 34px;
+}
+
 .lp-nav {
   position: sticky;
   top: 0;
@@ -57,9 +68,13 @@ body {
   align-items: center;
   gap: 14px;
   padding: 14px clamp(16px, 4vw, 48px);
-  background: rgba(17, 17, 17, 0.86);
+  /* Niente barra nera sopra un primo schermo panna: era una riga scura che
+     tagliava la pagina in due prima ancora che cominciasse. Il velo panna
+     serve solo a tenere leggibili i comandi quando sotto scorre il racconto
+     scuro. */
+  background: rgba(245, 240, 232, 0.9);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--linea);
+  border-bottom: 0;
 }
 
 .wordmark {
@@ -694,11 +709,20 @@ body {
 
 .rit-lato {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
+  gap: clamp(16px, 2.5vw, 32px);
+}
+
+/* Il tasto al centro e la mascotte SUBITO a destra, alta quasi quanto lui.
+   `align-items: flex-end` perche' Zack sta in piedi: allineare i due centri
+   lo farebbe galleggiare sopra la base del tasto. */
+.rit-riga {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
   justify-content: center;
-  gap: clamp(12px, 3vw, 40px);
-  flex-wrap: wrap;
+  gap: clamp(4px, 1.5vw, 24px);
 }
 
 /* Senza file il tasto e il claim stanno in colonna, e Zack di fianco. */
@@ -708,12 +732,30 @@ body {
   flex: 0 0 auto;
 }
 
+/* La mascotte sta a DESTRA del tasto ed e' alta quasi quanto lui: l'altezza
+   la detta il tasto, non una larghezza scelta a occhio. */
 .rit-zack {
   flex: none;
-  width: clamp(140px, 20vw, 260px);
-  height: auto;
+  width: auto;
+  height: clamp(150px, 24vw, 340px);
   pointer-events: none;
   user-select: none;
+}
+
+/* Il `+` sta sotto il tasto, e sotto di lui l'unica frase rimasta. */
+.rit-sotto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.rit-claim {
+  margin: 0;
+  max-width: 34ch;
+  font-size: clamp(15px, 1.7vw, 19px);
+  line-height: 1.45;
+  color: var(--nero);
+  text-align: center;
 }
 
 .lp-piu {
@@ -785,25 +827,24 @@ body {
 }
 
 .zack-oval {
-  min-width: clamp(280px, 30vw, 420px);
-  padding: clamp(26px, 3.2vw, 40px) clamp(48px, 6vw, 84px);
-  /* Il filo d'oro e' del marchio: il tasto ovale nero col bordo oro e' come
-     il committente l'ha disegnato. */
-  border: 3px solid var(--oro);
-  border-radius: 999px;
-  background: var(--nero);
-  color: var(--panna);
-  font-family: 'Fredoka', var(--display);
-  font-weight: 600;
-  font-size: clamp(38px, 4.6vw, 62px);
-  letter-spacing: 0.06em;
-  text-align: center;
+  display: block;
+  padding: 0;
+  width: clamp(260px, 42vw, 620px);
+  /* Il tasto e' un'IMMAGINE: niente fondo, niente cornice, niente testo. Il
+     filo d'oro e l'ovale li disegna il file, ed e' quello che il committente
+     ha fatto. Un bordo CSS sopra ne disegnerebbe un secondo. */
+  border: 0;
+  background: none;
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.15s ease;
 }
+.zack-oval img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
 .zack-oval:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(17, 17, 17, 0.22);
+  transform: translateY(-3px);
 }
 .zack-oval:disabled {
   opacity: 0.55;
@@ -1146,30 +1187,24 @@ body {
   background: var(--nero);
 }
 
-/* Il `+`: si vede con uno o due file, sparisce al terzo. */
+/* Il `+` e' un cerchio e basta: la parola sta nella frase sotto, e ripeterla
+   accanto al tasto sarebbe la stessa cosa detta due volte. */
 .rit-piu {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border: 0;
-  background: none;
-  font: inherit;
-  font-size: 14px;
-  color: var(--grigio-scuro);
-  cursor: pointer;
-}
-.rit-piu b {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 52px;
+  height: 52px;
   border: 1px solid var(--nero);
   border-radius: 50%;
-  font-size: 20px;
-  line-height: 1;
+  background: none;
   color: var(--nero);
+  font-family: 'Fredoka', var(--display);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
-.rit-piu:hover b {
+.rit-piu:hover {
   background: var(--nero);
   color: var(--panna);
 }
@@ -1346,4 +1381,21 @@ body {
     width: 100%;
     max-width: 240px;
   }
+}
+
+
+/* Cambiato il fondo della barra da nero a panna, va cambiato anche
+   l'inchiostro: e' la trappola gia' pagata due volte in questo progetto —
+   chi cambia il fondo si prende anche l'inchiostro. */
+.lp-nav .langswitch button {
+  color: var(--grigio-scuro);
+}
+.lp-nav .langswitch button[aria-pressed='true'] {
+  color: var(--nero);
+  border-color: var(--nero);
+}
+.lp-nav .lp-cta.small {
+  background: var(--nero);
+  color: var(--panna);
+  border-color: var(--nero);
 }
