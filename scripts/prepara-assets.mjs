@@ -51,6 +51,10 @@ const PIANO = [
   // disegno. NON si chiama «insegna»: quel nome è già di un altro asset in
   // public/zack/, e usarlo lo sovrascrive in silenzio (successo il 2026-08-27).
   { da: /^hero\.png$/, in: '', misure: [1600, 800], taglia: false, nome: 'hero' },
+  // Il tasto Zack: e' un'IMMAGINE, non piu' CSS — l'ovale nero col filo d'oro
+  // disegnato dal committente. Si scontorna (uniformita' 1.00) perche' deve
+  // galleggiare sul panna della home senza il suo quadrato attorno.
+  { da: /^tasto zack\.png$/, in: '', misure: [1200, 600], taglia: true, nome: 'tasto-zack' },
 ];
 
 /** Toglie il fondo piatto col motore del prodotto, o spiega perché non l'ha fatto. */
