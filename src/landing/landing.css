@@ -54,12 +54,12 @@ body {
 .lp-marchio {
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
+  width: 60px;
+  height: 60px;
 }
 .lp-marchio img {
-  width: 46px;
-  height: 46px;
+  width: 54px;
+  height: 54px;
 }
 
 .lp-nav {
@@ -69,7 +69,7 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 14px clamp(16px, 4vw, 48px);
+  padding: 18px clamp(12px, 2.2vw, 30px);
   /* Nera sopra, panna sotto. Il nero da togliere era la banda SOTTO il primo
      schermo, non questa barra. */
   background: rgba(17, 17, 17, 0.92);
@@ -737,9 +737,10 @@ body {
 }
 .rit-riga > .rit-zack {
   position: absolute;
-  /* Fino al margine del gruppo: piu' a destra non puo' andare senza uscire
-     dalla pagina, ed e' li' che il committente la vuole. */
-  right: 0;
+  /* Oltre il margine del gruppo, dentro il respiro che la pagina lascia ai
+     lati. Qui ci andranno i video, ESATTAMENTE in questa posizione: la misura
+     e la posizione sono un contratto con chi li gira, non un gusto. */
+  right: clamp(-56px, -2.6vw, 0px);
   bottom: 0;
 }
 
@@ -768,7 +769,7 @@ body {
 .rit-zack {
   flex: none;
   width: auto;
-  height: clamp(160px, 28vw, 400px);
+  height: clamp(175px, 32vw, 460px);
   pointer-events: none;
   user-select: none;
 }
@@ -860,7 +861,7 @@ body {
 .zack-oval {
   display: block;
   padding: 0;
-  width: clamp(300px, 52vw, 820px);
+  width: clamp(320px, 57vw, 900px);
   /* Il tasto e' un'IMMAGINE: niente fondo, niente cornice, niente testo. Il
      filo d'oro e l'ovale li disegna il file, ed e' quello che il committente
      ha fatto. Un bordo CSS sopra ne disegnerebbe un secondo. */
@@ -891,16 +892,21 @@ body {
   /* Sull'ANGOLO del tasto, non di fianco: il contratto dice «in alto a destra
      del tasto Zack», e di fianco a mezz'altezza sembra un secondo comando. */
   position: absolute;
-  top: -14px;
-  right: -14px;
+  /* MISURATO sull'immagine (2026-08-28): l'ovale opaco sta fra il 26,5% da
+     destra e il 23,3% dall'alto — l'angolo del riquadro e' tutto vuoto, e
+     ancorarsi li' lasciava il pallino a mezzo tasto di distanza dal bordo.
+     In percentuale e non in pixel, cosi' resta attaccato all'ovale a
+     qualunque misura del tasto. */
+  top: 16%;
+  right: 20%;
   display: grid;
   place-items: center;
   /* `flex: none` anche se qui e' assoluto: la prima versione stava nel flusso
      flex e si e' ristretta a 31 px invece di 44 — la stessa trappola gia'
      pagata, un elemento flex che si stringe sul contenuto. */
   flex: none;
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
   padding: 0;
   border: 0;
   background: none;
@@ -908,8 +914,8 @@ body {
 }
 .punto-oro i {
   display: block;
-  width: 13px;
-  height: 13px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--oro);
   box-shadow: 0 0 0 2px var(--panna);
