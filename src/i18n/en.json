@@ -371,7 +371,9 @@
     "local": "On your computer",
     "paid": "Pay per use",
     "balance": "Balance",
-    "soon": "soon"
+    "soon": "soon",
+    "open": "Show the names",
+    "close": "Icons only"
   },
   "soon": {
     "title": "This service isn't here yet",

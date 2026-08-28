@@ -371,7 +371,9 @@
     "local": "Sul tuo computer",
     "paid": "A consumo",
     "balance": "Saldo",
-    "soon": "presto"
+    "soon": "presto",
+    "open": "Mostra i nomi",
+    "close": "Solo icone"
   },
   "soon": {
     "title": "Questo servizio non c'è ancora",

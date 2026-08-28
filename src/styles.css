@@ -1446,9 +1446,50 @@ body {
   stroke-linejoin: round;
 }
 
+/* Chiusa la barra e' fatta di CERCHI: un'icona e basta, niente parole. I nomi
+   rubano larghezza alla tela in ogni schermata, e la tela e' il lavoro. */
 .toolrail[data-collapsed='true'] .tool-item {
   justify-content: center;
-  padding: 9px 0;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border-radius: 50%;
+  margin-inline: auto;
+}
+
+/* Il personaggio che sostituisce l'icona per un secondo. */
+.tool-pg {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  animation: pgEntra 180ms ease-out;
+}
+.toolrail[data-collapsed='true'] .tool-pg {
+  width: 34px;
+  height: 34px;
+}
+@keyframes pgEntra {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Il tastino che apre i nomi. Piccolo: e' un ripensamento, non un comando. */
+.rail-apri {
+  align-self: flex-end;
+  width: 26px;
+  height: 26px;
+  margin-bottom: 2px;
+  border: 1px solid var(--linea);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--inchiostro-3);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.rail-apri:hover {
+  color: var(--inchiostro);
+  border-color: var(--linea-viva);
 }
 
 .tool-name {
@@ -1755,7 +1796,9 @@ body {
    * è la navigazione. */
   .toolrail .group-label,
   .toolrail .tool-price,
-  .toolrail .tool-soon {
+  .toolrail .tool-soon,
+  .toolrail .tool-name,
+  .rail-apri {
     display: none;
   }
 
@@ -1763,10 +1806,17 @@ body {
      larghezza fissa «Vettorializza» sbordava sopra la pillola accanto. La
      barra scorre già in orizzontale, quindi lo spazio non manca — mancava solo
      il permesso di prenderselo. */
-  .toolrail .tool-item {
+  /* In basso sono SEMPRE cerchi: su un telefono la larghezza e' tutta della
+     tela, e i nomi non ci stanno comunque. */
+  .toolrail .tool-item,
+  .toolrail[data-collapsed='true'] .tool-item {
     flex-direction: column;
-    gap: 5px;
-    padding: 8px 14px;
+    gap: 0;
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    border-radius: 50%;
+    margin-inline: 0;
     /* La barra scorre, quindi le pillole non devono restringersi per far stare
        tutto: senza questo la pillola si stringeva sull'ICONA e il nome usciva
        da entrambi i lati del nero (misurato: pillola 44 px, «Vettorializza»
@@ -4212,33 +4262,6 @@ body {
   color: var(--inchiostro-2);
 }
 
-/* ─── Il lampo del personaggio ───────────────────────────────────────────
-   Compare al tocco di un servizio e se ne va. Non e' MAI l'unica conferma che
-   il comando ha funzionato: sotto cambia il servizio aperto e il tondo attivo
-   si ingrandisce — il colore, e nemmeno una faccia che passa, non e' mai
-   l'unico segnale. */
-.rail-lampo {
-  position: fixed;
-  left: 50%;
-  bottom: 96px;
-  z-index: 40;
-  width: 96px;
-  height: 96px;
-  margin-left: -48px;
-  border-radius: 50%;
-  pointer-events: none;
-  animation: lampo 900ms ease-out forwards;
-}
-@keyframes lampo {
-  0% { opacity: 0; transform: scale(0.7); }
-  22% { opacity: 1; transform: scale(1); }
-  70% { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1.05); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .rail-lampo { animation: lampo 900ms step-end forwards; }
-}
-
 @media (max-width: 760px) {
   /* Il servizio aperto e' il piu' grande della barra: e' il posto d'onore, e
      su un telefono la dimensione si legge prima del colore. */
@@ -4266,8 +4289,5 @@ body {
     .toolrail {
       scroll-behavior: auto;
     }
-  }
-  .rail-lampo {
-    bottom: 110px;
   }
 }

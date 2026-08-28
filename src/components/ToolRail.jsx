@@ -9,11 +9,14 @@ import Icon from './Icon.jsx';
  * Compare per un attimo quando si sceglie un servizio, e se ne va: e' il modo
  * in cui il cast entra nel prodotto senza occupare spazio in permanenza.
  *
- * ⚠️ Punta ai ritratti 3D che esistono oggi. I 2D in lavorazione andranno agli
- * STESSI percorsi, quindi sostituire i file non tocca una riga di codice.
- * E se un file manca l'immagine non compare: la scelta del servizio funziona
- * lo stesso, perche' una faccia non e' mai l'unico segnale.
+ * Le facce sono i 2D ritagliati dai fogli in `characters 2d`, e girano a
+ * rotazione.
+ *
+ * Se un file manca l'immagine non compare e l'icona resta quella vera: la
+ * scelta del servizio funziona lo stesso, perche' una faccia che passa non e'
+ * mai l'unico segnale che il comando ha funzionato.
  */
+const FACCE = 5;
 const PERSONAGGIO = {
   brain: 'imoth',
   scontorna: 'izack',
@@ -23,7 +26,7 @@ const PERSONAGGIO = {
   suono: 'ipigeon',
 };
 
-function Item({ service, active, collapsed, onPick }) {
+function Item({ service, active, collapsed, lampo, onPick }) {
   const label = t(`${service.key}.label`);
   return (
     <button
@@ -33,7 +36,13 @@ function Item({ service, active, collapsed, onPick }) {
       title={collapsed ? `${label} — ${t(`${service.key}.help`)}` : t(`${service.key}.help`)}
       onClick={() => onPick(service)}
     >
-      <Icon name={service.icon} draw />
+      {/* Il personaggio SOSTITUISCE l'icona per un secondo, non compare
+          altrove: e' il cerchio stesso che cambia faccia. */}
+      {lampo ? (
+        <img className="tool-pg" src={lampo} alt="" aria-hidden="true" width="40" height="40" />
+      ) : (
+        <Icon name={service.icon} draw />
+      )}
       {!collapsed && <span className="tool-name">{label}</span>}
       {/* Prezzo OPPURE 'presto', mai entrambi: a 190px si contendono lo
           spazio e vince la troncatura del nome, che è l'unica cosa
@@ -62,9 +71,29 @@ function Item({ service, active, collapsed, onPick }) {
  * Si riduce a sole icone mentre si lavora: nell'editor 130 px di tela contano
  * più dei nomi, che restano raggiungibili col passaggio del mouse.
  */
-export default function ToolRail({ current, collapsed, balance, onPick }) {
+export default function ToolRail({ current, collapsed: forzata, balance, onPick }) {
+  /**
+   * La barra e' fatta di CERCHI, e la parola compare solo se la si apre.
+   *
+   * Prima era il contrario: pillole con dentro il nome, che si stringevano a
+   * cerchio solo dentro l'editor. Ma i nomi rubano larghezza alla tela in ogni
+   * schermata, e la tela e' il lavoro — «non voglio rubare spazio al canva».
+   *
+   * Aperta o chiusa si ricorda: e' una preferenza, non uno stato del momento.
+   */
+  const [aperta, setAperta] = useState(() => {
+    try {
+      return localStorage.getItem('jayl.rail') === 'aperta';
+    } catch {
+      return false;
+    }
+  });
+  const collapsed = forzata || !aperta;
   const nav = useRef(null);
   const [lampo, setLampo] = useState(null);
+  const giro = useRef(0);
+  const timer = useRef(null);
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   /**
    * Il servizio scelto va al CENTRO della barra, e gli altri scorrono.
@@ -101,34 +130,52 @@ export default function ToolRail({ current, collapsed, balance, onPick }) {
     barra.scrollTo({ left: centroEl - meta });
   }, [current]);
 
+  /**
+   * Il lampo dura un secondo, poi l'icona torna quella vera.
+   *
+   * A rotazione fra le facce di quel personaggio: la stessa faccia ogni volta
+   * smette di essere una sorpresa dopo tre tocchi.
+   */
   const scegli = (s) => {
-    setLampo(PERSONAGGIO[s.id] || null);
+    const pg = PERSONAGGIO[s.id];
+    if (pg) {
+      const n = giro.current++;
+      setLampo({ id: s.id, src: `/zack/pg/${pg}-${(n % FACCE) + 1}.webp` });
+      clearTimeout(timer.current);
+      timer.current = setTimeout(() => setLampo(null), 1000);
+    }
     onPick(s);
   };
 
   return (
     <nav ref={nav} className="toolrail" data-collapsed={collapsed} aria-label={t('rail.title')}>
-      {lampo && (
-        <img
-          className="rail-lampo"
-          key={`${lampo}-${current}`}
-          src={`/zack/cast/${lampo}-96.webp`}
-          alt=""
-          aria-hidden="true"
-          width="96"
-          height="96"
-          onAnimationEnd={() => setLampo(null)}
-          onError={() => setLampo(null)}
-        />
+      {!forzata && (
+        <button
+          className="rail-apri"
+          aria-expanded={aperta}
+          aria-label={t(aperta ? 'rail.close' : 'rail.open')}
+          title={t(aperta ? 'rail.close' : 'rail.open')}
+          onClick={() => {
+            const v = !aperta;
+            setAperta(v);
+            try {
+              localStorage.setItem('jayl.rail', v ? 'aperta' : 'chiusa');
+            } catch {
+              /* la preferenza vale per questa visita */
+            }
+          }}
+        >
+          {aperta ? '‹' : '›'}
+        </button>
       )}
       <p className="group-label">{collapsed ? '·' : t('rail.local')}</p>
       {localServices().map((s) => (
-        <Item key={s.id} service={s} active={current === s.id} collapsed={collapsed} onPick={scegli} />
+        <Item key={s.id} service={s} active={current === s.id} collapsed={collapsed} lampo={lampo?.id === s.id ? lampo.src : null} onPick={scegli} />
       ))}
 
       <p className="group-label">{collapsed ? '·' : t('rail.paid')}</p>
       {paidServices().map((s) => (
-        <Item key={s.id} service={s} active={current === s.id} collapsed={collapsed} onPick={scegli} />
+        <Item key={s.id} service={s} active={current === s.id} collapsed={collapsed} lampo={lampo?.id === s.id ? lampo.src : null} onPick={scegli} />
       ))}
 
       <div className="rail-foot">
