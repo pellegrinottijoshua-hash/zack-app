@@ -59,7 +59,7 @@ export const COPY = {
       unreadable: 'Uno dei file non si legge come immagine.',
       failed: 'Qualcosa è andato storto. Riprova con un file solo.',
       whatDoes: 'Cosa farà',
-      yours: 'Questo tasto lo puoi cambiare: da adesso fa quello che scegli tu.',
+      yours: 'Questo tasto lo puoi cambiare: resta tuo anche dentro lo studio.',
       stepCutout: 'Toglie lo sfondo',
       steps: {
         x4: 'Ingrandisce ×4',
@@ -189,7 +189,7 @@ export const COPY = {
       unreadable: "One of those files doesn't read as an image.",
       failed: 'Something went wrong. Try again with a single file.',
       whatDoes: 'What it will do',
-      yours: 'You can change this button. From now on it does what you picked.',
+      yours: 'You can change this button. It stays yours inside the studio too.',
       stepCutout: 'Removes the background',
       steps: {
         x4: 'Enlarges ×4',

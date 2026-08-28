@@ -16,24 +16,50 @@ const APP_URL = '/app/';
 const CAST = ['izack', 'ipigeon', 'iseagull', 'imoth', 'icat', 'iant'];
 
 /**
- * La ricetta del tasto Zack sulla home.
+ * La ricetta del tasto Zack, **la stessa chiave dello studio**.
  *
- * Chiave separata da quella dello studio (`jayl.zack.scontorna`) finché i
- * passi non parlano la stessa lingua: la home ragiona per fattori (×4, :2) e
- * lo studio per passi (`ingrandisci`). Unirle adesso significherebbe scrivere
- * nella chiave dello studio parole che lo studio non sa leggere, e un tasto
- * che al ritorno non fa quello che l'utente ha scelto è peggio di due tasti
- * separati che lo dicono.
+ * Fino al 2026-08-28 erano due chiavi separate, perché le due parti parlavano
+ * lingue diverse: la home per fattori (`×4`, `:2`), lo studio per passi
+ * (`ingrandisci`, che vuol dire «portalo alla misura di stampa» e il fattore
+ * lo decide il file). Ora lo studio conosce `ridimensiona:x4`, quindi la home
+ * può scrivere direttamente ciò che lo studio sa leggere.
+ *
+ * È il ponte, e non costa niente: stessa origine, stessa chiave, stesso
+ * `localStorage`. Personalizzi il tasto qui, entri in `/app/`, ed è già il tuo.
  */
-const CHIAVE = 'jayl.zack.home';
+const CHIAVE = 'jayl.zack.scontorna';
+
+/**
+ * Dalla pastiglia al passo dello studio.
+ *
+ * Le pastiglie restano corte sullo schermo — `×4` sta in un ovale, non
+ * `ridimensiona:x4` — ma sotto si scrive la parola intera, perché è quella
+ * che l'altra metà del prodotto sa leggere.
+ */
+const PASSO = {
+  x4: 'ridimensiona:x4',
+  x2: 'ridimensiona:x2',
+  d2: 'ridimensiona:d2',
+  d4: 'ridimensiona:d4',
+  scarica: 'scarica',
+};
+const PASTIGLIA = Object.fromEntries(Object.entries(PASSO).map(([k, v]) => [v, k]));
 
 /** Ridimensionare è UNA scelta, non quattro: ×4 e :4 insieme non esistono. */
 const MISURE = ['x4', 'x2', 'd2', 'd4'];
 
+/**
+ * Legge la ricetta condivisa e tiene solo ciò che la home sa mostrare.
+ *
+ * Lo studio ha più passi di quanti la home ne offra — `scontorna`, `buchi`,
+ * `esporta` — e vanno **ignorati, non cancellati**: chi ha costruito una
+ * catena nello studio non deve perderla passando dalla home.
+ */
 function leggiRicetta() {
   try {
     const v = JSON.parse(localStorage.getItem(CHIAVE) || '[]');
-    return Array.isArray(v) ? v.filter((x) => [...MISURE, 'scarica'].includes(x)) : [];
+    if (!Array.isArray(v)) return [];
+    return v.map((x) => PASTIGLIA[x]).filter(Boolean);
   } catch {
     return [];
   }
@@ -177,7 +203,21 @@ export default function Landing() {
       // file che non è quello che l'utente ha chiesto.
       dopo = [...dopo.filter((x) => x !== 'scarica'), ...(dopo.includes('scarica') ? ['scarica'] : [])];
       try {
-        localStorage.setItem(CHIAVE, JSON.stringify(dopo));
+        /*
+         * Si SCRIVE dentro la catena dello studio, non sopra.
+         *
+         * La home mostra due cose — la misura e lo scaricamento — ma la catena
+         * ne contiene altre: `scontorna`, `buchi`, `esporta`. Scrivere solo le
+         * proprie le cancellerebbe, e chi ha costruito una catena nello studio
+         * la perderebbe passando di qui a togliere una pastiglia.
+         */
+        const esistente = JSON.parse(localStorage.getItem(CHIAVE) || '[]');
+        const altrui = (Array.isArray(esistente) ? esistente : []).filter((x) => !PASTIGLIA[x]);
+        const miei = dopo.map((x) => PASSO[x]).filter(Boolean);
+        // `scarica` in fondo comunque: è l'unico passo il cui posto nella
+        // catena non è negoziabile.
+        const unite = [...altrui.filter((x) => x !== 'scarica'), ...miei];
+        localStorage.setItem(CHIAVE, JSON.stringify(unite));
       } catch {
         /* archivio pieno o negato: la scelta vale per questa visita */
       }
