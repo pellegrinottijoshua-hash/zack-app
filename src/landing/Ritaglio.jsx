@@ -301,7 +301,13 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
         accetta(e.dataTransfer.files);
       }}
       data-sopra={sopra || undefined}
+      data-file={lavori.length ? '' : undefined}
     >
+      {/* Il lato: tasto, claim, `+` e la mascotte.
+          Senza file sta al centro, con Zack di fianco a destra. Appena
+          arrivano i file diventa la COLONNA DESTRA, il tasto trasla sopra la
+          mascotte e le tele si prendono tutta la sinistra. */}
+      <div className="rit-lato">
       <div className="rit-tasto">
         <button
           className="zack-oval"
@@ -341,6 +347,18 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
           <span>{lavori.length ? c.tool.addMore : c.tool.orDrop}</span>
         </button>
       )}
+
+        <img
+          className="rit-zack"
+          src="/zack/zack-disegna.webp"
+          srcSet="/zack/zack-disegna-360.webp 360w, /zack/zack-disegna.webp 720w"
+          sizes="(max-width: 700px) 150px, 260px"
+          alt=""
+          aria-hidden="true"
+          width="720"
+          height="720"
+        />
+      </div>
 
       {(busy || scarico) && (
         <div className="rit-attesa">

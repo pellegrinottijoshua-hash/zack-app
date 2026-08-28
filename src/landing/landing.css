@@ -685,12 +685,33 @@ body {
   text-align: center;
 }
 
-.lp-zack {
-  width: clamp(150px, 22vw, 290px);
+/* ─── L'impianto del primo schermo ──────────────────────────────────────
+   Senza file: il tasto grande al CENTRO e Zack di fianco a destra.
+   Con i file: le tele si prendono tutta la sinistra, e il lato — tasto sopra,
+   Zack sotto — diventa la colonna destra. È la traslazione che il committente
+   ha descritto: «il tasto trasla sopra di lui non appena vengono aggiunti i
+   file, che saran ben visibili grandi a sinistra». */
+
+.rit-lato {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 3vw, 40px);
+  flex-wrap: wrap;
+}
+
+/* Senza file il tasto e il claim stanno in colonna, e Zack di fianco. */
+.rit:not([data-file]) .rit-lato > .rit-tasto,
+.rit:not([data-file]) .rit-lato > .rit-claim,
+.rit:not([data-file]) .rit-lato > .rit-piu {
+  flex: 0 0 auto;
+}
+
+.rit-zack {
+  flex: none;
+  width: clamp(140px, 20vw, 260px);
   height: auto;
-  /* Non spinge il tasto in basso: Zack sta a fianco, e su schermo stretto
-     sopra. Un'immagine decorativa non deve mai rubare la piega. */
-  margin-bottom: -18px;
   pointer-events: none;
   user-select: none;
 }
@@ -713,13 +734,43 @@ body {
 
 .rit {
   width: 100%;
-  max-width: 940px;
+  max-width: 1240px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 18px;
   border-radius: 20px;
   transition: background 0.15s ease;
+}
+
+/* Appena arrivano i file l'impianto cambia: due colonne, i file a sinistra e
+   grandi, il lato a destra. `minmax(0, 1fr)` e non `1fr`: una colonna griglia
+   ha larghezza minima automatica pari al contenuto, e una tela larga la
+   farebbe sbordare invece di restringerla. */
+@media (min-width: 860px) {
+  .rit[data-file] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 32px;
+    text-align: left;
+  }
+  .rit[data-file] > .rit-tele {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    justify-content: flex-start;
+  }
+  .rit[data-file] > .rit-lato {
+    grid-column: 2;
+    /* Il tasto SOPRA la mascotte, non di fianco. */
+    flex-direction: column;
+    width: clamp(240px, 24vw, 300px);
+  }
+  .rit[data-file] > .rit-strumenti,
+  .rit[data-file] > .rit-tuo,
+  .rit[data-file] > .rit-attesa {
+    grid-column: 1;
+  }
 }
 .rit[data-sopra] {
   background: var(--oro-velo);
@@ -734,15 +785,17 @@ body {
 }
 
 .zack-oval {
-  min-width: 268px;
-  padding: 22px 54px;
-  border: 1px solid var(--nero);
+  min-width: clamp(280px, 30vw, 420px);
+  padding: clamp(26px, 3.2vw, 40px) clamp(48px, 6vw, 84px);
+  /* Il filo d'oro e' del marchio: il tasto ovale nero col bordo oro e' come
+     il committente l'ha disegnato. */
+  border: 3px solid var(--oro);
   border-radius: 999px;
   background: var(--nero);
   color: var(--panna);
   font-family: 'Fredoka', var(--display);
   font-weight: 600;
-  font-size: 34px;
+  font-size: clamp(38px, 4.6vw, 62px);
   letter-spacing: 0.06em;
   text-align: center;
   cursor: pointer;
@@ -1274,4 +1327,23 @@ body {
   max-width: 1100px;
   height: auto;
   margin: 0 auto;
+}
+
+/* Col file sul tavolo il tasto si rimpicciolisce e sta dentro la sua colonna:
+   grande e centrale e' come si presenta a chi arriva, non come lavora. */
+@media (min-width: 860px) {
+  .rit[data-file] .zack-oval {
+    min-width: 0;
+    width: 100%;
+    padding: 20px 24px;
+    font-size: 34px;
+  }
+  .rit[data-file] .rit-claim {
+    font-size: 14px;
+    text-align: left;
+  }
+  .rit[data-file] .rit-zack {
+    width: 100%;
+    max-width: 240px;
+  }
 }

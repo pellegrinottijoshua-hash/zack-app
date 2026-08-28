@@ -252,20 +252,6 @@ export default function Landing() {
           c'è nient'altro. Chi arriva trascina un file prima di aver letto una
           riga; il racconto sta sotto, per chi ha già capito. */}
       <section className="lp-primo">
-        <img
-          className="lp-zack"
-          src="/zack/zack-disegna.webp"
-          srcSet="/zack/zack-disegna-360.webp 360w, /zack/zack-disegna.webp 720w"
-          sizes="(max-width: 700px) 180px, 300px"
-          alt=""
-          width="720"
-          height="720"
-          /* Decorativo: la pagina si capisce identica senza. Un lettore di
-             schermo che annuncia «papera» non aggiunge niente a chi deve
-             togliere uno sfondo. */
-          aria-hidden="true"
-        />
-
         <Ritaglio c={c} ricetta={ricetta} onRicetta={commuta} />
 
         <p className="lp-piu">
