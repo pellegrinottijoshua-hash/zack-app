@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   pianoZack,
+  commutaPasso,
   normalizza,
   stessaRicetta,
   RICETTE_DI_FABBRICA,
@@ -84,4 +85,102 @@ test('"Zack può ricordarlo" non compare per la ricetta che già hai', () => {
 
 test('senza immagine il piano si rifiuta di partire', () => {
   assert.throws(() => pianoZack(['scontorna'], null), /Nessuna immagine/);
+});
+
+/*
+ * `ridimensiona:<fattore>` — lo studio impara i fattori.
+ *
+ * Il buco che chiude (2026-08-28): la home offre `x4 x2 :2 :4`, che sono
+ * FATTORI; lo studio aveva solo `ingrandisci`, che non e' un fattore ma
+ * «portalo alla misura di stampa» — di quanto lo decide il file. Le due
+ * lingue non si parlavano, quindi il tasto personalizzato sulla home non
+ * poteva seguire l'utente dentro l'app.
+ *
+ * E lo studio non sapeva RIMPICCIOLIRE affatto. La tavola dei tasti che il
+ * committente ha disegnato — INGRANDISCI, RIMPICCIOLISCI, 4X, 2X, :2, :4 —
+ * dice che deve saperlo.
+ *
+ * Il fattore sta dentro il nome del passo (`ridimensiona:x4`) e non in un
+ * campo a parte: cosi' una catena resta una LISTA DI STRINGHE, che e' la
+ * regola scritta in cima a ricette.js — «una catena e' una lista, non un
+ * programma». Un passo con dei parametri accanto sarebbe il primo passo verso
+ * un costruttore di flussi di lavoro, cioe' la cosa che stiamo evitando.
+ */
+
+test('i quattro fattori sono passi validi', () => {
+  for (const f of ['x4', 'x2', 'd2', 'd4']) {
+    assert.deepEqual(normalizza([`ridimensiona:${f}`]), [`ridimensiona:${f}`]);
+  }
+});
+
+test('un fattore inventato viene buttato via, non eseguito', () => {
+  // Una ricetta salvata puo' tornare indietro sbagliata: da una versione
+  // vecchia, da una chiave scritta a mano. Un fattore sconosciuto non deve
+  // far esplodere il tasto ne' eseguire qualcosa che nessuno ha chiesto.
+  assert.deepEqual(normalizza(['ridimensiona:x99']), []);
+  assert.deepEqual(normalizza(['ridimensiona']), []);
+  assert.deepEqual(normalizza(['ridimensiona:']), []);
+});
+
+test('un solo ridimensiona per catena', () => {
+  // Sono una scelta, non quattro interruttori: x4 e :4 insieme farebbero
+  // aspettare mezzo minuto per tornare da dove si e' partiti.
+  assert.deepEqual(normalizza(['ridimensiona:x4', 'ridimensiona:d2']), ['ridimensiona:x4']);
+});
+
+test('il fattore esplicito batte l ingrandimento automatico', () => {
+  // Rispondono alla stessa domanda — «quanto grande?» — e non possono
+  // convivere. Vince chi l'ha detto esplicitamente: `ingrandisci` e' il
+  // valore di fabbrica, `ridimensiona:x4` e' una scelta di qualcuno.
+  assert.deepEqual(normalizza(['ingrandisci', 'ridimensiona:x2']), ['ridimensiona:x2']);
+  assert.deepEqual(normalizza(['ridimensiona:x2', 'ingrandisci']), ['ridimensiona:x2']);
+});
+
+test('rimpicciolire non costa attesa e dice la misura giusta', () => {
+  const piano = pianoZack(['ridimensiona:d2'], { w: 1000, h: 800 });
+  assert.deepEqual(piano.out, { w: 500, h: 400 });
+  assert.equal(piano.secondi, 0, 'ridurre e una riscrittura di pixel, non un modello');
+  assert.deepEqual(piano.passi, ['ridimensiona:d2']);
+});
+
+test('rimpicciolire non scende mai sotto un pixel', () => {
+  const piano = pianoZack(['ridimensiona:d4'], { w: 3, h: 2 });
+  assert.ok(piano.out.w >= 1 && piano.out.h >= 1, `misura ${piano.out.w}x${piano.out.h}`);
+});
+
+test('ingrandire di un fattore dice la misura e un attesa vera', () => {
+  const piano = pianoZack(['ridimensiona:x2'], { w: 600, h: 400 });
+  assert.deepEqual(piano.out, { w: 1200, h: 800 });
+  assert.ok(piano.secondi > 0, 'passa dal modello, quindi si aspetta');
+});
+
+test('la catena della home diventa una catena che lo studio sa leggere', () => {
+  // È il ponte: le pastiglie della home scritte nella lingua dello studio.
+  const piano = pianoZack(['scontorna', 'buchi', 'ridimensiona:x4', 'scarica'], { w: 500, h: 500 });
+  assert.deepEqual(piano.passi, ['scontorna', 'buchi', 'ridimensiona:x4', 'scarica']);
+  assert.deepEqual(piano.out, { w: 2000, h: 2000 });
+});
+
+test('spuntare un passo nello studio non cancella il fattore della home', () => {
+  // Il difetto che questa funzione impedisce (2026-08-28): il pannello «Cosa
+  // farà» ricostruiva la ricetta da PASSI, che è una lista CHIUSA e non
+  // contiene `ridimensiona:x4`. Bastava una spunta qualsiasi nello studio per
+  // perdere in silenzio la scelta fatta sulla home — e il difetto non si vede
+  // subito: si scopre quando il file esce della misura sbagliata.
+  const r = ['scontorna', 'ridimensiona:x4'];
+  const dopo = commutaPasso(r, 'buchi');
+  assert.ok(dopo.includes('ridimensiona:x4'), 'il fattore e sopravvissuto');
+  assert.ok(dopo.includes('buchi'));
+  assert.ok(dopo.includes('scontorna'));
+});
+
+test('spegnere un passo lascia il fattore dov e', () => {
+  const dopo = commutaPasso(['scontorna', 'buchi', 'ridimensiona:d2'], 'buchi');
+  assert.deepEqual(dopo.filter((p) => p !== 'ridimensiona:d2'), ['scontorna']);
+  assert.ok(dopo.includes('ridimensiona:d2'));
+});
+
+test('accendere e spegnere lo stesso passo torna al punto di partenza', () => {
+  const r = ['scontorna', 'ridimensiona:x2'];
+  assert.deepEqual(normalizza(commutaPasso(commutaPasso(r, 'esporta'), 'esporta')), normalizza(r));
 });

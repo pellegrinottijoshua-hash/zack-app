@@ -598,7 +598,11 @@
       "buchi": "Richiudi i buchi",
       "ingrandisci": "Porta alla misura di stampa",
       "esporta": "Salva in libreria",
-      "scarica": "Scarica sul computer"
+      "scarica": "Scarica sul computer",
+      "ridimensiona:x4": "Ingrandisce ×4",
+      "ridimensiona:x2": "Ingrandisce ×2",
+      "ridimensiona:d2": "Rimpicciolisce a metà",
+      "ridimensiona:d4": "Rimpicciolisce a un quarto"
     },
     "stepHelp": {
       "scontorna": "Il modello separa il soggetto dal fondo. È il passo più lento della catena.",

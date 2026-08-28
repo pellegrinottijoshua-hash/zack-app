@@ -21,6 +21,19 @@
  */
 
 import { planReady, TARGET_SIDE, CUTOUT_SECONDS } from './ready.js';
+import { estimateSeconds, getScale } from './upscale.js';
+
+/**
+ * L'attesa di un ingrandimento a fattore fisso.
+ *
+ * Chiede il numero a `upscale.js` invece di inventarlo: le piastrelle e i
+ * secondi per piastrella li conosce quel file, che li ha misurati. Due stime
+ * della stessa cosa in due posti divergono al primo cambio di modello, e
+ * quella sbagliata resta scritta accanto al pulsante.
+ */
+function stimaIngrandimento(image, fattore) {
+  return estimateSeconds(image.w, image.h, getScale(fattore === 4 ? 'x4' : 'x2'));
+}
 
 /**
  * I passi che una catena può contenere.
@@ -29,6 +42,35 @@ import { planReady, TARGET_SIDE, CUTOUT_SECONDS } from './ready.js';
  * andare storta in silenzio dentro un tasto solo.
  */
 export const PASSI = ['scontorna', 'buchi', 'ingrandisci', 'esporta', 'scarica'];
+
+/**
+ * I fattori di `ridimensiona`, e quanto moltiplicano.
+ *
+ * `ingrandisci` non è un fattore: vuol dire «portalo alla misura di stampa», e
+ * di quanto lo decide il file. Serviva anche l'altra domanda — «moltiplica per
+ * quattro» — perché è quella che il tasto Zack della home fa, ed è quella che
+ * il committente ha disegnato nella tavola dei tasti: INGRANDISCI,
+ * RIMPICCIOLISCI, 4X, 2X, :2, :4.
+ *
+ * E perché **lo studio non sapeva rimpicciolire affatto**.
+ */
+export const FATTORI = { x4: 4, x2: 2, d2: 0.5, d4: 0.25 };
+
+/**
+ * Il fattore di un passo `ridimensiona:x4`, o `null` se non è quel passo.
+ *
+ * Il fattore sta **dentro il nome**, non in un campo accanto: così una catena
+ * resta una lista di stringhe, che è la regola scritta qui sopra — «una catena
+ * è una lista, non un programma». Un passo con dei parametri di fianco sarebbe
+ * il primo passo verso un costruttore di flussi di lavoro, cioè la cosa che
+ * stiamo esplicitamente evitando.
+ */
+export function fattoreDi(passo) {
+  if (typeof passo !== 'string') return null;
+  const [nome, f] = passo.split(':');
+  if (nome !== 'ridimensiona') return null;
+  return Object.hasOwn(FATTORI, f) ? FATTORI[f] : null;
+}
 
 /**
  * Quanto costa richiudere i buchi, in secondi.
@@ -67,12 +109,53 @@ export const RICETTA_VUOTA = [];
  */
 export function normalizza(ricetta) {
   if (!Array.isArray(ricetta)) return RICETTA_VUOTA;
+
   const visti = new Set();
-  return ricetta.filter((p) => {
-    if (typeof p !== 'string' || !PASSI.includes(p) || visti.has(p)) return false;
+  const pulita = ricetta.filter((p) => {
+    if (typeof p !== 'string' || visti.has(p)) return false;
+    // Un solo ridimensionamento per catena: sono una SCELTA, non quattro
+    // interruttori. `×4` e `:4` insieme farebbero aspettare mezzo minuto per
+    // tornare esattamente da dove si è partiti.
+    if (fattoreDi(p) !== null) {
+      if (visti.has('ridimensiona')) return false;
+      visti.add('ridimensiona');
+      visti.add(p);
+      return true;
+    }
+    if (!PASSI.includes(p)) return false;
     visti.add(p);
     return true;
   });
+
+  // `ingrandisci` e `ridimensiona` rispondono alla stessa domanda — «quanto
+  // grande?» — e non possono convivere: darebbero due misure d'uscita diverse
+  // per lo stesso file. Vince il fattore esplicito, perché `ingrandisci` è il
+  // valore di fabbrica e `ridimensiona:x4` è la scelta di qualcuno.
+  if (visti.has('ridimensiona')) return pulita.filter((p) => p !== 'ingrandisci');
+  return pulita;
+}
+
+/**
+ * Accende o spegne un passo, **senza perdere quelli che non sa nominare**.
+ *
+ * Il difetto che questa funzione impedisce (2026-08-28): il pannello «Cosa
+ * farà» ricostruiva la ricetta filtrando `PASSI`, che è una lista **chiusa** e
+ * non contiene `ridimensiona:x4`. Bastava una spunta qualsiasi nello studio
+ * per cancellare in silenzio la scelta fatta sulla home — e non si sarebbe
+ * visto subito: si scopre quando il file esce della misura sbagliata.
+ *
+ * L'ordine di `PASSI` decide l'ordine delle spunte, non quello dei clic: una
+ * catena che si riordina da sola a ogni tocco sarebbe imprevedibile. I passi
+ * con un fattore si riattaccano in fondo, e non importa dove: l'ordine di
+ * esecuzione lo decide `pianoZack`, non questa lista.
+ */
+export function commutaPasso(ricetta, passo) {
+  const conFattore = ricetta.filter((p) => fattoreDi(p) !== null);
+  const acceso = ricetta.includes(passo);
+  const base = acceso
+    ? ricetta.filter((p) => p !== passo && PASSI.includes(p))
+    : PASSI.filter((p) => p === passo || ricetta.includes(p));
+  return [...base, ...conFattore];
 }
 
 /**
@@ -120,6 +203,29 @@ export function pianoZack(ricetta, image, { target = TARGET_SIDE } = {}) {
       passi.push('ingrandisci');
       secondi += piano.seconds;
     }
+  }
+
+  /*
+   * Il ridimensionamento a fattore fisso.
+   *
+   * Due mestieri diversi sotto lo stesso passo, e la differenza si vede
+   * nell'attesa: **ingrandire passa dal modello** e costa secondi veri;
+   * **rimpicciolire è una riscrittura di pixel** e non costa niente. Dirlo
+   * insieme sarebbe comodo e falso, e qui l'attesa dichiarata è una promessa.
+   */
+  const passoRid = scelti.find((p) => fattoreDi(p) !== null);
+  if (passoRid) {
+    const f = fattoreDi(passoRid);
+    out = {
+      // Mai sotto un pixel: un'immagine da zero pixel non è piccola, è rotta.
+      w: Math.max(1, Math.round(image.w * f)),
+      h: Math.max(1, Math.round(image.h * f)),
+    };
+    if (f > 1) {
+      scaleId = f === 4 ? 'x4' : 'x2';
+      secondi += stimaIngrandimento(image, f);
+    }
+    passi.push(passoRid);
   }
 
   if (scelti.includes('esporta')) passi.push('esporta');

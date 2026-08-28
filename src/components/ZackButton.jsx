@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
-import { PASSI } from '../engine/ricette.js';
+import { PASSI, commutaPasso } from '../engine/ricette.js';
 import Icon from './Icon.jsx';
 
 /**
@@ -44,14 +44,11 @@ export default function ZackButton({ ricetta, piano, disabled, busy, lampo, onRu
 
   const vuota = !piano || piano.passi.length === 0;
 
-  function commuta(passo) {
-    const acceso = ricetta.includes(passo);
-    // L'ordine è quello della lista dei passi, non quello dei clic: una
-    // catena che si riordina da sola a ogni spunta sarebbe imprevedibile.
-    onChange(
-      acceso ? ricetta.filter((p) => p !== passo) : PASSI.filter((p) => p === passo || ricetta.includes(p)),
-    );
-  }
+  // La regola sta in `ricette.js`, dove i test la vedono: qui ricostruiva la
+  // catena filtrando `PASSI`, che è una lista chiusa, e un passo con un
+  // fattore (`ridimensiona:x4`, che arriva dalla home) spariva in silenzio
+  // alla prima spunta.
+  const commuta = (passo) => onChange(commutaPasso(ricetta, passo));
 
   return (
     <div className="zack" ref={box}>

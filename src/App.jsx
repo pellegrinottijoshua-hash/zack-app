@@ -27,7 +27,7 @@ import { useSound } from './hooks/useSound.js';
 import { useBatch } from './hooks/useBatch.js';
 import { canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { TARGET_SIDE } from './engine/ready.js';
-import { pianoZack, normalizza, RICETTE_DI_FABBRICA } from './engine/ricette.js';
+import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/ricette.js';
 import { caricaFileDiProva, deveMostrareProva, segnaProvaVista } from './engine/prova.js';
 import { getService, firstReady } from './services.js';
 
@@ -772,6 +772,58 @@ export default function App() {
             ? t('zack.done', { size: `${out.width}×${out.height}` })
             : t('ready.short', { size: `${out.width}×${out.height}`, target: TARGET_SIDE }),
         );
+      }
+
+      /*
+       * Il ridimensionamento a fattore fisso, che e' due mestieri.
+       *
+       * Ingrandire passa dal modello e costa secondi; rimpicciolire e' una
+       * riscrittura di pixel e non costa niente. Sono lo stesso passo per
+       * l'utente — «quanto grande?» — e due strade diverse qui sotto.
+       */
+      const passoRid = piano.passi.find((p) => fattoreDi(p) !== null);
+      if (passoRid) {
+        annuncia(passoRid);
+        const f = fattoreDi(passoRid);
+        if (f > 1) {
+          setUpscaling(true);
+          const bmp = await createImageBitmap(current);
+          const totali = piano.secondi;
+          const out = await engine.upscale(bmp, piano.scaleId, (fase, d) => {
+            if (!d?.done) return;
+            const fatto = d.done / d.total;
+            setQuanto(fatto);
+            annuncia(passoRid, t('upscale.estimate', { sec: Math.round((1 - fatto) * totali) }));
+          });
+          const cv = document.createElement('canvas');
+          cv.width = out.width;
+          cv.height = out.height;
+          cv.getContext('2d').putImageData(new ImageData(out.rgba, out.width, out.height), 0, 0);
+          current = await new Promise((r) => cv.toBlob(r, 'image/png'));
+          setUpscaling(false);
+        } else {
+          const bmp = await createImageBitmap(current);
+          const cv = document.createElement('canvas');
+          // Mai sotto un pixel: un'immagine da zero pixel non e' piccola, e' rotta.
+          cv.width = Math.max(1, Math.round(bmp.width * f));
+          cv.height = Math.max(1, Math.round(bmp.height * f));
+          const cx = cv.getContext('2d');
+          // Alta qualita' e non il default: ridurre a meta' col campionamento
+          // piu' vicino produce una scalinata su ogni bordo, che e' proprio
+          // cio' che questo prodotto vende di saper evitare.
+          cx.imageSmoothingEnabled = true;
+          cx.imageSmoothingQuality = 'high';
+          cx.drawImage(bmp, 0, 0, cv.width, cv.height);
+          bmp.close?.();
+          current = await new Promise((r) => cv.toBlob(r, 'image/png'));
+        }
+        pushResult({
+          url: own(current),
+          blob: current,
+          kind: 'png',
+          meta: { strategy: 'ridimensiona', fattore: f, output: piano.out },
+        });
+        detto.push(t('zack.done', { size: `${piano.out.w}×${piano.out.h}` }));
       }
 
       if (piano.passi.includes('esporta')) {

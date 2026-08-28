@@ -598,7 +598,11 @@
       "buchi": "Close the holes",
       "ingrandisci": "Take it to print size",
       "esporta": "Save to library",
-      "scarica": "Download to your computer"
+      "scarica": "Download to your computer",
+      "ridimensiona:x4": "Enlarges ×4",
+      "ridimensiona:x2": "Enlarges ×2",
+      "ridimensiona:d2": "Halves the size",
+      "ridimensiona:d4": "Quarters the size"
     },
     "stepHelp": {
       "scontorna": "The model separates the subject from the background. It is the slowest step in the chain.",
