@@ -57,6 +57,25 @@ const PIANO = [
   { da: /^tasto zack\.png$/, in: '', misure: [1200, 600], taglia: true, nome: 'tasto-zack' },
 ];
 
+/**
+ * Sotto questa soglia l'alfa è un fantasma, non un bordo.
+ *
+ * MISURATO su `zack draw.png` il 2026-08-28: 88.967 pixel pieni, ~3.500 nella
+ * banda sfumata del contorno (64-223) e **37.700 sotto 64** — un alone pallido
+ * che sul panna della home si vedeva come un'ombra fra Zack e il tasto.
+ *
+ * Si rimappa invece di tagliare netto: un taglio a gradino lascerebbe un bordo
+ * duro, che è il difetto opposto e si nota di più.
+ */
+const ALFA_MIN = 64;
+
+function togliFantasmi(alpha) {
+  for (let i = 0; i < alpha.length; i++) {
+    alpha[i] = alpha[i] <= ALFA_MIN ? 0 : Math.round(((alpha[i] - ALFA_MIN) / (255 - ALFA_MIN)) * 255);
+  }
+  return alpha;
+}
+
 /** Toglie il fondo piatto col motore del prodotto, o spiega perché non l'ha fatto. */
 async function scontorna(file) {
   const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
@@ -71,7 +90,7 @@ async function scontorna(file) {
     rgb[i * 3 + 1] = data[i * 4 + 1];
     rgb[i * 3 + 2] = data[i * 4 + 2];
   }
-  const rgba = interlaceRgba(rgb, r.alpha, w, h);
+  const rgba = interlaceRgba(rgb, togliFantasmi(r.alpha), w, h);
   return {
     ok: true,
     uniformita: r.uniformita,

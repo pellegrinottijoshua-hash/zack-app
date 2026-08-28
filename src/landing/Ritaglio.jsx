@@ -351,6 +351,30 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
           width="720"
           height="720"
         />
+
+        {personalizza && (
+        <div className="rit-tuo">
+          <p>{c.tool.makeYours}</p>
+          <div className="rit-pastiglie">
+            {[
+              { id: 'x4', label: '×4' },
+              { id: 'x2', label: '×2' },
+              { id: 'd2', label: ':2' },
+              { id: 'd4', label: ':4' },
+              { id: 'scarica', label: c.tool.addDownload },
+            ].map((p) => (
+              <button
+                key={p.id}
+                className="pastiglia"
+                aria-pressed={ricetta.includes(p.id)}
+                onClick={() => onRicetta(p.id)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       </div>
 
       <input
@@ -488,33 +512,6 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
               </figcaption>
             </figure>
           ))}
-        </div>
-      )}
-
-      {personalizza && (
-        <div className="rit-tuo">
-          <p>{c.tool.makeYours}</p>
-          <div className="rit-pastiglie">
-            {[
-              { id: 'x4', label: '×4' },
-              { id: 'x2', label: '×2' },
-              { id: 'd2', label: ':2' },
-              { id: 'd4', label: ':4' },
-              { id: 'scarica', label: c.tool.addDownload },
-            ].map((p) => (
-              <button
-                key={p.id}
-                className="pastiglia"
-                aria-pressed={ricetta.includes(p.id)}
-                onClick={() => onRicetta(p.id)}
-              >
-                {/* Il colore non è mai l'unico segnale: l'accesa porta anche il
-                    numero del suo posto, che è oro E informazione. */}
-                {ricetta.includes(p.id) && <b className="posto">{ricetta.indexOf(p.id) + 2}.</b>}
-                {p.label}
-              </button>
-            ))}
-          </div>
         </div>
       )}
 
