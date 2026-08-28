@@ -4211,3 +4211,63 @@ body {
   font-weight: 500;
   color: var(--inchiostro-2);
 }
+
+/* ─── Il lampo del personaggio ───────────────────────────────────────────
+   Compare al tocco di un servizio e se ne va. Non e' MAI l'unica conferma che
+   il comando ha funzionato: sotto cambia il servizio aperto e il tondo attivo
+   si ingrandisce — il colore, e nemmeno una faccia che passa, non e' mai
+   l'unico segnale. */
+.rail-lampo {
+  position: fixed;
+  left: 50%;
+  bottom: 96px;
+  z-index: 40;
+  width: 96px;
+  height: 96px;
+  margin-left: -48px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: lampo 900ms ease-out forwards;
+}
+@keyframes lampo {
+  0% { opacity: 0; transform: scale(0.7); }
+  22% { opacity: 1; transform: scale(1); }
+  70% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.05); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rail-lampo { animation: lampo 900ms step-end forwards; }
+}
+
+@media (max-width: 760px) {
+  /* Il servizio aperto e' il piu' grande della barra: e' il posto d'onore, e
+     su un telefono la dimensione si legge prima del colore. */
+  .toolrail .tool-item[aria-pressed='true'] {
+    transform: scale(1.18);
+    background: var(--inchiostro);
+    color: var(--fondo);
+  }
+  .toolrail .tool-item {
+    transition: transform 0.18s ease;
+  }
+  /* Il primo e l'ultimo devono poter arrivare al centro: senza margine la
+     barra si ferma prima e il tondo attivo resta di lato. */
+  .toolrail {
+    /* La morbidezza sta QUI e non nella chiamata: lo scorrimento deve avvenire
+       comunque, anche dove l'animazione non parte. E cosi' rispetta da sola
+       chi ha chiesto meno movimento. */
+    scroll-behavior: smooth;
+    /* Il primo e l'ultimo devono poter arrivare al centro: senza margine la
+       barra si ferma prima e il tondo attivo resta di lato. */
+    padding-left: 40vw;
+    padding-right: 40vw;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .toolrail {
+      scroll-behavior: auto;
+    }
+  }
+  .rail-lampo {
+    bottom: 110px;
+  }
+}
