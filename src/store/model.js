@@ -133,8 +133,42 @@ export function safeName(name) {
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^[-.]+|[-.]+$/g, '')
-    .slice(0, 60);
+    .slice(0, NOME_MAX);
   return base || 'senza-nome';
+}
+
+/**
+ * Quanti caratteri può essere lungo il nome di un asset.
+ *
+ * Era un `60` scritto dentro `safeName`. È diventato una costante perché
+ * `nomeConSuffisso` deve conoscerlo per fare il suo mestiere: un limite noto a
+ * una funzione sola è un limite che l'altra viola senza accorgersene.
+ */
+export const NOME_MAX = 60;
+
+/**
+ * Attacca un suffisso a un nome **senza perderlo nel taglio**.
+ *
+ * Il difetto (2026-08-27, sui file veri del committente): i nomi che escono
+ * dai generatori sono lunghissimi — `hf_20260816_230951_2f79b86e-…` sono 55
+ * caratteri. Con `-gelato-front` in coda fanno 68, e `safeName` li tagliava a
+ * 60: restava `…-gela`. Quindi `gelato-front` e `gelato-back` sullo stesso
+ * file diventavano **lo stesso nome**, e in libreria non si distinguevano più.
+ *
+ * Si accorcia il NOME, mai il suffisso: il nome dice di quale file si tratta e
+ * un pezzo basta a riconoscerlo, il suffisso dice **cosa** è quel file ed è
+ * l'unica parte che non si può perdere.
+ */
+export function nomeConSuffisso(nome, suffisso) {
+  const coda = suffisso ? `-${suffisso}` : '';
+  if (!coda) return safeName(nome);
+  // Il suffisso passa da `safeName` per conto suo: se contenesse caratteri da
+  // ripulire, ripulirlo dopo il taglio cambierebbe di nuovo la lunghezza.
+  const pulito = safeName(coda).replace(/^-*/, '');
+  // Almeno un carattere di nome resta sempre: un asset chiamato solo col
+  // suffisso è un asset che non si ritrova più.
+  const spazio = Math.max(1, NOME_MAX - pulito.length - 1);
+  return safeName(`${safeName(nome).slice(0, spazio)}-${pulito}`);
 }
 
 /**

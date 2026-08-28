@@ -16,6 +16,8 @@ import {
   doppioni,
   pesoDi,
   giaInLibreria,
+  nomeConSuffisso,
+  NOME_MAX,
 } from '../src/store/model.js';
 
 // Sorgenti deterministiche: un test che dipende dal caso non è un test.
@@ -387,4 +389,46 @@ test('senza impronta non si deduplica mai', () => {
   const assets = [lav({ id: 'a', name: 'zack' }), lav({ id: 'b', name: 'zack' })];
   assert.equal(giaInLibreria(assets, { name: 'zack', hash: null }), null);
   assert.equal(giaInLibreria(assets, { name: 'zack', hash: 'aaa' }), null);
+});
+
+/*
+ * Il suffisso non muore nel taglio.
+ *
+ * Trovato il 2026-08-27 sui file veri del committente: `safeName` taglia a 60
+ * caratteri, e i nomi che escono dai generatori sono lunghissimi —
+ * `hf_20260816_230951_2f79b86e-2d5a-44d6-9a39-7d0c4e959e5a` sono 55. Con
+ * `-gelato-front` in coda fanno 68, tagliati a 60 diventano `…-gela`.
+ *
+ * Non e' cosmetico: `gelato-front` e `gelato-back` sullo stesso file
+ * diventano LO STESSO NOME. Due export diversi, indistinguibili in libreria —
+ * e da quando `saveAsset` deduplica, due voci che si chiamano uguale sono
+ * anche il posto dove un domani si potrebbero fondere per sbaglio.
+ *
+ * Si accorcia il NOME, mai l'operazione: il suffisso dice cosa e' quel file,
+ * ed e' l'unica parte che non si puo' perdere.
+ */
+test('un nome lungo si accorcia, il suffisso resta intero', () => {
+  const lungo = 'hf_20260816_230951_2f79b86e-2d5a-44d6-9a39-7d0c4e959e5a';
+  const a = nomeConSuffisso(lungo, 'gelato-front');
+  const b = nomeConSuffisso(lungo, 'gelato-back');
+  assert.ok(a.endsWith('-gelato-front'), `il suffisso e' sopravvissuto: ${a}`);
+  assert.ok(b.endsWith('-gelato-back'), `il suffisso e' sopravvissuto: ${b}`);
+  assert.notEqual(a, b, 'due export diversi devono restare due nomi diversi');
+  assert.ok(a.length <= NOME_MAX, `${a.length} caratteri`);
+});
+
+test('un nome corto non viene toccato', () => {
+  assert.equal(nomeConSuffisso('logo', 'vettoriale'), 'logo-vettoriale');
+});
+
+test('senza suffisso si comporta come safeName', () => {
+  assert.equal(nomeConSuffisso('logo', ''), safeName('logo'));
+});
+
+test('un suffisso piu lungo del limite non cancella tutto il nome', () => {
+  // Caso limite assurdo, ma il risultato non deve essere una stringa vuota:
+  // un asset senza nome e' un asset che non si ritrova piu'.
+  const out = nomeConSuffisso('a', 'x'.repeat(80));
+  assert.ok(out.length > 0);
+  assert.ok(out.length <= NOME_MAX);
 });

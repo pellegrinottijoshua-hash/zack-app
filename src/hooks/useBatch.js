@@ -10,6 +10,7 @@ import {
   estimateRemaining,
   OPS,
 } from '../engine/batch.js';
+import { nomeConSuffisso } from '../store/model.js';
 import { renderExport } from '../engine/render.js';
 import { planReady } from '../engine/ready.js';
 import { traceToSvg } from '../engine/trace.js';
@@ -156,7 +157,7 @@ export function useBatch({ engine, library, model }) {
             } else if (job.op === OPS.vector) {
               const { svg } = await traceToSvg(source, { preset: 'poster', clean: true });
               await library.save(new Blob([svg], { type: 'image/svg+xml' }), {
-                name: `${job.file.name.replace(/\.[^.]+$/, '')}-vettoriale`,
+                name: nomeConSuffisso(job.file.name.replace(/\.[^.]+$/, ''), 'vettoriale'),
                 kind: 'svg',
                 meta: { op: 'vectorize', batch: true },
               });
@@ -166,7 +167,7 @@ export function useBatch({ engine, library, model }) {
                 background: 'transparent',
               });
               await library.save(blob, {
-                name: `${job.file.name.replace(/\.[^.]+$/, '')}-${job.preset}`,
+                name: nomeConSuffisso(job.file.name.replace(/\.[^.]+$/, ''), job.preset),
                 kind: 'png',
                 meta: { op: 'export', preset: job.preset, batch: true },
               });

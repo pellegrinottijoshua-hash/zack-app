@@ -20,7 +20,7 @@ import Advanced from './components/Advanced.jsx';
 import Brain from './components/Brain.jsx';
 import BatchGrid from './components/BatchGrid.jsx';
 import FilmLab from './components/FilmLab.jsx';
-import { kindFromFile } from './store/model.js';
+import { kindFromFile, nomeConSuffisso } from './store/model.js';
 import { impacchetta, spacchetta, fotografaTela } from './store/brainBundle.js';
 import StageBar from './components/StageBar.jsx';
 import { useSound } from './hooks/useSound.js';
@@ -440,7 +440,7 @@ export default function App() {
         const blob = new Blob([text], { type: 'image/svg+xml' });
         pushResult({ url: own(blob), blob, text, kind: 'svg', meta });
         await library.save(blob, {
-          name: `${file.name.replace(/\.[^.]+$/, '')}-vettoriale`,
+          name: nomeConSuffisso(file.name.replace(/\.[^.]+$/, ''), 'vettoriale'),
           kind: 'svg',
           meta: { fromId: sourceAssetId, op: 'vectorize', preset: s.tracePreset, paths: meta.paths },
         });
@@ -594,7 +594,7 @@ export default function App() {
       });
       api.download(own(blob), `${source.name.replace(/\.[^.]+$/, '')}-${s.preset}.png`);
       await library.save(blob, {
-        name: `${source.name.replace(/\.[^.]+$/, '')}-${s.preset}`,
+        name: nomeConSuffisso(source.name.replace(/\.[^.]+$/, ''), s.preset),
         kind: 'png',
         meta: { fromId: sourceAssetId, op: 'export', preset: s.preset, background: s.background },
       });
@@ -776,7 +776,7 @@ export default function App() {
 
       if (piano.passi.includes('esporta')) {
         await library.save(current, {
-          name: `${base}-zack`,
+          name: nomeConSuffisso(base, 'zack'),
           kind: 'png',
           meta: { fromId: sourceAssetId, op: 'zack', passi: piano.passi },
         });
@@ -1279,7 +1279,7 @@ export default function App() {
                 }
 
                 await library.save(blob, {
-                  name: `${(file?.name || 'immagine').replace(/\.[^.]+$/, '')}-corretto`,
+                  name: nomeConSuffisso((file?.name || 'immagine').replace(/\.[^.]+$/, ''), 'corretto'),
                   kind: 'png',
                   meta: { fromId: sourceAssetId, op: 'brush' },
                 });
