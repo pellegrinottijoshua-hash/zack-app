@@ -696,103 +696,16 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  /* In ALTO e non centrato: centrando, il primo schermo si ridispone appena
+     cambia il contenuto, e con lui si sposta la mascotte — che e' l'unica cosa
+     che non deve muoversi mai. Misurato: 13 px di salto all'arrivo del primo
+     file. Ancorato in alto, zero. */
+  justify-content: flex-start;
   gap: 26px;
-  padding: 96px 24px 64px;
+  padding: clamp(60px, 9vh, 120px) 24px 64px;
   text-align: center;
 }
 
-/* ─── L'impianto del primo schermo ──────────────────────────────────────
-   Senza file: il tasto grande al CENTRO e Zack di fianco a destra.
-   Con i file: le tele si prendono tutta la sinistra, e il lato — tasto sopra,
-   Zack sotto — diventa la colonna destra. È la traslazione che il committente
-   ha descritto: «il tasto trasla sopra di lui non appena vengono aggiunti i
-   file, che saran ben visibili grandi a sinistra». */
-
-.rit-lato {
-  /* Larga quanto la pagina, o la mascotte — che si appoggia al bordo DESTRO
-     del gruppo — si appoggerebbe al bordo del tasto e gli finirebbe sopra. */
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(6px, 1vw, 14px);
-}
-
-/* Il tasto al centro e la mascotte SUBITO a destra, alta quasi quanto lui.
-   `align-items: flex-end` perche' Zack sta in piedi: allineare i due centri
-   lo farebbe galleggiare sopra la base del tasto. */
-/* Il tasto e' centrato dal flusso, la mascotte e' FUORI dal flusso.
-   Le tre colonne non bastavano: una colonna `1fr` ha comunque una larghezza
-   minima pari al suo contenuto, quindi quella della mascotte (400 px) spingeva
-   la colonna di mezzo a sinistra — misurato, 212 px fuori centro. Togliendo la
-   mascotte dal flusso, il centro del tasto e' il centro della pagina e resta
-   tale qualunque cosa le stia accanto. */
-.rit-riga {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  width: 100%;
-}
-.rit-riga > .rit-zack {
-  position: absolute;
-  /* Oltre il margine del gruppo, dentro il respiro che la pagina lascia ai
-     lati. Qui ci andranno i video, ESATTAMENTE in questa posizione: la misura
-     e la posizione sono un contratto con chi li gira, non un gusto. */
-  right: clamp(-56px, -2.6vw, 0px);
-  bottom: 0;
-}
-
-/* Su schermo stretto la mascotte tornerebbe sopra il tasto: li' rientra nel
-   flusso e si mette sotto, piu' piccola. */
-@media (max-width: 900px) {
-  .rit-riga {
-    flex-direction: column;
-    gap: 12px;
-  }
-  .rit-riga > .rit-zack {
-    position: static;
-    height: clamp(120px, 26vw, 200px);
-  }
-}
-
-/* Senza file il tasto e il claim stanno in colonna, e Zack di fianco. */
-.rit:not([data-file]) .rit-lato > .rit-tasto,
-.rit:not([data-file]) .rit-lato > .rit-claim,
-.rit:not([data-file]) .rit-lato > .rit-piu {
-  flex: 0 0 auto;
-}
-
-/* La mascotte sta a DESTRA del tasto ed e' alta quasi quanto lui: l'altezza
-   la detta il tasto, non una larghezza scelta a occhio. */
-.rit-zack {
-  flex: none;
-  width: auto;
-  height: clamp(175px, 32vw, 460px);
-  pointer-events: none;
-  user-select: none;
-}
-
-/* Il `+` sta sotto il tasto, e sotto di lui l'unica frase rimasta. */
-.rit-sotto {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  /* Un po' piu' su: il tasto e' un ovale dentro un riquadro, e sotto l'ovale
-     resta un margine vuoto dell'immagine che allontanava il `+` senza che
-     nessuno lo avesse chiesto. */
-  margin-top: clamp(-46px, -3vw, -10px);
-}
-.rit-claim {
-  margin: 0;
-  max-width: 34ch;
-  font-size: clamp(15px, 1.7vw, 19px);
-  line-height: 1.45;
-  color: var(--nero);
-  text-align: center;
-}
 
 .lp-piu {
   margin: 8px 0 0;
@@ -819,67 +732,6 @@ body {
   gap: 18px;
   border-radius: 20px;
   transition: background 0.15s ease;
-}
-
-/* Appena arrivano i file l'impianto cambia: due colonne, i file a sinistra e
-   grandi, il lato a destra. `minmax(0, 1fr)` e non `1fr`: una colonna griglia
-   ha larghezza minima automatica pari al contenuto, e una tela larga la
-   farebbe sbordare invece di restringerla. */
-@media (min-width: 860px) {
-  .rit[data-file] {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: start;
-    gap: 32px;
-    text-align: left;
-  }
-  /* Riga 1: gli strumenti. Riga 2: le tele. Il lato occupa TUTTE le righe
-     della colonna destra, o le tele finiscono spinte sotto di lui — misurato,
-     partivano a 1020 px, fuori schermo. */
-  .rit[data-file] > .rit-tele {
-    grid-column: 1;
-    grid-row: 2;
-    justify-content: flex-start;
-  }
-  .rit[data-file] > .rit-lato {
-    grid-column: 2;
-    grid-row: 1 / span 3;
-    width: clamp(260px, 26vw, 340px);
-  }
-  /* Coi file la riga diventa una colonna: il tasto SOPRA la mascotte. La
-     mascotte torna nel flusso — restando assoluta sparirebbe, ed e' quello che
-     faceva sparire anche il tasto. */
-  .rit[data-file] .rit-riga {
-    flex-direction: column;
-    align-items: center;
-    gap: 14px;
-  }
-  .rit[data-file] .rit-riga > .rit-zack {
-    position: static;
-    order: 2;
-  }
-  .rit[data-file] .rit-tasto {
-    order: 1;
-  }
-  .rit[data-file] .rit-sotto {
-    margin-top: 0;
-  }
-  /* Gli strumenti in ALTO, sopra le tele. */
-  .rit[data-file] > .rit-strumenti {
-    grid-column: 1;
-    grid-row: 1;
-    justify-content: flex-start;
-  }
-
-  .rit[data-file] > .rit-attesa {
-    grid-column: 1;
-    grid-row: 3;
-  }
-}
-.rit[data-sopra] {
-  background: var(--oro-velo);
-  outline: 2px dashed var(--oro);
-  outline-offset: 12px;
 }
 
 .rit-tasto {
@@ -1289,10 +1141,17 @@ body {
      ci andranno i video. */
   bottom: calc(100% + 14px);
   z-index: 5;
-  width: min(420px, 44vw);
-  padding: 22px 26px;
+  width: min(460px, 46vw);
+  /* Un'ELLISSE, non un rettangolo stondato: `999px` arrotonda i lati corti e
+     lascia dritti quelli lunghi. `50%` fa la stessa forma del tasto Zack, che
+     e' il punto — e' lo stesso oggetto che si apre. Il prezzo e' il padding
+     generoso: dentro un'ellisse gli angoli non si possono usare. */
+  aspect-ratio: 5 / 3;
+  display: grid;
+  place-content: center;
+  padding: 0 15%;
   border: 3px solid var(--oro);
-  border-radius: 999px;
+  border-radius: 50%;
   background: var(--nero);
   color: var(--panna);
   text-align: center;
@@ -1309,13 +1168,14 @@ body {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
 }
 .pastiglia {
   display: inline-flex;
   align-items: center;
   flex: none;
-  padding: 8px 18px;
+  padding: 6px 13px;
+  font-size: 13px;
   /* Dentro un ovale nero il fondo e' cambiato, quindi cambia l'inchiostro:
      nere su nero sarebbero invisibili. */
   border: 1px solid var(--linea-viva);
@@ -1453,24 +1313,6 @@ body {
   margin: 0 auto;
 }
 
-/* Col file sul tavolo il tasto si rimpicciolisce e sta dentro la sua colonna:
-   grande e centrale e' come si presenta a chi arriva, non come lavora. */
-@media (min-width: 860px) {
-  .rit[data-file] .zack-oval {
-    min-width: 0;
-    width: 100%;
-    padding: 20px 24px;
-    font-size: 34px;
-  }
-  .rit[data-file] .rit-claim {
-    font-size: 14px;
-    text-align: left;
-  }
-  .rit[data-file] .rit-zack {
-    width: 100%;
-    max-width: 240px;
-  }
-}
 
 
 
@@ -1500,4 +1342,155 @@ body {
 .lp-nav .langswitch button[aria-pressed='true'] {
   border-color: var(--oro);
   color: var(--oro);
+}
+
+
+/* ══ L'impianto del primo schermo ═══════════════════════════════════════
+   Un principio solo, e tutto il resto discende da li':
+
+   **LA MASCOTTE NON SI MUOVE MAI.** E' l'unica cosa ferma della pagina, e
+   diventera' dieci video in quel punto esatto — quindi e' fuori dal flusso,
+   ancorata in basso a destra, identica con o senza file. Tutto il resto si
+   dispone attorno a lei.
+
+   Anche il TASTO e' fuori dal flusso: senza file sta grande al centro, con i
+   file si sposta sopra la mascotte. Se fosse nel flusso, spostarlo
+   sposterebbe lei. */
+
+.rit {
+  position: relative;
+  width: 100%;
+  max-width: 1240px;
+  min-height: 560px;
+  display: block;
+  border-radius: 20px;
+  transition: background 0.15s ease;
+}
+
+/* La mascotte: sempre qui, in ogni stato. */
+.rit-zack {
+  position: absolute;
+  right: 0;
+  /* Ancorata in ALTO, non in basso: `.rit` cambia altezza col contenuto, e
+     `bottom: 0` la faceva scendere di 13 px appena arrivava un file. Dall'alto
+     la sua posizione non dipende da quanto c'e' sotto. */
+  top: 100px;
+  height: clamp(175px, 32vw, 460px);
+  width: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Il tasto, senza file: grande e al centro della pagina. */
+.rit-tasto {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Il tasto, con i file: sopra la mascotte. Piu' piccolo, ma non minuscolo. */
+.rit[data-file] .rit-tasto {
+  left: auto;
+  right: 0;
+  top: 0;
+  transform: none;
+  width: clamp(240px, 26vw, 380px);
+}
+.rit[data-file] .zack-oval {
+  width: 100%;
+}
+
+/* Il `+` e la frase: sempre al CENTRO, sotto. Con i file restano al centro —
+   e' quello che il committente ha chiesto. */
+.rit-sotto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  /* Lo spazio che il tasto occupa: il `+` deve stare SOTTO l'ovale, non
+     dietro. Il riquadro del tasto e' piu' alto dell'ovale che contiene, quindi
+     la misura si prende dall'ovale visibile, non dal riquadro. */
+  padding-top: clamp(330px, 32vw, 480px);
+}
+.rit[data-file] .rit-sotto {
+  padding-top: 0;
+  margin: 40px auto 0;
+}
+.rit-claim {
+  margin: 0;
+  max-width: 34ch;
+  font-size: clamp(15px, 1.7vw, 19px);
+  line-height: 1.45;
+  color: var(--nero);
+  text-align: center;
+}
+
+/* La zona di lavoro: strumenti in alto, tele sotto, a sinistra e larghe. */
+.rit-lavoro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  /* Lo spazio della mascotte resta suo: le tele non ci arrivano sotto. */
+  padding-right: clamp(0px, 34vw, 470px);
+}
+
+@media (max-width: 900px) {
+  .rit-zack {
+    height: clamp(120px, 26vw, 190px);
+  }
+  .rit-tasto {
+    position: static;
+    transform: none;
+    justify-content: center;
+    width: 100%;
+  }
+  .rit[data-file] .rit-tasto {
+    width: 100%;
+  }
+  .rit-sotto {
+    padding-top: 18px;
+  }
+  .rit-lavoro {
+    padding-right: 0;
+  }
+}
+
+
+/* Con i file: le tele a SINISTRA, il `+` e la frase al CENTRO, la mascotte
+   dove e' sempre stata. Griglia e non flusso, o la frase finisce sopra il
+   file invece che accanto. */
+@media (min-width: 900px) {
+  .rit[data-file] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 360px);
+    grid-template-rows: auto 1fr;
+    column-gap: 30px;
+    /* Lo spazio della mascotte resta suo. */
+    padding-right: clamp(240px, 33vw, 470px);
+  }
+  .rit[data-file] > .rit-strumenti {
+    grid-column: 1;
+    grid-row: 1;
+    justify-content: flex-start;
+  }
+  .rit[data-file] > .rit-tele {
+    grid-column: 1;
+    grid-row: 2;
+    justify-content: flex-start;
+    align-content: start;
+  }
+  .rit[data-file] > .rit-sotto {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: start;
+    margin: 0;
+  }
+  .rit[data-file] > .rit-attesa,
+  .rit[data-file] > .rit-avviso {
+    grid-column: 1 / -1;
+  }
 }

@@ -124,6 +124,9 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
           });
         }
         setLavori(nuovi);
+        // Il pannello si CHIUDE quando arriva un file: da li' in poi la tela e'
+        // il lavoro, e un ovale aperto sopra la mascotte e' un ingombro.
+        setPersonalizza(false);
         setStrumento(null);
         setGuide({});
         if (nuovi.some((l) => !l.pronto)) preparaMotore().catch(() => {});
@@ -164,7 +167,6 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
       const ordine = lavori.map((l) => l.id);
       fatti.sort((a, b) => ordine.indexOf(a.id) - ordine.indexOf(b.id));
       setLavori(fatti);
-      setPersonalizza(true);
     } catch (e) {
       console.error(e);
       setAvviso(c.tool.failed);
@@ -385,8 +387,6 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
         </div>
       )}
 
-      <div className="rit-lato">
-      <div className="rit-riga">
       <div className="rit-tasto">
         {/* Il tasto E' l'immagine: l'ovale nero col filo d'oro disegnato dal
             committente, scontornato col motore del prodotto. Il nome resta
@@ -453,7 +453,6 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
           </div>
         </div>
       )}
-      </div>
 
       <input
         id="rit-input"
@@ -477,8 +476,6 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
           </button>
         )}
         {lavori.length < MAX_FILE && <p className="rit-claim">{c.tool.claim}</p>}
-      </div>
-
       </div>
 
       {(busy || scarico) && (
