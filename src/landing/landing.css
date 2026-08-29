@@ -783,7 +783,7 @@ body {
   /* Un po' piu' su: il tasto e' un ovale dentro un riquadro, e sotto l'ovale
      resta un margine vuoto dell'immagine che allontanava il `+` senza che
      nessuno lo avesse chiesto. */
-  margin-top: clamp(-70px, -5vw, -20px);
+  margin-top: clamp(-46px, -3vw, -10px);
 }
 .rit-claim {
   margin: 0;
@@ -833,21 +833,47 @@ body {
     gap: 32px;
     text-align: left;
   }
+  /* Riga 1: gli strumenti. Riga 2: le tele. Il lato occupa TUTTE le righe
+     della colonna destra, o le tele finiscono spinte sotto di lui — misurato,
+     partivano a 1020 px, fuori schermo. */
   .rit[data-file] > .rit-tele {
     grid-column: 1;
-    grid-row: 1 / span 3;
+    grid-row: 2;
     justify-content: flex-start;
   }
   .rit[data-file] > .rit-lato {
     grid-column: 2;
-    /* Il tasto SOPRA la mascotte, non di fianco. */
-    flex-direction: column;
-    width: clamp(240px, 24vw, 300px);
+    grid-row: 1 / span 3;
+    width: clamp(260px, 26vw, 340px);
   }
-  .rit[data-file] > .rit-strumenti,
-  .rit[data-file] > .rit-tuo,
+  /* Coi file la riga diventa una colonna: il tasto SOPRA la mascotte. La
+     mascotte torna nel flusso — restando assoluta sparirebbe, ed e' quello che
+     faceva sparire anche il tasto. */
+  .rit[data-file] .rit-riga {
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  .rit[data-file] .rit-riga > .rit-zack {
+    position: static;
+    order: 2;
+  }
+  .rit[data-file] .rit-tasto {
+    order: 1;
+  }
+  .rit[data-file] .rit-sotto {
+    margin-top: 0;
+  }
+  /* Gli strumenti in ALTO, sopra le tele. */
+  .rit[data-file] > .rit-strumenti {
+    grid-column: 1;
+    grid-row: 1;
+    justify-content: flex-start;
+  }
+
   .rit[data-file] > .rit-attesa {
     grid-column: 1;
+    grid-row: 3;
   }
 }
 .rit[data-sopra] {
@@ -1259,8 +1285,9 @@ body {
 .rit-tuo {
   position: absolute;
   right: clamp(-56px, -2.6vw, 0px);
-  top: 50%;
-  transform: translateY(-50%);
+  /* SOPRA la mascotte, non addosso: sovrapposta le copriva la faccia, e li'
+     ci andranno i video. */
+  bottom: calc(100% + 14px);
   z-index: 5;
   width: min(420px, 44vw);
   padding: 22px 26px;

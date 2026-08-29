@@ -41,7 +41,7 @@ export const COPY = {
     // inglese anche in italiano dove sono un'insegna e non una spiegazione:
     // «use Zack for free» è il claim, e un claim non si traduce a metà.
     tool: {
-      claim: 'Remove up to three backgrounds in just one click.',
+      claim: 'Remove up to three backgrounds for free in just a few clicks.',
       pick: 'Scegli le immagini',
       orDrop: 'o trascinale qui. Fino a tre per volta.',
       reading: 'Leggo i file…',
@@ -56,6 +56,7 @@ export const COPY = {
       ripristina: 'Ripristina',
       cancella: 'Cancella',
       clearGuide: 'togli il righello',
+      undo: 'Annulla',
       customise: 'Personalizza il tasto Zack',
       addMore: 'aggiungine un altro',
       zoomIn: 'Ingrandisci',
@@ -175,7 +176,7 @@ export const COPY = {
     },
 
     tool: {
-      claim: 'Remove up to three backgrounds in just one click.',
+      claim: 'Remove up to three backgrounds for free in just a few clicks.',
       pick: 'Choose your images',
       orDrop: 'or drop them here. Up to three at a time.',
       reading: 'Reading your files…',
@@ -190,6 +191,7 @@ export const COPY = {
       ripristina: 'Restore',
       cancella: 'Erase',
       clearGuide: 'remove the ruler',
+      undo: 'Undo',
       customise: 'Customise the Zack button',
       addMore: 'add another one',
       zoomIn: 'Zoom in',

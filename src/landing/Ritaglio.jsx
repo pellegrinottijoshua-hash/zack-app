@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MAX_FILE, aPng, applicaAlfa, mb, pixelDaFile, ritaglioIstantaneo, scaricaModello } from './ritaglio.js';
-import { guidaDritta, maniglia, pennellaGuidato, puntoDellaGuida, spostaManiglia } from '../engine/righello.js';
+import {
+  guidaDritta,
+  maniglia,
+  puntoDellaGuida,
+  puntoPiuVicino,
+  spostaManiglia,
+  tracciaGuidata,
+} from '../engine/righello.js';
 
 /**
  * Lo strumento gratuito della home: togli lo sfondo, fino a tre per volta.
@@ -61,6 +68,16 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
   const motore = useRef(null);
   const tele = useRef({});
   const trascino = useRef(null);
+  /**
+   * La cronologia dell'annulla, per file.
+   *
+   * Otto passi bastano e non mangiano memoria: un alfa di un file da 4000 px
+   * sono 16 MB, e tenerne trenta e' il modo piu' rapido per far chiudere la
+   * scheda al browser. Si registra all'INIZIO del tratto, non alla fine:
+   * altrimenti il primo annulla non annulla niente.
+   */
+  const storia = useRef({});
+  const [puoiAnnullare, setPuoiAnnullare] = useState(false);
 
   const preparaMotore = useCallback(async () => {
     if (motore.current) return motore.current;
@@ -177,7 +194,7 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
 
       const g = guide[l.id];
       if (!g) return;
-      const spessore = Math.max(2, l.src.w / 400);
+      const spessore = Math.max(3, l.src.w / 220);
       cx.save();
       cx.strokeStyle = '#c4a35a';
       cx.lineWidth = spessore;
@@ -229,8 +246,18 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
       return;
     }
 
-    trascino.current = { id: l.id, quale: 'pennello' };
-    pennellata(p, l);
+    // Il lato si decide QUI e vale per tutto il tratto: chi comincia da una
+    // parte della guida resta da quella parte anche attraversandola.
+    const g = guide[l.id];
+    const lato = g ? puntoPiuVicino(g, p).lato : null;
+    trascino.current = { id: l.id, quale: 'pennello', lato, ultimo: p };
+
+    const pila = storia.current[l.id] || (storia.current[l.id] = []);
+    pila.push(l.alpha.slice());
+    if (pila.length > 8) pila.shift();
+    setPuoiAnnullare(true);
+
+    pennellata(p, l, lato, p);
   }
 
   function muovi(e, l) {
@@ -238,7 +265,11 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
     if (!t || t.id !== l.id || !e.buttons) return;
     const p = suImmagine(e, tele.current[l.id]);
 
-    if (t.quale === 'pennello') return pennellata(p, l);
+    if (t.quale === 'pennello') {
+      pennellata(p, l, t.lato, t.ultimo);
+      trascino.current = { ...t, ultimo: p };
+      return;
+    }
 
     if (t.quale === 'nuova') {
       setGuide((g0) => ({ ...g0, [l.id]: guidaDritta(t.da, p) }));
@@ -258,19 +289,34 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
    * schermo, e si divide per lo zoom — è il motivo per cui a 8× la matita più
    * fine copre 3 pixel veri invece di 24.
    */
-  function pennellata(p, l) {
+  function pennellata(p, l, lato, da) {
     if (!l.alpha) return;
     const cv = tele.current[l.id];
     const scala = l.src.w / cv.getBoundingClientRect().width;
-    pennellaGuidato(
+    // Un TRATTO fra il punto precedente e questo, non un timbro: muovendo
+    // veloce, timbrare solo dove arrivano gli eventi lascia buchi.
+    tracciaGuidata(
       l.alpha,
       l.src.w,
       l.src.h,
-      { ...p, raggio: Math.max(1, (misura / 2) * scala), valore: strumento === 'ripristina' ? 255 : 0 },
+      da || p,
+      p,
+      { raggio: Math.max(1, (misura / 2) * scala), valore: strumento === 'ripristina' ? 255 : 0 },
       guide[l.id] || null,
-      { modo: 'barriera' },
+      { modo: 'barriera', lato },
     );
     ridipingi(l);
+  }
+
+  /** Torna indietro di un tratto, sul file su cui si e' lavorato per ultimo. */
+  function annulla() {
+    for (const l of lavori) {
+      const pila = storia.current[l.id];
+      if (!pila?.length) continue;
+      l.alpha.set(pila.pop());
+      ridipingi(l);
+    }
+    setPuoiAnnullare(Object.values(storia.current).some((p) => p.length > 0));
   }
 
   async function scarica(l) {
@@ -307,6 +353,38 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
           Senza file sta al centro, con Zack di fianco a destra. Appena
           arrivano i file diventa la COLONNA DESTRA, il tasto trasla sopra la
           mascotte e le tele si prendono tutta la sinistra. */}
+      {/* ── gli strumenti, che compaiono DOPO il risultato ───────────────── */}
+      {pronti && (
+        <div className="rit-strumenti">
+          {STRUMENTI.map((s) => (
+            <button key={s} aria-pressed={strumento === s} onClick={() => setStrumento(strumento === s ? null : s)}>
+              {c.tool[s]}
+            </button>
+          ))}
+          <button className="comelink" disabled={!puoiAnnullare} onClick={annulla}>
+            {c.tool.undo}
+          </button>
+          {guide && Object.keys(guide).length > 0 && (
+            <button className="comelink" onClick={() => setGuide({})}>
+              {c.tool.clearGuide}
+            </button>
+          )}
+
+          {/* La misura del tratto compare quando si sceglie uno strumento:
+              prima non c'è niente da misurare. Il righello non dipinge, quindi
+              non ha una misura sua. */}
+          {strumento && strumento !== 'righello' && (
+            <span className="rit-misure">
+              {MISURE.map((m) => (
+                <button key={m} aria-pressed={misura === m} onClick={() => setMisura(m)} aria-label={`${m}px`}>
+                  <i style={{ width: Math.min(18, m / 6), height: Math.min(18, m / 6) }} />
+                </button>
+              ))}
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="rit-lato">
       <div className="rit-riga">
       <div className="rit-tasto">
@@ -398,7 +476,7 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
             +
           </button>
         )}
-        <p className="rit-claim">{c.tool.claim}</p>
+        {lavori.length < MAX_FILE && <p className="rit-claim">{c.tool.claim}</p>}
       </div>
 
       </div>
@@ -429,35 +507,6 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
       )}
 
       {avviso && <p className="rit-avviso">{avviso}</p>}
-
-      {/* ── gli strumenti, che compaiono DOPO il risultato ───────────────── */}
-      {pronti && (
-        <div className="rit-strumenti">
-          {STRUMENTI.map((s) => (
-            <button key={s} aria-pressed={strumento === s} onClick={() => setStrumento(strumento === s ? null : s)}>
-              {c.tool[s]}
-            </button>
-          ))}
-          {guide && Object.keys(guide).length > 0 && (
-            <button className="comelink" onClick={() => setGuide({})}>
-              {c.tool.clearGuide}
-            </button>
-          )}
-
-          {/* La misura del tratto compare quando si sceglie uno strumento:
-              prima non c'è niente da misurare. Il righello non dipinge, quindi
-              non ha una misura sua. */}
-          {strumento && strumento !== 'righello' && (
-            <span className="rit-misure">
-              {MISURE.map((m) => (
-                <button key={m} aria-pressed={misura === m} onClick={() => setMisura(m)} aria-label={`${m}px`}>
-                  <i style={{ width: Math.min(18, m / 6), height: Math.min(18, m / 6) }} />
-                </button>
-              ))}
-            </span>
-          )}
-        </div>
-      )}
 
       {lavori.length > 0 && (
         <div className="rit-tele">
