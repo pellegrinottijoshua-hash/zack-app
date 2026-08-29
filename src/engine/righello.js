@@ -123,7 +123,7 @@ export function puntoPiuVicino(guida, p) {
  *
  * Restituisce l'alfa, modificato in luogo come `stamp`.
  */
-export function pennellaGuidato(alpha, w, h, tratto, guida, { modo = 'barriera' } = {}) {
+export function pennellaGuidato(alpha, w, h, tratto, guida, { modo = 'barriera', lato = null } = {}) {
   const timbra = (x, y) => stamp(alpha, w, h, x, y, tratto.raggio, tratto.valore);
 
   if (!guida) return timbra(tratto.x, tratto.y);
@@ -141,7 +141,17 @@ export function pennellaGuidato(alpha, w, h, tratto, guida, { modo = 'barriera' 
   const y0 = Math.max(0, Math.floor(tratto.y - raggio));
   const y1 = Math.min(h - 1, Math.ceil(tratto.y + raggio));
 
-  const nostro = puntoPiuVicino(guida, { x: tratto.x, y: tratto.y }).lato;
+  /*
+   * Il lato lo decide l'INIZIO del tratto, non ogni singolo timbro.
+   *
+   * Il difetto (2026-08-28): il lato veniva ricalcolato a ogni timbro dal
+   * centro del pennello. Attraversando la guida il centro passava dall'altra
+   * parte, il lato si ribaltava, e da li' in poi si dipingeva sull'altro lato —
+   * cioe' il righello non serviva a niente proprio nel gesto per cui esiste.
+   *
+   * Chi comincia da una parte resta da quella parte per tutto il tratto.
+   */
+  const nostro = lato ?? puntoPiuVicino(guida, { x: tratto.x, y: tratto.y }).lato;
   const prima = new Uint8ClampedArray((x1 - x0 + 1) * (y1 - y0 + 1));
   const larg = x1 - x0 + 1;
   for (let y = y0; y <= y1; y++) {

@@ -163,3 +163,39 @@ test('un tratto guidato rispetta la barriera per tutta la sua lunghezza', () => 
     assert.equal(alpha[38 * w + x], 0, `il colore ha passato la guida a x=${x}`);
   }
 });
+
+test('chi comincia da una parte resta da quella parte, anche attraversando', () => {
+  /*
+   * Il difetto raccontato dal committente (2026-08-28): «se vado sopra da una
+   * parte o dall'altra non si deve cancellare dall'altra parte, opposta a dove
+   * ho iniziato il segno».
+   *
+   * Il lato veniva ricalcolato a ogni timbro dal centro del pennello:
+   * attraversando la guida il centro passava di la', il lato si ribaltava, e da
+   * quel punto in poi si dipingeva sull'altro lato. Cioe' il righello non
+   * serviva a niente proprio nel gesto per cui esiste.
+   */
+  const w = 100;
+  const h = 100;
+  const alpha = new Uint8ClampedArray(w * h);
+  const g = guidaDritta({ x: 0, y: 50 }, { x: 99, y: 50 });
+  // Si comincia SOTTO la guida e si attraversa fino a sopra.
+  const lato = puntoPiuVicino(g, { x: 50, y: 70 }).lato;
+  tracciaGuidata(alpha, w, h, { x: 50, y: 70 }, { x: 50, y: 20 }, { raggio: 10, valore: 255 }, g, {
+    modo: 'barriera',
+    lato,
+  });
+  assert.ok(alpha[68 * w + 50] > 200, 'dalla parte di partenza si dipinge');
+  assert.equal(alpha[30 * w + 50], 0, 'oltre la guida non arriva niente, nemmeno dopo averla attraversata');
+});
+
+test('senza bloccare il lato il tratto sborda: e il difetto di prima', () => {
+  const w = 100;
+  const h = 100;
+  const alpha = new Uint8ClampedArray(w * h);
+  const g = guidaDritta({ x: 0, y: 50 }, { x: 99, y: 50 });
+  tracciaGuidata(alpha, w, h, { x: 50, y: 70 }, { x: 50, y: 20 }, { raggio: 10, valore: 255 }, g, {
+    modo: 'barriera',
+  });
+  assert.ok(alpha[30 * w + 50] > 0, 'senza `lato` il colore passa: e la controprova');
+});
