@@ -421,6 +421,43 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
             height="670"
           />
         </button>
+        {/* Il punto oro: piccolo da vedere, 44 px da premere. Sta alla DESTRA
+            dell'ovale e in alto, nel vuoto del riquadro — non lo tocca mai:
+            addosso al filo d'oro sembrava un difetto del tasto, non un
+            comando. Il nome resta nell'`aria-label`: qui la parola scritta
+            competerebbe col tasto, che di parole ne ha gia' una. */}
+        <button
+          className="punto-oro"
+          aria-expanded={personalizza}
+          aria-label={c.tool.customise}
+          onClick={() => setPersonalizza((v) => !v)}
+        >
+          <i />
+        </button>
+
+        {personalizza && (
+        <div className="rit-tuo">
+          <p>{c.tool.makeYours}</p>
+          <div className="rit-pastiglie">
+            {[
+              { id: 'x4', label: '×4' },
+              { id: 'x2', label: '×2' },
+              { id: 'd2', label: ':2' },
+              { id: 'd4', label: ':4' },
+              { id: 'scarica', label: c.tool.addDownload },
+            ].map((p) => (
+              <button
+                key={p.id}
+                className="pastiglia"
+                aria-pressed={ricetta.includes(p.id)}
+                onClick={() => onRicetta(p.id)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        )}
       </div>
 
         <img
@@ -456,45 +493,6 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
           </button>
         )}
         {lavori.length < MAX_FILE && <p className="rit-claim">{c.tool.claim}</p>}
-        {/* Personalizzare il tasto e' una delle due cose che si fanno qui, e
-            finche' e' stata un pallino sull'angolo del tasto non l'ha trovata
-            nessuno: adesso e' un comando con il suo nome, sotto il tasto,
-            accanto al `+`. Il pallino d'oro resta come segno, non come
-            bersaglio. */}
-        <div className="rit-personalizza">
-          <button
-            className="punto-oro"
-            aria-expanded={personalizza}
-            onClick={() => setPersonalizza((v) => !v)}
-          >
-            <i />
-            {c.tool.customise}
-          </button>
-
-          {personalizza && (
-          <div className="rit-tuo">
-            <p>{c.tool.makeYours}</p>
-            <div className="rit-pastiglie">
-              {[
-                { id: 'x4', label: '×4' },
-                { id: 'x2', label: '×2' },
-                { id: 'd2', label: ':2' },
-                { id: 'd4', label: ':4' },
-                { id: 'scarica', label: c.tool.addDownload },
-              ].map((p) => (
-                <button
-                  key={p.id}
-                  className="pastiglia"
-                  aria-pressed={ricetta.includes(p.id)}
-                  onClick={() => onRicetta(p.id)}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          )}
-        </div>
       </div>
 
       {(busy || scarico) && (

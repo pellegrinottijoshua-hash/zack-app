@@ -1443,7 +1443,15 @@ body {
     height: clamp(120px, 26vw, 190px);
   }
   .rit-tasto {
-    position: static;
+    /* `relative` e non `static`: rientra nel flusso lo stesso, ma resta il
+       riferimento di cio' che gli sta attaccato. Da `static` l'ovale delle
+       opzioni si ancorava a tutto il riquadro e si apriva 400 px piu' in
+       basso, meta' dentro la sezione nera. */
+    position: relative;
+    /* Su un elemento `relative` il `left: 50%` del desktop torna a contare, e
+       spostava il tasto di mezza pagina a destra. Va spento a mano. */
+    left: auto;
+    top: auto;
     transform: none;
     justify-content: center;
     width: 100%;
@@ -1539,53 +1547,71 @@ body {
   height: min(38vh, 340px);
 }
 
-/* ── «Personalizza»: un comando con il suo nome ─────────────────────── */
+/* ── Il punto oro, dov'era: un pallino che si illumina ──────────────── */
 
-/* Era un pallino d'oro sull'angolo del tasto: 18 px senza etichetta, che chi
-   arriva non lega a niente. Adesso e' un comando sotto il tasto, con la
-   parola scritta; il pallino resta come segno accanto al nome. */
-.rit-personalizza {
-  position: relative;
-  display: flex;
-  justify-content: center;
-}
+/* Torna a essere un PUNTO, non una parola: la parola competeva col tasto, che
+   di parole ne ha gia' una. Cambia solo dove sta — alla destra dell'ovale e in
+   alto, nel vuoto del riquadro, senza toccarlo mai. Addosso al filo d'oro
+   sembrava un difetto del tasto.
+
+   MISURATO sull'immagine (2026-08-28): l'ovale opaco arriva al 73,5% della
+   larghezza e comincia al 23,3% dell'altezza. Il centro del pallino sta
+   all'82% e all'8%: fuori dall'ovale in orizzontale E in verticale, e dentro
+   il riquadro — cosi' non esce dalla pagina quando il tasto e' a destra. */
 .punto-oro {
-  position: static;
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  width: auto;
-  height: auto;
-  min-height: 44px;
-  padding: 0 18px;
-  border: 1px solid var(--linea-viva);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--nero);
-  font-family: 'Fredoka', var(--display);
-  font-size: 15px;
+  position: absolute;
+  left: 82%;
+  top: 8%;
+  right: auto;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  /* La zona premibile e' 44 px trasparenti attorno al pallino: sotto quella
+     misura un polpastrello sbaglia. `flex: none` perche' e' gia' costata una
+     volta — un elemento flex si stringe sul contenuto. */
+  flex: none;
+  width: 44px;
+  height: 44px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
 }
 .punto-oro i {
-  width: 12px;
-  height: 12px;
-  box-shadow: none;
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--oro);
+  box-shadow: 0 0 0 2px var(--panna);
+  transition: transform 0.12s ease, box-shadow 0.15s ease;
 }
-.punto-oro[aria-expanded='true'] {
-  border-color: var(--oro);
+/* Si ILLUMINA: cresce e si accende d'oro. Il colore non e' l'unico segnale —
+   la misura cambia insieme a lui. */
+.punto-oro:hover i,
+.punto-oro:focus-visible i,
+.punto-oro[aria-expanded='true'] i {
+  transform: scale(1.35);
+  box-shadow: 0 0 0 2px var(--panna), 0 0 14px 4px rgba(196, 163, 90, 0.75);
 }
 
-/* L'ovale delle opzioni: SOTTO il comando che lo apre, e fuori dal flusso —
-   e' un momento, non uno stato, e non deve spostare niente aprendosi. Prima
+/* L'ovale delle opzioni: SOTTO il tasto che lo apre, e fuori dal flusso — e'
+   un momento, non uno stato, e non deve spostare niente aprendosi. Prima
    stava ancorato sopra tutto il riquadro (`bottom: calc(100% + 14px)`) e
-   usciva dalla cima della pagina: si vedeva mezzo. */
+   usciva dalla cima della pagina: se ne vedeva meta'. */
 .rit-tuo {
   position: absolute;
-  top: calc(100% + 12px);
+  top: calc(100% + 4px);
   bottom: auto;
   left: 50%;
   right: auto;
   transform: translateX(-50%);
-  width: min(420px, 88vw);
+  /* 360 e non 420: l'ovale ha `aspect-ratio: 5/3`, quindi la larghezza decide
+     l'altezza. A 420 px finiva 1 px sotto la piega a 1440x900 — misurato. */
+  width: min(360px, 86vw);
+  z-index: 6;
 }
 
 @media (max-width: 700px) {
