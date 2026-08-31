@@ -66,6 +66,10 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
   const [sopra, setSopra] = useState(false);
 
   const motore = useRef(null);
+  /** Lo specchio di `lavori`, per `accetta`: senza, la chiusura vede la lista
+      di quando e' stata creata e il file precedente sparisce. */
+  const gia = useRef([]);
+  const seq = useRef(0);
   const tele = useRef({});
   const trascino = useRef(null);
   /**
@@ -98,24 +102,31 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
   }, []);
 
   useEffect(() => () => motore.current?.engine.dispose(), []);
+  useEffect(() => {
+    gia.current = lavori;
+  }, [lavori]);
 
   const accetta = useCallback(
     async (lista) => {
       const immagini = [...lista].filter((f) => /^image\//.test(f.type));
       if (!immagini.length) return;
-      if (immagini.length > MAX_FILE) setTroppi(true);
+      // Il posto libero e' quello che RESTA: chi ha gia' un file e ne aggiunge
+      // un secondo non perde il primo — succedeva, e succedeva in silenzio.
+      const posti = Math.max(0, MAX_FILE - gia.current.length);
+      if (immagini.length > posti) setTroppi(true);
+      if (!posti) return;
 
       setAvviso(null);
       setBusy(c.tool.reading);
       try {
         const nuovi = [];
-        for (const f of immagini.slice(0, MAX_FILE)) {
+        for (const f of immagini.slice(0, posti)) {
           const src = await pixelDaFile(f);
           // Venti millisecondi per sapere se il modello servirà: si paga qui,
           // una volta, invece di far pagare a tutti lo scaricamento.
           const istante = ritaglioIstantaneo(src);
           nuovi.push({
-            id: `${f.name}-${f.size}-${nuovi.length}`,
+            id: `${f.name}-${f.size}-${seq.current++}`,
             nome: f.name.replace(/\.[^.]+$/, ''),
             src,
             alpha: null,
@@ -123,7 +134,7 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
             via: null,
           });
         }
-        setLavori(nuovi);
+        setLavori((v) => [...v, ...nuovi]);
         // Il pannello si CHIUDE quando arriva un file: da li' in poi la tela e'
         // il lavoro, e un ovale aperto sopra la mascotte e' un ingombro.
         setPersonalizza(false);
@@ -146,7 +157,11 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
     try {
       const restano = [];
       for (const l of lavori) {
-        if (l.pronto) fatti.push({ ...l, alpha: l.pronto, via: 'istante' });
+        // Chi e' gia' scontornato non si rifa': aggiungendo il terzo file, i
+        // primi due passerebbero un'altra volta dal modello per niente — e
+        // perderebbero le correzioni fatte col pennello.
+        if (l.alpha) fatti.push(l);
+        else if (l.pronto) fatti.push({ ...l, alpha: l.pronto, via: 'istante' });
         else restano.push(l);
       }
       if (restano.length) {
@@ -406,17 +421,6 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
             height="670"
           />
         </button>
-        {/* Il punto oro: piccolo da vedere, 44 px da premere. Sotto quella
-            misura un polpastrello sbaglia — la zona premibile sta nel CSS,
-            attorno al pallino, ed è trasparente. */}
-        <button
-          className="punto-oro"
-          aria-expanded={personalizza}
-          aria-label={c.tool.customise}
-          onClick={() => setPersonalizza((v) => !v)}
-        >
-          <i />
-        </button>
       </div>
 
         <img
@@ -429,30 +433,6 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
           width="720"
           height="720"
         />
-
-        {personalizza && (
-        <div className="rit-tuo">
-          <p>{c.tool.makeYours}</p>
-          <div className="rit-pastiglie">
-            {[
-              { id: 'x4', label: '×4' },
-              { id: 'x2', label: '×2' },
-              { id: 'd2', label: ':2' },
-              { id: 'd4', label: ':4' },
-              { id: 'scarica', label: c.tool.addDownload },
-            ].map((p) => (
-              <button
-                key={p.id}
-                className="pastiglia"
-                aria-pressed={ricetta.includes(p.id)}
-                onClick={() => onRicetta(p.id)}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       <input
         id="rit-input"
@@ -476,6 +456,45 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
           </button>
         )}
         {lavori.length < MAX_FILE && <p className="rit-claim">{c.tool.claim}</p>}
+        {/* Personalizzare il tasto e' una delle due cose che si fanno qui, e
+            finche' e' stata un pallino sull'angolo del tasto non l'ha trovata
+            nessuno: adesso e' un comando con il suo nome, sotto il tasto,
+            accanto al `+`. Il pallino d'oro resta come segno, non come
+            bersaglio. */}
+        <div className="rit-personalizza">
+          <button
+            className="punto-oro"
+            aria-expanded={personalizza}
+            onClick={() => setPersonalizza((v) => !v)}
+          >
+            <i />
+            {c.tool.customise}
+          </button>
+
+          {personalizza && (
+          <div className="rit-tuo">
+            <p>{c.tool.makeYours}</p>
+            <div className="rit-pastiglie">
+              {[
+                { id: 'x4', label: '×4' },
+                { id: 'x2', label: '×2' },
+                { id: 'd2', label: ':2' },
+                { id: 'd4', label: ':4' },
+                { id: 'scarica', label: c.tool.addDownload },
+              ].map((p) => (
+                <button
+                  key={p.id}
+                  className="pastiglia"
+                  aria-pressed={ricetta.includes(p.id)}
+                  onClick={() => onRicetta(p.id)}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          )}
+        </div>
       </div>
 
       {(busy || scarico) && (

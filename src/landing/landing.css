@@ -1494,3 +1494,174 @@ body {
     grid-column: 1 / -1;
   }
 }
+
+
+/* ══ I primi fix della home (2026-08-31) ════════════════════════════════
+   Quattro cose, e una regola sola dietro: **chi usa lo scontorno gratuito
+   deve poter restare sul primo schermo**. Sotto comincia il racconto del
+   servizio, e chi scorre per vedere il proprio file finisce dentro un'altra
+   pagina. Quindi i file stanno in fila, non in colonna, e nessuno di loro
+   puo' crescere piu' di quanto lo schermo regga. */
+
+/* ── I file: in FILA, sempre ────────────────────────────────────────── */
+
+/* `wrap` mandava il secondo file sotto il primo appena lo spazio si
+   stringeva, e il terzo fuori dal primo schermo. Adesso le tele si dividono
+   la larghezza che c'e' — `min-width: 0`, o un elemento flex si rifiuta di
+   scendere sotto il suo contenuto. */
+.rit-tele {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 12px;
+}
+.rit-tela {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+  max-width: 320px;
+}
+
+/* Il tetto d'altezza: un ritratto verticale da solo si mangiava tutto lo
+   schermo. `object-fit` vale anche sul canvas — i pixel restano quelli, e' la
+   scatola che si stringe. */
+.rit-tela canvas {
+  max-height: min(38vh, 340px);
+  object-fit: contain;
+}
+.rit-vista {
+  display: flex;
+  justify-content: center;
+}
+.rit-vista[data-zoom] {
+  display: block;
+  height: min(38vh, 340px);
+}
+
+/* ── «Personalizza»: un comando con il suo nome ─────────────────────── */
+
+/* Era un pallino d'oro sull'angolo del tasto: 18 px senza etichetta, che chi
+   arriva non lega a niente. Adesso e' un comando sotto il tasto, con la
+   parola scritta; il pallino resta come segno accanto al nome. */
+.rit-personalizza {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+.punto-oro {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  width: auto;
+  height: auto;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--linea-viva);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--nero);
+  font-family: 'Fredoka', var(--display);
+  font-size: 15px;
+}
+.punto-oro i {
+  width: 12px;
+  height: 12px;
+  box-shadow: none;
+}
+.punto-oro[aria-expanded='true'] {
+  border-color: var(--oro);
+}
+
+/* L'ovale delle opzioni: SOTTO il comando che lo apre, e fuori dal flusso —
+   e' un momento, non uno stato, e non deve spostare niente aprendosi. Prima
+   stava ancorato sopra tutto il riquadro (`bottom: calc(100% + 14px)`) e
+   usciva dalla cima della pagina: si vedeva mezzo. */
+.rit-tuo {
+  position: absolute;
+  top: calc(100% + 12px);
+  bottom: auto;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: min(420px, 88vw);
+}
+
+@media (max-width: 700px) {
+  /* Mobile: piu' pulita. Le tele restano in fila ma piccole, e il tetto
+     d'altezza scende — sul telefono il primo schermo e' meta' di quello di
+     un portatile. */
+  .rit-tela {
+    max-width: none;
+  }
+  .rit-tela canvas,
+  .rit-vista[data-zoom] {
+    max-height: 26vh;
+    height: auto;
+  }
+  .rit-vista[data-zoom] {
+    height: 26vh;
+  }
+  .rit-tela figcaption {
+    padding: 6px;
+    font-size: 11px;
+  }
+  /* Il nome del file per intero non serve a nessuno su 90 px di larghezza. */
+  .rit-tela .rit-via {
+    display: none;
+  }
+}
+
+/* Con i file, sul desktop: le tele si prendono TUTTA la larghezza fino alla
+   mascotte, e il `+` con la frase scendono sotto, al centro. La colonna
+   stretta di destra lasciava alle tele 380 px in tre — 119 px a testa,
+   misurati il 2026-08-31: un francobollo su cui non si corregge un bordo. */
+@media (min-width: 900px) {
+  .rit[data-file] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+  }
+  .rit[data-file] > .rit-tele {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .rit[data-file] > .rit-sotto {
+    grid-column: 1;
+    grid-row: 3;
+    margin: 22px 0 0;
+  }
+}
+
+/* Sotto i 900 px il tasto rientra nel flusso, e l'ordine del documento
+   metteva il `+` e «Personalizza» PRIMA dei file: si apriva la pagina e la
+   prima cosa sotto la mascotte era un comando, non il proprio lavoro. Qui
+   l'ordine e' quello che conta: il tasto, gli strumenti, i file, e i comandi
+   in fondo. */
+@media (max-width: 899px) {
+  .rit[data-file] {
+    display: flex;
+    flex-direction: column;
+    /* I 560 px servono a tenere il posto alla mascotte quando la pagina e'
+       vuota. Con i file dentro sono solo vuoto in fondo. */
+    min-height: 0;
+  }
+  .rit[data-file] > .rit-tasto {
+    order: 0;
+  }
+  .rit[data-file] > .rit-strumenti,
+  .rit[data-file] > .rit-attesa,
+  .rit[data-file] > .rit-avviso {
+    order: 1;
+  }
+  .rit[data-file] > .rit-tele {
+    order: 2;
+    /* La mascotte e' fuori dal flusso e non spinge niente: senza questo
+       stacco il terzo file le passava sopra i piedi (misurato: 34 px di
+       sovrapposizione a 375 px di larghezza). */
+    margin-top: 48px;
+  }
+  .rit[data-file] > .rit-sotto {
+    order: 3;
+  }
+}
