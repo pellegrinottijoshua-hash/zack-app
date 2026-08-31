@@ -40,6 +40,19 @@ import {
 const MISURE = [4, 10, 25, 60, 120];
 const ZOOM_MAX = 8;
 
+/**
+ * I due modelli fra cui si sceglie, qui.
+ *
+ * Nello studio ce n'e' un terzo (illustrazioni), ma la home non e' il posto
+ * per una tassonomia: chi arriva vuole sapere se aspetta poco o viene bene.
+ * Il nome del modello resta l'etichetta di chi va a guardare — sta nel
+ * `title`, non nel tasto.
+ */
+const MODELLI = [
+  { id: 'u2net', chiave: 'modelFast', serveGpu: false },
+  { id: 'isnet-general-use', chiave: 'modelQuality', serveGpu: true },
+];
+
 /** I tre strumenti del contratto. Il righello non dipinge: guida chi dipinge. */
 const STRUMENTI = ['righello', 'ripristina', 'cancella'];
 
@@ -63,6 +76,20 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
   const [zoom, setZoom] = useState({});
   const [guide, setGuide] = useState({});
   const [personalizza, setPersonalizza] = useState(false);
+  /**
+   * Quale modello, e se questo browser regge quello buono.
+   *
+   * `gpu` resta `null` finche' non si sa: un tasto spento prima di aver
+   * misurato direbbe una cosa che non e' stata verificata.
+   */
+  const [modello, setModello] = useState(() => {
+    try {
+      return localStorage.getItem('jayl.modello') || 'u2net';
+    } catch {
+      return 'u2net';
+    }
+  });
+  const [gpu, setGpu] = useState(null);
   const [sopra, setSopra] = useState(false);
 
   const motore = useRef(null);
@@ -83,16 +110,46 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
   const storia = useRef({});
   const [puoiAnnullare, setPuoiAnnullare] = useState(false);
 
+  /**
+   * Si misura la WebGPU quando si apre il pannello, non prima.
+   *
+   * `capabilities.js` non tira dentro ONNX ne' un modello: sono due funzioni e
+   * una lista. Chi non apre il pannello non paga nemmeno quelle.
+   */
+  useEffect(() => {
+    if (!personalizza || gpu !== null) return;
+    import('../engine/capabilities.js')
+      .then((cap) => cap.detectWebGpu(navigator.gpu))
+      .then(setGpu)
+      .catch(() => setGpu(false));
+  }, [personalizza, gpu]);
+
+  function scegliModello(id) {
+    setModello(id);
+    try {
+      localStorage.setItem('jayl.modello', id);
+    } catch {
+      /* la scelta vale per questa visita */
+    }
+    // Il motore in memoria e' quello VECCHIO: cambiare modello senza buttarlo
+    // via significa scegliere e non vedere niente cambiare.
+    motore.current?.engine.dispose();
+    motore.current = null;
+  }
+
   const preparaMotore = useCallback(async () => {
     if (motore.current) return motore.current;
     const [{ createEngine }, cap] = await Promise.all([
       import('../engine/client.js'),
       import('../engine/capabilities.js'),
     ]);
-    const tier = cap.pickTier(await cap.detectWebGpu(navigator.gpu));
-    // `defaultModelFor` restituisce il MODELLO, non il suo id: il modello lo
-    // sceglie il prodotto, non questa pagina.
-    const model = cap.defaultModelFor(tier);
+    const haGpu = await cap.detectWebGpu(navigator.gpu);
+    setGpu(haGpu);
+    const tier = cap.pickTier(haGpu);
+    // La scelta del committente vince, ma solo fra i modelli che questo
+    // browser regge davvero: `modelsFor` esclude i 1024 px senza WebGPU.
+    // `defaultModelFor` restituisce il MODELLO, non il suo id.
+    const model = cap.modelsFor(tier).find((m) => m.id === scelto.current) || cap.defaultModelFor(tier);
     await scaricaModello(model.url, (d) => setScarico(d));
     setScarico(null);
     const engine = createEngine();
@@ -100,6 +157,12 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
     motore.current = { engine, modelId: model.id };
     return motore.current;
   }, []);
+
+  /** La scelta letta dentro `preparaMotore`, che non si ricrea a ogni scelta. */
+  const scelto = useRef(modello);
+  useEffect(() => {
+    scelto.current = modello;
+  }, [modello]);
 
   useEffect(() => () => motore.current?.engine.dispose(), []);
   useEffect(() => {
@@ -435,30 +498,49 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
           <i />
         </button>
 
-        {personalizza && (
-        <div className="rit-tuo">
-          <p>{c.tool.makeYours}</p>
-          <div className="rit-pastiglie">
-            {[
-              { id: 'x4', label: '×4' },
-              { id: 'x2', label: '×2' },
-              { id: 'd2', label: ':2' },
-              { id: 'd4', label: ':4' },
-              { id: 'scarica', label: c.tool.addDownload },
-            ].map((p) => (
-              <button
-                key={p.id}
-                className="pastiglia"
-                aria-pressed={ricetta.includes(p.id)}
-                onClick={() => onRicetta(p.id)}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        )}
       </div>
+
+      {personalizza && (
+      <div className="rit-tuo">
+        <p>{c.tool.makeYours}</p>
+        {/* Con quale dei due modelli. «Rapido» e' quello da 320 px che gira
+            ovunque; «Qualita'» e' quello da 1024, e senza WebGPU non si offre
+            nemmeno: nella sonda del 2026-08-25 ha bloccato la scheda per tre
+            minuti. */}
+        <div className="rit-modelli" role="group" aria-label={c.tool.model}>
+          {MODELLI.map((m) => (
+            <button
+              key={m.id}
+              className="pastiglia"
+              aria-pressed={modello === m.id}
+              disabled={m.serveGpu && gpu === false}
+              title={m.serveGpu && gpu === false ? c.tool.modelNeedsGpu : undefined}
+              onClick={() => scegliModello(m.id)}
+            >
+              {c.tool[m.chiave]}
+            </button>
+          ))}
+        </div>
+        <div className="rit-pastiglie">
+          {[
+            { id: 'x4', label: '×4' },
+            { id: 'x2', label: '×2' },
+            { id: 'd2', label: ':2' },
+            { id: 'd4', label: ':4' },
+            { id: 'scarica', label: c.tool.addDownload },
+          ].map((p) => (
+            <button
+              key={p.id}
+              className="pastiglia"
+              aria-pressed={ricetta.includes(p.id)}
+              onClick={() => onRicetta(p.id)}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      )}
 
         <img
           className="rit-zack"
@@ -566,7 +648,6 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
 
               <figcaption>
                 <span className="rit-nome">{l.nome}</span>
-                {l.via && <span className="rit-via">{l.via === 'istante' ? c.tool.instant : c.tool.viaModel}</span>}
                 {l.alpha && (
                   <button className="comelink" onClick={() => scarica(l)}>
                     {c.tool.download}

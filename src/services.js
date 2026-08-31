@@ -34,17 +34,15 @@ export const SERVICES = [
     ready: true,
   },
   {
+    // Vettorializza ED editor SVG: un servizio solo, perche' sono un gesto
+    // solo. Nessuno traccia un'immagine per lasciarla com'e' viene, e nessuno
+    // apre l'editor senza qualcosa da modificare — erano due cerchi che si
+    // rimandavano l'un l'altro. Dentro, `tool === 'editor'` resta il MODO in
+    // cui si ritocca: si entra tracciando, o portando dentro un SVG.
     id: 'vettorializza',
     group: GROUP_LOCAL,
     key: 'tool.vector',
     icon: 'vector',
-    ready: true,
-  },
-  {
-    id: 'editor',
-    group: GROUP_LOCAL,
-    key: 'tool.editor',
-    icon: 'pencil',
     ready: true,
   },
   {
@@ -85,6 +83,16 @@ export const SERVICES = [
 
 export const localServices = () => SERVICES.filter((s) => s.group === GROUP_LOCAL);
 export const paidServices = () => SERVICES.filter((s) => s.group === GROUP_PAID);
+
+/**
+ * Il servizio a cui appartiene uno strumento.
+ *
+ * L'editor non e' piu' un servizio suo: e' il modo in cui si ritocca dentro
+ * «Vettoriale». Chi deve accendere un cerchio nella barra passa di qui.
+ */
+export function servizioDelloStrumento(tool) {
+  return tool === 'editor' ? 'vettorializza' : tool;
+}
 
 export function getService(id) {
   const s = SERVICES.find((x) => x.id === id);

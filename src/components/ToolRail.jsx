@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
-import { localServices, paidServices } from '../services.js';
+import { localServices, paidServices, servizioDelloStrumento } from '../services.js';
 import Icon from './Icon.jsx';
 
 /**
@@ -21,7 +21,6 @@ const PERSONAGGIO = {
   brain: 'imoth',
   scontorna: 'izack',
   vettorializza: 'iseagull',
-  editor: 'iant',
   filmato: 'icat',
   suono: 'ipigeon',
 };
@@ -71,7 +70,10 @@ function Item({ service, active, collapsed, lampo, onPick }) {
  * Si riduce a sole icone mentre si lavora: nell'editor 130 px di tela contano
  * più dei nomi, che restano raggiungibili col passaggio del mouse.
  */
-export default function ToolRail({ current, collapsed: forzata, balance, onPick }) {
+export default function ToolRail({ current: strumento, collapsed: forzata, balance, onPick }) {
+  // Dentro «Vettoriale» si ritocca con l'editor: e' lo stesso cerchio, e deve
+  // restare acceso anche mentre si modificano i tracciati.
+  const current = servizioDelloStrumento(strumento);
   /**
    * La barra e' fatta di CERCHI, e la parola compare solo se la si apre.
    *

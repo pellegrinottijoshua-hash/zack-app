@@ -10,8 +10,8 @@
       "help": "Takes the background away and keeps only the subject, on transparency."
     },
     "vector": {
-      "label": "Vectorise",
-      "help": "Turns pixels into shapes you can scale as large as you like without going blurry."
+      "label": "Vector",
+      "help": "Turns pixels into shapes you can scale as much as you like, and you refine them right here: move, colour, add text and shapes."
     },
     "editor": {
       "label": "SVG editor",

@@ -1691,3 +1691,61 @@ body {
     order: 3;
   }
 }
+
+
+/* ══ L'ovale delle opzioni sale in alto, accanto agli strumenti ═════════
+   Dove si apriva prima copriva la mascotte e spingeva lo sguardo in basso,
+   nella zona in cui comincia il racconto del servizio. In alto c'e' una
+   fascia vuota — quella indicata col rosso il 2026-08-31 — e li' l'ovale sta
+   nel FLUSSO: apre, spinge i file un po' piu' giu', chiude, tornano su.
+   Nessuna sovrapposizione, nessuna eccezione da giustificare. */
+
+.rit-modelli {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+.rit-modelli .pastiglia:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* I file, un dito piu' in basso: attaccati agli strumenti sembravano la
+   seconda riga della barra invece del lavoro. */
+.rit-tele {
+  margin-top: 26px;
+}
+
+@media (min-width: 900px) {
+  .rit[data-file] > .rit-tuo {
+    position: static;
+    transform: none;
+    grid-column: 1;
+    grid-row: 1;
+    /* A DESTRA della fascia degli strumenti, che stanno a sinistra: e' il
+       vuoto fra la barra e il tasto Zack. */
+    justify-self: end;
+    margin: 0;
+    width: min(400px, 100%);
+  }
+  /* La riga degli strumenti cresce con l'ovale dentro, e i file scendono di
+     conseguenza: e' il flusso a spostarli, non un margine indovinato. */
+  .rit[data-file] > .rit-strumenti {
+    align-self: start;
+  }
+}
+
+@media (max-width: 899px) {
+  /* Sul telefono l'ovale sta nel flusso e basta: sotto il tasto, sopra i
+     file. Con i file dentro il riquadro e' un flex, quindi serve un posto
+     esplicito nella fila. */
+  .rit-tuo {
+    position: static;
+    transform: none;
+    margin: 14px auto 0;
+  }
+  .rit[data-file] > .rit-tuo {
+    order: 1;
+  }
+}

@@ -10,8 +10,8 @@
       "help": "Toglie lo sfondo e lascia solo il soggetto, su trasparenza."
     },
     "vector": {
-      "label": "Vettorializza",
-      "help": "Trasforma i pixel in forme che puoi ingrandire quanto vuoi senza sgranare."
+      "label": "Vettoriale",
+      "help": "Trasforma i pixel in forme che puoi ingrandire quanto vuoi, e le ritocchi qui stesso: sposta, colora, aggiungi testo e forme."
     },
     "editor": {
       "label": "Editor SVG",
