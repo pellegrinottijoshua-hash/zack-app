@@ -6,12 +6,16 @@ import SvgEditor from './components/SvgEditor.jsx';
 import { RemovePanel, TracePanel, ExportPanel, UpscalePanel, MetaBlock, Help } from './components/Panels.jsx';
 import EngineBanner from './components/EngineBanner.jsx';
 import LanguageSwitch from './components/LanguageSwitch.jsx';
-import HelpToggle from './components/HelpToggle.jsx';
+// «Spiegami» e' nascosto dal 2026-08-31 (decisione del committente): la
+// striscia in cima porta solo il logo del servizio. Il componente resta qui,
+// pronto, perche' rimetterlo e' una riga sola.
+// import HelpToggle from './components/HelpToggle.jsx';
 import Onboarding, { hasSeenOnboarding } from './components/Onboarding.jsx';
 import VectorTools from './components/VectorTools.jsx';
 import { resolveShortcut } from './engine/shortcuts.js';
 import { useLibrary } from './hooks/useLibrary.js';
 import ToolRail from './components/ToolRail.jsx';
+import Scontorna from './components/Scontorna.jsx';
 import MaskBrush from './components/MaskBrush.jsx';
 import BatchPanel from './components/BatchPanel.jsx';
 import SoundLab from './components/SoundLab.jsx';
@@ -55,6 +59,15 @@ const PALETTE = ['#111111', '#F5F0E8', '#FFFFFF', '#8A8A85', '#C4A35A', 'none'];
 
 const px = (d) => (d ? `${d.w}×${d.h}` : '—');
 /** Come è stato ottenuto il risultato, detto in italiano. */
+/**
+ * I servizi che hanno la loro faccia, consegnata dal committente.
+ *
+ * Non e' un'icona astratta: e' la faccia di Zack che FA quella cosa — il becco
+ * d'oro dello scontorno, la nota del suono, il tracciato del vettoriale. Sta
+ * in cima, e dice dove sei.
+ */
+const FACCIA = new Set(['brain', 'scontorna', 'vettorializza', 'filmato', 'suono']);
+
 const STRATEGIE = { mask: 'maschera', crop: 'ritaglio', upscale: 'ingrandimento', browser: 'diretta' };
 // Un tempo che non abbiamo misurato non si stampa: «NaNs» sembra un guasto,
 // e un trattino dice la verità.
@@ -1178,95 +1191,18 @@ export default function App() {
   const isEditor = tool === 'editor';
   const canExport = isEditor || Boolean(file);
 
-  return (
-    <div className="shell" data-working={isEditor}>
-      <header className="topbar">
-        {/* Il marchio del prodotto, non quello del negozio: JAYL resta di
-            jayl.store e dei capi, Zack App è il software. Erano la stessa
-            parola su due modelli di business con ritmi incompatibili. */}
-        <span className="wordmark">
-          ZACK <em>app</em>
-        </span>
-        <span className="spacer" />
-        <HelpToggle />
-        <LanguageSwitch />
-      </header>
-
-      {showOnboarding && <Onboarding onClose={() => setShowOnboarding(false)} />}
-
-      <div className="main">
-        <ToolRail
-          current={tool}
-          collapsed={isEditor}
-          balance={null}
-          onPick={(svc) => {
-            if (!svc.ready) {
-              setNotice(`${t('soon.title')} — ${t('soon.body')}`);
-              return;
-            }
-            setNotice(null);
-            setTool(svc.id);
-            setRicetta(leggiRicetta(svc.id));
-          }}
-        />
-
-        <section className="stage">
-          {bannerOpen && engine.ready && (
-            <EngineBanner
-              tier={engine.tier}
-              phase={engine.phase}
-              onDismiss={() => setBannerOpen(false)}
-            />
-          )}
-          {/* La barra parla del file sul piano di lavoro. In Brain non c'è un
-              file sul piano: c'è una tela, e i suoi comandi stanno sopra di
-              lei. Lasciarla visibile faceva credere che il tasto Zack agisse
-              su ciò che si stava guardando. */}
-          {/* La barra sopra la tela parla del file sul piano di lavoro, che è
-              un'immagine. Nei servizi che lavorano su altro non ha senso, e
-              `filmato` era rimasto fuori dalla lista mentre veniva aggiunto
-              dappertutto: chi apriva Filmato si trovava sopra il nome di un
-              JPG e il tasto Zack, che avrebbe scontornato l'immagine mentre
-              lui guardava una clip. */}
-          {!isEditor && !['suono', 'brain', 'filmato'].includes(tool) && (
-            <StageBar
-              file={file}
-              image={stats?.image}
-              hasResult={result?.kind === 'png'}
-              canUndo={history.length > 0}
-              brushOpen={brushOpen}
-              busy={Boolean(busy)}
-              ricetta={ricetta}
-              pianoZack={stats?.image ? pianoZack(ricetta, stats.image) : null}
-              lampoZack={lampoZack}
-              onZack={runZack}
-              onRicetta={salvaRicetta}
-              onUndo={undoResult}
-              onBrush={() => setBrushOpen((v) => !v)}
-              onCrop={() => {
-                setNotice(null);
-                // Il ritaglio vive negli avanzati: si aprono, e ci si porta.
-                // Cercare la sezione per il testo del titolo, com'era prima,
-                // si rompeva al primo cambio di traduzione: ora ha un id.
-                const avanzati = document.querySelector('.rail .avanzati-head');
-                if (avanzati?.getAttribute('aria-expanded') !== 'true') avanzati?.click();
-                requestAnimationFrame(() => {
-                  document
-                    .querySelector('.rail .sect[data-id="crop"]')
-                    ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-                });
-              }}
-              onSwap={swapFile}
-              onClear={() => {
-                if (window.confirm(t('bar.confirmClear'))) reset();
-              }}
-            />
-          )}
-
-          {error && <div className="alert">{error}</div>}
-          {notice && !error && <div className="alert">{notice}</div>}
-
-          {tool === 'scontorna' && !batch.running && batch.results.length > 0 && !brushOpen ? (
+  /**
+   * Cio' che sta sul piano di lavoro, qualunque sia il servizio.
+   *
+   * Si chiama `suPiano` e non `tela` perche' `tela` e' gia' la lavagna di
+   * Brain: due cose diverse con lo stesso nome nello stesso file., qualunque sia il servizio.
+   *
+   * Estratta in una variabile perche' lo scontorno ora la mette DENTRO il suo
+   * piano di lavoro (`Scontorna`) e gli altri servizi no: duplicarla sarebbe
+   * il modo piu' rapido per farle prendere due strade diverse.
+   */
+  const suPiano = (
+tool === 'scontorna' && !batch.running && batch.results.length > 0 && !brushOpen ? (
             /* I risultati del blocco stanno sulla TELA, non in un elenco di
                francobolli nella colonna: l'errore del modello si vede per
                differenza guardandoli insieme, non aprendoli a uno a uno. */
@@ -1369,6 +1305,154 @@ export default function App() {
               title={t(tool === 'scontorna' ? 'drop.title' : 'drop.vectorTitle')}
               hint={t(tool === 'scontorna' ? 'drop.hint' : 'drop.vectorHint')}
             />
+          )
+  );
+
+  return (
+    <div className="shell" data-working={isEditor}>
+      {/* La striscia nera in cima, e dentro il LOGO DEL SERVIZIO IN USO.
+          La faccia di Zack che fa quella cosa e' l'unica cosa che deve stare
+          qui: dice dove sei senza una parola, e cambia quando cambi servizio.
+
+          «Spiegami» e la scelta della lingua sono NASCOSTI per ora — decisione
+          del committente del 2026-08-31. I componenti restano importati e
+          pronti: rimetterli e' una riga. */}
+      <header className="topbar">
+        {/* Il marchio del prodotto, non quello del negozio: JAYL resta di
+            jayl.store e dei capi, Zack App è il software. Erano la stessa
+            parola su due modelli di business con ritmi incompatibili. */}
+        <span className="wordmark">
+          ZACK <em>app</em>
+        </span>
+        <span className="spacer" />
+        {FACCIA.has(tool) && (
+          <img
+            className="topbar-faccia"
+            src={`/zack/servizi/${tool}-320.webp`}
+            alt=""
+            aria-hidden="true"
+            width="320"
+            height="320"
+          />
+        )}
+      </header>
+
+      {showOnboarding && <Onboarding onClose={() => setShowOnboarding(false)} />}
+
+      <div className="main">
+        <ToolRail
+          current={tool}
+          collapsed={isEditor}
+          balance={null}
+          onPick={(svc) => {
+            if (!svc.ready) {
+              setNotice(`${t('soon.title')} — ${t('soon.body')}`);
+              return;
+            }
+            setNotice(null);
+            setTool(svc.id);
+            setRicetta(leggiRicetta(svc.id));
+          }}
+        />
+
+        <section className="stage">
+          {bannerOpen && engine.ready && (
+            <EngineBanner
+              tier={engine.tier}
+              phase={engine.phase}
+              onDismiss={() => setBannerOpen(false)}
+            />
+          )}
+          {/* La barra parla del file sul piano di lavoro. In Brain non c'è un
+              file sul piano: c'è una tela, e i suoi comandi stanno sopra di
+              lei. Lasciarla visibile faceva credere che il tasto Zack agisse
+              su ciò che si stava guardando. */}
+          {/* La barra sopra la tela parla del file sul piano di lavoro, che è
+              un'immagine. Nei servizi che lavorano su altro non ha senso, e
+              `filmato` era rimasto fuori dalla lista mentre veniva aggiunto
+              dappertutto: chi apriva Filmato si trovava sopra il nome di un
+              JPG e il tasto Zack, che avrebbe scontornato l'immagine mentre
+              lui guardava una clip. */}
+          {!isEditor && !['suono', 'brain', 'filmato', 'scontorna'].includes(tool) && (
+            <StageBar
+              file={file}
+              image={stats?.image}
+              hasResult={result?.kind === 'png'}
+              canUndo={history.length > 0}
+              brushOpen={brushOpen}
+              busy={Boolean(busy)}
+              ricetta={ricetta}
+              pianoZack={stats?.image ? pianoZack(ricetta, stats.image) : null}
+              lampoZack={lampoZack}
+              onZack={runZack}
+              onRicetta={salvaRicetta}
+              onUndo={undoResult}
+              onBrush={() => setBrushOpen((v) => !v)}
+              onCrop={() => {
+                setNotice(null);
+                // Il ritaglio vive negli avanzati: si aprono, e ci si porta.
+                // Cercare la sezione per il testo del titolo, com'era prima,
+                // si rompeva al primo cambio di traduzione: ora ha un id.
+                const avanzati = document.querySelector('.rail .avanzati-head');
+                if (avanzati?.getAttribute('aria-expanded') !== 'true') avanzati?.click();
+                requestAnimationFrame(() => {
+                  document
+                    .querySelector('.rail .sect[data-id="crop"]')
+                    ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                });
+              }}
+              onSwap={swapFile}
+              onClear={() => {
+                if (window.confirm(t('bar.confirmClear'))) reset();
+              }}
+            />
+          )}
+
+          {error && <div className="alert">{error}</div>}
+          {notice && !error && <div className="alert">{notice}</div>}
+
+          {/* Lo scontorno ha il suo piano di lavoro: vuoto, col `+` in mezzo,
+              il tasto Zack in basso a destra e la mascotte a sinistra. La
+              tela vera — confronto, pennello, blocco — gli sta dentro, e
+              compare quando c'e' un file. */}
+          {tool === 'scontorna' ? (
+            <Scontorna
+              vuoto={!file && batch.results.length === 0}
+              ricetta={ricetta}
+              piano={stats?.image ? pianoZack(ricetta, stats.image) : null}
+              busy={Boolean(busy)}
+              models={engine.models}
+              modello={s.model}
+              onModello={(id) => set({ model: id })}
+              onPick={swapFile}
+              onFile={onFile}
+              onZack={runZack}
+              onRicetta={salvaRicetta}
+              onScarica={runExport}
+              puoiScaricare={canExport}
+              strumenti={
+                file
+                  ? [
+                      { id: 'undo', icon: 'undo', label: t('bar.undo'), disabled: Boolean(busy) || history.length === 0, onClick: undoResult },
+                      { id: 'eraser', icon: 'eraser', label: t('bar.eraser'), disabled: Boolean(busy) || result?.kind !== 'png', active: brushOpen, onClick: () => setBrushOpen((v) => !v) },
+                      { id: 'swap', icon: 'swap', label: t('bar.swap'), disabled: Boolean(busy), onClick: swapFile },
+                      {
+                        id: 'clear',
+                        icon: 'clear',
+                        label: t('bar.clear'),
+                        disabled: Boolean(busy),
+                        onClick: () => {
+                          if (window.confirm(t('bar.confirmClear'))) reset();
+                        },
+                      },
+                    ]
+                  : []
+              }
+            >
+              {suPiano}
+            </Scontorna>
+          ) : (
+            suPiano
           )}
         </section>
 
@@ -1378,12 +1462,12 @@ export default function App() {
              guarda. Senza questo la colonna mostrava i comandi del vettoriale
              accanto al laboratorio dei suoni: un pannello che parla di
              un'altra cosa è peggio di un pannello vuoto. */
-          data-vuota={['brain', 'suono', 'filmato'].includes(tool) || undefined}
+          data-vuota={['brain', 'suono', 'filmato', 'scontorna'].includes(tool) || undefined}
         >
           {/* Brain non ha comandi in colonna: i suoi stanno sulla tela, dove
               si guarda. Una colonna di comandi spenti accanto a una lavagna è
               esattamente il rumore che la regola §6.1 vuole togliere. */}
-          {['brain', 'suono', 'filmato'].includes(tool) ? null : isEditor ? (
+          {['brain', 'suono', 'filmato', 'scontorna'].includes(tool) ? null : isEditor ? (
             <>
               <VectorTools
                 editor={editorRef}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
-import { localServices, paidServices, servizioDelloStrumento } from '../services.js';
+import { localServices, servizioDelloStrumento } from '../services.js';
 import Icon from './Icon.jsx';
 
 /**
@@ -25,16 +25,6 @@ const PERSONAGGIO = {
   suono: 'ipigeon',
 };
 
-/**
- * I servizi che hanno la loro faccia, consegnata dal committente.
- *
- * Non e' un'icona astratta e non e' un personaggio a caso: e' la faccia di
- * Zack che FA quella cosa — il becco d'oro dello scontorno, la nota del
- * suono, il tracciato del vettoriale. Chi non ce l'ha (i due a consumo)
- * tiene il segno disegnato di prima.
- */
-const FACCIA = new Set(['brain', 'scontorna', 'vettorializza', 'filmato', 'suono']);
-
 function Item({ service, active, collapsed, lampo, onPick }) {
   const label = t(`${service.key}.label`);
   return (
@@ -49,35 +39,14 @@ function Item({ service, active, collapsed, lampo, onPick }) {
           altrove: e' il cerchio stesso che cambia faccia. */}
       {lampo ? (
         <img className="tool-pg" src={lampo} alt="" aria-hidden="true" width="40" height="40" />
-      ) : FACCIA.has(service.id) ? (
-        <span className="tool-faccia">
-          <img
-            src={`/zack/servizi/${service.id}.webp`}
-            srcSet={`/zack/servizi/${service.id}.webp 160w, /zack/servizi/${service.id}-320.webp 320w`}
-            sizes="40px"
-            alt=""
-            aria-hidden="true"
-            width="160"
-            height="160"
-          />
-          {/* Lo scontorno ha anche la faccia «quando ci si va sopra»: il becco
-              si accende d'oro. E' l'unica consegnata, e sta sull'unico
-              servizio che si usa anche fuori dallo studio. */}
-          {service.id === 'scontorna' && (
-            <img
-              className="tool-sopra"
-              src="/zack/servizi/scontorna-sopra.webp"
-              alt=""
-              aria-hidden="true"
-              width="160"
-              height="160"
-            />
-          )}
-        </span>
       ) : (
         <Icon name={service.icon} draw />
       )}
-      {!collapsed && <span className="tool-name">{label}</span>}
+      {/* Il nome si scrive SEMPRE: e' il CSS a nasconderlo dove la barra e'
+          una colonna di cerchi. Sul telefono, dove la barra sta in fondo e non
+          esiste il passaggio del mouse, cinque segni senza nome non si
+          distinguono — ed e' li' che il committente li ha chiesti. */}
+      <span className="tool-name">{label}</span>
       {/* Prezzo OPPURE 'presto', mai entrambi: a 190px si contendono lo
           spazio e vince la troncatura del nome, che è l'unica cosa
           davvero necessaria. */}
@@ -210,10 +179,10 @@ export default function ToolRail({ current: strumento, collapsed: forzata, balan
         <Item key={s.id} service={s} active={current === s.id} collapsed={collapsed} lampo={lampo?.id === s.id ? lampo.src : null} onPick={scegli} />
       ))}
 
-      <p className="group-label">{collapsed ? '·' : t('rail.paid')}</p>
-      {paidServices().map((s) => (
-        <Item key={s.id} service={s} active={current === s.id} collapsed={collapsed} lampo={lampo?.id === s.id ? lampo.src : null} onPick={scegli} />
-      ))}
+      {/* I due a consumo — immagine e video — sono usciti dalla barra il
+          2026-08-31: erano due cerchi spenti che dicevano «presto» in mezzo a
+          cinque che funzionano. Torneranno quando ci sara' cosa premere.
+          `paidServices()` resta in `services.js`, e con lei il gruppo. */}
 
       <div className="rail-foot">
         {collapsed ? (

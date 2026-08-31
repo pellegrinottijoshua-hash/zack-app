@@ -13,6 +13,13 @@
 export const GROUP_LOCAL = 'local';
 export const GROUP_PAID = 'paid';
 
+/**
+ * L'ordine della fila in basso, deciso dal committente il 2026-08-31:
+ * Brain · Vettoriale · SCONTORNO · Suono · Filmato. Lo scontorno sta in mezzo
+ * perche' e' il centro del prodotto, ed e' il posto che si raggiunge col
+ * pollice senza spostare la mano. I due a consumo restano ultimi e fuori
+ * dalla barra finche' non ci sara' cosa premere.
+ */
 export const SERVICES = [
   {
     // Primo della lista, e non per gerarchia: è l'unico servizio che ha senso
@@ -27,13 +34,6 @@ export const SERVICES = [
     ready: true,
   },
   {
-    id: 'scontorna',
-    group: GROUP_LOCAL,
-    key: 'tool.cutout',
-    icon: 'scissors',
-    ready: true,
-  },
-  {
     // Vettorializza ED editor SVG: un servizio solo, perche' sono un gesto
     // solo. Nessuno traccia un'immagine per lasciarla com'e' viene, e nessuno
     // apre l'editor senza qualcosa da modificare — erano due cerchi che si
@@ -43,6 +43,22 @@ export const SERVICES = [
     group: GROUP_LOCAL,
     key: 'tool.vector',
     icon: 'vector',
+    ready: true,
+  },
+  {
+    id: 'scontorna',
+    group: GROUP_LOCAL,
+    key: 'tool.cutout',
+    icon: 'scissors',
+    ready: true,
+  },
+  {
+    // Il laboratorio dei suoni sta fra i GRATUITI: non genera niente, filtra
+    // la voce registrata. Nessun modello, nessun costo, nessuna attesa.
+    id: 'suono',
+    group: GROUP_LOCAL,
+    key: 'tool.sound',
+    icon: 'wave',
     ready: true,
   },
   {
@@ -69,15 +85,6 @@ export const SERVICES = [
     icon: 'film',
     ready: false,
     price: 0.21,
-  },
-  {
-    // Il laboratorio dei suoni sta fra i GRATUITI: non genera niente, filtra
-    // la voce registrata. Nessun modello, nessun costo, nessuna attesa.
-    id: 'suono',
-    group: GROUP_LOCAL,
-    key: 'tool.sound',
-    icon: 'wave',
-    ready: true,
   },
 ];
 

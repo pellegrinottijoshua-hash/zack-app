@@ -4321,3 +4321,344 @@ body {
 .tool-item[aria-pressed='true'] .tool-sopra {
   opacity: 1;
 }
+
+/* ══ La striscia in cima: il logo del servizio in uso ═══════════════════
+   Nera opaca, e dentro una cosa sola — la faccia di Zack che fa il servizio
+   in cui ti trovi. Dice dove sei senza una parola, e cambia quando cambi
+   servizio. «Spiegami» e la lingua sono nascosti (2026-08-31). */
+.topbar-faccia {
+  display: block;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  /* Il tondo e' gia' nel file, e il fondo della striscia e' lo stesso nero
+     del disegno: il cerchio non si vede, si vede la faccia. */
+}
+
+/* I nomi dei servizi: si nascondono dove la barra e' una colonna di cerchi,
+   ma sul telefono restano SEMPRE. In fondo allo schermo non c'e' il
+   passaggio del mouse, e cinque segni senza nome non si distinguono. */
+.toolrail[data-collapsed='true'] .tool-name {
+  display: none;
+}
+@media (max-width: 760px) {
+  .toolrail[data-collapsed='true'] .tool-name,
+  .toolrail .tool-name {
+    display: block;
+    max-width: 68px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 10px;
+    text-align: center;
+  }
+  .toolrail .tool-item,
+  .toolrail[data-collapsed='true'] .tool-item {
+    flex-direction: column;
+    gap: 2px;
+    width: auto;
+    min-width: 62px;
+    height: auto;
+    padding: 6px 4px;
+    border-radius: 14px;
+  }
+}
+
+/* ══ Lo scontorno: il piano di lavoro vuoto ═════════════════════════════
+   Il disegno del committente del 2026-08-31. Il principio e' che il piano
+   e' VUOTO: il `+` in mezzo, il tasto Zack in basso a destra sopra la fila
+   dei servizi, la mascotte in basso a sinistra accanto a lui, «scarica» in
+   alto a destra. Gli strumenti compaiono a destra, in cerchi, solo quando
+   c'e' qualcosa da correggere.
+
+   Tutto cio' che stava intorno — la barra sopra la tela, il pannello della
+   qualita' di fianco, i due tasti in fondo — non c'e' piu': la qualita' e'
+   dentro il punto oro, l'azione e' il tasto, lo scarico e' l'icona in alto. */
+
+.sc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  /* Lo spazio in basso e' della mascotte e del tasto: la tela non ci arriva
+     sotto. */
+  padding: 0 0 clamp(120px, 20vh, 190px);
+}
+
+.sc-tela {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Il `+`: grande, perche' intorno non c'e' nient'altro ed e' il gesto con
+   cui si comincia. */
+.sc-piu {
+  display: grid;
+  place-items: center;
+  width: clamp(96px, 18vh, 150px);
+  height: clamp(96px, 18vh, 150px);
+  border: 2px solid var(--linea-viva);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--inchiostro);
+  font-size: clamp(40px, 8vh, 64px);
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.14s ease, background 0.14s ease, color 0.14s ease;
+}
+.sc-piu:hover {
+  transform: scale(1.05);
+  background: var(--inchiostro);
+  color: var(--fondo);
+}
+
+.sc-scarica {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid var(--linea-viva);
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--inchiostro);
+  cursor: pointer;
+}
+.sc-scarica:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.sc-scarica:hover:not(:disabled) {
+  background: var(--inchiostro);
+  color: var(--fondo);
+}
+
+/* Gli strumenti: cerchi in colonna, a destra, sul fianco della tela. Il nome
+   sta nel `title` — la parola ruba larghezza alla tela in ogni schermata. */
+.sc-strumenti {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sc-strumento {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--linea-viva);
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--inchiostro);
+  cursor: pointer;
+}
+.sc-strumento[aria-pressed='true'] {
+  background: var(--inchiostro);
+  color: var(--fondo);
+}
+.sc-strumento:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* La mascotte a sinistra e il tasto a destra, in basso, uno accanto all'altro
+   sopra la fila dei servizi. */
+.sc-zack {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: clamp(96px, 16vh, 150px);
+  width: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+.sc-tasto {
+  position: absolute;
+  right: 0;
+  bottom: 8px;
+  width: clamp(190px, 34vw, 300px);
+}
+.sc-tasto .zack-oval {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.sc-tasto .zack-oval img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.sc-tasto .zack-oval:hover:not(:disabled) {
+  transform: translateY(-3px);
+}
+.sc-tasto .zack-oval:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Il punto oro, nella stessa posizione della home: 82% e 8% dell'immagine,
+   cioe' alla destra dell'ovale e in alto, senza toccarlo mai. */
+.sc-tasto .punto-oro {
+  position: absolute;
+  left: 82%;
+  top: 8%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+.sc-tasto .punto-oro i {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--oro);
+  box-shadow: 0 0 0 2px var(--fondo);
+  transition: transform 0.12s ease, box-shadow 0.15s ease;
+}
+.sc-tasto .punto-oro:hover i,
+.sc-tasto .punto-oro[aria-expanded='true'] i {
+  transform: scale(1.35);
+  box-shadow: 0 0 0 2px var(--fondo), 0 0 14px 4px rgba(196, 163, 90, 0.75);
+}
+
+/* Le opzioni: sopra il tasto, perche' sotto c'e' la fila dei servizi. Nero
+   col filo d'oro, come nella home — e' lo stesso oggetto che si apre. */
+.sc-tuo {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  z-index: 6;
+  width: min(360px, 84vw);
+  padding: 16px 18px;
+  border: 2px solid var(--oro);
+  border-radius: 22px;
+  background: #111111;
+  color: #f5f0e8;
+  text-align: center;
+  box-shadow: 0 18px 50px rgba(17, 17, 17, 0.35);
+}
+.sc-tuo p {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: rgba(245, 240, 232, 0.75);
+}
+.sc-modelli,
+.sc-catena {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+.sc-modelli {
+  margin-bottom: 10px;
+}
+/* Dentro un pannello nero il fondo e' cambiato, quindi cambia l'inchiostro:
+   nere su nero sarebbero invisibili. */
+.sc-tuo .pastiglia {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  padding: 6px 13px;
+  border: 1px solid rgba(245, 240, 232, 0.35);
+  border-radius: 999px;
+  background: transparent;
+  color: #f5f0e8;
+  font-family: 'Fredoka', var(--display);
+  font-size: 14px;
+  cursor: pointer;
+}
+.sc-tuo .pastiglia[aria-pressed='true'] {
+  background: var(--oro);
+  border-color: var(--oro);
+  color: #111111;
+  /* Il colore non e' mai l'unico segnale. */
+  box-shadow: inset 0 0 0 2px #111111;
+}
+
+/* La striscia in cima e' NERA E OPACA (decisione del committente,
+   2026-08-31): il logo del servizio ci sta dentro come un timbro, e il fondo
+   dell'immagine e quello della striscia sono lo stesso nero — il cerchio non
+   si vede, si vede la faccia. Chi cambia il fondo si prende anche
+   l'inchiostro: il nome del prodotto passa a panna. */
+.topbar {
+  background: #111111;
+  border-bottom: 0;
+}
+.topbar .wordmark {
+  color: #f5f0e8;
+}
+
+/* Il piano di lavoro dello scontorno prende TUTTA l'altezza della tela: se
+   no la mascotte e il tasto, che sono ancorati in basso, restano a mezzo
+   schermo — misurato, finivano a 385 px su 812. */
+.stage:has(.sc) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.sc {
+  flex: 1 1 auto;
+  min-height: min(74vh, 640px);
+}
+
+/* Sul telefono `.main` e' due righe: tela sopra, pannello sotto. Quando il
+   pannello NON C'E' — scontorno, brain, suono, filmato — la sua riga si
+   prendeva lo stesso 38vh, e la tela restava a 343 px su 812: la mascotte e
+   il tasto, ancorati in fondo, finivano fuori dal riquadro e venivano
+   tagliati. Con `:has` la seconda riga sparisce e la tela si prende tutto. */
+@media (max-width: 760px) {
+  .main:has(> .rail[data-vuota]) {
+    grid-template-rows: minmax(200px, 1fr);
+  }
+}
+.sc {
+  min-height: 0;
+}
+
+/* Il piano quando ci si trascina sopra un file: si accende, come il
+   riquadro tratteggiato che c'era prima. */
+.sc[data-sopra] {
+  background: rgba(196, 163, 90, 0.08);
+  outline: 2px dashed var(--oro);
+  outline-offset: -8px;
+  border-radius: 16px;
+}
+
+/* Il contenuto vero della tela — confronto, pennello, blocco — si prende
+   tutto il riquadro. `.plate` e' `flex: 1` e conta su un genitore in
+   colonna: dentro un contenitore centrato collassava a una riga sola (visto
+   il 2026-08-31: l'immagine non compariva affatto). */
+.sc-tela > :not(.sc-piu) {
+  flex: 1 1 auto;
+  align-self: stretch;
+  min-width: 0;
+  min-height: 0;
+  /* Lo spazio degli strumenti resta loro: la tela non ci passa sotto. */
+  margin-right: 54px;
+  display: flex;
+  flex-direction: column;
+}
