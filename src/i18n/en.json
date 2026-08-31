@@ -42,7 +42,8 @@
     "title": "Drop an image here",
     "hint": "PNG, JPG or WebP, large print files included. Nothing leaves this computer.",
     "vectorTitle": "Drop an image to vectorise",
-    "vectorHint": "Better with flat colours, logos and line art than with photographs."
+    "vectorHint": "Better with flat colours, logos and line art than with photographs.",
+    "claim": "Remove up to three backgrounds for free in just a few clicks."
   },
   "control": {
     "quality": {

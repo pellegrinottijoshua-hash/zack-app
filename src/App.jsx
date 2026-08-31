@@ -1318,13 +1318,9 @@ tool === 'scontorna' && !batch.running && batch.results.length > 0 && !brushOpen
           del committente del 2026-08-31. I componenti restano importati e
           pronti: rimetterli e' una riga. */}
       <header className="topbar">
-        {/* Il marchio del prodotto, non quello del negozio: JAYL resta di
-            jayl.store e dei capi, Zack App è il software. Erano la stessa
-            parola su due modelli di business con ritmi incompatibili. */}
-        <span className="wordmark">
-          ZACK <em>app</em>
-        </span>
-        <span className="spacer" />
+        {/* Il nome del prodotto e' uscito dalla striscia il 2026-08-31: in
+            cima ci sta UNA cosa sola, il logo del servizio in uso, e sta in
+            mezzo. Il nome lo porta gia' la scheda del browser. */}
         {FACCIA.has(tool) && (
           <img
             className="topbar-faccia"
@@ -1621,38 +1617,43 @@ tool === 'scontorna' && !batch.running && batch.results.length > 0 && !brushOpen
         </aside>
       </div>
 
-      <Library
-        store={library}
-        open={libOpen}
-        onToggle={() =>
-          setLibOpen((v) => {
-            const next = !v;
-            try {
-              localStorage.setItem('jayl.libOpen', next ? '1' : '0');
-            } catch {
-              /* la sessione corrente funziona lo stesso */
-            }
-            return next;
-          })
-        }
-        big={libBig}
-        onToggleBig={() =>
-          setLibBig((v) => {
-            const next = !v;
-            try {
-              localStorage.setItem('jayl.libBig', next ? '1' : '0');
-            } catch {
-              /* la sessione corrente funziona lo stesso */
-            }
-            return next;
-          })
-        }
-        onOpenInEditor={openWorkInEditor}
-        onDownloadAll={downloadAll}
-        onAssetAction={assetAction}
-      />
+      {/* La libreria non compare nello scontorno: il piano e' vuoto, e
+          «scarica tutto» e' diventato l'icona in alto a destra. Resta in
+          tutti gli altri servizi, dove il lavoro si accumula. */}
+      {tool !== 'scontorna' && (
+        <Library
+          store={library}
+          open={libOpen}
+          onToggle={() =>
+            setLibOpen((v) => {
+              const next = !v;
+              try {
+                localStorage.setItem('jayl.libOpen', next ? '1' : '0');
+              } catch {
+                /* la sessione corrente funziona lo stesso */
+              }
+              return next;
+            })
+          }
+          big={libBig}
+          onToggleBig={() =>
+            setLibBig((v) => {
+              const next = !v;
+              try {
+                localStorage.setItem('jayl.libBig', next ? '1' : '0');
+              } catch {
+                /* la sessione corrente funziona lo stesso */
+              }
+              return next;
+            })
+          }
+          onOpenInEditor={openWorkInEditor}
+          onDownloadAll={downloadAll}
+          onAssetAction={assetAction}
+        />
+      )}
 
-      <footer className="statusbar">
+      {tool !== 'scontorna' && <footer className="statusbar">
         <span>
           {t('status.file')} <b>{file ? file.name : t('status.none')}</b>
         </span>
@@ -1689,7 +1690,7 @@ tool === 'scontorna' && !batch.running && batch.results.length > 0 && !brushOpen
         )}
 
         <span className="payoff">{t('app.payoff')}</span>
-      </footer>
+      </footer>}
     </div>
   );
 }

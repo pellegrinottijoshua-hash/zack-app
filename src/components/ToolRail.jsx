@@ -30,6 +30,10 @@ function Item({ service, active, collapsed, lampo, onPick }) {
   return (
     <button
       className="tool-item"
+      /* L'id del servizio, per il CSS: lo scontorno e' il cerchio grande in
+         mezzo, e cercarlo per l'etichetta si sarebbe rotto al primo cambio
+         di lingua. */
+      data-servizio={service.id}
       aria-pressed={active}
       aria-label={label}
       title={collapsed ? `${label} — ${t(`${service.key}.help`)}` : t(`${service.key}.help`)}

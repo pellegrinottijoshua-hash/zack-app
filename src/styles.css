@@ -4652,7 +4652,7 @@ body {
    tutto il riquadro. `.plate` e' `flex: 1` e conta su un genitore in
    colonna: dentro un contenitore centrato collassava a una riga sola (visto
    il 2026-08-31: l'immagine non compariva affatto). */
-.sc-tela > :not(.sc-piu) {
+.sc-tela > :not(.sc-piu):not(.sc-vuoto) {
   flex: 1 1 auto;
   align-self: stretch;
   min-width: 0;
@@ -4661,4 +4661,129 @@ body {
   margin-right: 54px;
   display: flex;
   flex-direction: column;
+}
+
+/* ══ Le correzioni dal disegno del 2026-08-31, dall'alto in basso ═══════ */
+
+/* 1-3. La striscia: un pelo piu' alta, senza il nome del prodotto, e il logo
+   del servizio piu' grande e IN MEZZO. In cima c'e' una cosa sola. */
+.topbar {
+  height: 72px;
+  justify-content: center;
+  gap: 0;
+}
+.topbar-faccia {
+  width: 58px;
+  height: 58px;
+}
+
+/* 4. Il `+` e la frase della home sotto. */
+.sc-vuoto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+.sc-claim {
+  margin: 0;
+  max-width: 30ch;
+  font-size: clamp(14px, 1.6vw, 17px);
+  line-height: 1.45;
+  color: var(--inchiostro);
+  text-align: center;
+}
+
+/* 5-6. La mascotte e il tasto scendono e crescono. Lo spazio in fondo si
+   stringe di conseguenza: erano staccati dalla fila dei servizi di un dito
+   di troppo. */
+.sc {
+  padding-bottom: clamp(96px, 15vh, 150px);
+}
+.sc-zack {
+  bottom: -14px;
+  height: clamp(120px, 19vh, 185px);
+}
+.sc-tasto {
+  bottom: -6px;
+  width: clamp(220px, 38vw, 340px);
+}
+
+/* 6. Il punto oro LAMPEGGIA: e' l'unica cosa che si muove nella schermata, e
+   dice «qui dentro si decide cosa fa il tasto». Chi ha chiesto meno
+   movimento non lo vede lampeggiare — resta acceso e basta. */
+@keyframes punto-oro-lampeggia {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 2px var(--fondo), 0 0 0 0 rgba(196, 163, 90, 0);
+  }
+  50% {
+    transform: scale(1.25);
+    box-shadow: 0 0 0 2px var(--fondo), 0 0 16px 5px rgba(196, 163, 90, 0.85);
+  }
+}
+.sc-tasto .punto-oro i {
+  animation: punto-oro-lampeggia 1.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-tasto .punto-oro i {
+    animation: none;
+    box-shadow: 0 0 0 2px var(--fondo), 0 0 12px 3px rgba(196, 163, 90, 0.7);
+  }
+}
+
+/* 8. I servizi in basso sono CERCHI, non pastiglie: la stessa forma del
+   tasto che aprono. Stanno al centro, e lo scontorno e' esattamente in mezzo
+   e piu' grande — e' il centro del prodotto, ed e' il punto che il pollice
+   raggiunge senza spostare la mano. */
+@media (max-width: 760px) {
+  .toolrail {
+    justify-content: center;
+    gap: 10px;
+    /* In fondo ci va il NOME, che sta fuori dal cerchio: senza questo spazio
+       «Scontorna» finiva sotto il bordo dello schermo. */
+    /* Il cerchio dello scontorno e' 16 px piu' alto degli altri, e il suo
+       nome finisce 16 px piu' in basso: misurato, arrivava a 810 px su 812.
+       Lo spazio in fondo lo tiene in conto. */
+    padding: 8px 8px calc(30px + env(safe-area-inset-bottom, 0px));
+    overflow: visible;
+  }
+  .toolrail .tool-item,
+  .toolrail[data-collapsed='true'] .tool-item {
+    width: 56px;
+    min-width: 0;
+    height: 56px;
+    padding: 0;
+    border-radius: 50%;
+    /* Il nome sotto il cerchio, fuori dal cerchio: dentro non ci sta senza
+       rimpicciolire l'icona fino a non vedersi piu'. */
+    overflow: visible;
+    position: relative;
+  }
+  .toolrail .tool-name {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 72px;
+    color: var(--inchiostro);
+  }
+  /* Lo scontorno: piu' grande degli altri, sempre — non solo quando e'
+     aperto. La sua misura dice che e' il centro, non che e' selezionato. */
+  .toolrail .tool-item[data-servizio='scontorna'] {
+    width: 72px;
+    height: 72px;
+  }
+  /* Con i cerchi al centro non serve piu' spingerli con mezzo schermo di
+     margine: ci stanno tutti e cinque. */
+  .toolrail {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .toolrail .tool-item[aria-pressed='true'] {
+    transform: none;
+  }
+  /* Il saldo in euro non ha niente a che fare con la scelta del servizio. */
+  .toolrail .rail-foot {
+    display: none;
+  }
 }

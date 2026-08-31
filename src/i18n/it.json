@@ -42,7 +42,8 @@
     "title": "Trascina qui un'immagine",
     "hint": "PNG, JPG o WebP, anche file di stampa grandi. Non lascia questo computer.",
     "vectorTitle": "Trascina un'immagine da vettorializzare",
-    "vectorHint": "Funziona meglio con colori piatti, loghi e disegni al tratto che con le fotografie."
+    "vectorHint": "Funziona meglio con colori piatti, loghi e disegni al tratto che con le fotografie.",
+    "claim": "Togli lo sfondo a un massimo di tre immagini, gratis, in pochi clic."
   },
   "control": {
     "quality": {

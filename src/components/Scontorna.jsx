@@ -113,9 +113,15 @@ export default function Scontorna({
           è grande perché intorno non c'è nient'altro. */}
       <div className="sc-tela">
         {vuoto ? (
-          <button className="sc-piu" onClick={onPick} aria-label={t('drop.title')}>
-            +
-          </button>
+          <div className="sc-vuoto">
+            <button className="sc-piu" onClick={onPick} aria-label={t('drop.title')}>
+              +
+            </button>
+            {/* La stessa frase della home, sotto il `+`: chi entra dallo
+                studio deve leggere la stessa promessa di chi entra dalla
+                home, o sono due prodotti. */}
+            <p className="sc-claim">{t('drop.claim')}</p>
+          </div>
         ) : (
           children
         )}
