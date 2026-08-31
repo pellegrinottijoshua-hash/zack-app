@@ -408,6 +408,11 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
     setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
   }
 
+  /** Tutti i file finiti, uno dopo l'altro. Il browser li accoda da solo. */
+  async function scaricaTutti() {
+    for (const l of lavori) if (l.alpha) await scarica(l);
+  }
+
   const pronti = lavori.some((l) => l.alpha);
   const z = (id) => zoom[id] || 1;
   const cambiaZoom = (id, d) =>
@@ -463,6 +468,24 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
             </span>
           )}
         </div>
+      )}
+
+      {/* Scarica TUTTO, in alto a destra: e' il posto dove il committente lo
+          ha messo nel disegno del 2026-08-31, ed e' il gesto che chiude il
+          lavoro. Compare solo quando c'e' qualcosa da scaricare. */}
+      {pronti && (
+        <button className="rit-scarica-tutti" onClick={scaricaTutti} aria-label={c.tool.downloadAll}>
+          <svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22">
+            <path
+              d="M12 3v11m0 0 4-4m-4 4-4-4M4 19h16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
       )}
 
       <div className="rit-tasto">

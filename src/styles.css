@@ -4291,3 +4291,33 @@ body {
     }
   }
 }
+
+/* ══ Le facce dei servizi nella barra ═══════════════════════════════════
+   Le icone consegnate il 2026-08-31: la faccia di Zack che fa quella cosa.
+   Il tondo e' gia' nel file (fondo trasparente attorno), quindi qui non
+   serve nessun `border-radius` — e sul fondo panna non si vede l'angolo di
+   un quadrato che nel nero non si vedeva. */
+.tool-faccia {
+  position: relative;
+  display: block;
+  width: 40px;
+  height: 40px;
+  flex: none;
+}
+.tool-faccia img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* La faccia «sopra» sta sopra l'altra e si accende: due immagini, nessun
+   salto di misura quando si passa col dito. */
+.tool-faccia .tool-sopra {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+.tool-item:hover .tool-sopra,
+.tool-item[aria-pressed='true'] .tool-sopra {
+  opacity: 1;
+}

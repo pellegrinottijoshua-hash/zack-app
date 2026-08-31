@@ -50,6 +50,7 @@ export const COPY = {
       downloading: 'Scarico Zack. Succede una volta sola.',
       progress: '{fatti} di {totale}',
       download: 'Scarica',
+      downloadAll: 'Scarica tutto',
       righello: 'Righello',
       ripristina: 'Ripristina',
       cancella: 'Cancella',
@@ -80,6 +81,15 @@ export const COPY = {
       onlyThree: 'Tre per volta qui. Nello studio quaranta insieme — e tutto il resto.',
       toStudio: 'Apri lo studio',
       close: 'Va bene così',
+    },
+
+    servizi: {
+      title: 'I servizi',
+      brain: 'Brain',
+      vector: 'Vettoriale',
+      cutout: 'Togli lo sfondo',
+      sound: 'Suono',
+      film: 'Filmato',
     },
 
     hero: {
@@ -187,6 +197,7 @@ export const COPY = {
       downloading: 'Downloading Zack. This happens once.',
       progress: '{fatti} of {totale}',
       download: 'Download',
+      downloadAll: 'Download all',
       righello: 'Ruler',
       ripristina: 'Restore',
       cancella: 'Erase',
@@ -217,6 +228,15 @@ export const COPY = {
       onlyThree: 'Three at a time here. Forty together in the studio — and everything else.',
       toStudio: 'Open the studio',
       close: "That's fine",
+    },
+
+    servizi: {
+      title: 'The services',
+      brain: 'Brain',
+      vector: 'Vector',
+      cutout: 'Remove background',
+      sound: 'Sound',
+      film: 'Film',
     },
 
     hero: {

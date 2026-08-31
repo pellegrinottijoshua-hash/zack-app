@@ -25,6 +25,16 @@ const PERSONAGGIO = {
   suono: 'ipigeon',
 };
 
+/**
+ * I servizi che hanno la loro faccia, consegnata dal committente.
+ *
+ * Non e' un'icona astratta e non e' un personaggio a caso: e' la faccia di
+ * Zack che FA quella cosa — il becco d'oro dello scontorno, la nota del
+ * suono, il tracciato del vettoriale. Chi non ce l'ha (i due a consumo)
+ * tiene il segno disegnato di prima.
+ */
+const FACCIA = new Set(['brain', 'scontorna', 'vettorializza', 'filmato', 'suono']);
+
 function Item({ service, active, collapsed, lampo, onPick }) {
   const label = t(`${service.key}.label`);
   return (
@@ -39,6 +49,31 @@ function Item({ service, active, collapsed, lampo, onPick }) {
           altrove: e' il cerchio stesso che cambia faccia. */}
       {lampo ? (
         <img className="tool-pg" src={lampo} alt="" aria-hidden="true" width="40" height="40" />
+      ) : FACCIA.has(service.id) ? (
+        <span className="tool-faccia">
+          <img
+            src={`/zack/servizi/${service.id}.webp`}
+            srcSet={`/zack/servizi/${service.id}.webp 160w, /zack/servizi/${service.id}-320.webp 320w`}
+            sizes="40px"
+            alt=""
+            aria-hidden="true"
+            width="160"
+            height="160"
+          />
+          {/* Lo scontorno ha anche la faccia «quando ci si va sopra»: il becco
+              si accende d'oro. E' l'unica consegnata, e sta sull'unico
+              servizio che si usa anche fuori dallo studio. */}
+          {service.id === 'scontorna' && (
+            <img
+              className="tool-sopra"
+              src="/zack/servizi/scontorna-sopra.webp"
+              alt=""
+              aria-hidden="true"
+              width="160"
+              height="160"
+            />
+          )}
+        </span>
       ) : (
         <Icon name={service.icon} draw />
       )}

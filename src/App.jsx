@@ -29,7 +29,7 @@ import { canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { TARGET_SIDE } from './engine/ready.js';
 import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/ricette.js';
 import { caricaFileDiProva, deveMostrareProva, segnaProvaVista } from './engine/prova.js';
-import { getService, firstReady } from './services.js';
+import { SERVICES, getService, firstReady } from './services.js';
 
 /** La catena salvata per un servizio, o quella di fabbrica se non c'è. */
 function leggiRicetta(servizio) {
@@ -62,7 +62,23 @@ const secs = (ms) => (Number.isFinite(ms) ? `${(ms / 1000).toFixed(1)}s` : '—'
 
 export default function App() {
   const [apiState, setApiState] = useState('offline');
-  const [tool, setTool] = useState('scontorna');
+  /**
+   * Il servizio con cui si apre.
+   *
+   * I cerchi della home linkano `?servizio=<id>`: entrare gia' dentro il
+   * servizio che si e' premuto e' tutto il punto di quei cerchi. Un id che
+   * non esiste, o spento, non deve poter aprire una schermata rotta — si
+   * ricade sullo scontorno, che e' il servizio di casa.
+   */
+  const [tool, setTool] = useState(() => {
+    try {
+      const chiesto = new URLSearchParams(location.search).get('servizio');
+      const s = SERVICES.find((x) => x.id === chiesto);
+      return s?.ready ? s.id : 'scontorna';
+    } catch {
+      return 'scontorna';
+    }
+  });
 
   /**
    * La catena del tasto Zack, una per servizio.

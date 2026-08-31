@@ -1749,3 +1749,186 @@ body {
     order: 1;
   }
 }
+
+
+/* ══ I cinque cerchi dei servizi, in fondo al primo schermo ═════════════
+   Il disegno del 2026-08-31: cinque tondi in fila, quello di centro piu'
+   grande. Al centro sta lo scontorno — l'unica cosa che si fa qui senza
+   pagare, e il motivo per cui la pagina esiste. Gli altri portano allo
+   studio, sul loro servizio.
+
+   Il tondo e' nell'IMMAGINE (fondo trasparente attorno), non un
+   `border-radius` su un quadrato nero: sul fondo panna la differenza si vede.
+   Qui restano i pixel del disegno consegnato e basta. */
+
+.lp-servizi {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(10px, 3vw, 28px);
+  width: 100%;
+  max-width: 1240px;
+  margin: 8px auto 0;
+}
+.lp-servizio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: var(--grigio-scuro);
+  /* Il nome sta sotto e non e' un `title`: su un telefono il passaggio del
+     mouse non esiste, e cinque facce nere senza nome non si distinguono. */
+  font-size: clamp(10px, 2.6vw, 12px);
+  text-align: center;
+  transition: transform 0.14s ease;
+}
+.lp-servizio img {
+  display: block;
+  width: clamp(52px, 15vw, 64px);
+  height: auto;
+}
+.lp-servizio[data-centro] img {
+  width: clamp(76px, 22vw, 92px);
+}
+.lp-servizio[data-centro] {
+  color: var(--nero);
+  font-weight: 600;
+}
+.lp-servizio:hover {
+  transform: translateY(-3px);
+  color: var(--nero);
+}
+
+/* Sul desktop la fila sta piu' larga e piu' staccata: c'e' spazio, e
+   appiccicata al lavoro sembrerebbe parte sua. */
+@media (min-width: 900px) {
+  .lp-servizi {
+    margin-top: 26px;
+    gap: clamp(20px, 4vw, 48px);
+  }
+}
+
+
+/* ══ «Scarica tutto», in alto a destra ══════════════════════════════════
+   Nel disegno del committente sta li', da solo, staccato da tutto: e' il
+   gesto che CHIUDE il lavoro, e non appartiene a nessun file in
+   particolare. Compare solo quando c'e' qualcosa da scaricare. */
+.rit-scarica-tutti {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid var(--linea-viva);
+  border-radius: 50%;
+  background: var(--panna);
+  color: var(--nero);
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+.rit-scarica-tutti:hover {
+  background: var(--nero);
+  color: var(--panna);
+}
+
+/* ══ Il telefono, secondo il disegno ════════════════════════════════════
+   Mascotte in basso a SINISTRA, il `+` al centro, i cinque cerchi in fondo.
+   E' l'unico posto dove la mascotte cambia angolo rispetto al desktop: sul
+   telefono la colonna e' una sola, e a destra ci va il tasto. */
+@media (max-width: 899px) {
+  .rit {
+    /* Senza file il riquadro non deve tenere il posto a una colonna che sul
+       telefono non esiste: teneva 560 px di vuoto sopra i cerchi. */
+    min-height: 0;
+    padding-bottom: 150px;
+  }
+  .rit-zack {
+    right: auto;
+    left: 0;
+    top: auto;
+    bottom: 0;
+    height: clamp(110px, 30vw, 160px);
+  }
+  /* Il `+` e la frase restano al centro, ma non sotto la mascotte. */
+  .rit-sotto {
+    padding-top: 24px;
+  }
+  .rit-scarica-tutti {
+    width: 42px;
+    height: 42px;
+  }
+  /* I file non hanno piu' bisogno dello stacco: la mascotte non e' piu'
+     sopra di loro. */
+  .rit[data-file] > .rit-tele {
+    margin-top: 14px;
+  }
+  .rit[data-file] {
+    padding-bottom: 120px;
+  }
+}
+
+/* Con i file dentro, sul telefono, tutto deve stare comunque nel primo
+   schermo — cerchi dei servizi compresi. Misurato a 375x812: senza questi
+   tagli il riquadro arrivava a 948 px e i cinque cerchi finivano sotto la
+   piega, che e' esattamente cio' che si voleva evitare. */
+@media (max-width: 899px) {
+  .rit[data-file] .rit-tasto {
+    /* Il tasto ha gia' fatto il suo mestiere: da qui in poi il lavoro sono i
+       file. Resta premibile, smette di essere l'insegna. */
+    width: 62%;
+    margin: 0 auto;
+  }
+  .rit[data-file] .rit-tela canvas,
+  .rit[data-file] .rit-vista[data-zoom] {
+    max-height: 20vh;
+  }
+  .rit[data-file] .rit-vista[data-zoom] {
+    height: 20vh;
+  }
+  /* La frase invita a portare un file: con i file dentro ha gia' funzionato. */
+  .rit[data-file] .rit-claim {
+    display: none;
+  }
+  .rit[data-file] .rit-sotto {
+    padding-top: 12px;
+  }
+  .rit[data-file] {
+    padding-bottom: 70px;
+  }
+  .rit[data-file] .rit-zack {
+    height: clamp(84px, 24vw, 120px);
+  }
+}
+
+/* Gli ultimi 125 px, tolti dove non tolgono niente a nessuno: il cappello
+   della sezione, la barra degli strumenti che andava a due righe, e i vuoti
+   fra un blocco e l'altro. Misurato: il riquadro finiva a 816 px e i cerchi
+   a 955; ora finisce a 700 e i cerchi stanno dentro il primo schermo. */
+@media (max-width: 899px) {
+  .lp-primo {
+    /* In fondo restano solo i cerchi: 10 px bastano, e sono quelli che
+       facevano finire i NOMI dei servizi appena sotto la piega. */
+    padding: 28px 18px 10px;
+  }
+  .rit[data-file] > .rit-strumenti {
+    gap: 6px;
+  }
+  .rit[data-file] > .rit-strumenti > button {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  .rit[data-file] > .rit-tele {
+    margin-top: 8px;
+  }
+  .rit[data-file] > .rit-sotto {
+    margin: 12px auto 0;
+  }
+  .rit[data-file] .rit-tela canvas {
+    max-height: 150px;
+  }
+}
