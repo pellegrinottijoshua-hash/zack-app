@@ -97,6 +97,12 @@ export const ICONS = {
   // L'annulla vecchio finiva a y=24: la curva usciva dal riquadro e veniva
   // tagliata a metà senza che nessuno se ne accorgesse.
   undo: ['M9 6.5L4 11.5l5 5', 'M4 11.5h8.5a5 5 0 1 1 0 10H10'],
+  // Il righello: una riga con le sue tacche. Non dipinge — guida chi dipinge,
+  // ed e' il solo strumento della home che qui non aveva un disegno suo.
+  righello: [
+    'M3 8h18v8H3z',
+    'M7 8v3M11 8v4M15 8v3M19 8v4',
+  ],
   eraser: ['M8.5 19.5H4.5l-1.2-4L14 4.8l5.7 5.7-9 9z', 'M10 8.8l5.7 5.7'],
   crop: ['M6.5 3v14.5H21', 'M3 6.5h14.5V21'],
   swap: ['M3.5 8.5h15', 'M14.5 4.5l4 4-4 4', 'M20.5 15.5h-15', 'M9.5 11.5l-4 4 4 4'],

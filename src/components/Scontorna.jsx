@@ -32,12 +32,16 @@ export default function Scontorna({
   vuoto,
   ricetta,
   piano,
+  /** Quanti file ci sono sul piano: con piu' di uno il tasto li fa tutti. */
+  quanti,
   busy,
   models,
   modello,
   strumenti,
+  lavoro,
   onPick,
   onFile,
+  onFiles,
   onZack,
   onRicetta,
   onModello,
@@ -83,8 +87,9 @@ export default function Scontorna({
       onDrop={(e) => {
         e.preventDefault();
         setSopra(false);
-        const f = [...e.dataTransfer.files].find((x) => /^image\//.test(x.type));
-        if (f) onFile(f);
+        // Tre in una volta anche trascinandoli: se il `+` ne prende tre, il
+        // trascinamento non puo' prenderne uno.
+        onFiles([...e.dataTransfer.files]);
       }}
       data-sopra={sopra || undefined}
     >
@@ -126,6 +131,25 @@ export default function Scontorna({
           children
         )}
       </div>
+
+      {/* Mentre il tasto lavora si DICE che sta lavorando, e a che punto e'.
+          Senza, tre file in coda erano otto secondi di schermo immobile — e
+          uno schermo immobile e' indistinguibile da uno rotto. */}
+      {lavoro && (
+        <div className="sc-attesa" role="status">
+          <svg className="piuma" viewBox="0 0 200 60" aria-hidden="true">
+            <path
+              d="M6 42 C 30 12, 56 12, 76 34 S 122 56, 142 30 S 182 8, 194 26"
+              fill="none"
+              stroke="#c4a35a"
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+          </svg>
+          <p>{lavoro.testo}</p>
+          {lavoro.nota && <small>{lavoro.nota}</small>}
+        </div>
+      )}
 
       {/* Gli strumenti compaiono DOPO il risultato, in colonna a destra, e
           sono cerchi: il nome ruba larghezza alla tela in ogni schermata, e
@@ -169,7 +193,7 @@ export default function Scontorna({
           /* Col piano vuoto il tasto NON e' spento: e' il secondo modo di
              cominciare, insieme al `+`. Si spegne solo quando c'e' un file e
              la catena e' vuota — li' non c'e' niente da fare. */
-          disabled={busy || (!vuoto && vuota)}
+          disabled={busy || (!vuoto && quanti <= 1 && vuota)}
           onClick={vuoto ? onPick : onZack}
         >
           <img

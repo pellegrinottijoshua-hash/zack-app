@@ -71,7 +71,9 @@ export default function BatchGrid({ results, onFix, onRename, onDownload, onDown
       <div className="bg-testa">
         <h2>{t('batch.gridTitle', { n: results.length })}</h2>
         <span className="bg-spazio" />
-        <button onClick={onDownloadAll}>{t('batch.downloadAll')}</button>
+        {/* «Scarica tutti» solo dove non c'e' gia' altrove: nello scontorno
+            e' l'icona in alto a destra, la stessa per un file e per tre. */}
+        {onDownloadAll && <button onClick={onDownloadAll}>{t('batch.downloadAll')}</button>}
         <button onClick={onClose}>{t('batch.close')}</button>
       </div>
 

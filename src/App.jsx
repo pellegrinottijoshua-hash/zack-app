@@ -197,6 +197,8 @@ export default function App() {
   const [references, setReferences] = useState([]);
   const [brushOpen, setBrushOpen] = useState(false);
   const [batchFiles, setBatchFiles] = useState([]);
+  /** Con quale strumento si e' aperto il pennello, per accendere il cerchio. */
+  const [modoPennello, setModoPennello] = useState('erase');
   // Da quale lavoro in libreria viene il file aperto: serve a registrare la
   // provenienza, che è ciò che rende ritrovabile un file di cui non si
   // ricorda il nome.
@@ -886,6 +888,47 @@ export default function App() {
     }
   }
 
+  /**
+   * Fino a TRE file in una volta, dal `+` o trascinandoli.
+   *
+   * Uno solo prende il piano di lavoro e lo si lavora a mano, col pennello e
+   * il righello. Da due in su e' un blocco: si guardano insieme, in colonna, e
+   * il tasto Zack li fa tutti. Il tetto e' tre come nella home — di piu' e' il
+   * lavoro in blocco vero, che ha il suo pannello e arriva a quaranta.
+   */
+  const MAX_TELA = 3;
+  function accettaFile(lista) {
+    const immagini = [...lista].filter((f) => f.type.startsWith('image/'));
+    if (!immagini.length) return;
+    if (immagini.length === 1) {
+      setBatchFiles([]);
+      batch.clear();
+      onFile(immagini[0]);
+      return;
+    }
+    // Da due in su il piano diventa la colonna: il file singolo esce di
+    // scena, o resterebbero due lavori aperti insieme senza dirlo.
+    reset();
+    batch.clear();
+    setBatchFiles(immagini.slice(0, MAX_TELA));
+  }
+
+  /** Il `+`: sceglie i file dal computer. Multiplo, fino a tre. */
+  function scegliFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.onchange = () => accettaFile(input.files || []);
+    input.click();
+  }
+
+  /** Apre il pennello gia' sullo strumento scelto dal cerchio a destra. */
+  function apriPennello(modo) {
+    setModoPennello(modo);
+    setBrushOpen(true);
+  }
+
   /** Cambia il file sul piano di lavoro senza passare dal cestino. */
   function swapFile() {
     const input = document.createElement('input');
@@ -1202,7 +1245,23 @@ export default function App() {
    * il modo piu' rapido per farle prendere due strade diverse.
    */
   const suPiano = (
-tool === 'scontorna' && !batch.running && batch.results.length > 0 && !brushOpen ? (
+batchFiles.length > 1 && batch.results.length === 0 ? (
+      /* I file scelti, in colonna, PRIMA che il tasto li lavori: si vedono
+         tutti e tre insieme — e' il senso di poterne portare tre. */
+      <ul className="sc-colonna">
+        {batchFiles.map((f) => (
+          <li key={`${f.name}-${f.size}`}>
+            <img src={URL.createObjectURL(f)} alt="" aria-hidden="true" />
+            <span>{f.name.replace(/\.[^.]+$/, '')}</span>
+          </li>
+        ))}
+      </ul>
+    ) : tool === 'scontorna' && batch.results.length > 0 && !brushOpen ? (
+            /* Anche MENTRE gira: i risultati arrivano uno alla volta, e
+               vederli comparire e' il modo piu' onesto di dire a che punto e'.
+               Prima si aspettava `!batch.running`, e nel frattempo il piano
+               tornava al riquadro vuoto — sembrava che il lavoro si fosse
+               perso. */
             /* I risultati del blocco stanno sulla TELA, non in un elenco di
                francobolli nella colonna: l'errore del modello si vede per
                differenza guardandoli insieme, non aprendoli a uno a uno. */
@@ -1211,8 +1270,11 @@ tool === 'scontorna' && !batch.running && batch.results.length > 0 && !brushOpen
               onFix={fixFromBatch}
               onRename={rinominaRisultato}
               onDownload={scaricaRisultato}
-              onDownloadAll={downloadAll}
-              onClose={() => batch.clear()}
+              onDownloadAll={null}
+              onClose={() => {
+                batch.clear();
+                setBatchFiles([]);
+              }}
             />
           ) : tool === 'brain' ? (
             <Brain
@@ -1266,6 +1328,7 @@ tool === 'scontorna' && !batch.running && batch.results.length > 0 && !brushOpen
             <MaskBrush
               source={file}
               cutout={result.blob}
+              modoIniziale={modoPennello}
               onDone={async (blob) => {
                 pushResult({ url: own(blob), blob, kind: 'png', meta: { ...result.meta, retouched: true } });
                 setBrushOpen(false);
@@ -1413,36 +1476,74 @@ tool === 'scontorna' && !batch.running && batch.results.length > 0 && !brushOpen
               compare quando c'e' un file. */}
           {tool === 'scontorna' ? (
             <Scontorna
-              vuoto={!file && batch.results.length === 0}
+              /* Vuoto vuol dire NIENTE sul piano: ne' un file solo, ne' la
+                 colonna dei tre scelti, ne' i risultati. Senza i tre scelti
+                 il `+` restava in mezzo e la colonna non si vedeva mai. */
+              vuoto={!file && batchFiles.length === 0 && batch.results.length === 0}
               ricetta={ricetta}
               piano={stats?.image ? pianoZack(ricetta, stats.image) : null}
+              quanti={batchFiles.length > 1 ? batchFiles.length : file ? 1 : 0}
+              /* Il lavoro in corso, detto. Col file singolo lo dice gia' il
+                 confronto; con la colonna non lo diceva nessuno. */
+              lavoro={
+                batch.running
+                  ? {
+                      testo: t('batch.progress', {
+                        done: batch.summary.done + batch.summary.failed,
+                        total: batch.summary.total,
+                      }),
+                      nota: batch.eta != null ? t('batch.eta', { sec: batch.eta }) : engine.phase,
+                    }
+                  : null
+              }
               busy={Boolean(busy)}
               models={engine.models}
               modello={s.model}
               onModello={(id) => set({ model: id })}
-              onPick={swapFile}
-              onFile={onFile}
-              onZack={runZack}
+              onPick={scegliFile}
+              onFile={(f) => accettaFile([f])}
+              onFiles={accettaFile}
+              onZack={() => {
+                // Con la colonna piena il tasto fa TUTTI i file: e' la stessa
+                // promessa del tasto della home, applicata a tre invece che a
+                // uno. I passi che il blocco sa fare sono lo scontorno e
+                // l'ingrandimento; gli altri restano al file singolo.
+                if (batchFiles.length > 1) {
+                  batch.run(batchFiles, {
+                    cutout: ricetta.includes('scontorna'),
+                    upscale: ricetta.includes('ingrandisci'),
+                    vector: false,
+                    exportPresets: [],
+                  });
+                  return;
+                }
+                runZack();
+              }}
               onRicetta={salvaRicetta}
-              onScarica={runExport}
-              puoiScaricare={canExport}
+              /* Il tasto in alto a destra scarica CIO' CHE C'E': i tre file
+                 della colonna se il blocco e' finito, il file singolo se il
+                 piano ne ha uno solo. Sono lo stesso gesto. */
+              onScarica={batch.results.length > 0 ? downloadAll : runExport}
+              puoiScaricare={batch.results.length > 0 || canExport}
               strumenti={
-                file
+                file && result?.kind === 'png'
                   ? [
+                      // Gli stessi quattro della home, e nello stesso ordine:
+                      // il righello guida, gli altri due dipingono, l'annulla
+                      // torna indietro. Aprono il pennello GIA' su quello
+                      // strumento — sceglierlo due volte sarebbe premerlo due
+                      // volte per la stessa cosa.
+                      { id: 'righello', icon: 'righello', label: t('brush.ruler'), disabled: Boolean(busy), active: brushOpen && modoPennello === 'righello', onClick: () => apriPennello('righello') },
+                      { id: 'restore', icon: 'pencil', label: t('brush.restore'), disabled: Boolean(busy), active: brushOpen && modoPennello === 'restore', onClick: () => apriPennello('restore') },
+                      { id: 'erase', icon: 'eraser', label: t('brush.erase'), disabled: Boolean(busy), active: brushOpen && modoPennello === 'erase', onClick: () => apriPennello('erase') },
                       { id: 'undo', icon: 'undo', label: t('bar.undo'), disabled: Boolean(busy) || history.length === 0, onClick: undoResult },
-                      { id: 'eraser', icon: 'eraser', label: t('bar.eraser'), disabled: Boolean(busy) || result?.kind !== 'png', active: brushOpen, onClick: () => setBrushOpen((v) => !v) },
-                      { id: 'swap', icon: 'swap', label: t('bar.swap'), disabled: Boolean(busy), onClick: swapFile },
-                      {
-                        id: 'clear',
-                        icon: 'clear',
-                        label: t('bar.clear'),
-                        disabled: Boolean(busy),
-                        onClick: () => {
-                          if (window.confirm(t('bar.confirmClear'))) reset();
-                        },
-                      },
                     ]
-                  : []
+                  : file
+                    ? [
+                        { id: 'undo', icon: 'undo', label: t('bar.undo'), disabled: Boolean(busy) || history.length === 0, onClick: undoResult },
+                        { id: 'swap', icon: 'swap', label: t('bar.swap'), disabled: Boolean(busy), onClick: swapFile },
+                      ]
+                    : []
               }
             >
               {suPiano}

@@ -88,10 +88,13 @@ async function toPixels(blob, misura = null) {
   return { w, h, data: ctx.getImageData(0, 0, w, h).data };
 }
 
-export default function MaskBrush({ source, cutout, onChange, onDone }) {
+export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDone }) {
   const canvasRef = useRef(null);
   const stateRef = useRef(null);
-  const [mode, setMode] = useState('erase');
+  // Lo strumento con cui si entra: dai cerchi a destra si sceglie GIA' cosa
+  // fare — righello, ripristina, cancella — e riaprirsi sempre sulla gomma
+  // vorrebbe dire premere due volte per la stessa cosa.
+  const [mode, setMode] = useState(modoIniziale || 'erase');
   const [size, setSize] = useState(25);
   const [dirty, setDirty] = useState(false);
   const [zoom, setZoom] = useState(1);
