@@ -38,6 +38,16 @@ import {
  * zoom, quindi a 8× la più fine copre 3 pixel veri invece di 24.
  */
 const MISURE = [4, 10, 25, 60, 120];
+
+/**
+ * I fattori delle pastiglie, e cosa vogliono dire in pixel.
+ *
+ * Erano scritti sul tasto e non li faceva nessuno: il tasto scontornava e
+ * basta. Rimpicciolire e' una riscrittura di pixel e non costa niente;
+ * ingrandire passa dal modello, e il modello si scarica solo se qualcuno lo
+ * ha davvero chiesto — chi non spunta ×2 o ×4 non paga un byte.
+ */
+const FATTORI = { x4: 4, x2: 2, d2: 0.5, d4: 0.25 };
 const ZOOM_MAX = 8;
 
 /**
@@ -135,6 +145,26 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
     // via significa scegliere e non vedere niente cambiare.
     motore.current?.engine.dispose();
     motore.current = null;
+
+    /*
+     * E i file gia' fatti tornano da fare.
+     *
+     * Senza questo, cambiare modello non cambiava NIENTE sullo schermo: il
+     * tasto salta chi ha gia' un alfa, quindi si sceglieva «Qualita'», si
+     * premeva, e si riguardava lo stesso ritaglio di prima. Sembrava un
+     * comando rotto, ed era la regola giusta applicata al caso sbagliato.
+     *
+     * Si rifa' solo chi e' passato dal MODELLO e non e' stato corretto a
+     * mano: il ritaglio istantaneo non usa nessun modello, e una pennellata
+     * e' lavoro di una persona — quello non si butta via per una spunta.
+     */
+    setLavori((v) =>
+      v.map((l) =>
+        l.via === 'modello' && !(storia.current[l.id]?.length > 0)
+          ? { ...l, alpha: null, via: null }
+          : l,
+      ),
+    );
   }
 
   const preparaMotore = useCallback(async () => {
@@ -245,6 +275,19 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
       const ordine = lavori.map((l) => l.id);
       fatti.sort((a, b) => ordine.indexOf(a.id) - ordine.indexOf(b.id));
       setLavori(fatti);
+
+      // La catena, dopo lo scontorno: prima la misura, poi lo scarico. Sono
+      // le pastiglie che il committente spunta nel punto oro, e fino al
+      // 2026-08-31 erano scritte e basta.
+      const passo = Object.keys(FATTORI).find((k) => ricetta.includes(k));
+      let usciti = fatti;
+      if (passo) {
+        setBusy(c.tool.resizing);
+        usciti = [];
+        for (const l of fatti) usciti.push(await ridimensiona(l, FATTORI[passo]));
+        setLavori(usciti);
+      }
+      if (ricetta.includes('scarica')) for (const l of usciti) await scarica(l);
     } catch (e) {
       console.error(e);
       setAvviso(c.tool.failed);
@@ -396,6 +439,67 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
       l.alpha.set(pila.pop());
       ridipingi(l);
     }
+    setPuoiAnnullare(Object.values(storia.current).some((p) => p.length > 0));
+  }
+
+  /**
+   * Un file alla sua nuova misura, alfa compreso.
+   *
+   * Sotto l'uno si riscrivono i pixel, e costa zero. Sopra l'uno passa dal
+   * modello di ingrandimento — che e' un SECONDO scaricamento, e per questo
+   * parte solo qui, quando la pastiglia e' accesa davvero.
+   *
+   * L'alfa si porta a mano dall'altra parte: la rete ha tre canali, e un
+   * ritaglio ridimensionato senza questa riga torna con lo sfondo nero. E'
+   * la stessa trappola gia' pagata nello studio.
+   */
+  async function ridimensiona(l, f) {
+    const dentro = applicaAlfa(l.src, l.alpha);
+    const bitmap = await createImageBitmap(dentro);
+    let fuori;
+
+    if (f > 1) {
+      const { engine } = await preparaMotore();
+      const out = await engine.upscale(bitmap, f === 4 ? 'x4' : 'x2');
+      fuori = new ImageData(new Uint8ClampedArray(out.rgba), out.width, out.height);
+    } else {
+      const cv = document.createElement('canvas');
+      // Mai sotto un pixel: un'immagine da zero pixel non e' piccola, e' rotta.
+      cv.width = Math.max(1, Math.round(l.src.w * f));
+      cv.height = Math.max(1, Math.round(l.src.h * f));
+      const cx = cv.getContext('2d');
+      // Alta qualita' e non il default: ridurre a meta' col campionamento piu'
+      // vicino fa una scalinata su ogni bordo, che e' esattamente cio' che
+      // questo prodotto vende di saper evitare.
+      cx.imageSmoothingEnabled = true;
+      cx.imageSmoothingQuality = 'high';
+      cx.drawImage(bitmap, 0, 0, cv.width, cv.height);
+      fuori = cx.getImageData(0, 0, cv.width, cv.height);
+    }
+    bitmap.close?.();
+
+    // Da qui in poi il file E' la nuova misura: sorgente e alfa insieme, o il
+    // pennello ridipingerebbe sui pixel vecchi.
+    const alpha = new Uint8ClampedArray(fuori.width * fuori.height);
+    for (let i = 0; i < alpha.length; i++) alpha[i] = fuori.data[i * 4 + 3];
+    storia.current[l.id] = [];
+    return {
+      ...l,
+      src: { w: fuori.width, h: fuori.height, rgba: fuori.data },
+      alpha,
+      pronto: null,
+    };
+  }
+
+  /** Toglie un file dal piano. Il suo annulla se ne va con lui. */
+  function togli(id) {
+    delete storia.current[id];
+    delete tele.current[id];
+    setLavori((v) => v.filter((l) => l.id !== id));
+    setGuide((g) => {
+      const { [id]: _via, ...resto } = g;
+      return resto;
+    });
     setPuoiAnnullare(Object.values(storia.current).some((p) => p.length > 0));
   }
 
@@ -631,6 +735,11 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
         <div className="rit-tele">
           {lavori.map((l) => (
             <figure key={l.id} className="rit-tela">
+              {/* Togliere un file era impossibile: si poteva solo ricaricare
+                  la pagina, e con lei se ne andavano anche gli altri due. */}
+              <button className="rit-togli" aria-label={c.tool.remove} onClick={() => togli(l.id)}>
+                ×
+              </button>
               <div className="rit-vista" data-zoom={z(l.id) > 1 || undefined}>
                 <canvas
                   ref={(el) => {

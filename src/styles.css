@@ -4876,3 +4876,39 @@ body {
 .sc .bg-testa {
   padding-right: 56px;
 }
+
+/* La ✖ per togliere un file dalla colonna, sull'angolo come nella home. */
+.sc-colonna li {
+  position: relative;
+}
+.sc-togli {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--linea-viva);
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--inchiostro);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.sc-togli:hover {
+  background: var(--inchiostro);
+  color: var(--fondo);
+}
+
+/* Il punto oro dell'app segue quello della home: piu' a destra, piu' piccolo. */
+.sc-tasto .punto-oro {
+  left: 86%;
+}
+.sc-tasto .punto-oro i {
+  width: 11px;
+  height: 11px;
+}

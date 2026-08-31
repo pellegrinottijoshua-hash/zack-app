@@ -5,61 +5,13 @@ import Ritaglio from './Ritaglio.jsx';
 
 const APP_URL = '/app/';
 
-/**
- * I cinque servizi, in cerchio, in fondo al primo schermo.
+/*
+ * I cinque cerchi dei servizi sono usciti dalla home il 2026-08-31.
  *
- * L'ordine e il centro non sono estetica: al centro sta lo scontorno, che e'
- * l'unica cosa che si puo' fare qui senza pagare, ed e' piu' grande perche' e'
- * il motivo per cui la pagina esiste. Gli altri quattro stanno attorno e
- * portano allo studio, sul loro servizio.
- *
- * L'ordine, deciso dal committente il 2026-08-31:
- * estrema sinistra Brain · sinistra Vettoriale · CENTRO scontorno ·
- * destra Suono · estrema destra Filmato.
- *
- * Le icone sono le facce consegnate, gia' ritagliate in cerchio da
- * `scripts/prepara-icone-servizi.mjs`: il tondo e' nel file e non nel CSS,
- * perche' un quadrato nero stondato sul fondo panna si vede.
+ * Il primo schermo e' lo scontorno gratuito e basta: cinque facce in fondo
+ * invitavano ad andarsene altrove proprio mentre si stava per portare un
+ * file. I servizi si raccontano piu' sotto, a chi ha gia' capito.
  */
-const SERVIZI = [
-  { id: 'brain', chiave: 'brain' },
-  { id: 'vettorializza', chiave: 'vector' },
-  { id: 'scontorna', chiave: 'cutout', centro: true },
-  { id: 'suono', chiave: 'sound' },
-  { id: 'filmato', chiave: 'film' },
-];
-
-function Servizi({ c }) {
-  return (
-    <nav className="lp-servizi" aria-label={c.servizi.title}>
-      {SERVIZI.map((s) => (
-        <a
-          key={s.id}
-          className="lp-servizio"
-          data-centro={s.centro || undefined}
-          href={s.centro ? '#' : `${APP_URL}?servizio=${s.id}`}
-          onClick={s.centro ? (e) => {
-            // Lo scontorno si fa QUI: il cerchio di centro riporta al tasto,
-            // non porta via dalla pagina.
-            e.preventDefault();
-            document.querySelector('.zack-oval')?.scrollIntoView({ block: 'center' });
-          } : undefined}
-        >
-          <img
-            src={`/zack/servizi/${s.id}.webp`}
-            srcSet={`/zack/servizi/${s.id}.webp 160w, /zack/servizi/${s.id}-320.webp 320w`}
-            sizes={s.centro ? '92px' : '64px'}
-            alt=""
-            aria-hidden="true"
-            width="160"
-            height="160"
-          />
-          <span>{c.servizi[s.chiave]}</span>
-        </a>
-      ))}
-    </nav>
-  );
-}
 
 /**
  * I sei del cast, con la faccia che hanno nel prodotto.
@@ -309,7 +261,6 @@ export default function Landing() {
           riga; il racconto sta sotto, per chi ha già capito. */}
       <section className="lp-primo">
         <Ritaglio c={c} ricetta={ricetta} onRicetta={commuta} />
-        <Servizi c={c} />
       </section>
 
       {/* ─── apertura ────────────────────────────────────────────────── */}

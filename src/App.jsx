@@ -1251,6 +1251,16 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
       <ul className="sc-colonna">
         {batchFiles.map((f) => (
           <li key={`${f.name}-${f.size}`}>
+            {/* Togliere un file dalla colonna: prima si poteva solo
+                ricominciare da capo, e con lui se ne andavano anche gli
+                altri due. */}
+            <button
+              className="sc-togli"
+              aria-label={t('bar.clear')}
+              onClick={() => setBatchFiles((v) => v.filter((x) => x !== f))}
+            >
+              ×
+            </button>
             <img src={URL.createObjectURL(f)} alt="" aria-hidden="true" />
             <span>{f.name.replace(/\.[^.]+$/, '')}</span>
           </li>
@@ -1509,6 +1519,13 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 // uno. I passi che il blocco sa fare sono lo scontorno e
                 // l'ingrandimento; gli altri restano al file singolo.
                 if (batchFiles.length > 1) {
+                  // Una catena che non contiene niente che il blocco sappia
+                  // fare non deve restare in silenzio: si premeva il tasto e
+                  // non succedeva nulla, che e' indistinguibile da un guasto.
+                  if (!ricetta.includes('scontorna') && !ricetta.includes('ingrandisci')) {
+                    setNotice(t('zack.empty'));
+                    return;
+                  }
                   batch.run(batchFiles, {
                     cutout: ricetta.includes('scontorna'),
                     upscale: ricetta.includes('ingrandisci'),

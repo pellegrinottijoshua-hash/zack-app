@@ -1932,3 +1932,74 @@ body {
     max-height: 150px;
   }
 }
+
+
+/* ══ Le correzioni del 2026-08-31, secondo giro ═════════════════════════ */
+
+/* La ✖ per togliere un file: sull'angolo della tela, dove il committente
+   l'ha disegnata. Prima non c'era NESSUN modo di togliere un file — solo
+   ricaricare la pagina, e con lei se ne andavano anche gli altri due. */
+.rit-togli {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(17, 17, 17, 0.18);
+  border-radius: 50%;
+  background: rgba(245, 240, 232, 0.92);
+  color: var(--nero);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+.rit-togli:hover {
+  background: var(--nero);
+  color: var(--panna);
+}
+
+/* Il punto oro: un po' piu' a destra e un po' piu' piccolo. */
+.punto-oro {
+  left: 86%;
+}
+.punto-oro i {
+  width: 11px;
+  height: 11px;
+}
+
+/* Il `+` e la frase A FIANCO al primo file, non sotto: sotto spingevano il
+   lavoro fuori dal primo schermo, ed e' li' che deve restare tutto quello
+   che riguarda lo scontorno gratuito. */
+@media (min-width: 900px) {
+  .rit[data-file] {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .rit[data-file] > .rit-strumenti {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .rit[data-file] > .rit-tuo {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+  .rit[data-file] > .rit-tele {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .rit[data-file] > .rit-sotto {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+    justify-self: start;
+    margin: 0;
+    padding-top: 0;
+    width: max-content;
+    max-width: 260px;
+  }
+}
