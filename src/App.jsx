@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Dropzone from './components/Dropzone.jsx';
 import Compare from './components/Compare.jsx';
 import Library from './components/Library.jsx';
@@ -1295,6 +1295,24 @@ export default function App() {
     }
   }
 
+  /**
+   * Le anteprime dei file scelti, fatte UNA VOLTA.
+   *
+   * Prima l'URL nasceva dentro la `.map()` del render: uno nuovo a ogni
+   * ridisegno, nessuno revocato, e ogni URL tiene in vita il blob a cui punta.
+   * Tre file di stampa e una manciata di ridisegni sono decine di copie in
+   * memoria.
+   *
+   * Sta QUI, sopra il `return` anticipato del motore: un hook dopo un `return`
+   * condizionale gira in alcuni render e non in altri, e React si ferma con
+   * «Rendered fewer hooks than expected».
+   */
+  const anteprime = useMemo(
+    () => batchFiles.map((f) => ({ f, url: URL.createObjectURL(f) })),
+    [batchFiles],
+  );
+  useEffect(() => () => anteprime.forEach((a) => URL.revokeObjectURL(a.url)), [anteprime]);
+
   // L'attesa dipende dal MOTORE, non dal server. Il backend serve solo alla
   // libreria su disco: legare tutta l'interfaccia alla sua risposta rendeva
   // l'app inutilizzabile senza backend, cioè l'esatto contrario della promessa.
@@ -1333,7 +1351,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
       /* I file scelti, in colonna, PRIMA che il tasto li lavori: si vedono
          tutti e tre insieme — e' il senso di poterne portare tre. */
       <ul className="sc-colonna">
-        {batchFiles.map((f) => (
+        {anteprime.map(({ f, url }) => (
           <li key={`${f.name}-${f.size}`}>
             {/* Togliere un file dalla colonna: prima si poteva solo
                 ricominciare da capo, e con lui se ne andavano anche gli
@@ -1345,7 +1363,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
             >
               ×
             </button>
-            <img src={URL.createObjectURL(f)} alt="" aria-hidden="true" />
+            <img src={url} alt="" aria-hidden="true" />
             <span>{f.name.replace(/\.[^.]+$/, '')}</span>
           </li>
         ))}

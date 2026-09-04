@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { t } from '../i18n/index.js';
 import { Choice, Help } from './Panels.jsx';
 import Section from './Section.jsx';
@@ -12,6 +12,29 @@ import { humanSeconds } from '../engine/upscale.js';
  * Non è uno strumento nuovo: è ciò che rende utili quelli che ci sono già.
  * Scontornare quaranta file uno per uno è il lavoro che nessuno vuole fare.
  */
+/**
+ * Un risultato del blocco, con la sua anteprima.
+ *
+ * Sta in un componente suo per una ragione sola: l'URL del blob deve nascere
+ * UNA VOLTA e morire con lui, e un hook non può stare dentro una `.map()`.
+ * Dentro il render ne nasceva uno a ogni ridisegno e non ne moriva nessuno.
+ * È la stessa forma di `Riquadro` in `BatchGrid.jsx`, dove il difetto era già
+ * stato evitato.
+ */
+function Scatto({ r, onFix }) {
+  const url = useMemo(() => URL.createObjectURL(r.blob), [r.blob]);
+  useEffect(() => () => URL.revokeObjectURL(url), [url]);
+
+  return (
+    <li>
+      <button onClick={() => onFix(r)} title={t('batch.fix')}>
+        <img src={url} alt="" loading="lazy" />
+        <span>{r.file.name}</span>
+      </button>
+    </li>
+  );
+}
+
 export default function BatchPanel({ files, batch, onPickFiles, onClearFiles, onFix }) {
   const [opts, setOpts] = useState({
     cutout: true,
@@ -154,12 +177,7 @@ export default function BatchPanel({ files, batch, onPickFiles, onClearFiles, on
               <Help k="batch.fixHelp" />
               <ul className="batch-results">
                 {batch.results.map((r, i) => (
-                  <li key={`${r.file.name}-${i}`}>
-                    <button onClick={() => onFix(r)} title={t('batch.fix')}>
-                      <img src={URL.createObjectURL(r.blob)} alt="" loading="lazy" />
-                      <span>{r.file.name}</span>
-                    </button>
-                  </li>
+                  <Scatto key={`${r.file.name}-${i}`} r={r} onFix={onFix} />
                 ))}
               </ul>
             </div>
