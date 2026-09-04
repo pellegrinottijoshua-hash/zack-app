@@ -4,10 +4,10 @@ Documento di passaggio. Serve ad aprire una chat nuova e ripartire senza
 ricostruire il contesto. Se leggi solo tre cose: la **sezione 2** (le regole),
 la **sezione 6** (cosa manca) e la **sezione 5** (le trappole già pagate).
 
-- **Repo:** `~/jayl-studio` — ramo `main`, **440 test verdi**
+- **Repo:** `~/jayl-studio` — ramo `main`, **487 test verdi**
 - **Online:** [zack-app.com](https://zack-app.com), modelli su R2 · push = deploy
 - **Remoto:** `github.com/pellegrinottijoshua-hash/zack-app`
-- **Ultimo aggiornamento:** 28 agosto 2026
+- **Ultimo aggiornamento:** 5 settembre 2026
 
 ```bash
 cd ~/jayl-studio && npm run dev
@@ -60,10 +60,11 @@ il posto dove l'asset generato viene rifinito, organizzato e preparato.
 
 | servizio | stato |
 |---|---|
-| **Brain** — tela di idee, note, gruppi, frecce, documenti | fatto |
-| Scontorna (+ pennello, righello, buchi, ingrandimento) | fatto |
-| Vettorializza · Editor SVG | fatto |
-| **Filmato** · **Suono** | fatti, mai usati sul serio |
+| **Brain** — tela di idee, note, gruppi, frecce, documenti | fatto, **non ancora nell'impianto** |
+| Scontorna (+ pennello, righello, buchi, ingrandimento) | fatto, **nell'impianto** |
+| Vettorializza · Editor SVG | fatto, **non ancora nell'impianto** |
+| **Filmato** | fatto, **nell'impianto** (pezzo 2) |
+| **Suono** | fatto, mai usato sul serio, **non ancora nell'impianto** |
 | Immagine / Video a consumo | **non costruiti**, marcati «presto» |
 
 Più: il **tasto Zack** (catena personalizzabile, condivisa fra home e studio),
@@ -128,39 +129,93 @@ ms. Il modello da 175 MB parte solo per i file che ne hanno bisogno, e parte
 | **`setPointerCapture` che solleva** | su un puntatore non riconosciuto interrompe il gesto prima di dipingere. Va in un `try`. |
 | **Sovrascrivere un asset che esiste già** | `hero.png` → `insegna.webp` ha sovrascritto un altro file in silenzio. |
 | **Il suffisso perso nel taglio a 60 caratteri** | `gelato-front` e `gelato-back` diventavano lo stesso nome. Si accorcia il nome, mai il suffisso. |
+| **Una configurazione che vive SOLO nel pannello** | il comando di build su Cloudflare e' tornato da solo a `npm run build`, perdendo il `rm -rf dist/ort dist/models`, e **ogni deploy ha fallito per giorni** senza che un commit lo raccontasse. Ora il `rm -rf` e' un `postbuild` in `package.json`. Stessa ragione per cui la regola di cache su `assets.zack-app.com` sta scritta in `docs/2026-08-27-deploy-zack-app.md` §4-bis. |
+| **Una correzione CSS che dipende da `:has()`** | `.main:has(> .rail[data-vuota])` curava la tela schiacciata su mobile — ma solo dove `:has()` esiste. Su Firefox < 121 e Samsung Internet < 20 il difetto tornava identico, mascotte e tasto a meta' schermo. La cura giusta non ha bisogno di `:has()`: traccia `auto` e minimo sull'ELEMENTO, cosi' la riga collassa da sola quando il pannello e' `display: none`. |
+| **`vh` su un telefono** | e' il viewport GRANDE, quello senza la barra del browser. Con `.shell` a `overflow: hidden`, cio' che sfora non si puo' nemmeno raggiungere scorrendo. Si usa `dvh`, con la riga in `vh` prima come ricaduta. |
+| **Una regola CSS piu' sotto che ne annulla una piu' sopra** | ho diagnosticato un guasto su `min-height: min(74vh, 640px)` di `.sc` senza accorgermi che 30 righe dopo c'era `.sc { min-height: 0 }`, che vince. **Prima di incolpare una regola, chiedere al browser cosa ha risolto davvero** (`getComputedStyle`). |
+| **Un commento che attribuisce una cura a una riga inerte** | `.stage:has(.sc)` dichiarava tre proprieta' gia' tutte presenti nella regola base di `.stage` — non faceva niente — ma il suo commento diceva di curare la mascotte «che resta a mezzo schermo». Mi ha fatto perdere un giro intero. Un commento che indica il posto sbagliato e' peggio di nessun commento. |
+| **La cache HTTP non e' protetta da `navigator.storage.persist()`** | in nessun browser. Un file da 176 MB nella cache HTTP viene sfrattato presto su un telefono, e `persist()` non lo salva. Va nella **Cache API** — che e' cio' che `persist()` protegge davvero. |
+| **`canvas.toBlob` nell'anteprima** | e' bloccato a **~1004 ms fissi**, con varianza di 2 ms: una PNG da 10x10 costa quanto una da 4 megapixel. Non e' contesa, e' un timer. Qualunque cronometraggio che includa una codifica PNG preso da li' non misura niente. Il controllo che lo smaschera: cronometrare una PNG minuscola. |
+| **`requestAnimationFrame` e `<video>` nell'anteprima nascosta** | rAF non scatta MAI, e gli elementi `<video>` non caricano i metadati (`readyState` resta 0). Una funzione che aspetta un giro di rAF per fotogramma — come `togliSfondo` — si pianta. Si sostituisce **solo** il pompa-fotogrammi, dichiarandolo, e il resto resta la funzione vera. |
+| **Una barra di avanzamento che nessuno accende** | `EngineBanner` aveva da agosto un ramo `phase === 'downloading'` con la percentuale, e il worker non ha MAI emesso quella fase. Codice in attesa di un segnale che nessuno mandava, mentre 176 MB scendevano in silenzio. **Se un ramo dell'interfaccia non si vede mai, controllare chi dovrebbe accenderlo.** |
 
 ---
 
 ## 6. Cosa manca, in ordine
 
-### Deciso e in attesa di risposta
+Dal 2026-09-04 il lavoro segue una spec e cinque pezzi:
+[docs/superpowers/specs/2026-09-04-impianto-unico-design.md](docs/superpowers/specs/2026-09-04-impianto-unico-design.md).
 
-- **I tre modelli nel pannello dello studio** (Rapido / Qualità /
-  Illustrazioni): spariscono sotto «Avanzati» o restano tre cerchi? **Chiesto
-  tre volte, mai risposto.** Blocca il rifacimento del pannello di destra.
+### L'impianto — la cosa da capire per prima
+
+Lo scontorno non era «una sezione fatta bene»: era **l'impianto** di ogni
+servizio, cablato in `App.jsx` come caso speciale. Ora e' `Piano.jsx`, e ogni
+servizio dichiara in `src/servizi/<id>.js` le tre cose che lo distinguono —
+cosa accetta il `+`, cosa fa il tasto Zack, quali strumenti compaiono e
+quando. **E' dati, non un programma**, quindi vive in Node dove i test lo
+vedono.
+
+La mappa, uguale in ogni schermata: `+` al centro · tasto Zack e strumenti in
+un angolo · mascotte in basso a sinistra · scarica in alto a destra · i
+servizi in fila (mobile) o in colonna (desktop).
+
+### Fatto
+
+- **Pezzo 1 — i sei tappi allo scontorno.** Lo scontorno rapido (`~96 ms di
+  lavoro vero contro i 2 s del modello) ora c'e' anche nell'app; l'errore non
+  accusa piu' il file dell'utente; il righello si accende davvero; i fattori
+  ×4 ×2 :2 :4 sono nel punto oro; lo «scarica» scarica il piano.
+- **Pezzo 2 — l'impianto, e Filmato dentro.** Filmato ha la stessa mappa dello
+  scontorno, i suoi tre gesti sono cerchi, dietro al video ci sono gli
+  scacchi, e l'attesa di «togli sfondo» si dichiara.
+- **Il deploy**, che falliva da giorni in silenzio (vedi § 5).
+- **Il modello si scarica una volta sola**, e mentre scarica dice quanto manca.
 
 ### Da fare
 
-1. **Il pannello di destra dello studio** → bottoni circolari con icone
-   semplici, che si estendono a tendina e solo allora mostrano la parola.
-   Il meccanismo esiste già nella barra dei servizi.
-2. **I sei loghi di servizio** — prompt pronti in
+1. **Pezzo 3 — Brain e Vocale nell'impianto.** Quando entrano, spariscono
+   anche le ultime due liste `['brain','suono']`.
+   - **Brain**: il `+` da tre voci — *nota · gruppo · file*. «Idea» non e' una
+     voce: e' una nota con la categoria «idea», che `brain.js` ha gia'. Il
+     tasto Zack **riorganizza**, con la regola scelta nel punto oro
+     (gruppi/tipo/compatta/frecce), e **deve essere deterministica**.
+   - **Vocale**: il `+` da due scelte — *registra* o *aggiungi*. Il vocale va
+     in alto, la descrizione in basso, e il tasto imposta i filtri da un
+     **dizionario locale** (niente AI).
+2. **Pezzo 4 — Vettoriale nell'impianto**, con gli strumenti sui due fianchi e
+   «Avanzati» fra loro.
+3. **Pezzo 5 — il desktop**: stesso impianto, servizi a sinistra, tasto Zack
+   nella tela in alto a destra, medio-grande.
+4. **La Libreria come schermata**, e allora la striscia in alto diventa
+   `libreria · faccia · scarica` (misurato: a 375 px restano 229 px di
+   margine).
+5. **I sei loghi di servizio** — prompt pronti in
    [docs/2026-08-28-prompt-loghi-servizi.md](docs/2026-08-28-prompt-loghi-servizi.md).
    Da generare **nero su panna**, non su nero.
-3. **Le facce 2D di Zack**: in `characters 2d` manca il suo foglio. Il suo
-   cerchio resta sull'icona finché non arriva.
-4. **Le dieci clip della home** — riquadro **460×460 px, margine destro,
-   allineate in basso**. È un contratto: se escono con proporzioni diverse,
-   Zack cambia taglia rispetto al tasto.
-5. **La home in HTML vero (pre-render).** L'HTML servito contiene **zero
-   caratteri di testo**: per la SEO non è difficile, è impossibile.
-6. **Il cast come asset** e il **prima/dopo esportabile**.
-7. **fp16** — dimezzerebbe i 175 MB. Va misurato sulla qualità del bordo.
+6. **Le facce 2D di Zack**: in `characters 2d` manca il suo foglio.
+7. **Le clip della mascotte**, senza sfondo. Il riquadro e' gia' riservato e
+   non dipende dal contenuto: mettercele dentro non deve muovere nient'altro.
+8. **La home in HTML vero (pre-render).** L'HTML servito contiene **zero
+   caratteri di testo**: per la SEO non e' difficile, e' impossibile.
+9. **fp16** — dimezzerebbe i 176 MB. Va misurato sulla qualita' del bordo.
+
+### Deciso, e non si rifa'
+
+- **L'AI nel tasto Zack e' rimandata** (2026-09-04). Sarebbe stata la prima
+  cosa a non girare nel browser del cliente. Vettoriale e Vocale fanno
+  qualcosa di locale.
+- **Niente encoder video nuovo**: misurato che `MediaRecorder` conserva
+  l'alfa. Il filmato esce gia' senza sfondo.
+- **Si dice «impianto»**, non «guscio» ne' «modello» — `modello` qui e' gia'
+  il modello ONNX.
 
 ### Cosa NON farei
 
 - Niente sincronizzazione. Niente timeline video. Niente abbonamento prima di
   cento persone che usano lo studio gratis. Niente altri modelli o formati.
+- **Niente app su Play Store per risolvere la cache**: una TWA usa la stessa
+  memoria del browser, quindi non cambia niente. Solo Capacitor porterebbe i
+  176 MB dentro il pacchetto, e sono al limite dei 200 MB di Play.
 
 ---
 
@@ -173,6 +228,12 @@ ms. Il modello da 175 MB parte solo per i file che ne hanno bisogno, e parte
 - [docs/2026-08-28-prompt-2d-cast.md](docs/2026-08-28-prompt-2d-cast.md) —
   da 3D a 2D senza snaturare i personaggi.
 - [docs/2026-08-28-prompt-loghi-servizi.md](docs/2026-08-28-prompt-loghi-servizi.md)
+- [docs/superpowers/specs/2026-09-04-impianto-unico-design.md](docs/superpowers/specs/2026-09-04-impianto-unico-design.md)
+  — **l'impianto**: la mappa condivisa, i descrittori, i cinque pezzi. Con
+  dentro le misure, comprese quelle che hanno smentito una mia diagnosi.
+- [docs/2026-08-27-deploy-zack-app.md](docs/2026-08-27-deploy-zack-app.md) —
+  e in particolare il **§ 4-bis**: la regola di cache che vive nel pannello
+  Cloudflare. Se i modelli tornano lenti, si guarda prima quella.
 - [docs/superpowers/specs/2026-08-27-home-che-lavora-design.md](docs/superpowers/specs/2026-08-27-home-che-lavora-design.md)
 - `~/Desktop/zack the duck/zack-series-bible.md` — **la bibbia.** Zack non
   parla, non festeggia, non è mai l'unico segnale.
