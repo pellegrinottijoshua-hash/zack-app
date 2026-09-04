@@ -80,6 +80,7 @@ export default function FilmLab({ file, gesto, onGesto, onSave, onNotice, onErro
 
       <div className="film-comandi">
         {/* ── TAGLIA ────────────────────────────────────────────────── */}
+        {gesto === 'taglia' && (
         <section className="film-gesto">
           <h3>{t('film.taglia')}</h3>
           <div className="film-tempi">
@@ -138,8 +139,10 @@ export default function FilmLab({ file, gesto, onGesto, onSave, onNotice, onErro
             {t('film.tagliaOra', { s: scelto.toFixed(1) })}
           </button>
         </section>
+        )}
 
         {/* ── FOTOGRAMMI ───────────────────────────────────────────── */}
+        {gesto === 'fotogrammi' && (
         <section className="film-gesto">
           <h3>{t('film.frames')}</h3>
           <label className="film-quanti">
@@ -167,8 +170,10 @@ export default function FilmLab({ file, gesto, onGesto, onSave, onNotice, onErro
             {t('film.estraiOra')}
           </button>
         </section>
+        )}
 
         {/* ── SFONDO ───────────────────────────────────────────────── */}
+        {gesto === 'sfondo' && (
         <section className="film-gesto">
           <h3>{t('film.sfondo')}</h3>
           <p className="help">{t('film.sfondoNota')}</p>
@@ -193,6 +198,7 @@ export default function FilmLab({ file, gesto, onGesto, onSave, onNotice, onErro
             {t('film.togliOraAttesa', { s: (durata || 0).toFixed(1) })}
           </button>
         </section>
+        )}
       </div>
 
       {lavoro && (

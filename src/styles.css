@@ -4954,3 +4954,17 @@ body {
   flex-wrap: wrap;
   gap: 6px;
 }
+
+/* I comandi del gesto scelto stanno SOTTO la tela, non di fianco: il fianco
+   è dei cerchi, e la tela è il lavoro. E se ne apre uno solo — i tre cerchi
+   dell'impianto SONO già la scelta, e mostrarli tutti e tre aperti
+   rimetterebbe la colonna di comandi che l'impianto ha appena tolto,
+   coprendo il video. «Gli strumenti non coprono la tela.» */
+.film-comandi {
+  flex: none;
+  padding: 10px 0 0;
+}
+.film-gesto {
+  border: 0;
+  padding: 0;
+}
