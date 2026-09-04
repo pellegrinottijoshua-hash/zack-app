@@ -16,7 +16,7 @@ import Icon from './Icon.jsx';
  * clip perché si registra mentre scorre, e far partire un'attesa lunga senza
  * dirne la durata è il modo più sicuro di far chiudere la scheda a metà.
  */
-export default function FilmLab({ file, onPick, onSave, onNotice, onError }) {
+export default function FilmLab({ file, gesto, onGesto, onSave, onNotice, onError }) {
   const video = useRef(null);
   const [meta, setMeta] = useState(null);
   const [da, setDa] = useState(0);
@@ -42,27 +42,10 @@ export default function FilmLab({ file, onPick, onSave, onNotice, onError }) {
   const urlClip = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
   useEffect(() => () => urlClip && URL.revokeObjectURL(urlClip), [urlClip]);
 
-  if (!file) {
-    return (
-      <div className="film film-vuoto">
-        <img src="/zack/libreria.webp" alt="" />
-        <h2>{t('film.vuoto')}</h2>
-        <p>{t('film.vuotoNota')}</p>
-        <label className="btn">
-          {t('film.scegli')}
-          <input
-            type="file"
-            accept="video/mp4,video/webm,video/quicktime"
-            onChange={(e) => {
-              const f = e.target.files[0];
-              e.target.value = '';
-              if (f) onPick(f);
-            }}
-          />
-        </label>
-      </div>
-    );
-  }
+  // Niente schermata vuota qui: il `+` dell'impianto e' l'unico invito a
+  // portare un file, e la frase sotto arriva dal descrittore. Due inviti
+  // sulla stessa schermata sono due comandi per la stessa cosa.
+  if (!file) return null;
 
   const durata = meta?.durata ?? 0;
   const fine = a ?? durata;

@@ -35,3 +35,37 @@ test('ogni strumento dichiarato ha un gesto che lo esegue', () => {
     }
   }
 });
+
+test('«filmato» non compare piu’ nelle liste di esclusione', () => {
+  /*
+   * Erano tre liste identiche piu' un Set, e tenerle in sincronia a mano e'
+   * gia' fallito una volta: `filmato` rimasto fuori mentre veniva aggiunto
+   * altrove, e chi apriva Filmato si trovava sopra il nome di un JPG e il
+   * tasto Zack, che avrebbe scontornato l'immagine mentre lui guardava una
+   * clip (il commento e' ancora in App.jsx a raccontarlo).
+   */
+  const liste = APP.match(/\[[^\]]*'filmato'[^\]]*\]\.includes\(tool\)/g) || [];
+  assert.deepEqual(liste, [], `«filmato» sta ancora in ${liste.length} lista/e di esclusione`);
+});
+
+test('chi ha un descrittore passa dall’impianto', () => {
+  // Una risposta sola alla domanda «questo servizio passa dall'impianto?».
+  // Due risposte divergono al primo servizio nuovo: e' quello che aveva
+  // lasciato `filmato` fuori da una lista.
+  assert.match(APP, /DESCRITTORI\[tool\]/, 'il filmato non entra ancora in <Piano>');
+});
+
+test('la libreria e la barra di stato seguono l’impianto, non un id', () => {
+  /*
+   * Erano `tool !== 'scontorna'`: dicevano «tranne lo scontorno» e
+   * intendevano «tranne chi passa dall'impianto». Con Filmato dentro
+   * l'impianto, quelle due comparivano sotto la sua tela — la barra di stato
+   * col nome di un file e «Scarica tutto» della libreria, cioe' esattamente
+   * cio' che l'impianto toglie di mezzo.
+   */
+  assert.doesNotMatch(
+    APP,
+    /tool !== 'scontorna'/,
+    'la libreria o la barra di stato guardano ancora un id invece del descrittore',
+  );
+});

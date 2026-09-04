@@ -981,6 +981,18 @@ export default function App() {
     setBrushOpen(true);
   }
 
+  /** Il `+` del filmato: un file solo, dei tipi che il descrittore dichiara. */
+  function scegliFilmato() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = getDescrittore('filmato').accetta.file.join(',');
+    input.onchange = () => {
+      const f = input.files?.[0];
+      if (f) setFilmato(f);
+    };
+    input.click();
+  }
+
   /** Cambia il file sul piano di lavoro senza passare dal cestino. */
   function swapFile() {
     const input = document.createElement('input');
@@ -1409,7 +1421,11 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
           ) : tool === 'filmato' ? (
             <FilmLab
               file={filmato}
-              onPick={setFilmato}
+              /* Il gesto aperto arriva da fuori: i tre cerchi dell'impianto
+                 sono gli stessi tre gesti, e tenerli anche dentro FilmLab
+                 vorrebbe dire due comandi per la stessa cosa. */
+              gesto={gestoFilm}
+              onGesto={setGestoFilm}
               onSave={async (blob, { kind, op }) =>
                 library.save(blob, {
                   name: (filmato?.name || 'filmato').replace(/\.[^.]+$/, ''),
@@ -1552,7 +1568,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               dappertutto: chi apriva Filmato si trovava sopra il nome di un
               JPG e il tasto Zack, che avrebbe scontornato l'immagine mentre
               lui guardava una clip. */}
-          {!isEditor && !['suono', 'brain', 'filmato', 'scontorna'].includes(tool) && (
+          {!isEditor && !DESCRITTORI[tool] && !['suono', 'brain'].includes(tool) && (
             <StageBar
               file={file}
               image={stats?.image}
@@ -1594,13 +1610,21 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               il tasto Zack in basso a destra e la mascotte a sinistra. La
               tela vera — confronto, pennello, blocco — gli sta dentro, e
               compare quando c'e' un file. */}
-          {tool === 'scontorna' ? (
+          {/* Chi ha un descrittore passa dall'impianto. La lista non si
+              scrive a mano: e' la stessa domanda a cui risponde `servizi/`,
+              e due risposte alla stessa domanda divergono al primo servizio
+              nuovo. */}
+          {DESCRITTORI[tool] ? (
             <Piano
               servizio={getDescrittore(tool)}
               /* Vuoto vuol dire NIENTE sul piano: ne' un file solo, ne' la
                  colonna dei tre scelti, ne' i risultati. Senza i tre scelti
                  il `+` restava in mezzo e la colonna non si vedeva mai. */
-              vuoto={!file && batchFiles.length === 0 && batch.results.length === 0}
+              vuoto={
+                tool === 'filmato'
+                  ? !filmato
+                  : !file && batchFiles.length === 0 && batch.results.length === 0
+              }
               ricetta={ricetta}
               piano={stats?.image ? pianoZack(ricetta, stats.image) : null}
               quanti={batchFiles.length > 1 ? batchFiles.length : file ? 1 : 0}
@@ -1621,9 +1645,15 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               models={engine.models}
               modello={s.model}
               onModello={(id) => set({ model: id })}
-              onPick={scegliFile}
-              onFile={(f) => accettaFile([f])}
-              onFiles={accettaFile}
+              onPick={tool === 'filmato' ? scegliFilmato : scegliFile}
+              /* Il rilascio segue lo stesso instradamento del `+`: se no il
+                 trascinamento di una clip su Filmato finirebbe nel percorso
+                 delle immagini, che la rifiuta in silenzio — il `+` funziona
+                 e il trascinamento no, sulla stessa schermata. */
+              onFile={(f) => (tool === 'filmato' ? setFilmato(f) : accettaFile([f]))}
+              onFiles={(files) =>
+                tool === 'filmato' ? files[0] && setFilmato(files[0]) : accettaFile(files)
+              }
               onZack={() => {
                 // Con la colonna piena il tasto fa TUTTI i file: e' la stessa
                 // promessa del tasto della home, applicata a tre invece che a
@@ -1679,7 +1709,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   erase: brushOpen && modoPennello === 'erase',
                 };
                 return strumentiVisibili(getDescrittore(tool), {
-                  file: Boolean(file),
+                  file: tool === 'filmato' ? Boolean(filmato) : Boolean(file),
                   risultato: result?.kind === 'png',
                 }).map((s) => ({
                   id: s.id,
@@ -1707,12 +1737,12 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
              guarda. Senza questo la colonna mostrava i comandi del vettoriale
              accanto al laboratorio dei suoni: un pannello che parla di
              un'altra cosa è peggio di un pannello vuoto. */
-          data-vuota={['brain', 'suono', 'filmato', 'scontorna'].includes(tool) || undefined}
+          data-vuota={Boolean(DESCRITTORI[tool]) || ['brain', 'suono'].includes(tool) || undefined}
         >
           {/* Brain non ha comandi in colonna: i suoi stanno sulla tela, dove
               si guarda. Una colonna di comandi spenti accanto a una lavagna è
               esattamente il rumore che la regola §6.1 vuole togliere. */}
-          {['brain', 'suono', 'filmato', 'scontorna'].includes(tool) ? null : isEditor ? (
+          {DESCRITTORI[tool] || ['brain', 'suono'].includes(tool) ? null : isEditor ? (
             <>
               <VectorTools
                 editor={editorRef}
@@ -1869,7 +1899,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
       {/* La libreria non compare nello scontorno: il piano e' vuoto, e
           «scarica tutto» e' diventato l'icona in alto a destra. Resta in
           tutti gli altri servizi, dove il lavoro si accumula. */}
-      {tool !== 'scontorna' && (
+      {!DESCRITTORI[tool] && (
         <Library
           store={library}
           open={libOpen}
@@ -1902,7 +1932,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
         />
       )}
 
-      {tool !== 'scontorna' && <footer className="statusbar">
+      {!DESCRITTORI[tool] && <footer className="statusbar">
         <span>
           {t('status.file')} <b>{file ? file.name : t('status.none')}</b>
         </span>
