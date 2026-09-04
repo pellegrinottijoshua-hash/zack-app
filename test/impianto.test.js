@@ -96,3 +96,27 @@ test('il video sta sugli scacchi, come i ritagli', () => {
     '.film-video non ha gli scacchi: un video trasparente sembrera’ avere il fondo panna',
   );
 });
+
+test('il riquadro della mascotte non dipende da cosa ci sta dentro', () => {
+  /*
+   * Spec §5.3: la mascotte diventera' una o piu' clip senza sfondo. Il
+   * contratto e' gia' scritto per la home in RIPRENDI-QUI §6.4 — «riquadro
+   * fisso, allineato in basso: se le clip escono con proporzioni diverse,
+   * Zack cambia taglia rispetto al tasto», ed e' la prima cosa che si nota.
+   *
+   * Con `width: auto` la larghezza la decide l'immagine. Finche' e' un .webp
+   * quadrato non si vede; il giorno che entra una clip 16:9 la mascotte
+   * cambia taglia e si sposta, e sembrera' un difetto dell'impaginazione
+   * invece che di questa riga. Va chiuso ORA, che costa niente.
+   */
+  const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+  const blocchi = [...CSS.matchAll(/(?:^|\n)\s*\.sc-zack\s*\{([^}]*)\}/g)].map((m) => m[1]);
+  assert.ok(blocchi.length > 0, '.sc-zack non esiste piu’ in styles.css');
+  for (const b of blocchi) {
+    assert.doesNotMatch(b, /width:\s*auto/, '.sc-zack ha «width: auto»: la larghezza la decide il contenuto');
+  }
+  assert.ok(
+    blocchi.some((b) => /aspect-ratio/.test(b)),
+    '.sc-zack non dichiara una proporzione: il riquadro non e’ riservato',
+  );
+});

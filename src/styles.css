@@ -4504,13 +4504,26 @@ body {
 
 /* La mascotte a sinistra e il tasto a destra, in basso, uno accanto all'altro
    sopra la fila dei servizi. */
+/* La mascotte a sinistra, in basso.
+   IL RIQUADRO E' RISERVATO, e non dipende da cosa ci sta dentro: oggi e' un
+   `.webp` quadrato, domani sara' una clip senza sfondo (decisione del
+   committente del 2026-09-04). Con `width: auto` la larghezza la decideva
+   l'immagine, e il giorno che entra una clip con proporzioni diverse Zack
+   cambierebbe taglia rispetto al tasto — che e' la prima cosa che si nota, ed
+   e' il contratto gia' scritto per la home in RIPRENDI-QUI §6.4.
+   `object-fit: contain` fa stare dentro qualunque cosa senza allargare il
+   riquadro, quindi passare da <img> a <video> non muove nient'altro. */
 .sc-zack {
   position: absolute;
   left: 0;
   bottom: 0;
   height: clamp(96px, 16vh, 150px);
   height: clamp(96px, 16dvh, 150px);
-  width: auto;
+  width: clamp(96px, 16vh, 150px);
+  width: clamp(96px, 16dvh, 150px);
+  aspect-ratio: 1;
+  object-fit: contain;
+  object-position: bottom left;
   pointer-events: none;
   user-select: none;
 }
@@ -4737,10 +4750,14 @@ body {
 .sc {
   padding-bottom: clamp(96px, 15dvh, 150px);
 }
+/* La mascotte scende e cresce. Cresce in TUTT'E DUE le misure, o il riquadro
+   torna a dipendere dal contenuto. */
 .sc-zack {
   bottom: -14px;
   height: clamp(120px, 19vh, 185px);
   height: clamp(120px, 19dvh, 185px);
+  width: clamp(120px, 19vh, 185px);
+  width: clamp(120px, 19dvh, 185px);
 }
 .sc-tasto {
   bottom: -6px;
