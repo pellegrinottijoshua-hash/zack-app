@@ -65,3 +65,34 @@ test('lo studio prova il fondo piatto PRIMA di svegliare il modello', () => {
     'il modello viene chiamato prima della prova senza modello: la scorciatoia non serve a niente',
   );
 });
+
+test('il pennello si rimonta quando cambia strumento', () => {
+  /*
+   * Il difetto (2026-09-04, riferito dal committente come «il righello non
+   * funziona»): `MaskBrush` legge lo strumento d'ingresso con
+   * `useState(modoIniziale || 'erase')`, e `useState` guarda il valore SOLO
+   * al montaggio. `App.jsx` montava `<MaskBrush>` senza `key`, quindi non lo
+   * rimontava mai.
+   *
+   * Risultato: premere il cerchio del righello mentre il pennello e' gia'
+   * aperto ACCENDEVA il cerchio — `aria-pressed` legge `modoPennello` — e non
+   * cambiava lo strumento. Un comando che si illumina e non fa niente e' la
+   * definizione esatta di «rotto», e la matematica del righello era giusta e
+   * testata da dodici test: il ponte non passava.
+   *
+   * La `key` e' la cura giusta e non un rattoppo: cambiare strumento vuol dire
+   * ricominciare il gesto, e lo stato interno del pennello precedente non ha
+   * niente da dire al nuovo.
+   */
+  const i = APP.indexOf('<MaskBrush');
+  assert.notEqual(i, -1, '<MaskBrush> non si trova piu’ in App.jsx');
+  // La finestra tiene la `key` ancorata a QUESTO elemento invece di cercarla
+  // in tutto il file: 600 caratteri stanno dentro i suoi attributi e non
+  // arrivano al successivo. Larga abbastanza da contenere il commento che
+  // spiega la `key` — con 200 il test bocciava la riga giusta.
+  assert.match(
+    APP.slice(i, i + 600),
+    /key=\{modoPennello\}/,
+    'senza `key={modoPennello}` il pennello resta sullo strumento con cui e’ stato aperto',
+  );
+});

@@ -1385,6 +1385,11 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
             />
           ) : brushOpen && result?.kind === 'png' ? (
             <MaskBrush
+              /* Cambiare strumento vuol dire ricominciare il gesto: il
+                 pennello si rimonta, e rilegge `modoIniziale`. Senza questa
+                 riga premere il righello accendeva il cerchio e lasciava la
+                 gomma — `useState` guarda il valore solo al montaggio. */
+              key={modoPennello}
               source={file}
               cutout={result.blob}
               modoIniziale={modoPennello}
