@@ -233,18 +233,32 @@ usato coerentemente sotto.
 1. **Crea il progetto Pages.** Dashboard Cloudflare → Workers & Pages →
    Create → Pages → Connect to Git → scegli il repo `jayl-studio`.
    (In alternativa, da terminale: `wrangler pages project create zack-app`.)
-2. **Comando di build**: `npm run build && rm -rf dist/ort dist/models`.
-   Il `rm -rf` in coda non è pulizia estetica: `scripts/stage-ort.js` gira in
-   automatico a ogni `npm install`/`npm run build` (hook `postinstall` e
-   `prebuild` in `package.json`) e rigenera `public/ort/` da
-   `node_modules/onnxruntime-web/dist` **a ogni build**, quindi anche in CI —
-   portando con sé di nuovo il file da 26,5 MiB. Senza toglierlo da `dist/`
-   prima dell'upload, Pages rifiuta il deploy anche con `VITE_ORT_BASE`
-   impostata: la variabile decide da dove l'app *legge* a runtime, non cosa
-   finisce nella cartella pubblicata. `public/models/` invece è già escluso
-   da git (vedi `.gitignore`) e in una build pulita di Cloudflare non esiste
-   proprio: quel `rm -rf` è difensivo, per chi facesse mai un deploy manuale
-   da una macchina che li ha scaricati in locale.
+2. **Comando di build**: `npm run build` — e basta.
+
+   ⚠️ **Aggiornamento del 2026-09-04.** Qui c'era scritto
+   `npm run build && rm -rf dist/ort dist/models`, col `rm -rf` da scrivere a
+   mano nel campo del pannello Cloudflare. È esattamente quello che è successo:
+   il campo è tornato a `npm run build` da solo (probabilmente nella migrazione
+   al sistema unificato Workers & Pages), e **ogni deploy ha fallito da quel
+   momento** — misurato con un log vero il 2026-09-04, build delle 11:51:
+   `Asset too large… ort-wasm-simd-threaded.jsep.wasm … 26.5 MiB`. Lo stesso
+   guasto, verbatim, del 27 agosto: un campo fuori dal repository può regredire
+   senza che nessun commit lo racconti.
+
+   La correzione ora vive **nel repository**, non nel pannello:
+   `package.json` ha uno script `postbuild` che fa lui stesso
+   `rm -rf dist/ort dist/models`, e gira dopo QUALUNQUE comando chiami
+   `npm run build` — dashboard configurato bene o no. Il motivo del `rm -rf`
+   resta lo stesso: `scripts/stage-ort.js` gira a ogni `npm install`/
+   `npm run build` (hook `postinstall` e `prebuild`) e rigenera `public/ort/`
+   da `node_modules/onnxruntime-web/dist` **a ogni build**, portando con sé di
+   nuovo il file da 26,5 MiB. Senza toglierlo da `dist/` prima dell'upload,
+   Cloudflare rifiuta il deploy anche con `VITE_ORT_BASE` impostata: la
+   variabile decide da dove l'app *legge* a runtime, non cosa finisce nella
+   cartella pubblicata. `public/models/` invece è già escluso da git (vedi
+   `.gitignore`) e in una build pulita di Cloudflare non esiste proprio: quel
+   secondo `rm -rf` resta difensivo, per chi facesse mai un deploy manuale da
+   una macchina che li ha scaricati in locale.
 3. **Cartella di output**: `dist` (già impostata anche in `wrangler.jsonc`
    come `pages_build_output_dir`, ma il pannello Pages con l'integrazione
    Git la vuole comunque compilata a mano nel form).
