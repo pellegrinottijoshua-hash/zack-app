@@ -597,6 +597,7 @@
     "label": "Zack",
     "title": "Your Zack button",
     "what": "What it will do",
+    "resize": "How big",
     "empty": "Zack has nothing to do yet: turn on at least one step.",
     "note": "{size} · {wait}",
     "working": "Zack is working…",
@@ -619,7 +620,11 @@
       "buchi": "The counters of a logo — the inside of an “o” — that cutout leaves open get filled back in. Large, deliberate holes stay open.",
       "ingrandisci": "Enlarges to 4000 px on the long side, the size that fills a shirt. Skipped when the file is already big enough.",
       "esporta": "The result lands in the library, carrying where it came from.",
-      "scarica": "The file heads to your downloads folder as soon as it is ready."
+      "scarica": "The file heads to your downloads folder as soon as it is ready.",
+      "ridimensiona:x4": "Four times bigger, through the model. It's the slowest step in the chain.",
+      "ridimensiona:x2": "Twice as big, through the model. About a quarter of the ×4 wait.",
+      "ridimensiona:d2": "Half. It's a pixel rewrite: no waiting at all.",
+      "ridimensiona:d4": "A quarter. It's a pixel rewrite: no waiting at all."
     }
   },
   "advanced": {

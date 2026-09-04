@@ -597,6 +597,7 @@
     "label": "Zack",
     "title": "Il tuo tasto Zack",
     "what": "Cosa farà",
+    "resize": "Quanto grande",
     "empty": "Zack non ha ancora niente da fare: accendi almeno un passo.",
     "note": "{size} · {wait}",
     "working": "Zack sta lavorando…",
@@ -619,7 +620,11 @@
       "buchi": "Le controforme di un logo — l'interno di una «o» — che lo scontorno lascia aperte vengono richiuse. I buchi grandi e voluti restano.",
       "ingrandisci": "Ingrandisce fino a 4000 px sul lato lungo, la misura che riempie una maglietta. Se il file è già grande, salta.",
       "esporta": "Il risultato finisce nella libreria, con la provenienza del file di partenza.",
-      "scarica": "Il file parte verso la cartella dei download appena è pronto."
+      "scarica": "Il file parte verso la cartella dei download appena è pronto.",
+      "ridimensiona:x4": "Quattro volte più grande, col modello. È il passo più lento della catena.",
+      "ridimensiona:x2": "Il doppio, col modello. Circa un quarto dell'attesa di ×4.",
+      "ridimensiona:d2": "Metà. È una riscrittura di pixel: non costa nessuna attesa.",
+      "ridimensiona:d4": "Un quarto. È una riscrittura di pixel: non costa nessuna attesa."
     }
   },
   "advanced": {
