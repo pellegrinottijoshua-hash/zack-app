@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ritaglioIstantaneo, UNIFORMITA_MIN, MAX_FILE } from '../src/landing/ritaglio.js';
+import { ritaglioIstantaneo, UNIFORMITA_MIN, MAX_FILE } from '../src/engine/ritaglio.js';
 import { pennellaGuidato } from '../src/engine/righello.js';
 
 /*

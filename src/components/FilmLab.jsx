@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
 import { FORMATI } from '../engine/clip.js';
 import { estraiFotogrammi, tagliaFilmato, togliSfondo } from '../engine/filmato.js';
@@ -30,6 +30,17 @@ export default function FilmLab({ file, onPick, onSave, onNotice, onError }) {
     setDa(0);
     setA(null);
   }, [file]);
+
+  /*
+   * L'URL della clip si fa una volta per file.
+   *
+   * Dentro il render ne nasceva uno a ogni ridisegno, e nessuno veniva
+   * revocato: qui non è una miniatura, è un filmato intero che resta in
+   * memoria a ogni copia. Sta sopra il `return` anticipato perché un hook
+   * dopo un `return` condizionale gira in alcuni render e non in altri.
+   */
+  const urlClip = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+  useEffect(() => () => urlClip && URL.revokeObjectURL(urlClip), [urlClip]);
 
   if (!file) {
     return (
@@ -75,7 +86,7 @@ export default function FilmLab({ file, onPick, onSave, onNotice, onError }) {
       <video
         ref={video}
         className="film-video"
-        src={URL.createObjectURL(file)}
+        src={urlClip}
         controls
         onLoadedMetadata={(e) => {
           const v = e.currentTarget;

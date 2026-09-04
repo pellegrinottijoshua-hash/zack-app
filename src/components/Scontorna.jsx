@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
-import { PASSI, commutaPasso } from '../engine/ricette.js';
+import { FATTORI, PASSI, commutaFattore, commutaPasso } from '../engine/ricette.js';
 import Icon from './Icon.jsx';
 
 /**
@@ -27,6 +27,16 @@ import Icon from './Icon.jsx';
 
 /** I due modelli offerti qui. Il nome del modello resta nel `title`. */
 const DUE_MODELLI = ['u2net', 'isnet-general-use'];
+
+/**
+ * I simboli dei fattori, gli stessi della home.
+ *
+ * Il committente il 2026-09-04: «il tasto zack non ha le stesse opzioni della
+ * home (x2 X4 ecc)». Erano già esposti da `ricette.js`, già pianificati da
+ * `pianoZack` e già eseguiti da `runZack`: mancava solo il modo di accenderli.
+ * Restano simboli e non parole perché sono quattro e devono stare su una riga.
+ */
+const SIMBOLO = { x4: '×4', x2: '×2', d2: ':2', d4: ':4' };
 
 export default function Scontorna({
   vuoto,
@@ -231,6 +241,23 @@ export default function Scontorna({
                   onClick={() => onModello(m.id)}
                 >
                   {t(m.labelKey)}
+                </button>
+              ))}
+            </div>
+
+            {/* I quattro fattori, gli stessi della home. Stanno fra i modelli
+                e la catena perche' rispondono alla seconda domanda del tasto:
+                con quale modello, quanto grande, e poi cosa fare. */}
+            <div className="sc-fattori" role="group" aria-label={t('zack.resize')}>
+              {Object.keys(FATTORI).map((chiave) => (
+                <button
+                  key={chiave}
+                  className="pastiglia"
+                  aria-pressed={ricetta.includes(`ridimensiona:${chiave}`)}
+                  title={t(`zack.stepHelp.ridimensiona:${chiave}`)}
+                  onClick={() => onRicetta(commutaFattore(ricetta, chiave))}
+                >
+                  {SIMBOLO[chiave]}
                 </button>
               ))}
             </div>

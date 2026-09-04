@@ -159,6 +159,30 @@ export function commutaPasso(ricetta, passo) {
 }
 
 /**
+ * Accende o spegne un fattore di ridimensionamento.
+ *
+ * Il gemello di `commutaPasso` per l'altra metà della catena. Serve perché
+ * `PASSI` è una lista **chiusa** e non contiene `ridimensiona:x4`: passare un
+ * fattore a `commutaPasso` non lo accenderebbe, lo ignorerebbe in silenzio.
+ *
+ * Tre regole, e tutt'e tre sono già scritte in `normalizza`. Qui vengono
+ * applicate un momento prima, perché `normalizza` corregge la catena quando si
+ * **esegue**, e l'utente guarda le pastiglie **prima**: una pastiglia accesa
+ * che poi non produce niente è una bugia dell'interfaccia.
+ *
+ * 1. Un fattore solo per catena.
+ * 2. Ripremerlo lo spegne.
+ * 3. Un fattore e `ingrandisci` non convivono: rispondono alla stessa domanda.
+ */
+export function commutaFattore(ricetta, chiave) {
+  if (!Object.hasOwn(FATTORI, chiave)) return ricetta;
+  const passo = `ridimensiona:${chiave}`;
+  const senzaFattori = ricetta.filter((p) => fattoreDi(p) === null);
+  if (ricetta.includes(passo)) return senzaFattori;
+  return [...senzaFattori.filter((p) => p !== 'ingrandisci'), passo];
+}
+
+/**
  * Che cosa farà il tasto, prima di premerlo.
  *
  * @param {string[]} ricetta

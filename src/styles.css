@@ -4912,3 +4912,11 @@ body {
   width: 11px;
   height: 11px;
 }
+
+/* I quattro fattori nel punto oro: una riga sola, simboli e non parole.
+   Stessa forma delle altre pastiglie — questa e' solo la fila che le tiene. */
+.sc-fattori {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}

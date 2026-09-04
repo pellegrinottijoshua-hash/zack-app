@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Dropzone from './components/Dropzone.jsx';
 import Compare from './components/Compare.jsx';
 import Library from './components/Library.jsx';
@@ -32,6 +32,7 @@ import { useBatch } from './hooks/useBatch.js';
 import { canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { TARGET_SIDE } from './engine/ready.js';
 import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/ricette.js';
+import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/ritaglio.js';
 import { caricaFileDiProva, deveMostrareProva, segnaProvaVista } from './engine/prova.js';
 import { SERVICES, getService, firstReady } from './services.js';
 
@@ -45,7 +46,7 @@ function leggiRicetta(servizio) {
     return fabbrica;
   }
 }
-import { bundleAll } from './store/bundle.js';
+import { bundleAll, bundleBlobs } from './store/bundle.js';
 import { useEngine } from './hooks/useEngine.js';
 import { t, setLang, detectLang, onLangChange } from './i18n/index.js';
 import { onHelpChange, isHelpOn } from './i18n/help.js';
@@ -68,7 +69,16 @@ const px = (d) => (d ? `${d.w}×${d.h}` : '—');
  */
 const FACCIA = new Set(['brain', 'scontorna', 'vettorializza', 'filmato', 'suono']);
 
-const STRATEGIE = { mask: 'maschera', crop: 'ritaglio', upscale: 'ingrandimento', browser: 'diretta' };
+const STRATEGIE = {
+  mask: 'maschera',
+  crop: 'ritaglio',
+  upscale: 'ingrandimento',
+  browser: 'diretta',
+  // Il fondo era piatto: nessun modello, nessuno scaricamento, ~20 ms. Va
+  // detto nel pannello del risultato, perche' spiega da solo perche' quella
+  // volta non c'e' stata attesa.
+  istantaneo: 'senza modello',
+};
 // Un tempo che non abbiamo misurato non si stampa: «NaNs» sembra un guasto,
 // e un trattino dice la verità.
 const secs = (ms) => (Number.isFinite(ms) ? `${(ms / 1000).toFixed(1)}s` : '—');
@@ -443,7 +453,33 @@ export default function App() {
         // Sul lavoro in corso, non sull'originale: chi ha appena ingrandito e
         // preme Scontorna si vedeva tornare il file piccolo, con
         // l'ingrandimento buttato via senza un avviso.
-        const blob = await engine.cutout(result?.blob || file, s.model);
+        const sorgente = result?.blob || file;
+
+        /*
+         * I pixel PRIMA del modello, e sono due cose in una.
+         *
+         * 1. Venti millisecondi per sapere se il modello servira'. Si paga
+         *    qui, una volta, invece di far scendere 175 MB anche a un fondo
+         *    piatto. E' esattamente cio' che la home fa dal 2026-08-27 e che
+         *    lo studio non ha mai fatto.
+         * 2. Da qui in poi sappiamo CHI ha sbagliato. Se il file non si
+         *    decodifica, il colpevole e' il file; se si decodifica e poi il
+         *    modello cade, il colpevole e' lo strumento — e non si manda
+         *    l'utente a rifare un file che stava bene.
+         */
+        let src;
+        try {
+          src = await pixelDaFile(sorgente);
+        } catch (e) {
+          console.error(e);
+          throw Object.assign(e, { code: 'file-illeggibile' });
+        }
+
+        const istante = ritaglioIstantaneo(src);
+        const blob = istante
+          ? await aPng(applicaAlfa(src, istante.alpha))
+          : await engine.cutout(sorgente, s.model);
+
         pushResult({
           url: own(blob),
           blob,
@@ -451,8 +487,12 @@ export default function App() {
           // Lo scontorno non ricampiona: entra e esce alla stessa misura. Dirlo
           // serve a chi sta controllando di non aver perso risoluzione per strada.
           meta: {
-            strategy: 'browser',
-            model: s.model,
+            strategy: istante ? 'istantaneo' : 'browser',
+            // Senza modello non c'e' un modello da nominare, e scrivere
+            // `u2net` accanto a un ritaglio che non l'ha usato sarebbe una
+            // riga falsa nel pannello del risultato.
+            model: istante ? null : s.model,
+            uniformita: istante ? istante.uniformita : null,
             source: stats?.image,
             output: stats?.image,
             ms: Date.now() - started,
@@ -461,7 +501,12 @@ export default function App() {
         await library.save(blob, {
           name: `${file.name.replace(/\.[^.]+$/, '')}-scontornato`,
           kind: 'png',
-          meta: { fromId: sourceAssetId, op: 'remove-bg', model: s.model },
+          meta: {
+            fromId: sourceAssetId,
+            op: 'remove-bg',
+            model: istante ? null : s.model,
+            via: istante ? 'istantaneo' : 'modello',
+          },
         });
       } else {
         // Anche il tracciato gira nel browser: VTracer in WebAssembly, 140 KB.
@@ -481,6 +526,10 @@ export default function App() {
       // dice cosa è successo e cosa fare. Lo stack resta in console.
       console.error(e);
       if (e.code === 'trace-empty') setError(`${t('trace.empty.title')} — ${t('trace.empty.body')}`);
+      // Questo lo sappiamo per davvero: i pixel non si sono decodificati, e
+      // il colpevole e' il file. E' l'unico posto dove si puo' dire.
+      else if (e.code === 'file-illeggibile')
+        setError(`${t('engine.unreadable.title')} — ${t('engine.unreadable.body')}`);
       else if (e.code) setError(`${t('engine.error.title')} — ${t('engine.error.body')}`);
       else setError(e.message);
     } finally {
@@ -1211,6 +1260,59 @@ export default function App() {
     }
   }
 
+  /**
+   * Scarica CIO' CHE C'E' SUL PIANO.
+   *
+   * Qui c'era `downloadAll`, che zippa la LIBRERIA: con la libreria vuota
+   * rispondeva «libreria vuota» mentre sul piano c'erano tre risultati
+   * pronti. Il commento sopra la riga diceva gia' la cosa giusta; il codice ne
+   * faceva un'altra, ed e' il tipo di commento che questo progetto non vuole.
+   *
+   * Uno zip e non N scaricamenti: il browser blocca il secondo `a.click()` di
+   * fila, quindi «scarica tutti» ne avrebbe consegnato uno.
+   */
+  async function scaricaIlPiano() {
+    setError(null);
+    // Un file solo passa dall'esportazione di sempre, che rispetta il formato
+    // scelto: incartarlo in uno zip da solo sarebbe un passaggio in piu' per
+    // niente.
+    if (batch.results.length === 0) return runExport();
+
+    setBusy(t('action.preparing'));
+    try {
+      const blob = await bundleBlobs(
+        batch.results.map((r) => ({
+          nome: `${r.file.name.replace(/\.[^.]+$/, '')}.png`,
+          blob: r.blob,
+        })),
+      );
+      api.download(own(blob), `zack-${new Date().toISOString().slice(0, 10)}.zip`);
+    } catch (e) {
+      console.error(e);
+      setError(t('engine.error.body'));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /**
+   * Le anteprime dei file scelti, fatte UNA VOLTA.
+   *
+   * Prima l'URL nasceva dentro la `.map()` del render: uno nuovo a ogni
+   * ridisegno, nessuno revocato, e ogni URL tiene in vita il blob a cui punta.
+   * Tre file di stampa e una manciata di ridisegni sono decine di copie in
+   * memoria.
+   *
+   * Sta QUI, sopra il `return` anticipato del motore: un hook dopo un `return`
+   * condizionale gira in alcuni render e non in altri, e React si ferma con
+   * «Rendered fewer hooks than expected».
+   */
+  const anteprime = useMemo(
+    () => batchFiles.map((f) => ({ f, url: URL.createObjectURL(f) })),
+    [batchFiles],
+  );
+  useEffect(() => () => anteprime.forEach((a) => URL.revokeObjectURL(a.url)), [anteprime]);
+
   // L'attesa dipende dal MOTORE, non dal server. Il backend serve solo alla
   // libreria su disco: legare tutta l'interfaccia alla sua risposta rendeva
   // l'app inutilizzabile senza backend, cioè l'esatto contrario della promessa.
@@ -1249,7 +1351,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
       /* I file scelti, in colonna, PRIMA che il tasto li lavori: si vedono
          tutti e tre insieme — e' il senso di poterne portare tre. */
       <ul className="sc-colonna">
-        {batchFiles.map((f) => (
+        {anteprime.map(({ f, url }) => (
           <li key={`${f.name}-${f.size}`}>
             {/* Togliere un file dalla colonna: prima si poteva solo
                 ricominciare da capo, e con lui se ne andavano anche gli
@@ -1261,7 +1363,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
             >
               ×
             </button>
-            <img src={URL.createObjectURL(f)} alt="" aria-hidden="true" />
+            <img src={url} alt="" aria-hidden="true" />
             <span>{f.name.replace(/\.[^.]+$/, '')}</span>
           </li>
         ))}
@@ -1336,6 +1438,11 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
             />
           ) : brushOpen && result?.kind === 'png' ? (
             <MaskBrush
+              /* Cambiare strumento vuol dire ricominciare il gesto: il
+                 pennello si rimonta, e rilegge `modoIniziale`. Senza questa
+                 riga premere il righello accendeva il cerchio e lasciava la
+                 gomma — `useState` guarda il valore solo al montaggio. */
+              key={modoPennello}
               source={file}
               cutout={result.blob}
               modoIniziale={modoPennello}
@@ -1540,7 +1647,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               /* Il tasto in alto a destra scarica CIO' CHE C'E': i tre file
                  della colonna se il blocco e' finito, il file singolo se il
                  piano ne ha uno solo. Sono lo stesso gesto. */
-              onScarica={batch.results.length > 0 ? downloadAll : runExport}
+              onScarica={scaricaIlPiano}
               puoiScaricare={batch.results.length > 0 || canExport}
               strumenti={
                 file && result?.kind === 'png'

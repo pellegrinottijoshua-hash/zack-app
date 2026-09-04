@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   pianoZack,
   commutaPasso,
+  commutaFattore,
   normalizza,
   stessaRicetta,
   RICETTE_DI_FABBRICA,
@@ -183,4 +184,42 @@ test('spegnere un passo lascia il fattore dov e', () => {
 test('accendere e spegnere lo stesso passo torna al punto di partenza', () => {
   const r = ['scontorna', 'ridimensiona:x2'];
   assert.deepEqual(normalizza(commutaPasso(commutaPasso(r, 'esporta'), 'esporta')), normalizza(r));
+});
+
+test('accendere un fattore lo mette nella catena', () => {
+  assert.deepEqual(commutaFattore(['scontorna'], 'x4'), ['scontorna', 'ridimensiona:x4']);
+});
+
+test('ripremere lo stesso fattore lo spegne', () => {
+  assert.deepEqual(commutaFattore(['scontorna', 'ridimensiona:x4'], 'x4'), ['scontorna']);
+});
+
+test('un secondo fattore sostituisce il primo, non si somma', () => {
+  // Un solo ridimensionamento per catena: e' gia' la regola di `normalizza`.
+  // «×4» e «:4» insieme farebbero aspettare mezzo minuto per tornare
+  // esattamente da dove si e' partiti.
+  assert.deepEqual(commutaFattore(['scontorna', 'ridimensiona:x4'], 'd2'), [
+    'scontorna',
+    'ridimensiona:d2',
+  ]);
+});
+
+test('accendere un fattore spegne «ingrandisci»', () => {
+  /*
+   * Rispondono alla stessa domanda — «quanto grande?» — e `normalizza` fa
+   * gia' vincere il fattore. Toglierlo QUI serve all'occhio: se restasse
+   * acceso sarebbe una pastiglia premuta che non fa niente. «Il colore non e'
+   * mai l'unico segnale» vale anche al contrario — un segnale acceso deve
+   * corrispondere a un effetto.
+   */
+  assert.deepEqual(commutaFattore(['scontorna', 'ingrandisci'], 'x2'), [
+    'scontorna',
+    'ridimensiona:x2',
+  ]);
+});
+
+test('un fattore che non esiste non tocca la catena', () => {
+  // Una chiave puo' arrivare da un archivio vecchio o scritta a mano: non
+  // deve produrre un passo che nessuno sa eseguire.
+  assert.deepEqual(commutaFattore(['scontorna'], 'x8'), ['scontorna']);
 });
