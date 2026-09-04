@@ -1,8 +1,15 @@
-# Un guscio solo, sei servizi
+# Lo stesso impianto, sei schermate
 
 **Data:** 4 settembre 2026
 **Stato:** disegno approvato dal committente, da pianificare
-**Sostituisce:** niente. Aggiorna il [contratto UX del 28 agosto](../../2026-08-28-contratto-ux.md) in tre punti, elencati in § 11.
+**Sostituisce:** niente. Aggiorna il [contratto UX del 28 agosto](../../2026-08-28-contratto-ux.md) in quattro punti, elencati in § 11.
+
+> **Una parola, e va tenuta.** *Impianto* è il termine del contratto UX § 1 —
+> *«L'impianto: cosa sta dove, e non si sposta mai»*. Vuol dire **una mappa
+> condivisa, non un contenitore**: ogni servizio resta il suo componente, con
+> la sua funzione e i suoi test. Condividono **dove stanno le cose**, non cosa
+> fanno. E non si dice «modello»: in questo codice `modello` è già il modello
+> ONNX (`s.model`, «Modello sconosciuto»).
 
 ---
 
@@ -15,7 +22,7 @@ servizi sono rimasti all'impianto vecchio.
 
 Questo documento decide **come le altre sezioni ci arrivano** — e la risposta
 non è «quattro lavori di impaginazione», è **un lavoro solo**: quella schermata
-smette di essere lo scontorno e diventa il **guscio** di ogni servizio.
+smette di essere «lo scontorno» e diventa l'**impianto** di ogni schermata.
 
 Poi decide la stessa cosa per il desktop, dove oggi *«l'unica cosa che funziona
 in modo pratico e semplice è la home»*.
@@ -111,10 +118,10 @@ si costruiscono e si verificano uno alla volta.
 | # | pezzo | perché in questa posizione |
 |---|---|---|
 | **1** | I sei tappi | Rifare l'impianto sopra un'app lenta lascia un'app lenta con un impianto nuovo — e poi non si sa più quale dei due lavori l'ha rallentata. |
-| **2** | Il guscio + **Filmato** | Filmato è «uguale a scontorna»: entra nel guscio senza inventare un gesto nuovo, quindi è la **prova** che il guscio regge. |
+| **2** | L'impianto + **Filmato** | Filmato è «uguale a scontorna»: entra nell'impianto senza inventare un gesto nuovo, quindi è la **prova** che l'impianto regge. |
 | **3** | Brain e Vocale | I due che chiedono un `+` a scelta multipla e un tasto che fa una cosa nuova. |
 | **4** | Vettoriale | Il tasto senza AI va inventato (§ 7.2). |
-| **5** | Il desktop | Ultimo perché eredita: se il guscio è giusto, il desktop è impaginazione. |
+| **5** | Il desktop | Ultimo perché eredita: se l'impianto è giusto, il desktop è impaginazione. |
 
 **Fuori da questo documento, rimandato:** l'AI nel tasto Zack. Il committente
 l'aveva chiesta per Vettoriale («*visualizza l'img e commenta*») e per Vocale
@@ -165,7 +172,7 @@ nell'app e sulla home, con lo stesso file, e i due numeri vanno nel commit.
 
 ---
 
-## 5. Il guscio
+## 5. L'impianto
 
 ### 5.1 La mappa, e si impara una volta sola
 
@@ -177,28 +184,28 @@ nell'app e sulla home, con lo stesso file, e i due numeri vanno nel commit.
 | **centro della tela** | il **`+`**, quando il piano è vuoto, e sotto la frase del servizio | identico | identico |
 | **nella tela, in un angolo** | il **tasto Zack** e il **punto oro** | basso a destra | alto a destra, medio-grande |
 | **attaccati al tasto** | gli **strumenti**, cerchi, che compaiono *dopo* | in colonna | in colonna |
-| **basso a sinistra** | la **mascotte**, ferma | identica | identica |
+| **basso a sinistra** | la **mascotte** — oggi ferma, domani clip (§ 5.3) | identica | identica |
 | **i servizi** | i **cinque** cerchi | fila in basso | colonna a sinistra |
 
 **Due sole differenze fra i due schermi:** dove sta la fila dei servizi, e in
 quale angolo della tela sta Zack. Tutto il resto è lo stesso pixel.
 
 ⚠️ **La libreria non è uno dei cinque cerchi.** Si raggiunge dalla striscia in
-alto, ed è il sesto guscio (§ 7.6). I due gruppi di comandi del contratto UX
+alto, ed è la sesta schermata (§ 7.6). I due gruppi di comandi del contratto UX
 § 1 — *servizi* e *strumenti* — restano quelli, e la libreria non è né l'uno né
 l'altro: è dove stanno i tuoi file.
 
 ⚠️ **Gli strumenti si spostano.** Oggi su Scontorna stanno in alto a destra
-(`styles.css`, `.sc-strumenti { top: 60px; right: 0 }`), lontani dal tasto. Nel
-guscio stanno **attaccati al tasto Zack**, perché sono la stessa domanda —
+(`styles.css`, `.sc-strumenti { top: 60px; right: 0 }`), lontani dal tasto.
+Nell'impianto stanno **attaccati al tasto Zack**, perché sono la stessa domanda —
 «chi fa il lavoro, e con cosa lo si corregge» — e perché su desktop l'angolo in
 alto a destra ospita già il tasto. È un cambiamento allo scontorno di oggi, ed
 è l'unico.
 
-### 5.2 Le regole che il guscio fa rispettare da solo
+### 5.2 Le regole che l'impianto fa rispettare da solo
 
 Oggi sono regole scritte che ogni servizio può violare per distrazione. Nel
-guscio diventano struttura:
+impianto diventano struttura:
 
 - **gli strumenti non coprono la tela.** Unica eccezione dichiarata: l'ovale
   del punto oro, che è *un momento e non uno stato*;
@@ -208,11 +215,42 @@ guscio diventano struttura:
 - **la zona premibile del punto oro è 44 px**, col pallino disegnato dentro a
   12-14 (contratto UX § 3).
 
-### 5.3 Cosa sparisce, da tutte e sei le sezioni
+### 5.3 La mascotte è un posto riservato, non un'immagine
+
+Oggi è un `.webp` fermo. **Domani sarà una o più clip senza sfondo** —
+decisione del committente del 2026-09-04 — come già succede sulla home.
+
+Quindi l'impianto non le riserva *un'immagine*: le riserva **un riquadro con
+un contratto**, ed è lo stesso contratto già scritto per la home in
+`RIPRENDI-QUI` § 6.4:
+
+> **riquadro fisso, allineato in basso.** Se le clip escono con proporzioni
+> diverse, **Zack cambia taglia rispetto al tasto** — e il rapporto fra la
+> mascotte e il tasto Zack è la cosa che si nota per prima.
+
+Cosa vuol dire per il codice, e va fatto **ora** anche se le clip non ci sono:
+
+- il riquadro ha una misura dichiarata e **non dipende dal contenuto**: né
+  l'immagine ferma né la clip decidono quanto è grande;
+- passare da `<img>` a `<video>` non deve toccare l'impaginazione di
+  nient'altro. Se toccarla è necessario, il riquadro è sbagliato adesso;
+- **la mascotte non è mai un segnale.** *«Zack non parla, non festeggia, non è
+  mai l'unico segnale»* — una clip che parte non può essere l'unica conferma
+  che qualcosa è successo. Vale la stessa regola delle facce del contratto
+  UX § 4;
+- `prefers-reduced-motion` ferma le clip. Chi ha chiesto meno movimento vede il
+  fotogramma fermo, e non gli manca niente.
+
+⚠️ **Queste clip non sono toccate dal problema di § 7.4.** Si producono
+**offline** con `scripts/clip-alpha.mjs`, cioè con ffmpeg fuori dal browser,
+dove l'alfa si scrive senza difficoltà. Il muro di `MediaRecorder` riguarda
+solo ciò che **l'utente esporta** da Filmato.
+
+### 5.4 Cosa sparisce, da tutte e sei le sezioni
 
 `StageBar`, `aside.rail` coi suoi pannelli, i due bottoni `.cta` in fondo, la
 `statusbar`. Sono l'impianto vecchio, e sopravvivono solo perché cinque servizi
-su sei non sono ancora passati dal guscio.
+su sei non sono ancora passate all'impianto.
 
 Ordine di grandezza: ~600 righe di `App.jsx` e ~1500 di `styles.css`. Il numero
 esatto lo dirà il piano, non questo documento.
@@ -234,7 +272,7 @@ export default {
   claim: 'brain.claim',        // la frase sotto il `+`, chiave i18n
 
   // COSA FA IL `+`. O dei tipi di file, o un menu di scelte — mai tutt'e due.
-  accetta: { menu: ['nota', 'idea', 'icona', 'documento'] },
+  accetta: { menu: ['nota', 'gruppo', 'file'] },
   // Vettoriale:  { file: ['image/*'], quanti: 1 }
   // Vocale:      { menu: ['registra', 'aggiungi'] }
   // Filmato:     { file: ['video/mp4', 'video/webm'], quanti: 1 }
@@ -248,11 +286,14 @@ export default {
   },
 
   // QUALI CERCHI, E QUANDO. `quando` è un nome di stato, non una condizione:
-  // 'sempre' | 'con-file' | 'con-risultato'.
+  // 'sempre' | 'con-file' | 'con-risultato' | 'con-due'. Lista chiusa: se un
+  // servizio chiede uno stato nuovo si aggiunge qui, non si scrive una
+  // funzione dentro il descrittore.
   strumenti: [
-    { id: 'freccia', icon: 'arrow',  label: 'brain.arrow',  quando: 'sempre' },
-    { id: 'gruppo',  icon: 'group',  label: 'brain.group',  quando: 'sempre' },
-    { id: 'annulla', icon: 'undo',   label: 'bar.undo',     quando: 'con-file' },
+    // La freccia ha bisogno di due oggetti sulla tela: e' uno strumento, non
+    // una voce del `+`. Vedi § 7.1.
+    { id: 'freccia', icon: 'freccia', label: 'brain.add.arrow', quando: 'con-due' },
+    { id: 'annulla', icon: 'undo',    label: 'bar.undo',        quando: 'con-file' },
   ],
 }
 ```
@@ -277,10 +318,47 @@ chiama.
 
 ### 7.1 Brain
 
-- **il `+`** apre un menu: *nota · idea · icona · documento*. Quello che scegli
-  compare sulla tela e si trascina. Frecce e gruppi ci sono già in `Brain.jsx`;
-- **gli strumenti:** freccia, gruppo, annulla;
+**Quasi tutto quello che serve qui esiste già.** `engine/brain.js` ha
+`TIPI = ['asset', 'nota', 'cerchio', 'freccia']` — lista chiusa, e va tenuta
+chiusa.
+
+- **il `+` apre un menu di tre voci:** *nota · gruppo · file*;
+- **gli strumenti:** freccia, annulla;
 - **il tasto Zack: riorganizza la tela.**
+
+#### Perché tre voci e non quattro
+
+**«Idea» non è una voce: è una nota.** `CATEGORIE` in `brain.js:49` è già
+`idea · task · domanda · riferimento · fatto`, e il commento dice perché:
+*«si sceglie il senso, non la tinta… una nota gialla è gialla; una nota Da fare
+è una cosa da fare, e si può contare, cercare ed estrarre»*. È la regola «il
+colore non è mai l'unico segnale», già applicata. Due tasti che creano lo
+stesso oggetto avrebbero solo impedito di scoprire le altre quattro categorie.
+
+**«Gruppo» è il `cerchio`** di `TIPI`, col nome che ha nell'interfaccia.
+
+**La freccia non è nel `+`.** Ha bisogno di due oggetti già sulla tela —
+`Brain.jsx:298` la disabilita sotto i due — quindi è uno **strumento**, e sta
+nei cerchi accanto al tasto. Una voce del `+` che il più delle volte non si può
+premere non è una voce del `+`.
+
+#### «Un file, e gli dai un'icona» — richiesta del committente 2026-09-04
+
+Anche questo è **costruito e chiuso a chiave**, non da inventare:
+
+- `iconaDocumento(asset)` (`store/model.js:51`) legge `asset.meta.icona` e
+  funziona per **qualunque** asset;
+- il selettore delle icone esiste, in `Brain.jsx:563`;
+- ma è dietro `KIND_TESTO.includes(assetScelto.kind)`, e `KIND_TESTO = ['md']`.
+
+**Quindi: solo i `.md` possono avere un'icona.** Il lavoro è togliere quella
+condizione, non scrivere una funzione. Regola che ne esce: **un'immagine si
+vede, tutto il resto è un'icona con un nome** — e l'icona la scegli tu.
+
+⚠️ Da verificare mentre si toglie la condizione: `ICONE_DOCUMENTO` è
+`FOLDER_ICONS`, pensato per documenti. Se non c'è un'icona sensata per un
+audio o un filmato, ne servono, e vanno disegnate — non lasciate cadere
+sull'icona di ripiego, che è `ICONE_DOCUMENTO[0]` per tutti.
 
 **La regola di riordino è personalizzabile, e sta nel punto oro** — che è già
 «come deve comportarsi il tasto», esattamente come i modelli e la catena su
@@ -300,6 +378,11 @@ rimescola non si preme mai una seconda volta. Va scritto come test.
 Il calcolo sta in `engine/riordina.js`, puro, testato in Node. `Brain.jsx`
 applica le posizioni che riceve.
 
+E non parte da zero: `brain.js` ha già `riquadro(items)` (l'ingombro di ciò che
+c'è), `prossimoPosto(items, { perFila, passo })` (la griglia) e `MISURE` (le
+taglie di partenza). «Compatta» e «per tipo» si costruiscono quasi solo con
+questi tre.
+
 ### 7.2 Vettoriale
 
 - **il `+`** prende un'immagine;
@@ -307,7 +390,7 @@ applica le posizioni che riceve.
   tenuti in sordina finché non li si tocca. **Avanzati è il cerchio più in
   basso della colonna destra** — «fra loro» nel senso di *in mezzo agli
   strumenti*, non sospeso al centro della tela, che è l'unica cosa che il
-  guscio non permette a nessuno;
+  impianto non permette a nessuno;
 - **la tela resta grande:** 390 − 44 − 44 = **302 px**. Da verificare nel
   browser a 390 px prima di considerarla buona;
 - **il tasto Zack:** vettorializza con la catena.
@@ -322,7 +405,7 @@ pesa, quanto ha risparmiato, e i controlli di stampa che esistono già in
 dove sarebbe stato facile violarla: un modello linguistico che dice «prova ad
 alzare il contrasto» sembra un consiglio ed è un'opinione senza misura sotto.
 
-**Avanzati** è il posto dove va ciò che § 5.3 toglie dalla colonna: blocco,
+**Avanzati** è il posto dove va ciò che § 5.4 toglie dalla colonna: blocco,
 ingrandimento, rifinitura, esportazione. Un solo posto nascosto per schermata,
 e solo per ciò che il lavoro normale non usa — è la regola già scritta in
 `Advanced.jsx`.
@@ -380,15 +463,15 @@ uscite che **restano tutte nel browser**, e resta al committente:
 
 ### 7.5 Scontorna
 
-**Non cambia.** Entra nel guscio così com'è. È la prova che il guscio non ha
+**Non cambia.** Entra nell'impianto così com'è. È la prova che l'impianto non ha
 rotto niente: se dopo il pezzo 2 lo scontorno si comporta diversamente da
-prima, il guscio è sbagliato.
+prima, l'impianto è sbagliato.
 
 ### 7.6 Libreria
 
 Decisione del committente del 2026-09-04: **la libreria è un tasto sempre
 visibile nella striscia in alto**, e premerlo apre **una sezione a parte** — il
-sesto guscio.
+sesta schermata.
 
 E porta con sé un'inversione che vale più della sua impaginazione:
 
@@ -411,7 +494,7 @@ da visitare; nella striscia è una cosa che hai sempre addosso.
 
 ## 8. Il desktop
 
-Stesso guscio, e la mappa di § 5.1 vale identica. Le due differenze:
+Stesso impianto, e la mappa di § 5.1 vale identica. Le due differenze:
 
 - **i servizi passano dalla fila in basso alla colonna a sinistra**
   (contratto UX § 1);
