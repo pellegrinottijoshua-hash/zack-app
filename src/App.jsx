@@ -46,7 +46,7 @@ function leggiRicetta(servizio) {
     return fabbrica;
   }
 }
-import { bundleAll } from './store/bundle.js';
+import { bundleAll, bundleBlobs } from './store/bundle.js';
 import { useEngine } from './hooks/useEngine.js';
 import { t, setLang, detectLang, onLangChange } from './i18n/index.js';
 import { onHelpChange, isHelpOn } from './i18n/help.js';
@@ -1260,6 +1260,41 @@ export default function App() {
     }
   }
 
+  /**
+   * Scarica CIO' CHE C'E' SUL PIANO.
+   *
+   * Qui c'era `downloadAll`, che zippa la LIBRERIA: con la libreria vuota
+   * rispondeva «libreria vuota» mentre sul piano c'erano tre risultati
+   * pronti. Il commento sopra la riga diceva gia' la cosa giusta; il codice ne
+   * faceva un'altra, ed e' il tipo di commento che questo progetto non vuole.
+   *
+   * Uno zip e non N scaricamenti: il browser blocca il secondo `a.click()` di
+   * fila, quindi «scarica tutti» ne avrebbe consegnato uno.
+   */
+  async function scaricaIlPiano() {
+    setError(null);
+    // Un file solo passa dall'esportazione di sempre, che rispetta il formato
+    // scelto: incartarlo in uno zip da solo sarebbe un passaggio in piu' per
+    // niente.
+    if (batch.results.length === 0) return runExport();
+
+    setBusy(t('action.preparing'));
+    try {
+      const blob = await bundleBlobs(
+        batch.results.map((r) => ({
+          nome: `${r.file.name.replace(/\.[^.]+$/, '')}.png`,
+          blob: r.blob,
+        })),
+      );
+      api.download(own(blob), `zack-${new Date().toISOString().slice(0, 10)}.zip`);
+    } catch (e) {
+      console.error(e);
+      setError(t('engine.error.body'));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   // L'attesa dipende dal MOTORE, non dal server. Il backend serve solo alla
   // libreria su disco: legare tutta l'interfaccia alla sua risposta rendeva
   // l'app inutilizzabile senza backend, cioè l'esatto contrario della promessa.
@@ -1594,7 +1629,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               /* Il tasto in alto a destra scarica CIO' CHE C'E': i tre file
                  della colonna se il blocco e' finito, il file singolo se il
                  piano ne ha uno solo. Sono lo stesso gesto. */
-              onScarica={batch.results.length > 0 ? downloadAll : runExport}
+              onScarica={scaricaIlPiano}
               puoiScaricare={batch.results.length > 0 || canExport}
               strumenti={
                 file && result?.kind === 'png'

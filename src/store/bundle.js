@@ -52,3 +52,34 @@ export async function bundleAll(onProgress) {
 
   return new Blob([data], { type: 'application/zip' });
 }
+
+/**
+ * Uno zip di ciò che sta sul piano di lavoro, senza passare dalla libreria.
+ *
+ * `bundleAll` risponde a un'altra domanda — «portami via tutto l'archivio» —
+ * e usarlo per il tasto in alto a destra dava «libreria vuota» a chi aveva
+ * tre risultati davanti agli occhi.
+ */
+export async function bundleBlobs(voci) {
+  if (!voci?.length) {
+    throw Object.assign(new Error('piano-vuoto'), { code: 'piano-vuoto' });
+  }
+
+  const files = {};
+  const usati = new Set();
+  for (const { nome, blob } of voci) {
+    // Il numero va PRIMA del punto: `gatto.png-2` non si apre con un doppio
+    // clic. Si accorcia il nome, mai il suffisso — la stessa regola già
+    // pagata il 2026-08-28 con `gelato-front` e `gelato-back`.
+    let n = nome;
+    for (let i = 2; usati.has(n); i++) n = nome.replace(/(\.[^.]+)?$/, `-${i}$1`);
+    usati.add(n);
+    files[n] = new Uint8Array(await blob.arrayBuffer());
+  }
+
+  const data = await new Promise((resolve, reject) => {
+    zip(files, { level: 6 }, (err, out) => (err ? reject(err) : resolve(out)));
+  });
+
+  return new Blob([data], { type: 'application/zip' });
+}
