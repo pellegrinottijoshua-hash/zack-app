@@ -32,6 +32,7 @@ import { useBatch } from './hooks/useBatch.js';
 import { canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { TARGET_SIDE } from './engine/ready.js';
 import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/ricette.js';
+import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/ritaglio.js';
 import { caricaFileDiProva, deveMostrareProva, segnaProvaVista } from './engine/prova.js';
 import { SERVICES, getService, firstReady } from './services.js';
 
@@ -68,7 +69,16 @@ const px = (d) => (d ? `${d.w}×${d.h}` : '—');
  */
 const FACCIA = new Set(['brain', 'scontorna', 'vettorializza', 'filmato', 'suono']);
 
-const STRATEGIE = { mask: 'maschera', crop: 'ritaglio', upscale: 'ingrandimento', browser: 'diretta' };
+const STRATEGIE = {
+  mask: 'maschera',
+  crop: 'ritaglio',
+  upscale: 'ingrandimento',
+  browser: 'diretta',
+  // Il fondo era piatto: nessun modello, nessuno scaricamento, ~20 ms. Va
+  // detto nel pannello del risultato, perche' spiega da solo perche' quella
+  // volta non c'e' stata attesa.
+  istantaneo: 'senza modello',
+};
 // Un tempo che non abbiamo misurato non si stampa: «NaNs» sembra un guasto,
 // e un trattino dice la verità.
 const secs = (ms) => (Number.isFinite(ms) ? `${(ms / 1000).toFixed(1)}s` : '—');
@@ -443,7 +453,33 @@ export default function App() {
         // Sul lavoro in corso, non sull'originale: chi ha appena ingrandito e
         // preme Scontorna si vedeva tornare il file piccolo, con
         // l'ingrandimento buttato via senza un avviso.
-        const blob = await engine.cutout(result?.blob || file, s.model);
+        const sorgente = result?.blob || file;
+
+        /*
+         * I pixel PRIMA del modello, e sono due cose in una.
+         *
+         * 1. Venti millisecondi per sapere se il modello servira'. Si paga
+         *    qui, una volta, invece di far scendere 175 MB anche a un fondo
+         *    piatto. E' esattamente cio' che la home fa dal 2026-08-27 e che
+         *    lo studio non ha mai fatto.
+         * 2. Da qui in poi sappiamo CHI ha sbagliato. Se il file non si
+         *    decodifica, il colpevole e' il file; se si decodifica e poi il
+         *    modello cade, il colpevole e' lo strumento — e non si manda
+         *    l'utente a rifare un file che stava bene.
+         */
+        let src;
+        try {
+          src = await pixelDaFile(sorgente);
+        } catch (e) {
+          console.error(e);
+          throw Object.assign(e, { code: 'file-illeggibile' });
+        }
+
+        const istante = ritaglioIstantaneo(src);
+        const blob = istante
+          ? await aPng(applicaAlfa(src, istante.alpha))
+          : await engine.cutout(sorgente, s.model);
+
         pushResult({
           url: own(blob),
           blob,
@@ -451,8 +487,12 @@ export default function App() {
           // Lo scontorno non ricampiona: entra e esce alla stessa misura. Dirlo
           // serve a chi sta controllando di non aver perso risoluzione per strada.
           meta: {
-            strategy: 'browser',
-            model: s.model,
+            strategy: istante ? 'istantaneo' : 'browser',
+            // Senza modello non c'e' un modello da nominare, e scrivere
+            // `u2net` accanto a un ritaglio che non l'ha usato sarebbe una
+            // riga falsa nel pannello del risultato.
+            model: istante ? null : s.model,
+            uniformita: istante ? istante.uniformita : null,
             source: stats?.image,
             output: stats?.image,
             ms: Date.now() - started,
@@ -461,7 +501,12 @@ export default function App() {
         await library.save(blob, {
           name: `${file.name.replace(/\.[^.]+$/, '')}-scontornato`,
           kind: 'png',
-          meta: { fromId: sourceAssetId, op: 'remove-bg', model: s.model },
+          meta: {
+            fromId: sourceAssetId,
+            op: 'remove-bg',
+            model: istante ? null : s.model,
+            via: istante ? 'istantaneo' : 'modello',
+          },
         });
       } else {
         // Anche il tracciato gira nel browser: VTracer in WebAssembly, 140 KB.
