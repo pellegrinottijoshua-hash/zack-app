@@ -1727,12 +1727,26 @@ body {
   }
 
   /* Una colonna: tela sopra, proprietà sotto.
-     Entrambe le righe hanno una quota minima dichiarata: con `auto` la riga
-     delle proprietà veniva schiacciata a 55px pur avendo 1300px di contenuto,
-     e il pannello risultava vuoto senza alcun errore. */
+     La quota minima del pannello sta SULL'ELEMENTO, non sulla traccia. La
+     differenza non è di stile:
+
+     Con `minmax(160px, 38vh)` sulla traccia, la riga si prende 160px anche
+     quando il pannello è `display: none` — cioè su scontorno, brain, suono e
+     filmato. La tela crollava da 680px a 371px e mascotte e tasto, ancorati
+     in fondo, risalivano a metà schermo con 308px di vuoto sotto. La cura di
+     allora era una regola `.main:has(> .rail[data-vuota])`, e funzionava solo
+     dove `:has()` esiste: Firefox sotto la 121 e Samsung Internet sotto la 20
+     non ce l'hanno, e lì il difetto tornava identico. Misurato il 2026-09-04
+     simulando un browser senza `:has()`.
+
+     Con la traccia ad `auto` e il minimo sull'elemento, la riga collassa da
+     sola quando il pannello non c'è — nessuna regola da ricordarsi, nessun
+     browser da avere. E il difetto che aveva fatto scartare `auto` la prima
+     volta (il pannello schiacciato a 55px con 1300px di contenuto) non torna,
+     perché quel minimo ora ce l'ha il pannello addosso. */
   .main {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(200px, 1fr) minmax(160px, 38vh);
+    grid-template-rows: minmax(200px, 1fr) auto;
   }
 
   .stage {
@@ -1742,6 +1756,13 @@ body {
 
   .rail {
     --rail: auto;
+    /* Il minimo e il massimo del pannello stanno QUI e non sulla traccia del
+       grid: così la riga collassa da sola quando il pannello è
+       `display: none`, senza bisogno di `:has()`. */
+    min-height: 160px;
+    max-height: 38vh;
+    max-height: 38dvh;
+    overflow-y: auto;
     border-left: 0;
     border-top: 1px solid var(--linea);
     padding: var(--pad);
@@ -4231,6 +4252,7 @@ body {
      dentro. Vale per `auto` esattamente come per `hidden`. */
   flex: none;
   height: min(68vh, 560px);
+  height: min(68dvh, 560px);
 }
 
 .brush-zoom {
@@ -4383,7 +4405,7 @@ body {
   height: 100%;
   /* Lo spazio in basso e' della mascotte e del tasto: la tela non ci arriva
      sotto. */
-  padding: 0 0 clamp(120px, 20vh, 190px);
+  padding: 0 0 clamp(120px, 20dvh, 190px);
 }
 
 .sc-tela {
@@ -4401,6 +4423,7 @@ body {
   place-items: center;
   width: clamp(96px, 18vh, 150px);
   height: clamp(96px, 18vh, 150px);
+  height: clamp(96px, 18dvh, 150px);
   border: 2px solid var(--linea-viva);
   border-radius: 50%;
   background: transparent;
@@ -4480,6 +4503,7 @@ body {
   left: 0;
   bottom: 0;
   height: clamp(96px, 16vh, 150px);
+  height: clamp(96px, 16dvh, 150px);
   width: auto;
   pointer-events: none;
   user-select: none;
@@ -4612,29 +4636,37 @@ body {
   color: #f5f0e8;
 }
 
-/* Il piano di lavoro dello scontorno prende TUTTA l'altezza della tela: se
-   no la mascotte e il tasto, che sono ancorati in basso, restano a mezzo
-   schermo — misurato, finivano a 385 px su 812. */
-.stage:has(.sc) {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
+/* Qui c'era `.stage:has(.sc)`, che dichiarava `display: flex`,
+   `flex-direction: column` e `min-height: 0` — tutti e tre **già presenti
+   nella regola base di `.stage`**. Non faceva niente, ma il suo commento
+   diceva di curare la mascotte e il tasto che «restano a mezzo schermo»: cioè
+   attribuiva la cura a una riga inerte, mentre la causa vera era la seconda
+   riga del grid che si prendeva 160px pur essendo vuota (vedi `.main` nella
+   media query). Tolta il 2026-09-04, e con lei una dipendenza da `:has()`. */
 .sc {
   flex: 1 1 auto;
+  /* `dvh` e non `vh`: su un telefono `vh` e' il viewport GRANDE, quello senza
+     la barra del browser. `.shell` e' `overflow: hidden`, quindi un `.sc` piu'
+     alto dello schermo vero non si puo' scorrere — si taglia, e con lui la
+     mascotte e il tasto Zack, che gli sono ancorati in fondo.
+
+     Misurato il 2026-09-04 su segnalazione del committente: la regola era
+     entrata il 2026-08-31 alle 16:43, TRE MINUTI dopo l'ultimo deploy
+     riuscito, quindi non era mai andata online fino a stamattina — ed e'
+     arrivata in produzione insieme alla correzione del deploy.
+
+     La riga in `vh` resta prima come ricaduta per chi non conosce `dvh`. */
   min-height: min(74vh, 640px);
+  min-height: min(74dvh, 640px);
 }
 
-/* Sul telefono `.main` e' due righe: tela sopra, pannello sotto. Quando il
-   pannello NON C'E' — scontorno, brain, suono, filmato — la sua riga si
-   prendeva lo stesso 38vh, e la tela restava a 343 px su 812: la mascotte e
-   il tasto, ancorati in fondo, finivano fuori dal riquadro e venivano
-   tagliati. Con `:has` la seconda riga sparisce e la tela si prende tutto. */
-@media (max-width: 760px) {
-  .main:has(> .rail[data-vuota]) {
-    grid-template-rows: minmax(200px, 1fr);
-  }
-}
+/* La regola `.main:has(> .rail[data-vuota])` stava qui, e faceva sparire la
+   seconda riga quando il pannello non c'e'. È stata tolta il 2026-09-04: non
+   perché fosse sbagliata, ma perché **dipendeva da `:has()`** — e dove `:has()`
+   non c'è (Firefox < 121, Samsung Internet < 20) il difetto che curava tornava
+   identico, mascotte e tasto a metà schermo con 308 px di vuoto sotto.
+   Ora la riga collassa da sola: la traccia è `auto` e il minimo del pannello
+   sta sull'elemento. Vedi il commento su `.main` nella media query sopra. */
 .sc {
   min-height: 0;
 }
@@ -4697,11 +4729,12 @@ body {
    stringe di conseguenza: erano staccati dalla fila dei servizi di un dito
    di troppo. */
 .sc {
-  padding-bottom: clamp(96px, 15vh, 150px);
+  padding-bottom: clamp(96px, 15dvh, 150px);
 }
 .sc-zack {
   bottom: -14px;
   height: clamp(120px, 19vh, 185px);
+  height: clamp(120px, 19dvh, 185px);
 }
 .sc-tasto {
   bottom: -6px;
@@ -4814,6 +4847,7 @@ body {
   display: block;
   width: 100%;
   max-height: 32vh;
+  max-height: 32dvh;
   object-fit: contain;
 }
 .sc-colonna span {
