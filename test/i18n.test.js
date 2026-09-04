@@ -148,3 +148,38 @@ test('una parola sola per la cosa che sta in libreria: «asset»', () => {
     }
   }
 });
+
+test("l'errore del motore non accusa il file dell'utente", () => {
+  /*
+   * Il difetto (2026-09-04): `engine.error.body` diceva «il file potrebbe
+   * essere rovinato» per QUALUNQUE eccezione del motore, e la causa vera era
+   * che l'app scendeva sempre al modello. Un messaggio che accusa il
+   * materiale di chi lavora, quando il colpevole e' lo strumento, e' peggio
+   * di nessun messaggio: manda a rifare un file che stava bene.
+   *
+   * Ora l'accusa esiste ancora, ma solo in `engine.unreadable`, che si dice
+   * unicamente quando i pixel NON si sono decodificati — cioe' quando e' vera.
+   */
+  for (const [lang, dict] of [
+    ['it', it],
+    ['en', en],
+  ]) {
+    const body = dict.engine.error.body.toLowerCase();
+    for (const parola of ['rovinat', 'danneggiat', 'damaged', 'corrupt']) {
+      assert.ok(
+        !body.includes(parola),
+        `${lang}.engine.error.body accusa il file con «${parola}», e non puo' saperlo`,
+      );
+    }
+  }
+});
+
+test('esiste un messaggio per il file che davvero non si apre', () => {
+  for (const [lang, dict] of [
+    ['it', it],
+    ['en', en],
+  ]) {
+    assert.ok(dict.engine.unreadable?.title?.trim(), `manca ${lang}.engine.unreadable.title`);
+    assert.ok(dict.engine.unreadable?.body?.trim(), `manca ${lang}.engine.unreadable.body`);
+  }
+});

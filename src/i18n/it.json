@@ -107,8 +107,12 @@
     },
     "working": "Sto lavorando…",
     "error": {
-      "title": "Non sono riuscito a ritagliare questa immagine",
-      "body": "Riprova, oppure prova con un'immagine diversa. Se succede ancora, il file potrebbe essere rovinato."
+      "title": "Non sono riuscito a portare a termine",
+      "body": "Lo strumento non ce l'ha fatta. Riprova; se succede ancora, cambia modello nel punto oro o prova con un'immagine più piccola."
+    },
+    "unreadable": {
+      "title": "Non riesco ad aprire questo file",
+      "body": "Il browser non lo legge come immagine: potrebbe essere incompleto, oppure non essere un'immagine."
     },
     "starting": "Avvio lo strumento…"
   },

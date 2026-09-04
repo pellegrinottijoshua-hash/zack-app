@@ -107,8 +107,12 @@
     },
     "working": "Working on it…",
     "error": {
-      "title": "I couldn't cut out this image",
-      "body": "Try again, or try a different image. If it keeps happening, the file may be damaged."
+      "title": "I couldn't finish",
+      "body": "The tool didn't make it. Try again; if it keeps happening, switch model in the gold dot or try a smaller image."
+    },
+    "unreadable": {
+      "title": "I can't open this file",
+      "body": "The browser doesn't read it as an image: it may be incomplete, or not an image at all."
     },
     "starting": "Starting the tool…"
   },

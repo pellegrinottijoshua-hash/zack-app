@@ -526,6 +526,10 @@ export default function App() {
       // dice cosa è successo e cosa fare. Lo stack resta in console.
       console.error(e);
       if (e.code === 'trace-empty') setError(`${t('trace.empty.title')} — ${t('trace.empty.body')}`);
+      // Questo lo sappiamo per davvero: i pixel non si sono decodificati, e
+      // il colpevole e' il file. E' l'unico posto dove si puo' dire.
+      else if (e.code === 'file-illeggibile')
+        setError(`${t('engine.unreadable.title')} — ${t('engine.unreadable.body')}`);
       else if (e.code) setError(`${t('engine.error.title')} — ${t('engine.error.body')}`);
       else setError(e.message);
     } finally {
