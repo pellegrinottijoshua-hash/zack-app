@@ -210,6 +210,8 @@ export default function App() {
   const [batchFiles, setBatchFiles] = useState([]);
   /** Con quale strumento si e' aperto il pennello, per accendere il cerchio. */
   const [modoPennello, setModoPennello] = useState('erase');
+  /** Quale dei tre gesti del filmato e' aperto sulla tela. Nessuno: `null`. */
+  const [gestoFilm, setGestoFilm] = useState(null);
   // Da quale lavoro in libreria viene il file aperto: serve a registrare la
   // provenienza, che è ciò che rende ritrovabile un file di cui non si
   // ricorda il nome.
@@ -1651,26 +1653,46 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                  piano ne ha uno solo. Sono lo stesso gesto. */
               onScarica={scaricaIlPiano}
               puoiScaricare={batch.results.length > 0 || canExport}
-              strumenti={
-                file && result?.kind === 'png'
-                  ? [
-                      // Gli stessi quattro della home, e nello stesso ordine:
-                      // il righello guida, gli altri due dipingono, l'annulla
-                      // torna indietro. Aprono il pennello GIA' su quello
-                      // strumento — sceglierlo due volte sarebbe premerlo due
-                      // volte per la stessa cosa.
-                      { id: 'righello', icon: 'righello', label: t('brush.ruler'), disabled: Boolean(busy), active: brushOpen && modoPennello === 'righello', onClick: () => apriPennello('righello') },
-                      { id: 'restore', icon: 'pencil', label: t('brush.restore'), disabled: Boolean(busy), active: brushOpen && modoPennello === 'restore', onClick: () => apriPennello('restore') },
-                      { id: 'erase', icon: 'eraser', label: t('brush.erase'), disabled: Boolean(busy), active: brushOpen && modoPennello === 'erase', onClick: () => apriPennello('erase') },
-                      { id: 'undo', icon: 'undo', label: t('bar.undo'), disabled: Boolean(busy) || history.length === 0, onClick: undoResult },
-                    ]
-                  : file
-                    ? [
-                        { id: 'undo', icon: 'undo', label: t('bar.undo'), disabled: Boolean(busy) || history.length === 0, onClick: undoResult },
-                        { id: 'swap', icon: 'swap', label: t('bar.swap'), disabled: Boolean(busy), onClick: swapFile },
-                      ]
-                    : []
-              }
+              strumenti={(() => {
+                /*
+                 * Il descrittore dice QUALI cerchi e QUANDO; qui si dice cosa
+                 * fanno. La separazione non e' cerimonia: la prima meta' e'
+                 * dati e vive in Node dove i test la vedono, la seconda sono
+                 * chiusure sullo stato di React e non ci puo' vivere.
+                 *
+                 * I pennelli aprono GIA' sul loro strumento: sceglierlo due
+                 * volte sarebbe premerlo due volte per la stessa cosa.
+                 */
+                const GESTI = {
+                  righello: () => apriPennello('righello'),
+                  restore: () => apriPennello('restore'),
+                  erase: () => apriPennello('erase'),
+                  undo: undoResult,
+                  swap: swapFile,
+                  taglia: () => setGestoFilm('taglia'),
+                  fotogrammi: () => setGestoFilm('fotogrammi'),
+                  sfondo: () => setGestoFilm('sfondo'),
+                };
+                const acceso = {
+                  righello: brushOpen && modoPennello === 'righello',
+                  restore: brushOpen && modoPennello === 'restore',
+                  erase: brushOpen && modoPennello === 'erase',
+                };
+                return strumentiVisibili(getDescrittore(tool), {
+                  file: Boolean(file),
+                  risultato: result?.kind === 'png',
+                }).map((s) => ({
+                  id: s.id,
+                  icon: s.icon,
+                  label: t(s.label),
+                  active: acceso[s.id] || undefined,
+                  // L'annulla si spegne anche senza cronologia: premerlo
+                  // quando non c'e' niente da annullare non fa niente, e un
+                  // comando acceso che non fa niente e' un comando rotto.
+                  disabled: Boolean(busy) || (s.id === 'undo' && history.length === 0),
+                  onClick: GESTI[s.id],
+                }));
+              })()}
             >
               {suPiano}
             </Piano>
