@@ -705,6 +705,7 @@
     "estratti": "Estratti {n} fotogrammi",
     "sfondo": "Togli lo sfondo",
     "sfondoNota": "Funziona sui filmati girati su fondo panna: il panna che tocca il bordo se ne va, quello dentro il personaggio resta.",
+    "sfondoAttesa": "{n} fotogrammi da guardare uno a uno: circa {sec} secondi.",
     "tolto": "Sfondo tolto · {n} isole salvate",
     "toltoDubbio": "Sfondo tolto, ma nessuna isola salvata: guarda un fotogramma prima di usarlo.",
     "togliOraAttesa": "Togli lo sfondo — almeno {s}s di attesa"

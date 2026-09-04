@@ -177,6 +177,27 @@ export default function FilmLab({ file, gesto, onGesto, onSave, onNotice, onErro
         <section className="film-gesto">
           <h3>{t('film.sfondo')}</h3>
           <p className="help">{t('film.sfondoNota')}</p>
+          {/* L'attesa si dichiara PRIMA, non si scopre a metà — è la stessa
+              regola del taglio qui sotto e dell'ingrandimento nello studio.
+
+              Il conto è MISURATO (2026-09-04), non a occhio: `togliSfondo`
+              cerca un fotogramma alla volta, lo legge, calcola l'alfa e lo
+              riscrive, poi aspetta un giro di `requestAnimationFrame`. A
+              1280×720 sono 36 ms di lavoro per fotogramma, e il giro di rAF
+              ne aggiunge ~16 che non dipendono dalla misura. Il lavoro invece
+              scala coi PIXEL, quindi la stima non può essere una costante:
+              39 ms per megapixel, più i 16 di pavimento. */}
+          {durata > 0 && meta?.w > 0 && (
+            <p className="help">
+              {t('film.sfondoAttesa', {
+                n: Math.floor(durata * 25),
+                sec: Math.max(
+                  1,
+                  Math.ceil(durata * 25 * (0.016 + 0.039 * ((meta.w * meta.h) / 1e6))),
+                ),
+              })}
+            </p>
+          )}
           <button
             className="btn"
             disabled={occupato}

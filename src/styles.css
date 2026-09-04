@@ -4083,7 +4083,13 @@ body {
   height: 100%;
   min-height: 0;
   object-fit: contain;
-  background: transparent;
+  /* Gli stessi scacchi di `.bg-tela`, per la stessa ragione: senza, un
+     filmato correttamente trasparente sta sul fondo panna dell'app e sembra
+     avere il fondo panna. Misurato il 2026-09-04 — il file l'alfa ce l'ha
+     (MediaRecorder la conserva, e il key porta il panna a zero): era la
+     presentazione a mentire, ed è quello che il committente ha riferito. */
+  background:
+    conic-gradient(from 90deg, #2a2a28 25%, #1b1b19 0 50%, #2a2a28 0 75%, #1b1b19 0) 0 0 / 18px 18px;
 }
 
 .film-comandi {

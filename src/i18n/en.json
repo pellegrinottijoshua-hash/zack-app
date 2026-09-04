@@ -705,6 +705,7 @@
     "estratti": "Pulled {n} frames",
     "sfondo": "Drop the background",
     "sfondoNota": "Made for clips shot on the cream void: the cream touching the edge goes, the cream inside the character stays.",
+    "sfondoAttesa": "{n} frames to look at one by one: about {sec} seconds.",
     "tolto": "Background dropped · {n} islands kept",
     "toltoDubbio": "Background dropped, but no islands kept: look at a frame before using it.",
     "togliOraAttesa": "Remove the background — at least {s}s of waiting"

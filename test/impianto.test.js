@@ -69,3 +69,30 @@ test('la libreria e la barra di stato seguono l’impianto, non un id', () => {
     'la libreria o la barra di stato guardano ancora un id invece del descrittore',
   );
 });
+
+test('il video sta sugli scacchi, come i ritagli', () => {
+  /*
+   * MISURATO il 2026-09-04: `MediaRecorder` conserva l'alfa (canvas mezzo
+   * trasparente registrato e riletto: meta' a [0,0,0,0], meta' a
+   * [254,1,1,255]), e `alphaFromCreamVoid` porta il panna a zero. Il filmato
+   * esce davvero senza sfondo.
+   *
+   * Ma `.film-video` aveva `background: transparent`, quindi il video stava
+   * sul fondo panna dell'app e un filmato CORRETTAMENTE trasparente aveva
+   * l'aspetto identico a uno col fondo panna — ed e' quello che il
+   * committente ha riferito come difetto.
+   *
+   * Per i ritagli la regola era gia' pagata: `.bg-tela` ha gli scacchi, col
+   * commento che dice perche' — «senza, un ritaglio con un buco nel mezzo
+   * sembra riuscito, e il buco si scopre in stampa». Al filmato non era mai
+   * arrivata.
+   */
+  const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+  const blocco = CSS.match(/(?:^|\n)\s*\.film-video\s*\{([^}]*)\}/);
+  assert.ok(blocco, '.film-video non esiste piu’ in styles.css');
+  assert.match(
+    blocco[1],
+    /conic-gradient/,
+    '.film-video non ha gli scacchi: un video trasparente sembrera’ avere il fondo panna',
+  );
+});
