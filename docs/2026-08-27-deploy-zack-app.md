@@ -295,6 +295,76 @@ usato coerentemente sotto.
 
 ---
 
+## 4-bis. La regola di cache su `assets.zack-app.com` — aggiunta il 2026-09-05
+
+⚠️ **Questa configurazione vive nel pannello Cloudflare, non nel repository.**
+È la stessa forma di guasto che ha bloccato ogni deploy fino al 2026-09-04 (il
+comando di build tornato indietro da solo), quindi sta scritta qui: se un
+giorno i modelli tornano lenti, **la prima cosa da guardare è se questa regola
+c'è ancora.**
+
+### Il difetto che ripara
+
+Misurato il 2026-09-04 sugli oggetti veri:
+
+```
+cache-control     *** ASSENTE ***
+cf-cache-status   DYNAMIC        ← nemmeno la cache di bordo
+etag              presente (= l'MD5 del file)
+```
+
+Senza `Cache-Control` i 176 MB del modello finivano **solo nella cache HTTP**,
+che è la prima a essere sfrattata quando una voce pesa così — e su un telefono
+succede presto. Da qui la segnalazione del committente: *«ogni volta scarica
+il modello da 175 MB»*. Sì, lo faceva.
+
+La causa del riscaricamento è già chiusa nel codice (`engine/modelloCache.js`
+mette il modello nella **Cache API**, l'unica memoria protetta da
+`navigator.storage.persist()`). Questa regola serve al resto: la
+**rivalidazione** a ogni apertura, e la **cache di bordo**, che oggi è spenta —
+cioè ogni utente nuovo tira i 176 MB dall'origine R2 invece che dal nodo
+Cloudflare più vicino.
+
+### I passi
+
+Cloudflare → dominio **`zack-app.com`** → **Caching** → **Cache Rules** →
+**Create rule**:
+
+| campo | valore |
+|---|---|
+| nome | `assets — modelli e runtime, immutabili` |
+| quando | **Hostname** · *equals* · `assets.zack-app.com` |
+| allora | **Eligible for cache** |
+| Edge TTL | *Ignore cache-control and use this TTL* → **1 anno** |
+| Browser TTL | *Override origin* → **1 anno** |
+
+Un anno è sicuro perché **i modelli non cambiano a nome di file invariato**:
+un modello nuovo è un file con un altro nome. È la stessa regola già scritta
+in `public/_headers` per i file serviti da Pages — quella però **non vale per
+R2**, e il commento lì dentro lo dice.
+
+### Come si controlla che sia viva
+
+```bash
+# Dopo qualche minuto e una prima richiesta che scalda il nodo:
+node -e "fetch('https://assets.zack-app.com/models/u2net.onnx',{method:'HEAD',headers:{Origin:'https://zack-app.com'}}).then(r=>console.log('cache-control:',r.headers.get('cache-control'),'| cf-cache:',r.headers.get('cf-cache-status')))"
+```
+
+Deve dire un `cache-control` con un `max-age` lungo e `cf-cache-status: HIT`
+(la prima volta `MISS`, poi `HIT`). Se dice `ASSENTE` e `DYNAMIC`, la regola
+non c'è più.
+
+### L'alternativa scartata, e perché
+
+Si potevano ricaricare i quattro file con
+`wrangler r2 object put … --cache-control`, che scrive l'header sull'oggetto.
+Verificato il 2026-09-05 che i file locali in `public/models/` sono **identici
+byte per byte** a quelli su R2 (MD5 = ETag, tutti e quattro), quindi sarebbe
+stato sicuro. Scartata perché sono **560 MB in upload** e non sistema da sola
+il `cf-cache-status: DYNAMIC`, mentre la regola fa tutt'e due in due minuti.
+
+---
+
 ## 5. Caricare i modelli su R2
 
 Dalla cartella del progetto, con `wrangler` autenticato (`wrangler login`,
