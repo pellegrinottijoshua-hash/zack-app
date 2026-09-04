@@ -443,23 +443,48 @@ l'impianto**, e i tre gesti che già esistono diventano i cerchi.
   file solo, niente montaggio, niente timeline.
 
 ⚠️ **Requisito esplicito del committente: il filmato deve uscire SENZA sfondo,
-non con lo sfondo panna.** È la prima misura del pezzo 2, e va presa prima di
-scrivere una riga.
+non con lo sfondo panna.**
 
-**Il sospetto da verificare:** `engine/filmato.js:96` chiede
-`video/webm;codecs=vp9` a **`MediaRecorder`** e disegna nel canvas un'immagine
-con l'alfa (`filmato.js:125`). `MediaRecorder` **non scrive l'alfa**:
-VP9-con-alfa non è una cosa che emetta. È il motivo per cui esiste
-`scripts/clip-alpha.mjs`, dove quel lavoro lo fa **ffmpeg**, fuori dal browser.
+### MISURATO il 2026-09-04 — e il sospetto scritto qui era sbagliato
 
-Non è dichiarato finché non è misurato. Se confermato, la scelta è fra tre
-uscite che **restano tutte nel browser**, e resta al committente:
+Questo documento diceva: *«`MediaRecorder` non scrive l'alfa: VP9-con-alfa non
+è una cosa che emetta»*, e proponeva un bivio a tre uscite (sequenza PNG,
+WebP animato, encoder WASM). **Era falso, e l'ha smentito la misura.**
 
-| uscita | costo | cosa dà |
-|---|---|---|
-| **sequenza PNG in zip** | zero: il gesto «estrai fotogrammi» esiste già | trasparenza vera, senza perdita, ma non è un filmato |
-| **WebP animato** | medio | un file solo, trasparenza vera, meno compatibile |
-| **encoder WASM** (VP9-alfa o ffmpeg.wasm) | alto, e pesa | un `.webm` vero con l'alfa |
+| misura | esito |
+|---|---|
+| canvas mezzo trasparente → `MediaRecorder` `video/webm;codecs=vp9` → riletto | metà trasparente `[0,0,0,0]`, metà rossa `[254,1,1,255]` |
+| ripetuto su 320×240 a quattro istanti (0,05 · 0,3 · 0,6 · 0,9 s) | alfa 0 fuori, 255 dentro, **sempre** |
+| `alphaFromCreamVoid` in Node su fondo panna `#F5F0E8` | → alfa **0** |
+| idem su bianco puro, e su un panna leggermente diverso | → alfa **0** |
+
+**Quindi la catena è già corretta**, e non c'è nessun bivio da scegliere:
+niente encoder WASM, niente sequenza PNG di ripiego. Il valore del test era
+distinguere il video che *ha* dipinto da uno che non ha dipinto affatto: senza
+la metà rossa opaca, un canvas rimasto vuoto avrebbe dato «alfa 0» ovunque e
+sarebbe sembrato un successo.
+
+### Allora da dove viene il panna che il committente vede
+
+**Dalla presentazione, non dal file.** `styles.css` dice
+`.film-video { background: transparent }`: il video sta sul fondo panna
+dell'app, e un filmato **correttamente trasparente** lì dentro ha l'aspetto
+identico a uno col fondo panna.
+
+Per i ritagli la stessa regola era già stata pagata e risolta — `.bg-tela` ha
+gli scacchi, e il commento accanto dice perché: *«Lo sfondo a scacchi non è
+decorazione: senza, un ritaglio con un buco nel mezzo sembra riuscito, e il
+buco si scopre in stampa»*. **Al filmato quella regola non è mai arrivata.**
+
+Quindi il lavoro qui è: **gli scacchi dietro al video**, la stessa forma già
+usata per i ritagli. Non un encoder.
+
+### Un secondo dato, che il piano deve tenere
+
+`togliSfondo` fa **una ricerca e una passata di key per fotogramma**: una clip
+di 18 s a 25 fps sono 457 fotogrammi, e nella misura è andata in timeout. Non è
+un difetto da correggere qui — è un'attesa da **dichiarare prima**, che è già
+la regola del prodotto (*«ogni attesa si dichiara prima»*, `FilmLab.jsx`).
 
 ### 7.5 Scontorna
 
@@ -517,7 +542,7 @@ servizi.
 | # | misura | serve a |
 |---|---|---|
 | 1 | scontorno su fondo piatto: app contro home, stesso file | § 4.2 — dire di quanto § 2.1 ha rallentato l'app |
-| 2 | `MediaRecorder` conserva l'alfa? | § 7.4 — scegliere l'uscita del filmato |
+| ~~2~~ | ~~`MediaRecorder` conserva l'alfa?~~ | **FATTA il 2026-09-04: sì, la conserva.** Il bivio a tre uscite è cancellato; il lavoro vero sono gli scacchi dietro al video (§ 7.4) |
 | 3 | la tela a 390 px con due colonne di strumenti | § 7.2 — se 302 px bastano |
 | 4 | la striscia in alto a 390 px: due cerchi da 44 px più la faccia da 58 | § 5.1 — se libreria, faccia e scarica ci stanno senza stringersi |
 | 5 | quanto ridisegna `App.jsx` a ogni cambiamento | § 4.2 — se la lentezza ha anche una causa strutturale |
