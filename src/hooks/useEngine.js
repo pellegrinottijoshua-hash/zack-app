@@ -12,6 +12,15 @@ export function useEngine() {
   const engineRef = useRef(null);
   const [tier, setTier] = useState(null);
   const [phase, setPhase] = useState(null);
+  /**
+   * Quanto manca allo scaricamento del modello: `{fatti, totale, frazione}`.
+   *
+   * La fase da sola non basta: `EngineBanner` ha una barra con la percentuale
+   * e senza questo dato la disegnava sempre a zero. Sono 176 MB — su rete
+   * mobile la differenza fra «45%» e una barra ferma e' fra aspettare e
+   * chiudere la scheda.
+   */
+  const [scarico, setScarico] = useState(null);
 
   useEffect(() => {
     let alive = true;
@@ -53,7 +62,10 @@ export function useEngine() {
       const chosen = modelId || defaultModelFor(tier).id;
 
       try {
-        const { rgba, width, height } = await engine.cutout(bitmap, chosen, setPhase);
+        const { rgba, width, height } = await engine.cutout(bitmap, chosen, (fase, d) => {
+          setPhase(fase);
+          setScarico(fase === 'downloading' ? d : null);
+        });
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
@@ -61,6 +73,7 @@ export function useEngine() {
         return await new Promise((res) => canvas.toBlob(res, 'image/png'));
       } finally {
         setPhase(null);
+        setScarico(null);
       }
     },
     [tier],
@@ -81,6 +94,7 @@ export function useEngine() {
   return {
     tier,
     phase,
+    scarico,
     cutout,
     upscale,
     stopUpscale,

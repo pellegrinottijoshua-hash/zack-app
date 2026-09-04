@@ -15,6 +15,7 @@ import {
 } from './upscale.js';
 import { bleedEdges, extractAlpha, hasAlpha } from './compose.js';
 import { origine } from './origine.js';
+import { byteDelModello, chiediSpazioPersistente } from './modelloCache.js';
 
 // Stessa idea di models.js: in locale i file del runtime stanno sotto /ort/.
 // `stage-ort.js` li rigenera a ogni build da node_modules, e fra loro
@@ -35,13 +36,35 @@ let upScaleId = null;
 // d'uscita e' chiudere la scheda.
 let stopUpscale = false;
 
+// Si chiede UNA volta, all'avvio: senza, la Cache API resta «best effort» e
+// il browser la sfratta quando gli serve posto — che e' esattamente cio' che
+// faceva riscaricare 176 MB. Un rifiuto non blocca niente.
+chiediSpazioPersistente().catch(() => {});
+
 const post = (msg, transfer) => self.postMessage(msg, transfer || []);
 
-async function ensureSession(modelId) {
+/**
+ * La sessione, e il modello che le serve.
+ *
+ * `id` non e' decorativo: serve a emettere la fase `downloading` sulla
+ * richiesta giusta. `EngineBanner` ha da agosto una barra con la percentuale
+ * per quella fase, e nessuno l'aveva mai emessa nello studio — chi aspettava
+ * 176 MB su rete mobile leggeva «Zack sta lavorando…» per minuti.
+ *
+ * E i byte passano da `byteDelModello`, non piu' dall'URL: cosi' finiscono
+ * nella Cache API, che e' l'unica memoria protetta da
+ * `navigator.storage.persist()`. Dalla cache HTTP venivano sfrattati.
+ */
+async function ensureSession(modelId, id) {
   if (session && sessionModelId === modelId) return;
   const model = getModel(modelId);
   await session?.release?.();
-  session = await ort.InferenceSession.create(model.url, {
+
+  const byte = await byteDelModello(model.url, {
+    onProgress: (d) => post({ type: 'progress', id, phase: 'downloading', ...d }),
+  });
+
+  session = await ort.InferenceSession.create(byte, {
     executionProviders: [provider],
     graphOptimizationLevel: 'all',
   });
@@ -293,7 +316,7 @@ self.onmessage = async (e) => {
     if (type === 'cutout') {
       const { bitmap, modelId } = e.data;
       post({ type: 'progress', id, phase: 'loading' });
-      await ensureSession(modelId);
+      await ensureSession(modelId, id);
 
       post({ type: 'progress', id, phase: 'running' });
       const model = getModel(modelId);

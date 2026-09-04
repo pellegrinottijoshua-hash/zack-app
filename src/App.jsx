@@ -1551,10 +1551,14 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
         />
 
         <section className="stage">
-          {bannerOpen && engine.ready && (
+          {/* Lo scaricamento si vede SEMPRE: `bannerOpen` serve a chiudere
+              l'avviso della modalita' lenta, e chi l'ha chiuso una volta non
+              ha chiesto di non sapere piu' quando stanno arrivando 176 MB. */}
+          {(engine.phase === 'downloading' || bannerOpen) && engine.ready && (
             <EngineBanner
               tier={engine.tier}
               phase={engine.phase}
+              progress={engine.scarico?.frazione != null ? engine.scarico.frazione * 100 : undefined}
               onDismiss={() => setBannerOpen(false)}
             />
           )}

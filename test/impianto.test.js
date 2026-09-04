@@ -120,3 +120,38 @@ test('il riquadro della mascotte non dipende da cosa ci sta dentro', () => {
     '.sc-zack non dichiara una proporzione: il riquadro non e’ riservato',
   );
 });
+
+test('la barra dello scaricamento riceve davvero un segnale', () => {
+  /*
+   * Il difetto (2026-09-04, riferito dal committente come «fa "Zack sta
+   * lavorando" all'infinito»): `EngineBanner` ha da agosto un ramo
+   * `phase === 'downloading'` con una barra di percentuale, e il worker non
+   * ha MAI emesso quella fase — mandava solo `loading`, `running`,
+   * `compositing`. Era codice in attesa di un segnale che nessuno mandava, e
+   * intanto 176 MB scendevano in silenzio.
+   *
+   * Il test lega le due meta': chi disegna la barra e chi la accende.
+   */
+  const WORKER = readFileSync(new URL('../src/engine/worker.js', import.meta.url), 'utf8');
+  const BANNER = readFileSync(new URL('../src/components/EngineBanner.jsx', import.meta.url), 'utf8');
+
+  assert.match(BANNER, /phase === 'downloading'/, 'la barra non guarda piu’ la fase downloading');
+  assert.match(WORKER, /phase: 'downloading'/, 'il worker non emette la fase downloading: la barra resta spenta');
+  assert.match(
+    APP,
+    /progress=\{/,
+    'App.jsx non passa la percentuale al banner: la barra si disegnerebbe sempre a zero',
+  );
+});
+
+test('il modello passa dalla cache, non dall’URL', () => {
+  const WORKER = readFileSync(new URL('../src/engine/worker.js', import.meta.url), 'utf8');
+  // Con l'URL i byte finiscono nella cache HTTP, che e' la prima a essere
+  // sfrattata quando pesa 176 MB — e non e' protetta da `persist()`.
+  assert.match(WORKER, /byteDelModello\(/, 'il worker scarica ancora dall’URL: si riscarichera’');
+  assert.doesNotMatch(
+    WORKER,
+    /InferenceSession\.create\(model\.url/,
+    'la sessione nasce ancora dall’URL invece che dai byte in cache',
+  );
+});
