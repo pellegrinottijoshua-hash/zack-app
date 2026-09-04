@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MAX_FILE, aPng, applicaAlfa, mb, pixelDaFile, ritaglioIstantaneo, scaricaModello } from './ritaglio.js';
+import { MAX_FILE, aPng, applicaAlfa, mb, pixelDaFile, ritaglioIstantaneo, scaricaModello } from '../engine/ritaglio.js';
 import {
   guidaDritta,
   maniglia,

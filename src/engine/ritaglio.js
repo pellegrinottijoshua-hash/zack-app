@@ -1,13 +1,22 @@
 /**
- * Il lavoro vero dello strumento gratuito della home, senza React.
+ * Il ritaglio **senza modello**, e la decisione se basta.
  *
- * Sta separato dal componente per la stessa ragione per cui `holes.js` sta
- * separato da `FinishPanel.jsx`: è la parte capace di sbagliare in silenzio —
- * un alfa premoltiplicato, un modello scaricato a metà, una misura che non
- * torna — e va dove i test la vedono.
+ * Sta in `engine/` e non accanto a un componente per la ragione di sempre: è
+ * la parte capace di sbagliare in silenzio — un alfa premoltiplicato, un
+ * modello scaricato a metà, una misura che non torna — e va dove i test la
+ * vedono, in Node.
+ *
+ * **Lo usano tutt'e due le entrate.** È nato per la home il 2026-08-27 ed è
+ * rimasto lì fino al 2026-09-04: nel frattempo lo studio scendeva ai 175 MB
+ * del modello anche per un fondo piatto che qui costa venti millisecondi.
+ * Un pezzo di prodotto in una cartella sola diventa un pezzo di prodotto per
+ * metà utenti.
+ *
+ * `MAX_FILE`, `scaricaModello` e `mb` viaggiano con lui: sono della home, ma
+ * spezzare il file in due per tre esportazioni costerebbe più di quanto rende.
  */
 
-import { alphaDaFondoPiatto } from '../engine/keying.js';
+import { alphaDaFondoPiatto } from './keying.js';
 
 /**
  * Quanto dev'essere piatto il fondo perché il ritaglio istantaneo sia
