@@ -15,7 +15,7 @@ import VectorTools from './components/VectorTools.jsx';
 import { resolveShortcut } from './engine/shortcuts.js';
 import { useLibrary } from './hooks/useLibrary.js';
 import ToolRail from './components/ToolRail.jsx';
-import Scontorna from './components/Scontorna.jsx';
+import Piano from './components/Piano.jsx';
 import MaskBrush from './components/MaskBrush.jsx';
 import BatchPanel from './components/BatchPanel.jsx';
 import SoundLab from './components/SoundLab.jsx';
@@ -33,6 +33,7 @@ import { canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { TARGET_SIDE } from './engine/ready.js';
 import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/ricette.js';
 import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/ritaglio.js';
+import { DESCRITTORI, getDescrittore, strumentiVisibili } from './servizi/index.js';
 import { caricaFileDiProva, deveMostrareProva, segnaProvaVista } from './engine/prova.js';
 import { SERVICES, getService, firstReady } from './services.js';
 
@@ -1340,11 +1341,11 @@ export default function App() {
    * Cio' che sta sul piano di lavoro, qualunque sia il servizio.
    *
    * Si chiama `suPiano` e non `tela` perche' `tela` e' gia' la lavagna di
-   * Brain: due cose diverse con lo stesso nome nello stesso file., qualunque sia il servizio.
+   * Brain: due cose diverse con lo stesso nome nello stesso file.
    *
-   * Estratta in una variabile perche' lo scontorno ora la mette DENTRO il suo
-   * piano di lavoro (`Scontorna`) e gli altri servizi no: duplicarla sarebbe
-   * il modo piu' rapido per farle prendere due strade diverse.
+   * Estratta in una variabile perche' i servizi che passano dall'impianto la
+   * mettono DENTRO `Piano`, e gli altri no: duplicarla sarebbe il modo piu'
+   * rapido per farle prendere due strade diverse.
    */
   const suPiano = (
 batchFiles.length > 1 && batch.results.length === 0 ? (
@@ -1592,7 +1593,8 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               tela vera — confronto, pennello, blocco — gli sta dentro, e
               compare quando c'e' un file. */}
           {tool === 'scontorna' ? (
-            <Scontorna
+            <Piano
+              servizio={getDescrittore(tool)}
               /* Vuoto vuol dire NIENTE sul piano: ne' un file solo, ne' la
                  colonna dei tre scelti, ne' i risultati. Senza i tre scelti
                  il `+` restava in mezzo e la colonna non si vedeva mai. */
@@ -1671,7 +1673,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               }
             >
               {suPiano}
-            </Scontorna>
+            </Piano>
           ) : (
             suPiano
           )}

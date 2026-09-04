@@ -25,9 +25,6 @@ import Icon from './Icon.jsx';
  * e qualità. Il terzo (illustrazioni) resta nel motore, non nella scelta.
  */
 
-/** I due modelli offerti qui. Il nome del modello resta nel `title`. */
-const DUE_MODELLI = ['u2net', 'isnet-general-use'];
-
 /**
  * I simboli dei fattori, gli stessi della home.
  *
@@ -38,7 +35,9 @@ const DUE_MODELLI = ['u2net', 'isnet-general-use'];
  */
 const SIMBOLO = { x4: '×4', x2: '×2', d2: ':2', d4: ':4' };
 
-export default function Scontorna({
+export default function Piano({
+  /** Il descrittore del servizio aperto: dice claim, modelli e fattori. */
+  servizio,
   vuoto,
   ricetta,
   piano,
@@ -80,7 +79,10 @@ export default function Scontorna({
   }, [aperto]);
 
   const vuota = !piano || piano.passi.length === 0;
-  const offerti = models.filter((m) => DUE_MODELLI.includes(m.id));
+  // Quali modelli offre QUESTO servizio: lo scontorno ne ha due, il filmato
+  // nessuno. Prima era una costante nel file, cioe' una regola dello
+  // scontorno scritta dentro il pezzo che dovrebbe valere per tutti.
+  const offerti = models.filter((m) => servizio.tasto.modelli.includes(m.id));
 
   return (
     <div
@@ -135,7 +137,7 @@ export default function Scontorna({
             {/* La stessa frase della home, sotto il `+`: chi entra dallo
                 studio deve leggere la stessa promessa di chi entra dalla
                 home, o sono due prodotti. */}
-            <p className="sc-claim">{t('drop.claim')}</p>
+            <p className="sc-claim">{t(servizio.claim)}</p>
           </div>
         ) : (
           children
@@ -231,36 +233,44 @@ export default function Scontorna({
           <div className="sc-tuo">
             <p>{t('zack.title')}</p>
 
-            <div className="sc-modelli" role="group" aria-label={t('control.quality.label')}>
-              {offerti.map((m) => (
-                <button
-                  key={m.id}
-                  className="pastiglia"
-                  aria-pressed={modello === m.id}
-                  title={m.id}
-                  onClick={() => onModello(m.id)}
-                >
-                  {t(m.labelKey)}
-                </button>
-              ))}
-            </div>
+            {/* Un servizio che non offre modelli non deve mostrare il
+                riquadro vuoto dove starebbero: un gruppo senza pastiglie e'
+                un comando che non si puo' premere. */}
+            {offerti.length > 0 && (
+              <div className="sc-modelli" role="group" aria-label={t('control.quality.label')}>
+                {offerti.map((m) => (
+                  <button
+                    key={m.id}
+                    className="pastiglia"
+                    aria-pressed={modello === m.id}
+                    title={m.id}
+                    onClick={() => onModello(m.id)}
+                  >
+                    {t(m.labelKey)}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* I quattro fattori, gli stessi della home. Stanno fra i modelli
                 e la catena perche' rispondono alla seconda domanda del tasto:
-                con quale modello, quanto grande, e poi cosa fare. */}
-            <div className="sc-fattori" role="group" aria-label={t('zack.resize')}>
-              {Object.keys(FATTORI).map((chiave) => (
-                <button
-                  key={chiave}
-                  className="pastiglia"
-                  aria-pressed={ricetta.includes(`ridimensiona:${chiave}`)}
-                  title={t(`zack.stepHelp.ridimensiona:${chiave}`)}
-                  onClick={() => onRicetta(commutaFattore(ricetta, chiave))}
-                >
-                  {SIMBOLO[chiave]}
-                </button>
-              ))}
-            </div>
+                con quale modello, quanto grande, e poi cosa fare. Un filmato
+                non si ingrandisce col modello, quindi li' non ci sono. */}
+            {servizio.tasto.fattori && (
+              <div className="sc-fattori" role="group" aria-label={t('zack.resize')}>
+                {Object.keys(FATTORI).map((chiave) => (
+                  <button
+                    key={chiave}
+                    className="pastiglia"
+                    aria-pressed={ricetta.includes(`ridimensiona:${chiave}`)}
+                    title={t(`zack.stepHelp.ridimensiona:${chiave}`)}
+                    onClick={() => onRicetta(commutaFattore(ricetta, chiave))}
+                  >
+                    {SIMBOLO[chiave]}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div className="sc-catena">
               {PASSI.map((passo) => {
