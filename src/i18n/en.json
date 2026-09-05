@@ -26,6 +26,12 @@
       "help": "Generate a video from a description and your references."
     },
     "sound": {
+      "descrivi": "What do you want",
+      "descriviAiuto": "Say it in words: “warmer”, “less sibilant”, “radio”. Whatever it sets stays editable by hand.",
+      "capito": "I understood: {parole}.",
+      "nonCapito": "I don't know: {parole}. I applied the rest.",
+      "nienteCapito": "I didn't recognise a single word, so I changed nothing.",
+      "contraddizione": "“{a}” and “{b}” ask for opposites: I applied both, you pick which to keep.",
       "label": "Sound",
       "help": "Build a sound effect by imitating it with your voice and describing it."
     },

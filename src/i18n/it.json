@@ -26,6 +26,12 @@
       "help": "Genera un video da una descrizione e dai tuoi riferimenti."
     },
     "sound": {
+      "descrivi": "Cosa vuoi ottenere",
+      "descriviAiuto": "Scrivilo a parole: «più calda», «meno sibilante», «da radio». Quello che imposta resta modificabile a mano.",
+      "capito": "Ho capito: {parole}.",
+      "nonCapito": "Non conosco: {parole}. Il resto l'ho applicato.",
+      "nienteCapito": "Non ho riconosciuto nessuna parola, quindi non ho toccato niente.",
+      "contraddizione": "«{a}» e «{b}» chiedono il contrario: ho applicato tutt’e due, guarda tu quale tenere.",
       "label": "Suono",
       "help": "Costruisci un effetto sonoro imitandolo con la voce e descrivendolo."
     },
