@@ -43,6 +43,8 @@ export default function Piano({
   piano,
   /** Quanti file ci sono sul piano: con piu' di uno il tasto li fa tutti. */
   quanti,
+  /** Toglie dal piano il file singolo. Nella colonna ogni file ha la sua. */
+  onTogli,
   busy,
   models,
   modello,
@@ -125,6 +127,42 @@ export default function Piano({
           />
         </svg>
       </button>
+
+      {/*
+        Col piano gia' occupato, il `+` e la croce restano — piccoli, in alto a
+        sinistra, dove non c'e' nient'altro.
+
+        E' il contratto UX §5, che diceva gia' tutt'e due e non era rispettato
+        (segnalato dal committente il 2026-09-05): «il `+` si vede con 1 o 2,
+        sparisce al terzo» e «l'iconcina dentro ogni riquadro porta via quello
+        solo». Il codice mostrava il `+` SOLO a piano vuoto, e la croce solo
+        dalla colonna da due in su: con un file solo non c'era modo ne' di
+        aggiungerne un altro ne' di toglierlo, se non ricominciando.
+      */}
+      {!vuoto && (
+        <div className="sc-angolo">
+          {quanti > 0 && quanti < servizio.accetta.quanti && (
+            <button
+              className="sc-piu-piccolo"
+              onClick={onPick}
+              title={t('drop.title')}
+              aria-label={t('drop.title')}
+            >
+              +
+            </button>
+          )}
+          {quanti === 1 && onTogli && (
+            <button
+              className="sc-piu-piccolo"
+              onClick={onTogli}
+              title={t('bar.clear')}
+              aria-label={t('bar.clear')}
+            >
+              ×
+            </button>
+          )}
+        </div>
+      )}
 
       {/* La tela. Vuota c'è il `+` e basta: è il gesto con cui si comincia, ed
           è grande perché intorno non c'è nient'altro. */}

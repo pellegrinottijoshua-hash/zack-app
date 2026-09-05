@@ -4991,3 +4991,34 @@ body {
   border: 0;
   padding: 0;
 }
+
+/* Il `+` e la croce quando il piano è già occupato: piccoli, in alto a
+   sinistra, dove non c'è nient'altro — l'angolo a destra è dello «scarica».
+   Contratto UX §5: il `+` si vede con 1 o 2 file e sparisce al terzo, e ogni
+   file ha la sua iconcina per andarsene. */
+.sc-angolo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  display: flex;
+  gap: 8px;
+}
+.sc-piu-piccolo {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid var(--linea-viva);
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--inchiostro);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+.sc-piu-piccolo:hover {
+  background: var(--inchiostro);
+  color: var(--fondo);
+}

@@ -948,30 +948,50 @@ export default function App() {
    * il tasto Zack li fa tutti. Il tetto e' tre come nella home — di piu' e' il
    * lavoro in blocco vero, che ha il suo pannello e arriva a quaranta.
    */
-  const MAX_TELA = 3;
-  function accettaFile(lista) {
+  /**
+   * Mette dei file sul piano — AGGIUNGENDOLI a quelli che ci sono gia'.
+   *
+   * Il difetto (2026-09-05, riferito dal committente: «non c'e' il tasto piu'
+   * per aggiungere secondo e terzo file»): questa funzione SOSTITUIVA sempre.
+   * Non esisteva nessun percorso che aggiungesse, quindi anche mettendoci il
+   * `+` premerlo avrebbe buttato via il file di prima — il tasto sarebbe
+   * comparso e avrebbe fatto la cosa sbagliata, che e' peggio del tasto
+   * mancante.
+   *
+   * Quanti ne stanno lo dice il DESCRITTORE, non un numero scritto qui: e' la
+   * stessa domanda a cui risponde `servizi/`, e due risposte alla stessa
+   * domanda divergono.
+   */
+  function accettaFile(lista, { aggiungi = false } = {}) {
     const immagini = [...lista].filter((f) => f.type.startsWith('image/'));
     if (!immagini.length) return;
-    if (immagini.length === 1) {
+
+    const massimo = getDescrittore(tool).accetta.quanti;
+    // Cio' che sta gia' sul piano: la colonna, oppure il file singolo. Si
+    // legge PRIMA di `reset()`, che lo cancellerebbe.
+    const gia = aggiungi ? (batchFiles.length > 0 ? batchFiles : file ? [file] : []) : [];
+    const insieme = [...gia, ...immagini].slice(0, massimo);
+
+    if (insieme.length === 1) {
       setBatchFiles([]);
       batch.clear();
-      onFile(immagini[0]);
+      onFile(insieme[0]);
       return;
     }
     // Da due in su il piano diventa la colonna: il file singolo esce di
     // scena, o resterebbero due lavori aperti insieme senza dirlo.
     reset();
     batch.clear();
-    setBatchFiles(immagini.slice(0, MAX_TELA));
+    setBatchFiles(insieme);
   }
 
-  /** Il `+`: sceglie i file dal computer. Multiplo, fino a tre. */
+  /** Il `+`: sceglie i file dal computer, e li AGGIUNGE a quelli sul piano. */
   function scegliFile() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.multiple = true;
-    input.onchange = () => accettaFile(input.files || []);
+    input.onchange = () => accettaFile(input.files || [], { aggiungi: true });
     input.click();
   }
 
@@ -1650,13 +1670,19 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               modello={s.model}
               onModello={(id) => set({ model: id })}
               onPick={tool === 'filmato' ? scegliFilmato : scegliFile}
+              /* Togliere il file singolo: senza conferma, perche' e' un
+                 gesto piccolo e reversibile — il file sta ancora sul disco
+                 dell'utente, e il `+` e' li' accanto. */
+              onTogli={tool === 'filmato' ? () => setFilmato(null) : reset}
               /* Il rilascio segue lo stesso instradamento del `+`: se no il
                  trascinamento di una clip su Filmato finirebbe nel percorso
                  delle immagini, che la rifiuta in silenzio — il `+` funziona
                  e il trascinamento no, sulla stessa schermata. */
-              onFile={(f) => (tool === 'filmato' ? setFilmato(f) : accettaFile([f]))}
+              onFile={(f) => (tool === 'filmato' ? setFilmato(f) : accettaFile([f], { aggiungi: true }))}
               onFiles={(files) =>
-                tool === 'filmato' ? files[0] && setFilmato(files[0]) : accettaFile(files)
+                tool === 'filmato'
+                  ? files[0] && setFilmato(files[0])
+                  : accettaFile(files, { aggiungi: true })
               }
               onZack={() => {
                 // Con la colonna piena il tasto fa TUTTI i file: e' la stessa

@@ -88,6 +88,14 @@ async function toPixels(blob, misura = null) {
   return { w, h, data: ctx.getImageData(0, 0, w, h).data };
 }
 
+/** La curva della guida, tracciata due volte: un filo scuro sotto, l'oro sopra. */
+function traccia(cx, guida) {
+  cx.beginPath();
+  cx.moveTo(guida.a.x, guida.a.y);
+  cx.quadraticCurveTo(guida.c.x, guida.c.y, guida.b.x, guida.b.y);
+  cx.stroke();
+}
+
 export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDone }) {
   const canvasRef = useRef(null);
   const stateRef = useRef(null);
@@ -167,19 +175,48 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
     // elemento allineato a parte si scollerebbe al primo zoom. Non finisce nel
     // file salvato, che `commit` ricostruisce dai pixel piu' la maschera.
     if (!guida) return;
-    const sp = Math.max(2, s.w / 400);
+
+    /*
+     * La guida si misura in pixel DELLO SCHERMO, non dell'immagine.
+     *
+     * Il difetto (2026-09-05, riferito dal committente come «il righello
+     * ancora niente»): lo spessore era `max(2, larghezza/400)` in pixel
+     * d'immagine. Su un telefono la tela e' mostrata rimpicciolita — misurato:
+     * un'immagine da 2000 px in un riquadro da 295 css, scala 6,78 — quindi
+     * quei 5 pixel d'immagine diventavano **0,74 px sullo schermo**, piu'
+     * sottili di un pixel. E le maniglie erano punti da 2,2 px, contro i 44
+     * che il contratto UX dichiara come minimo per un dito.
+     *
+     * Si trascinava, la guida NASCEVA davvero, e non si vedeva: da fuori e'
+     * indistinguibile da un comando rotto — che e' esattamente come e' stato
+     * riferito, due volte.
+     *
+     * Il conto giusto il pennello lo fa gia' in `move()`. Qui non lo faceva.
+     */
+    const scala = s.w / (canvasRef.current?.getBoundingClientRect().width || s.w);
+    const px = (schermo) => schermo * scala;
+
     cx.save();
+    // Un filo scuro sotto: l'oro su una maglietta chiara sparisce, e la guida
+    // deve vedersi su qualunque immagine.
+    cx.lineCap = 'round';
+    cx.strokeStyle = 'rgba(17, 17, 17, 0.55)';
+    cx.lineWidth = px(4.5);
+    traccia(cx, guida);
     cx.strokeStyle = '#c4a35a';
-    cx.lineWidth = sp;
-    cx.beginPath();
-    cx.moveTo(guida.a.x, guida.a.y);
-    cx.quadraticCurveTo(guida.c.x, guida.c.y, guida.b.x, guida.b.y);
-    cx.stroke();
-    cx.fillStyle = '#c4a35a';
+    cx.lineWidth = px(2.5);
+    traccia(cx, guida);
+
     for (const q of [guida.a, guida.b, puntoDellaGuida(guida, 0.5)]) {
+      // Il pallino si VEDE a 9 px di raggio; la zona che lo AFFERRA e' piu'
+      // grande e sta in `begin`, come per il punto oro.
       cx.beginPath();
-      cx.arc(q.x, q.y, sp * 3, 0, Math.PI * 2);
+      cx.arc(q.x, q.y, px(9), 0, Math.PI * 2);
+      cx.fillStyle = '#c4a35a';
       cx.fill();
+      cx.lineWidth = px(2);
+      cx.strokeStyle = 'rgba(17, 17, 17, 0.55)';
+      cx.stroke();
     }
     cx.restore();
   }, [guida]);
@@ -207,7 +244,13 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
 
     if (mode === 'righello') {
       const p = toImage(ev);
-      const raggio = Math.max(14, s.w / 40);
+      // 22 px dello schermo di raggio, cioe' un bersaglio da 44: e' la
+      // misura minima dichiarata nel contratto UX §3, «sotto i 44x44 px un
+      // comando si sbaglia». Prima erano `s.w / 40` pixel d'IMMAGINE, che su
+      // una foto da 2000 px in un riquadro da 295 fanno 7 px veri: una
+      // maniglia che col dito non si prende mai.
+      const scala = s.w / (canvasRef.current?.getBoundingClientRect().width || s.w);
+      const raggio = Math.max(14, 22 * scala);
       const quale = guida ? maniglia(guida, p, { presa: raggio }) : null;
       // Senza guida il primo trascinamento la crea; con guida si afferra una
       // maniglia, e toccando lontano se ne ricomincia una nuova.

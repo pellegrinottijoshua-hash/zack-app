@@ -155,3 +155,25 @@ test('il modello passa dalla cache, non dall’URL', () => {
     'la sessione nasce ancora dall’URL invece che dai byte in cache',
   );
 });
+
+test('le icone si disegnano come contorni, non come macchie', () => {
+  /*
+   * Il difetto (2026-09-05, riferito dal committente: «le icone di strumenti
+   * sono fuorvianti e non si riconoscono bene righello, gomma ecc»).
+   *
+   * I tracciati di `icons.js` sono CONTORNI. Solo `.tool-item svg` (la barra
+   * dei servizi) dichiarava `fill: none; stroke: currentColor`, quindi i
+   * cerchi degli strumenti prendevano il default del browser — riempimento
+   * nero, nessun contorno. Misurato nel browser: `fill: rgb(0,0,0)`,
+   * `stroke: none` su tutti e quattro. Una gomma riempita e' una macchia, e
+   * `M13.8 7.2l3 3`, che e' una linea, riempita non si vede affatto.
+   *
+   * Ora lo dichiara il COMPONENTE, cosi' vale per ogni uso presente e futuro:
+   * una regola CSS accanto va ricordata ogni volta, e la volta che ci si
+   * dimentica l'icona torna una macchia senza che niente si lamenti.
+   */
+  const ICON = readFileSync(new URL('../src/components/Icon.jsx', import.meta.url), 'utf8');
+  const tag = ICON.slice(ICON.indexOf('<svg'), ICON.indexOf('>', ICON.indexOf('<svg')));
+  assert.match(tag, /fill="none"/, 'Icon.jsx non dichiara fill="none": i contorni si riempiono di nero');
+  assert.match(tag, /stroke="currentColor"/, 'Icon.jsx non dichiara lo stroke: i contorni spariscono');
+});
