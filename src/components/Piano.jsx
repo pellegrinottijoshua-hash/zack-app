@@ -363,12 +363,12 @@ export default function Piano({
               <div className="sc-fattori" role="group" aria-label={t('zack.what')}>
                 {servizio.tasto.opzioni.map((o) => (
                   <button
-                    key={o}
+                    key={o.id}
                     className="pastiglia"
-                    aria-pressed={opzione === o}
-                    onClick={() => onOpzione(o)}
+                    aria-pressed={opzione === o.id}
+                    onClick={() => onOpzione(o.id)}
                   >
-                    {t(`brain.riordina.${o}`)}
+                    {t(o.label)}
                   </button>
                 ))}
               </div>

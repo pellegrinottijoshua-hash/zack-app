@@ -4781,6 +4781,66 @@ body {
   font-size: 15px;
   cursor: pointer;
 }
+/* Come per `.brain-barra`: dentro l'impianto il `+` e la croce stanno in alto
+   a sinistra, e una fila che comincia a filo li finisce sotto. */
+.sc .sound-famiglie {
+  padding-left: 62px;
+}
+
+/* ---- la voce: in alto la clip, in basso la frase (contratto § 7.3) ---- */
+
+.voce {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--linea-viva);
+  border-radius: 18px;
+  background: var(--panna, #f5f0e8);
+}
+.voce-onda {
+  width: 100%;
+  height: 40px;
+}
+.voce-azioni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* La frase sta in fondo, e occupa tutta la riga: e' una frase, non
+   un'etichetta, e su due righe strette si scrive peggio. */
+.voce-descrizione {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+  /* Non deve arrivare sotto il tasto Zack, che sta in basso a destra e non si
+     sposta. Misurato: il campo finiva a x=887 e il tasto comincia a x=617.
+     46ch e' comunque una frase intera — «piu' calda e meno sibilante, da
+     radio» sono 40. */
+  max-width: min(100%, 46ch);
+}
+.voce-descrizione span {
+  font-family: 'Fredoka', var(--display);
+  font-size: 14px;
+  color: var(--inchiostro);
+}
+.voce-descrizione input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--linea-viva);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--inchiostro);
+  font-size: 15px;
+}
+/* Il suggerimento e' lungo apposta — dice COME si scrive — quindi non deve
+   gridare quanto il testo vero. */
+.voce-descrizione input::placeholder {
+  color: color-mix(in srgb, var(--inchiostro) 45%, transparent);
+}
+
 .sc-menu .pastiglia:hover {
   background: var(--oro);
   border-color: var(--oro);

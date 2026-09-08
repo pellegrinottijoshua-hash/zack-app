@@ -85,6 +85,68 @@ export const RECIPES = [
   },
 ];
 
+/**
+ * La ricetta che non fa niente.
+ *
+ * È la base di chi non ha scelto nessun effetto e scrive soltanto una frase:
+ * «più calda, da radio» deve poter partire da qualcosa, e quel qualcosa non
+ * può essere «gigante».
+ *
+ * `reverb.seconds` non è zero apposta: un riverbero di durata nulla è un
+ * buffer di lunghezza zero, e `createBuffer` lo rifiuta. Con `mix: 0` non si
+ * sente comunque. `allpass` lascia passare tutto: è il filtro che c'è per
+ * poter esserci, perché la catena Web Audio ne vuole uno.
+ */
+export const NEUTRA = {
+  id: 'neutra',
+  semitones: 0,
+  formants: 0,
+  drive: 0,
+  reverb: { seconds: 0.01, decay: 1, mix: 0 },
+  filter: { type: 'allpass', freq: 1000, q: 1 },
+};
+
+/** I limiti oltre i quali un filtro smette di essere un effetto. */
+const LIMITI = {
+  // Due ottave. Oltre, `playbackRate` allunga la clip di sedici volte: non
+  // è un effetto, è un file che non finisce piu'.
+  semitones: [-24, 24],
+  formants: [-12, 12],
+  // `driveCurve` fuori scala non protesta: restituisce una curva sbagliata,
+  // e il suono esce come uno scoppio.
+  drive: [0, 1],
+};
+
+const dentro = (chiave, v) => {
+  const l = LIMITI[chiave];
+  return l ? Math.max(l[0], Math.min(l[1], v)) : v;
+};
+
+/**
+ * Una ricetta più uno scostamento: il ponte fra la frase scritta e le casse.
+ *
+ * `apply` in `useSound` vuole una ricetta COMPLETA; `dizionarioVoce` produce
+ * filtri sciolti (`{semitones: -5}`). Senza questa funzione in mezzo, la
+ * frase dell'utente si fermava sullo schermo: i numeri si muovevano e il
+ * suono restava identico.
+ *
+ * I numeri si **sommano** perché il tasto imposta uno scostamento, non
+ * sostituisce la scelta: «più grave» su «gigante» vuol dire ancora più grave.
+ * Gli oggetti — un filtro, un riverbero — si sostituiscono, perché sommare un
+ * passa-basso a un passa-banda non vuol dire niente.
+ *
+ * Non tocca `base`: le ricette sono costanti condivise, e modificarle vorrebbe
+ * dire che la seconda frase parte dai filtri della prima.
+ */
+export function fondiRicetta(base, filtri) {
+  const out = { ...base, reverb: { ...base.reverb }, filter: { ...base.filter } };
+  for (const [k, v] of Object.entries(filtri || {})) {
+    if (typeof v === 'number') out[k] = dentro(k, (out[k] ?? 0) + v);
+    else if (v && typeof v === 'object') out[k] = { ...v };
+  }
+  return out;
+}
+
 export function getRecipe(id) {
   const r = RECIPES.find((x) => x.id === id);
   if (!r) throw new Error(`Ricetta sconosciuta: ${id}`);

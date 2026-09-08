@@ -27,7 +27,12 @@ export default {
      * dei fattori dell'ingrandimento: sono tutte risposte alla domanda «cosa
      * farà il tasto quando lo premo», e quella domanda ha un posto solo.
      */
-    opzioni: ['gruppi', 'tipo', 'compatta', 'frecce'],
+    opzioni: [
+      { id: 'gruppi', label: 'brain.riordina.gruppi' },
+      { id: 'tipo', label: 'brain.riordina.tipo' },
+      { id: 'compatta', label: 'brain.riordina.compatta' },
+      { id: 'frecce', label: 'brain.riordina.frecce' },
+    ],
     predefinita: 'gruppi',
   },
 

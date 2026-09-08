@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import {
   getRecipe,
+  NEUTRA,
   playbackRate,
   driveCurve,
   impulseResponse,
@@ -74,11 +75,17 @@ export function useSound() {
     setRecording(false);
   }, []);
 
-  /** Applica una ricetta e restituisce il risultato come file WAV. */
+  /**
+   * Applica una ricetta e restituisce il risultato come file WAV.
+   *
+   * Accetta un `id` **o una ricetta gia' fatta**: il dizionario della voce
+   * produce filtri sciolti che `fondiRicetta` unisce a quella scelta, e senza
+   * questa seconda forma non avrebbero modo di arrivare alle casse.
+   */
   const apply = useCallback(
-    async (recipeId) => {
+    async (ricetta) => {
       if (!clip?.buffer) return null;
-      const r = getRecipe(recipeId);
+      const r = typeof ricetta === 'string' ? getRecipe(ricetta) : ricetta || NEUTRA;
       const src = clip.buffer;
 
       const rate = playbackRate(r.semitones);
@@ -135,6 +142,52 @@ export function useSound() {
     [clip],
   );
 
+  /**
+   * Una voce che hai gia': un file al posto del microfono.
+   *
+   * Il contratto § 7.3 chiede DUE gesti sul `+` — «registra» e «aggiungi» — e
+   * il secondo non aveva niente dietro: si sceglieva un file e non succedeva
+   * nulla. Fa esattamente cio' che fa `onstop` con la registrazione, perche'
+   * da li' in poi sono la stessa cosa.
+   */
+  const apriFile = useCallback(async (file) => {
+    setError(null);
+    try {
+      const buffer = await audioCtx().decodeAudioData(await file.arrayBuffer());
+      const samples = buffer.getChannelData(0);
+      const onsets = detectOnsets(samples, buffer.sampleRate);
+      setClip({ buffer, url: URL.createObjectURL(file) });
+      setRhythm({ ...describeRhythm(onsets), onsets });
+    } catch (e) {
+      console.error(e);
+      // Non «formato non supportato»: il browser non dice quale sia il
+      // problema, e indovinarlo al posto suo manderebbe l'utente a cercare
+      // una cosa che magari non c'entra.
+      setError('audio-illeggibile');
+    }
+  }, []);
+
+  /** Riascolta la voce com'e' adesso, senza filtri. */
+  const riascolta = useCallback(async () => {
+    if (!clip?.buffer) return;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = ctx.createBufferSource();
+    src.buffer = clip.buffer;
+    src.connect(ctx.destination);
+    src.start();
+    await new Promise((ok) => (src.onended = ok));
+    await ctx.close();
+  }, [clip]);
+
+  /**
+   * La voce registrata, come file.
+   *
+   * Diverso da `comeFile`, che prende dei campioni sintetizzati: questa
+   * prende cio' che c'e' nel microfono. Serve a SALVARE la voce — richiesta
+   * del committente del 2026-09-05 — e non il suono lavorato.
+   */
+  const voceComeFile = useCallback(() => (clip?.buffer ? encodeWav(clip.buffer) : null), [clip]);
+
   const reset = useCallback(() => {
     if (clip?.url) URL.revokeObjectURL(clip.url);
     setClip(null);
@@ -168,7 +221,21 @@ export function useSound() {
     return encodeWav(buf);
   }, []);
 
-  return { recording, clip, rhythm, error, start, stop, apply, reset, suona, comeFile };
+  return {
+    recording,
+    clip,
+    rhythm,
+    error,
+    start,
+    stop,
+    apply,
+    reset,
+    suona,
+    comeFile,
+    apriFile,
+    riascolta,
+    voceComeFile,
+  };
 }
 
 /**

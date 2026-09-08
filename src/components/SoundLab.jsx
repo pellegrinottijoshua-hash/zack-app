@@ -19,12 +19,23 @@ import Icon from './Icon.jsx';
  * ha quaranta, e chi apre questo pannello non vuole diventare un fonico:
  * vuole un tonfo per la sua clip.
  */
-export default function SoundLab({ sound, onSave }) {
+export default function SoundLab({
+  sound,
+  onSave,
+  /* La voce: la frase scritta in basso, e la ricetta gia' fusa coi filtri che
+     il tasto ha impostato. Arrivano da `App.jsx` perche' il tasto Zack vive
+     nell'impianto: se lo stato stesse qui, il tasto non potrebbe toccarlo. */
+  descrizione = '',
+  onDescrizione,
+  ricettaVoce,
+  onSalvaLavorata,
+}) {
   const [scelto, setScelto] = useState(FAMIGLIE[0].id);
   const [param, setParam] = useState({ ...FAMIGLIE[0].param });
   const [durata, setDurata] = useState(FAMIGLIE[0].durata);
   const [seme, setSeme] = useState(1);
   const [suonando, setSuonando] = useState(false);
+  const [lavorando, setLavorando] = useState(false);
 
   const f = famiglia(scelto);
   const ritmo = sound.rhythm?.onsets?.length ? sound.rhythm.onsets : null;
@@ -51,8 +62,44 @@ export default function SoundLab({ sound, onSave }) {
     }
   }
 
+  /**
+   * La voce con i filtri addosso: e' il gesto per cui il servizio esiste.
+   *
+   * `sound.apply` sapeva farlo dal principio e NESSUNO lo chiamava — sei
+   * ricette scritte, provate e irraggiungibili. Senza questa funzione la
+   * frase dell'utente si fermava sullo schermo: i numeri si muovevano e il
+   * suono restava identico.
+   */
+  async function ascoltaVoce() {
+    setLavorando(true);
+    try {
+      const out = await sound.apply(ricettaVoce);
+      if (!out) return;
+      await sound.suona(out.buffer.getChannelData(0), out.buffer.sampleRate);
+    } finally {
+      setLavorando(false);
+    }
+  }
+
   return (
     <div className="sound">
+      {/* La voce sta in ALTO, sopra tutto il resto: contratto UX § 7.3. E' la
+          cosa su cui si sta lavorando, e il resto sono i comandi che la
+          toccano. */}
+      {sound.clip && (
+        <div className="voce">
+          <audio className="voce-onda" src={sound.clip.url} controls preload="metadata" />
+          <div className="voce-azioni">
+            <button className="btn" disabled={lavorando} onClick={ascoltaVoce}>
+              {lavorando ? t('sound.suona') : t('sound.ascolta')}
+            </button>
+            <button className="btn" disabled={lavorando} onClick={onSalvaLavorata}>
+              {t('sound.salva')}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="sound-famiglie">
         {FAMIGLIE.map((x) => (
           <button
@@ -124,7 +171,14 @@ export default function SoundLab({ sound, onSave }) {
         )}
       </div>
 
-      {sound.error && <p className="alert">{sound.error}</p>}
+      {/* Un codice non e' un messaggio: qui usciva «mic-denied» a schermo,
+          mentre `sound.micDenied` era scritto in due lingue e non lo chiamava
+          nessuno. */}
+      {sound.error && (
+        <p className="alert">
+          {sound.error === 'mic-denied' ? t('sound.micDenied') : t('sound.illeggibile')}
+        </p>
+      )}
 
       <div className="sound-azioni">
         <button className="btn" disabled={suonando} onClick={ascolta}>
@@ -137,6 +191,21 @@ export default function SoundLab({ sound, onSave }) {
           {t('sound.salva')}
         </button>
       </div>
+
+      {/* La descrizione in BASSO, contratto UX § 7.3: si scrive dopo aver
+          ascoltato, non prima. Il tasto Zack la legge col dizionario locale —
+          niente AI, e se non conosce una parola lo dice. */}
+      {onDescrizione && (
+        <label className="voce-descrizione">
+          <span>{t('sound.descrivi')}</span>
+          <input
+            type="text"
+            value={descrizione}
+            placeholder={t('sound.descriviAiuto')}
+            onChange={(e) => onDescrizione(e.target.value)}
+          />
+        </label>
+      )}
     </div>
   );
 }

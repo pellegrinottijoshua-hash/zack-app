@@ -36,6 +36,8 @@ import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/rit
 import { DESCRITTORI, getDescrittore, strumentiVisibili } from './servizi/index.js';
 import { nuovaNota, nuovoCerchio, prossimoPosto } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
+import { leggiDescrizione } from './engine/dizionarioVoce.js';
+import { NEUTRA, fondiRicetta, getRecipe } from './engine/sound.js';
 import { caricaFileDiProva, deveMostrareProva, segnaProvaVista } from './engine/prova.js';
 import { SERVICES, getService, firstReady } from './services.js';
 
@@ -149,6 +151,27 @@ export default function App() {
    * dentro e uno fuori — sono un comando di troppo.
    */
   const [collegaBrain, setCollegaBrain] = useState(null);
+
+  /** La frase scritta in basso nel Vocale: da lì il tasto ricava i filtri. */
+  const [descrizioneVoce, setDescrizioneVoce] = useState('');
+  /**
+   * Da dove parte la voce: una delle sei ricette, o «naturale».
+   *
+   * Sta qui e non dentro `SoundLab` per la stessa ragione della regola di
+   * Brain: la scelta si fa nel punto oro, che è dell'impianto.
+   */
+  const [baseVoce, setBaseVoce] = useState(getDescrittore('suono').tasto.predefinita);
+  /**
+   * I filtri impostati dal tasto, come scostamento dalla ricetta scelta.
+   *
+   * Due frasi di seguito sono due richieste che **si sommano**: chi scrive
+   * «più calda», ascolta, e poi scrive «da radio» non sta ricominciando.
+   */
+  const [filtriVoce, setFiltriVoce] = useState({});
+  /** I filtri di prima, per l'annulla. Una mossa sola, come per la tela. */
+  const [filtriDiPrima, setFiltriDiPrima] = useState(null);
+  /** Il laboratorio degli effetti, aperto dal `+` senza passare dal microfono. */
+  const [effettoAperto, setEffettoAperto] = useState(false);
   /**
    * La tela com'era prima dell'ultimo cambiamento.
    *
@@ -1278,6 +1301,81 @@ export default function App() {
     if (telaId) await library.saveBrain(telaId, prossima);
   }
 
+  /**
+   * Il `+` del Vocale: due gesti diversi, non uno.
+   *
+   * **Registrare** apre il microfono, **aggiungere** prende una voce che hai
+   * già. Metterli in uno solo avrebbe voluto dire scegliere al posto
+   * dell'utente quale dei due intendeva.
+   */
+  function menuVocale(voce) {
+    setMenuPiu(false);
+    if (voce === 'registra') return sound.start();
+    // Il laboratorio degli effetti non ha bisogno di una registrazione: e'
+    // l'altra meta' del servizio, e si apre da sola.
+    if (voce === 'effetto') return setEffettoAperto(true);
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'audio/*';
+    input.onchange = () => {
+      const f = input.files?.[0];
+      if (f) sound.apriFile(f);
+    };
+    return input.click();
+  }
+
+  /** Il tasto imposta, non decide: si fonde con ciò che c'è già. */
+  function applicaFiltriVoce(nuovi) {
+    setFiltriDiPrima(filtriVoce);
+    setFiltriVoce((v) => ({ ...v, ...nuovi }));
+  }
+
+  /**
+   * Salva la VOCE registrata, non il suono lavorato.
+   *
+   * Richiesta del committente del 2026-09-05: oggi si registra, si esporta, e
+   * la registrazione se ne va. Senza un archivio delle voci, qualunque cosa
+   * venga dopo — varianti, cast, clonazione — non ha su cosa appoggiarsi.
+   */
+  async function salvaVoce() {
+    const blob = sound.voceComeFile();
+    if (!blob) return;
+    await library.save(blob, {
+      name: `voce-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}`,
+      kind: 'wav',
+      // `op: 'voce'` distingue una VOCE da un effetto sonoro: è la differenza
+      // che servirà per ritrovarle quando saranno tante.
+      meta: { op: 'voce' },
+    });
+    setNotice(t('sound.saved'));
+  }
+
+  /**
+   * La voce LAVORATA in libreria: la registrazione con i filtri addosso.
+   *
+   * Diversa da `salvaVoce`, che mette via la voce com'e' uscita dal
+   * microfono. Sono due cose che si vogliono in due momenti diversi: la
+   * seconda e' materia prima da riusare, questa e' il risultato.
+   */
+  async function salvaVoceLavorata() {
+    const ricetta = fondiRicetta(baseVoce === 'neutra' ? NEUTRA : getRecipe(baseVoce), filtriVoce);
+    const out = await sound.apply(ricetta);
+    if (!out) return;
+    await library.save(out.blob, {
+      name: `voce-${baseVoce}`,
+      kind: 'wav',
+      meta: { op: 'sound', recipe: baseVoce },
+    });
+    setNotice(t('sound.save'));
+  }
+
+  /** Torna ai filtri di prima: il tasto imposta, e si puo' disfare. */
+  function annullaFiltriVoce() {
+    if (!filtriDiPrima) return;
+    setFiltriVoce(filtriDiPrima);
+    setFiltriDiPrima(null);
+  }
+
   /** Torna alla tela di prima. Una mossa sola: vedi `telaDiPrima`. */
   async function annullaTela() {
     if (!telaDiPrima) return;
@@ -1508,6 +1606,15 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
           ) : tool === 'suono' ? (
             <SoundLab
               sound={sound}
+              descrizione={descrizioneVoce}
+              onDescrizione={setDescrizioneVoce}
+              /* Gia' fusa: la ricetta scelta nel punto oro piu' i filtri che
+                 il tasto ha impostato dalla frase. */
+              ricettaVoce={fondiRicetta(
+                baseVoce === 'neutra' ? NEUTRA : getRecipe(baseVoce),
+                filtriVoce,
+              )}
+              onSalvaLavorata={salvaVoceLavorata}
               onSave={async (blob, recipe) => {
                 setNotice(null);
                 await library.save(blob, {
@@ -1698,7 +1805,9 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   ? !filmato
                   : tool === 'brain'
                     ? tela.length === 0
-                    : !file && batchFiles.length === 0 && batch.results.length === 0
+                    : tool === 'suono'
+                      ? !sound.clip && !effettoAperto
+                      : !file && batchFiles.length === 0 && batch.results.length === 0
               }
               ricetta={ricetta}
               piano={stats?.image ? pianoZack(ricetta, stats.image) : null}
@@ -1707,7 +1816,17 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                  non c'è. La croce no: si toglie l'oggetto scelto, non la
                  tela — quello lo fa `onTogli`, che qui è nullo. */
               quanti={
-                tool === 'brain' ? tela.length : batchFiles.length > 1 ? batchFiles.length : file ? 1 : 0
+                tool === 'brain'
+                  ? tela.length
+                  : tool === 'suono'
+                    ? sound.clip || effettoAperto
+                      ? 1
+                      : 0
+                    : batchFiles.length > 1
+                      ? batchFiles.length
+                      : file
+                        ? 1
+                        : 0
               }
               /* Il lavoro in corso, detto. Col file singolo lo dice gia' il
                  confronto; con la colonna non lo diceva nessuno. */
@@ -1737,6 +1856,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               }
               menu={menuPiu}
               onMenu={(voce) => {
+                if (tool === 'suono') return menuVocale(voce);
                 setMenuPiu(false);
                 if (voce === 'file') return scegliFile();
                 // `prossimoPosto` sa dove c'è spazio: due note nate insieme
@@ -1747,8 +1867,8 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   voce === 'gruppo' ? nuovoCerchio({ ...dove }) : nuovaNota({ ...dove }),
                 ]);
               }}
-              opzione={regolaRiordino}
-              onOpzione={setRegolaRiordino}
+              opzione={tool === 'suono' ? baseVoce : regolaRiordino}
+              onOpzione={tool === 'suono' ? setBaseVoce : setRegolaRiordino}
               /* Togliere il file singolo: senza conferma, perche' e' un
                  gesto piccolo e reversibile — il file sta ancora sul disco
                  dell'utente, e il `+` e' li' accanto. */
@@ -1756,7 +1876,18 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                  e una croce che svuota tutto in un clic, senza conferma,
                  sarebbe il gesto più distruttivo dell'app. Ogni oggetto ha
                  già la sua. */
-              onTogli={tool === 'brain' ? null : tool === 'filmato' ? () => setFilmato(null) : reset}
+              onTogli={
+                tool === 'brain'
+                  ? null
+                  : tool === 'filmato'
+                    ? () => setFilmato(null)
+                    : tool === 'suono'
+                      ? () => {
+                          sound.reset();
+                          setEffettoAperto(false);
+                        }
+                      : reset
+              }
               /* Il rilascio segue lo stesso instradamento del `+`: se no il
                  trascinamento di una clip su Filmato finirebbe nel percorso
                  delle immagini, che la rifiuta in silenzio — il `+` funziona
@@ -1768,6 +1899,28 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   : accettaFile(files, { aggiungi: true })
               }
               onZack={() => {
+                if (tool === 'suono') {
+                  const letto = leggiDescrizione(descrizioneVoce);
+                  if (letto.capito.length === 0) {
+                    // Non tocca NIENTE: un tasto che indovina su una parola
+                    // che non conosce insegna a non fidarsi del prossimo
+                    // risultato.
+                    setNotice(t('sound.nienteCapito'));
+                    return;
+                  }
+                  applicaFiltriVoce(letto.filtri);
+                  // Si dice sempre cosa si e' capito E cosa no: il tasto
+                  // imposta, non decide, e l'utente deve poter correggere.
+                  const detto = [t('sound.capito', { parole: letto.capito.join(', ') })];
+                  if (letto.nonCapito.length > 0) {
+                    detto.push(t('sound.nonCapito', { parole: letto.nonCapito.join(', ') }));
+                  }
+                  for (const [a, b] of letto.contraddizioni) {
+                    detto.push(t('sound.contraddizione', { a, b }));
+                  }
+                  setNotice(detto.join(' '));
+                  return;
+                }
                 if (tool === 'brain') {
                   // Deterministico: premere due volte da' lo stesso
                   // risultato, e ripremerlo non muove piu' niente. Lo
@@ -1823,7 +1976,15 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   fotogrammi: () => setGestoFilm('fotogrammi'),
                   sfondo: () => setGestoFilm('sfondo'),
                   freccia: () => setCollegaBrain((v) => (v ? null : { da: null })),
-                  annulla: annullaTela,
+                  riascolta: sound.riascolta,
+                  salvaVoce,
+                  /*
+                   * «Annulla» vuol dire cose diverse su servizi diversi, e va
+                   * bene: e' lo stesso gesto — torna indietro di una mossa —
+                   * su oggetti diversi. Su Brain la tela, sul Vocale i filtri
+                   * che il tasto ha appena impostato.
+                   */
+                  annulla: tool === 'suono' ? annullaFiltriVoce : annullaTela,
                 };
                 const acceso = {
                   righello: brushOpen && modoPennello === 'righello',
@@ -1843,7 +2004,9 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                     ? Boolean(filmato)
                     : tool === 'brain'
                       ? tela.filter((o) => o.t !== 'freccia').length >= 2
-                      : Boolean(file);
+                      : tool === 'suono'
+                        ? Boolean(sound.clip)
+                        : Boolean(file);
                 return strumentiVisibili(getDescrittore(tool), {
                   file: pieno,
                   risultato: result?.kind === 'png',
@@ -1858,7 +2021,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   disabled:
                     Boolean(busy) ||
                     (s.id === 'undo' && history.length === 0) ||
-                    (s.id === 'annulla' && !telaDiPrima),
+                    (s.id === 'annulla' && !(tool === 'suono' ? filtriDiPrima : telaDiPrima)),
                   onClick: GESTI[s.id],
                 }));
               })()}

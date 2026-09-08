@@ -73,7 +73,8 @@ test('ogni etichetta di ogni descrittore esiste in tutt’e due le lingue', () =
    */
   const at = (dict, key) => key.split('.').reduce((o, p) => (o == null ? o : o[p]), dict);
   for (const [id, d] of Object.entries(DESCRITTORI)) {
-    for (const chiave of [d.claim, ...d.strumenti.map((s) => s.label)]) {
+    const opzioni = (d.tasto.opzioni || []).map((o) => o.label);
+    for (const chiave of [d.claim, ...d.strumenti.map((s) => s.label), ...opzioni]) {
       for (const [lang, dict] of [['it', it], ['en', en]]) {
         assert.equal(
           typeof at(dict, chiave),
