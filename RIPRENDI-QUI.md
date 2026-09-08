@@ -141,6 +141,29 @@ ms. Il modello da 175 MB parte solo per i file che ne hanno bisogno, e parte
 
 ---
 
+### Registrare un descrittore È il cablaggio
+
+`DESCRITTORI[tool] ? <Piano>` in `App.jsx` e' l'interruttore che porta un
+servizio dentro l'impianto. Registrarne uno **prima** che i suoi gesti
+esistano vuol dire cerchi che si accendono e non fanno niente. Il piano del
+pezzo 3 aveva un task apposta per «i due descrittori», separato dal cablaggio,
+e non poteva funzionare: il test «ogni strumento dichiarato ha un gesto che lo
+esegue» l'ha rifiutato al primo giro.
+
+### Quattro volte: costruito e mai collegato
+
+`ritaglioIstantaneo`, `scaricaModello`, la fase `downloading`, e — il
+2026-09-08 — **le sei ricette della voce**: `sound.apply` sapeva applicarle dal
+principio e nessun componente lo chiamava. Prima di scrivere una funzione,
+cercare se c'e' gia' e se qualcuno la chiama.
+
+### Un nome di parametro che copre una variabile
+
+`onMenu={(voce) => ...}` copriva il registratore `voce`: «Costruisci» non
+apriva niente e la console diceva «quale is not defined». Stessa cosa con `s`,
+che sono le impostazioni, come parametro di un `.map`. Costa niente
+rinominare, e due volte in un'ora e' un avviso.
+
 ## 6. Cosa manca, in ordine
 
 Dal 2026-09-04 il lavoro segue una spec e cinque pezzi:
@@ -161,43 +184,53 @@ servizi in fila (mobile) o in colonna (desktop).
 
 ### Fatto
 
-- **Pezzo 1 — i sei tappi allo scontorno.** Lo scontorno rapido (`~96 ms di
+- **Pezzo 1 — i sei tappi allo scontorno.** Lo scontorno rapido (~96 ms di
   lavoro vero contro i 2 s del modello) ora c'e' anche nell'app; l'errore non
   accusa piu' il file dell'utente; il righello si accende davvero; i fattori
   ×4 ×2 :2 :4 sono nel punto oro; lo «scarica» scarica il piano.
 - **Pezzo 2 — l'impianto, e Filmato dentro.** Filmato ha la stessa mappa dello
   scontorno, i suoi tre gesti sono cerchi, dietro al video ci sono gli
   scacchi, e l'attesa di «togli sfondo» si dichiara.
+- **Pezzo 3 — Brain e Vocale.** Brain riordina con quattro regole
+  deterministiche (`engine/riordina.js`), il Vocale legge una frase con un
+  dizionario locale (`engine/dizionarioVoce.js`) che **dice quando non ha
+  capito**, e le voci si salvano come asset.
+- **La divisione di «suono»** (2026-09-08): Vocale ed Effetti sono due
+  servizi, con due registratori indipendenti.
+- **Pezzo 4 — Vettoriale**, con gli strumenti sui due fianchi e «Avanzati»
+  come cerchio piu' in basso a destra.
+- **Pezzo 5 — il desktop**: tasto Zack nella tela in alto a destra,
+  medio-grande, con gli strumenti attaccati sotto di lui.
 - **Il deploy**, che falliva da giorni in silenzio (vedi § 5).
 - **Il modello si scarica una volta sola**, e mentre scarica dice quanto manca.
 
+**Tutti e sei i servizi passano dall'impianto.** Fuori resta solo l'editor
+SVG, che e' un MODO di ritoccare dentro «Vettoriale», non un servizio.
+
 ### Da fare
 
-1. **Pezzo 3 — Brain e Vocale nell'impianto.** Quando entrano, spariscono
-   anche le ultime due liste `['brain','suono']`.
-   - **Brain**: il `+` da tre voci — *nota · gruppo · file*. «Idea» non e' una
-     voce: e' una nota con la categoria «idea», che `brain.js` ha gia'. Il
-     tasto Zack **riorganizza**, con la regola scelta nel punto oro
-     (gruppi/tipo/compatta/frecce), e **deve essere deterministica**.
-   - **Vocale**: il `+` da due scelte — *registra* o *aggiungi*. Il vocale va
-     in alto, la descrizione in basso, e il tasto imposta i filtri da un
-     **dizionario locale** (niente AI).
-2. **Pezzo 4 — Vettoriale nell'impianto**, con gli strumenti sui due fianchi e
-   «Avanzati» fra loro.
-3. **Pezzo 5 — il desktop**: stesso impianto, servizi a sinistra, tasto Zack
-   nella tela in alto a destra, medio-grande.
-4. **La Libreria come schermata**, e allora la striscia in alto diventa
+1. **La Libreria come schermata**, e allora la striscia in alto diventa
    `libreria · faccia · scarica` (misurato: a 375 px restano 229 px di
-   margine).
-5. **I sei loghi di servizio** — prompt pronti in
+   margine). E' il pezzo che manca per chiudere il contratto § 8.
+2. **La faccia di «effetti»**: e' l'unico servizio senza il suo `-320.webp` in
+   `public/zack/servizi/`, e la striscia lo salta. Un test lo difende, quindi
+   aggiungere l'id senza l'immagine fallisce invece di dare un riquadro rotto.
+3. **Il posto dove le cose si incontrano** (analisi del 2026-09-08). I sei
+   servizi producono asset che poi non si toccano piu': chi scontorna una
+   maglietta, per metterci sopra il nome, deve **uscire e aprire Canva**.
+   Manca una tela di composizione a livelli, con `export.js` e `print.js` —
+   gia' scritti — come uscita. Fatta quella, il testo e' due giorni e i
+   template sono un file JSON; fatta dopo, sono due casi speciali che non si
+   parlano. **Nel codice non esiste un solo `fillText`.**
+4. **I sei loghi di servizio** — prompt pronti in
    [docs/2026-08-28-prompt-loghi-servizi.md](docs/2026-08-28-prompt-loghi-servizi.md).
    Da generare **nero su panna**, non su nero.
-6. **Le facce 2D di Zack**: in `characters 2d` manca il suo foglio.
-7. **Le clip della mascotte**, senza sfondo. Il riquadro e' gia' riservato e
+5. **Le facce 2D di Zack**: in `characters 2d` manca il suo foglio.
+6. **Le clip della mascotte**, senza sfondo. Il riquadro e' gia' riservato e
    non dipende dal contenuto: mettercele dentro non deve muovere nient'altro.
-8. **La home in HTML vero (pre-render).** L'HTML servito contiene **zero
+7. **La home in HTML vero (pre-render).** L'HTML servito contiene **zero
    caratteri di testo**: per la SEO non e' difficile, e' impossibile.
-9. **fp16** — dimezzerebbe i 176 MB. Va misurato sulla qualita' del bordo.
+8. **fp16** — dimezzerebbe i 176 MB. Va misurato sulla qualita' del bordo.
 
 ### Deciso, e non si rifa'
 
