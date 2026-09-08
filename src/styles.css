@@ -2844,6 +2844,15 @@ body {
   border-bottom: 1px solid var(--linea);
 }
 
+/* Brain vive DENTRO l'impianto, e l'impianto tiene il `+` e la croce in alto
+   a sinistra (`.sc-angolo`, 46px). Senza questo spazio la barra ci finiva
+   sotto: il `+` copriva «Centra tutto», e due comandi sovrapposti sono due
+   comandi rotti. Misurato, non indovinato: `.sc-angolo` e la barra
+   cominciavano tutt'e due a x=213. */
+.sc .brain-barra {
+  padding-left: 62px;
+}
+
 .brain-barra button {
   display: flex;
   align-items: center;
@@ -4734,6 +4743,48 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 18px;
+}
+
+/* Il menu del `+`: la stessa forma del punto oro — pannello nero, bordo oro,
+   pastiglie chiare — perche' e' la stessa cosa, una scelta che si apre e si
+   chiude. Centrato in alto, dove l'occhio e' gia' andato premendo il `+`.
+
+   `position: fixed` e non `absolute`: il `+` grande sta al centro della tela
+   e quello piccolo in alto a sinistra, e un menu ancorato a uno dei due
+   sarebbe fuori posto per l'altro. */
+.sc-menu {
+  position: fixed;
+  z-index: 7;
+  top: clamp(80px, 18vh, 180px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 2px solid var(--oro);
+  border-radius: 22px;
+  background: #111111;
+  box-shadow: 0 18px 50px rgba(17, 17, 17, 0.35);
+}
+.sc-menu .pastiglia {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  padding: 8px 15px;
+  border: 1px solid rgba(245, 240, 232, 0.35);
+  border-radius: 999px;
+  background: transparent;
+  color: #f5f0e8;
+  font-family: 'Fredoka', var(--display);
+  font-size: 15px;
+  cursor: pointer;
+}
+.sc-menu .pastiglia:hover {
+  background: var(--oro);
+  border-color: var(--oro);
+  color: #111111;
 }
 .sc-claim {
   margin: 0;

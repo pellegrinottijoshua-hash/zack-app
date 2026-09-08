@@ -1,5 +1,6 @@
 import scontorna from './scontorna.js';
 import filmato from './filmato.js';
+import brain from './brain.js';
 
 /**
  * I descrittori dei servizi: dove vive il comportamento di ognuno.
@@ -9,7 +10,18 @@ import filmato from './filmato.js';
  * che non compare mai non solleva niente. Va dove i test la vedono, in Node.
  * Stessa ragione di `ricette.js`, `holes.js`, `keying.js`.
  */
-export const DESCRITTORI = { scontorna, filmato };
+/*
+ * La chiave è l'`id` dentro il descrittore, e un test lo verifica.
+ *
+ * ⚠️ **Registrare un descrittore È il cablaggio**, non un passo prima: la
+ * riga `DESCRITTORI[tool] ? <Piano>` in `App.jsx` è l'interruttore che porta
+ * un servizio dentro l'impianto. Registrarne uno prima che i suoi gesti
+ * esistano vuol dire cerchi che si accendono e non fanno niente — il difetto
+ * del righello del 2026-09-04 — e il test «ogni strumento dichiarato ha un
+ * gesto che lo esegue» lo rifiuta, giustamente. Il Vocale (`vocale.js`, id
+ * `suono`) entra qui insieme ai suoi gesti, non prima.
+ */
+export const DESCRITTORI = { scontorna, filmato, brain };
 
 /**
  * Gli stati in cui uno strumento può comparire. **Lista chiusa.**

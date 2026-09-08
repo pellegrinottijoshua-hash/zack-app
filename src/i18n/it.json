@@ -44,6 +44,13 @@
       "help": "Taglia una clip, estrai i fotogrammi, togli lo sfondo. Tutto sul tuo computer."
     }
   },
+  "menu": {
+    "nota": "Nota",
+    "gruppo": "Gruppo",
+    "file": "Un file",
+    "registra": "Registra",
+    "aggiungi": "Aggiungi"
+  },
   "drop": {
     "title": "Trascina qui un'immagine",
     "hint": "PNG, JPG o WebP, anche file di stampa grandi. Non lascia questo computer.",
@@ -460,6 +467,8 @@
     "startAlmeno": "almeno {wait} di attesa"
   },
   "sound": {
+    "claim": "Registra la tua voce o portane una, e trasformala.",
+    "saveVoice": "Salva questa voce",
     "record": "Registra",
     "again": "Registra di nuovo",
     "stop": "Ferma",
@@ -638,6 +647,14 @@
     "help": "I comandi che non servono all'uso normale. Restano aperti se li lasci aperti."
   },
   "brain": {
+    "pacco": "Fai un pacco",
+    "riordina": {
+      "gruppi": "Per gruppi",
+      "tipo": "Per tipo",
+      "compatta": "Compatta",
+      "frecce": "Segui le frecce"
+    },
+    "claim": "Butta giù tutto: note, gruppi, i tuoi file. Poi il tasto mette in ordine.",
     "add": {
       "note": "Nota",
       "group": "Gruppo",

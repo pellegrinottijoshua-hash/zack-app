@@ -44,6 +44,13 @@
       "help": "Trim a clip, pull frames, drop the background. All on your computer."
     }
   },
+  "menu": {
+    "nota": "Note",
+    "gruppo": "Group",
+    "file": "A file",
+    "registra": "Record",
+    "aggiungi": "Add"
+  },
   "drop": {
     "title": "Drop an image here",
     "hint": "PNG, JPG or WebP, large print files included. Nothing leaves this computer.",
@@ -460,6 +467,8 @@
     "startAlmeno": "at least {wait} of waiting"
   },
   "sound": {
+    "claim": "Record your voice or bring one in, and transform it.",
+    "saveVoice": "Save this voice",
     "record": "Record",
     "again": "Record again",
     "stop": "Stop",
@@ -638,6 +647,14 @@
     "help": "The commands the everyday job does not need. They stay open if you leave them open."
   },
   "brain": {
+    "pacco": "Pack it up",
+    "riordina": {
+      "gruppi": "By group",
+      "tipo": "By kind",
+      "compatta": "Tighten up",
+      "frecce": "Follow the arrows"
+    },
+    "claim": "Dump it all down: notes, groups, your files. Then the button sorts it out.",
     "add": {
       "note": "Note",
       "group": "Group",
