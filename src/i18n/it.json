@@ -218,7 +218,8 @@
       "label": "Pulisci il risultato",
       "help": "Alleggerisce il file: meno decimali nei tracciati e meno puntini isolati, a parità di aspetto."
     },
-    "working": "Sto trasformando i pixel in forme…"
+    "working": "Sto trasformando i pixel in forme…",
+    "openEditor": "Apri nell’editor"
   },
   "editor": {
     "edit": "Modifica",

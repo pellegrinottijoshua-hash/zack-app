@@ -3,6 +3,7 @@ import filmato from './filmato.js';
 import brain from './brain.js';
 import vocale from './vocale.js';
 import effetti from './effetti.js';
+import vettorializza from './vettorializza.js';
 
 /**
  * I descrittori dei servizi: dove vive il comportamento di ognuno.
@@ -23,7 +24,7 @@ import effetti from './effetti.js';
  * gesto che lo esegue» lo rifiuta, giustamente. Il Vocale (`vocale.js`, id
  * `suono`) entra qui insieme ai suoi gesti, non prima.
  */
-export const DESCRITTORI = { scontorna, filmato, brain, vocale, effetti };
+export const DESCRITTORI = { scontorna, filmato, brain, vocale, effetti, vettorializza };
 
 /**
  * Gli stati in cui uno strumento può comparire. **Lista chiusa.**
@@ -34,6 +35,15 @@ export const DESCRITTORI = { scontorna, filmato, brain, vocale, effetti };
  * saprebbe perché. Per questo `validaDescrittore` lo rifiuta.
  */
 export const QUANDO = ['sempre', 'con-file', 'con-risultato', 'con-file-senza-risultato'];
+
+/**
+ * I due fianchi su cui uno strumento può stare. **Lista chiusa**, come `QUANDO`.
+ *
+ * Contratto § 7.2: il Vettoriale tiene gli strumenti sui **due lati**, e la
+ * tela resta grande — 390 − 44 − 44 = 302 px. Chi non lo dichiara sta a
+ * destra, che è dove stanno da sempre.
+ */
+export const LATI = ['sinistra', 'destra'];
 
 /** Il descrittore di un servizio, o un errore che lo nomina. */
 export function getDescrittore(id) {
@@ -85,6 +95,13 @@ export function validaDescrittore(d) {
    * `t(`brain.riordina.${o}`)` scritto in `Piano.jsx`, e il Vocale avrebbe
    * mostrato «sound.riordina.gigante».
    */
+  for (const s of d.strumenti) {
+    if (s.lato && !LATI.includes(s.lato)) {
+      // Un lato inventato non farebbe comparire lo strumento da nessuna parte,
+      // e nessuno saprebbe perche': la stessa ragione di `QUANDO`.
+      throw new Error(`Descrittore ${d.id}, strumento ${s.id}: «${s.lato}» non è un lato.`);
+    }
+  }
   for (const o of d.tasto?.opzioni || []) {
     if (!o?.id || !o?.label) {
       throw new Error(`Descrittore ${d.id}: un'opzione senza «id» o «label».`);

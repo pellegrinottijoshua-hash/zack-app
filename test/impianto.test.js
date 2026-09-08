@@ -28,7 +28,15 @@ test('ogni strumento dichiarato ha un gesto che lo esegue', () => {
    */
   const inizio = APP.indexOf('const GESTI');
   assert.notEqual(inizio, -1, 'la mappa GESTI non esiste in App.jsx');
-  const mappa = APP.slice(inizio, inizio + 1200);
+  /*
+   * Si legge FINO a `const acceso`, invece di contare i caratteri: la finestra
+   * fissa da 1200 e' gia' stata troppo corta due volte — la mappa cresce a
+   * ogni servizio, e il test bocciava righe giuste. Un confine nominato non
+   * ha questo problema.
+   */
+  const fine = APP.indexOf('const acceso', inizio);
+  assert.notEqual(fine, -1, 'la mappa GESTI non finisce piu’ dove il test la cerca');
+  const mappa = APP.slice(inizio, fine);
   for (const d of Object.values(DESCRITTORI)) {
     for (const s of d.strumenti) {
       assert.match(mappa, new RegExp(`\\b${s.id}\\b`), `manca il gesto per «${s.id}» (${d.id})`);
@@ -233,4 +241,19 @@ test('ogni faccia della striscia e’ un file che esiste davvero', () => {
     const f = new URL(`../public/zack/servizi/${id}-320.webp`, import.meta.url);
     assert.ok(existsSync(f), `la striscia mostrerebbe «${id}», che non ha un'immagine`);
   }
+});
+
+test('«c’e’ un risultato» non vuol dire PNG per tutti', () => {
+  /*
+   * Il vettoriale produce un SVG. Con `risultato: result?.kind === 'png'`
+   * scritto una volta per tutti, il suo «apri nell'editor» era dichiarato nel
+   * descrittore, aveva il suo gesto in `GESTI`, e non sarebbe comparso mai.
+   * Nessuno degli altri test poteva vederlo: sono tutti veri presi uno per
+   * uno, ed e' il loro incastro a essere sbagliato.
+   */
+  assert.doesNotMatch(
+    APP,
+    /risultato: result\?\.kind === 'png'/,
+    'il tipo del risultato e’ ancora PNG per tutti i servizi',
+  );
 });

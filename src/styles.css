@@ -4490,6 +4490,46 @@ body {
   flex-direction: column;
   gap: 8px;
 }
+/* La tela si stringe di quanto le colonne coprono, invece di lasciarsele
+   addosso. Misurato a 390 px: con due colonne restano 302, che e' il numero
+   che il contratto § 7.2 chiede.
+
+   `padding` e non `width`: la zona di rilascio deve restare tutta la
+   schermata — chi trascina un file mira al centro, non a un rettangolo. */
+.sc[data-fianchi='uno'] .sc-tela {
+  padding-right: 44px;
+}
+.sc[data-fianchi='due'] .sc-tela {
+  padding-left: 44px;
+  padding-right: 44px;
+}
+
+/* Il fianco sinistro (contratto § 7.2). La colonna destra resta dov'era: chi
+   non dichiara un lato non si sposta. */
+.sc-strumenti[data-lato='sinistra'] {
+  right: auto;
+  left: 0;
+  /* Sotto il `+` e la croce, che stanno nello stesso angolo. */
+  top: 112px;
+}
+
+/* Gli avanzati, sopra la tela e non di fianco: di fianco vorrebbe dire
+   rimettere la colonna che l'impianto ha tolto. Scorre per conto suo, cosi'
+   la pagina sotto non si muove. */
+.sc-pannello {
+  position: absolute;
+  z-index: 8;
+  top: 60px;
+  left: 56px;
+  right: 56px;
+  max-height: min(60vh, 460px);
+  overflow-y: auto;
+  padding: 14px 16px;
+  border: 2px solid var(--oro);
+  border-radius: 22px;
+  background: var(--fondo);
+  box-shadow: 0 18px 50px rgba(17, 17, 17, 0.35);
+}
 .sc-strumento {
   display: grid;
   place-items: center;
@@ -4501,6 +4541,19 @@ body {
   background: var(--fondo);
   color: var(--inchiostro);
   cursor: pointer;
+}
+/* «In sordina finche' non li si tocca» (contratto § 7.2): il lavoro e' la
+   tela, e otto cerchi a piena forza ai fianchi la circondano di comandi.
+   0.55 e non meno: sotto, su fondo panna, un contorno da 1px sparisce e il
+   comando diventa introvabile invece che discreto. */
+.sc-strumento {
+  opacity: 0.55;
+  transition: opacity 120ms ease;
+}
+.sc-strumento:hover,
+.sc-strumento:focus-visible,
+.sc-strumento[aria-pressed='true'] {
+  opacity: 1;
 }
 .sc-strumento[aria-pressed='true'] {
   background: var(--inchiostro);
@@ -4906,7 +4959,12 @@ body {
 @media (max-width: 760px) {
   .toolrail {
     justify-content: center;
-    gap: 10px;
+    /* 6 e non 10: con la divisione di «suono» i servizi sono diventati SEI, e
+       a 390 px la fila sbordava — «Brain», il primo, entrava tagliato di 7 px.
+       Misurato nel browser: 6 cerchi (336 px, di cui lo scontorno 72) + 5
+       spazi + 16 di bordi facevano 402 su 390 disponibili. Con 6 restano
+       382. */
+    gap: 6px;
     /* In fondo ci va il NOME, che sta fuori dal cerchio: senza questo spazio
        «Scontorna» finiva sotto il bordo dello schermo. */
     /* Il cerchio dello scontorno e' 16 px piu' alto degli altri, e il suo

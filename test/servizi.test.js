@@ -108,3 +108,25 @@ test('la lista degli stati resta chiusa', () => {
   // Se questo numero cambia e' una decisione, non una cosa che scivola dentro.
   assert.equal(QUANDO.length, 4);
 });
+
+test('ogni strumento «con-risultato» puo’ davvero comparire', () => {
+  /*
+   * `strumentiVisibili` prende un booleano `risultato`, e chi lo calcola in
+   * App.jsx deve sapere COSA conta come risultato per quel servizio: un PNG
+   * per lo scontorno, un SVG per il vettoriale. Con la sola condizione del
+   * PNG, «apri nell'editor» del vettoriale non sarebbe comparso mai — un
+   * cerchio dichiarato, un gesto scritto, e nessun modo di arrivarci.
+   *
+   * Qui si prova la meta' che si puo' provare in Node: che ogni strumento
+   * dichiarato con-risultato compaia quando il risultato c'e'. L'altra meta'
+   * — che App.jsx passi il tipo giusto — la difende `test/impianto.test.js`.
+   */
+  for (const [id, d] of Object.entries(DESCRITTORI)) {
+    const dichiarati = d.strumenti.filter((s) => s.quando === 'con-risultato').map((s) => s.id);
+    if (dichiarati.length === 0) continue;
+    const visti = strumentiVisibili(d, { file: true, risultato: true }).map((s) => s.id);
+    for (const x of dichiarati) {
+      assert.ok(visti.includes(x), `${id}: «${x}» non compare nemmeno col risultato`);
+    }
+  }
+});

@@ -67,6 +67,16 @@ export const ICONS = {
   wave: ['M3.5 12h2', 'M8 7.5v9', 'M12 4v16', 'M16 8.5v7', 'M18.5 12h2'],
 
   /*
+   * Alleggerire: tre righe che si accorciano.
+   *
+   * Non `clear`, che e' una croce: sul Vettoriale il cerchio «pulisci» stava
+   * a un dito dalla croce che TOGLIE il file, e due croci accanto che fanno
+   * cose opposte sono un errore che si commette una volta sola — perche' poi
+   * non si tocca piu' nessuna delle due. Visto a 390 px, non ragionato.
+   */
+  alleggerisci: ['M5 8h14', 'M6.5 12h11', 'M9 16h6'],
+
+  /*
    * Gli effetti sonori: uno scoppio.
    *
    * Non un'altra onda. `wave` e' la VOCE — un'onda registrata — e le due

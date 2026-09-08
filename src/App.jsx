@@ -3,7 +3,7 @@ import Dropzone from './components/Dropzone.jsx';
 import Compare from './components/Compare.jsx';
 import Library from './components/Library.jsx';
 import SvgEditor from './components/SvgEditor.jsx';
-import { RemovePanel, TracePanel, ExportPanel, UpscalePanel, MetaBlock, Help } from './components/Panels.jsx';
+import { RemovePanel, ExportPanel, UpscalePanel, MetaBlock, Help } from './components/Panels.jsx';
 import EngineBanner from './components/EngineBanner.jsx';
 import LanguageSwitch from './components/LanguageSwitch.jsx';
 // «Spiegami» e' nascosto dal 2026-08-31 (decisione del committente): la
@@ -60,7 +60,7 @@ import { onHelpChange, isHelpOn } from './i18n/help.js';
 import { renderExport } from './engine/render.js';
 import { analyze, applyCrop, renderMockup, closeHoles } from './engine/finish.js';
 import { PRESETS, BACKGROUNDS } from './engine/export.js';
-import { traceToSvg, TRACE_PRESETS } from './engine/trace.js';
+import { traceToSvg } from './engine/trace.js';
 import * as api from './lib/api.js';
 
 const PALETTE = ['#111111', '#F5F0E8', '#FFFFFF', '#8A8A85', '#C4A35A', 'none'];
@@ -167,6 +167,15 @@ export default function App() {
    * stato stesse nel componente, il tasto non potrebbe leggerlo.
    */
   const [regolaRiordino, setRegolaRiordino] = useState(getDescrittore('brain').tasto.predefinita);
+  /**
+   * Gli avanzati aperti sopra la tela.
+   *
+   * § 5.4 li toglie dalla colonna e § 7.2 dice dove vanno. Quando i servizi
+   * sono entrati nell'impianto la colonna e' sparita con dentro TUTTO — un
+   * `display: none` che si portava via blocco, ingrandimento, rifinitura ed
+   * esportazione senza dirlo. Ora ci si torna dal cerchio piu' in basso.
+   */
+  const [avanzatiAperti, setAvanzatiAperti] = useState(false);
   /** Il menu del `+` aperto. È un momento, non uno stato: si apre e si chiude. */
   const [menuPiu, setMenuPiu] = useState(false);
   /**
@@ -1419,6 +1428,7 @@ export default function App() {
   const OPZIONE = {
     brain: { valore: regolaRiordino, cambia: setRegolaRiordino },
     vocale: { valore: baseVoce, cambia: setBaseVoce },
+    vettorializza: { valore: s.tracePreset, cambia: (id) => set({ tracePreset: id }) },
     effetti: {
       valore: effetto.famiglia,
       // Cambiare famiglia riporta le manopole a quelle di casa sua: le
@@ -1637,6 +1647,94 @@ export default function App() {
    * mettono DENTRO `Piano`, e gli altri no: duplicarla sarebbe il modo piu'
    * rapido per farle prendere due strade diverse.
    */
+  /**
+   * Gli avanzati: un contenuto solo, due posti dove mostrarlo.
+   *
+   * Vivevano dentro la colonna di destra, e quando i servizi sono entrati
+   * nell'impianto la colonna e' finita sotto un `display: none` — con dentro
+   * blocco, ingrandimento, rifinitura ed esportazione. Quattro pannelli
+   * spariti senza che niente si lamentasse.
+   *
+   * Ora sono una costante: l'impianto la apre dal cerchio piu' in basso,
+   * l'editor (che l'impianto non ha) la tiene nella sua colonna. **Lo stesso
+   * contenuto**, non due copie — due copie divergono al primo ritocco.
+   */
+  const avanzati = (
+    <Advanced id={tool}>
+          <BatchPanel
+            files={batchFiles}
+            batch={batch}
+            onPickFiles={pickBatchFiles}
+            onClearFiles={() => {
+              setBatchFiles([]);
+              batch.clear();
+            }}
+            onFix={fixFromBatch}
+          />
+
+          <UpscalePanel
+            image={stats?.image}
+            scaleId={s.scale}
+            onScale={(id) => set({ scale: id })}
+            busy={Boolean(busy)}
+            running={upscaling}
+            onRun={runUpscale}
+            onStop={engine.stopUpscale}
+          />
+
+          {result?.meta && (
+            <>
+              <MetaBlock
+                title="Risultato"
+                rows={
+                  result.kind === 'svg'
+                    ? [
+                        ['path', String(result.meta.paths)],
+                        ['peso', `${Math.round(result.meta.bytes / 1024)} KB`],
+                        ['risparmio', `${result.meta.saved}%`],
+                        ['tempo', secs(result.meta.ms)],
+                      ]
+                    : [
+                        ['strategia', STRATEGIE[result.meta.strategy] || 'diretta'],
+                        ['sorgente', px(result.meta.source)],
+                        ['uscita', px(result.meta.output)],
+                        ['la rete ha visto', px(result.meta.modelSaw)],
+                        ['tempo', secs(result.meta.ms)],
+                      ]
+                }
+              />
+              {result.kind === 'svg' && (
+                <button className="btn ghost small" onClick={sendToEditor}>
+                  Apri nell'editor
+                </button>
+              )}
+            </>
+          )}
+
+          {!SENZA_FILE.has(tool) && file && (
+            <FinishPanel
+              stats={stats}
+              reading={statsReading}
+              s={s}
+              set={set}
+              busy={Boolean(busy)}
+              isVector={result?.kind === 'svg'}
+              mockup={mockup}
+              onCrop={runCrop}
+              onMockup={runMockup}
+            />
+          )}
+
+          <ExportPanel
+            presets={PRESETS}
+            backgrounds={Object.keys(BACKGROUNDS)}
+            s={s}
+            set={set}
+            busy={Boolean(busy)}
+          />
+        </Advanced>
+  );
+
   const suPiano = (
 batchFiles.length > 1 && batch.results.length === 0 ? (
       /* I file scelti, in colonna, PRIMA che il tasto li lavori: si vedono
@@ -1875,14 +1973,22 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               onBrush={() => setBrushOpen((v) => !v)}
               onCrop={() => {
                 setNotice(null);
-                // Il ritaglio vive negli avanzati: si aprono, e ci si porta.
-                // Cercare la sezione per il testo del titolo, com'era prima,
-                // si rompeva al primo cambio di traduzione: ora ha un id.
-                const avanzati = document.querySelector('.rail .avanzati-head');
-                if (avanzati?.getAttribute('aria-expanded') !== 'true') avanzati?.click();
+                /*
+                 * Il ritaglio vive negli avanzati: si aprono, e ci si porta.
+                 *
+                 * Il pannello ora sta in DUE posti — nell'impianto quando il
+                 * cerchio lo apre, nella colonna per l'editor — quindi si
+                 * cerca ovunque invece che dentro `.rail`: legato alla colonna
+                 * il collegamento moriva in silenzio su ogni servizio entrato
+                 * nell'impianto. Si preme e non succede niente e' peggio di un
+                 * comando spento.
+                 */
+                setAvanzatiAperti(true);
+                const testa = document.querySelector('.avanzati-head');
+                if (testa?.getAttribute('aria-expanded') !== 'true') testa?.click();
                 requestAnimationFrame(() => {
                   document
-                    .querySelector('.rail .sect[data-id="crop"]')
+                    .querySelector('.sect[data-id="crop"]')
                     ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
                 });
               }}
@@ -1987,6 +2093,9 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   quale === 'gruppo' ? nuovoCerchio({ ...dove }) : nuovaNota({ ...dove }),
                 ]);
               }}
+              /* Gli avanzati, quando il cerchio li apre. Lo stesso contenuto
+                 della colonna: non una seconda copia, la stessa. */
+              pannello={avanzatiAperti ? avanzati : null}
               opzione={OPZIONE[tool]?.valore ?? regolaRiordino}
               onOpzione={OPZIONE[tool]?.cambia ?? setRegolaRiordino}
               /* Togliere il file singolo: senza conferma, perche' e' un
@@ -2109,6 +2218,9 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   unAltro: () => setEffetto((e) => ({ ...e, seme: e.seme + 1 })),
                   ritmo: () => (effettiAudio.recording ? effettiAudio.stop() : effettiAudio.start()),
                   salvaEffetto,
+                  pulisci: () => set({ clean: !s.clean }),
+                  apriEditor: sendToEditor,
+                  avanzati: () => setAvanzatiAperti((v) => !v),
                   salvaVoce,
                   /*
                    * «Annulla» vuol dire cose diverse su servizi diversi, e va
@@ -2124,6 +2236,8 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   erase: brushOpen && modoPennello === 'erase',
                   freccia: Boolean(collegaBrain),
                   ritmo: effettiAudio.recording,
+                  pulisci: s.clean,
+                  avanzati: avanzatiAperti,
                 };
                 /*
                  * Cosa vuol dire «c'e' qualcosa sul piano» cambia col
@@ -2142,22 +2256,35 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                         : tool === 'effetti'
                           ? effettoAperto || Boolean(effettiAudio.rhythm)
                           : Boolean(file);
+                /*
+                 * «C'e' un risultato» vuol dire cose diverse: per lo
+                 * scontorno un PNG — i pennelli non hanno su cosa lavorare
+                 * altrimenti — e per il vettoriale un SVG. Con la sola
+                 * condizione del PNG, «apri nell'editor» non sarebbe comparso
+                 * MAI: un cerchio dichiarato, un gesto scritto, e nessun modo
+                 * di arrivarci.
+                 */
+                const uscita = tool === 'vettorializza' ? 'svg' : 'png';
                 return strumentiVisibili(getDescrittore(tool), {
                   file: pieno,
-                  risultato: result?.kind === 'png',
-                }).map((s) => ({
-                  id: s.id,
-                  icon: s.icon,
-                  label: t(s.label),
-                  active: acceso[s.id] || undefined,
+                  risultato: result?.kind === uscita,
+                  /* Il parametro si chiama `str` e non `s`: `s` sono le
+                     impostazioni, e qui dentro le coprirebbe. E' lo stesso
+                     inciampo di `voce` in `onMenu`, un'ora fa. */
+                }).map((str) => ({
+                  id: str.id,
+                  icon: str.icon,
+                  lato: str.lato,
+                  label: t(str.label),
+                  active: acceso[str.id] || undefined,
                   // L'annulla si spegne anche senza cronologia: premerlo
                   // quando non c'e' niente da annullare non fa niente, e un
                   // comando acceso che non fa niente e' un comando rotto.
                   disabled:
                     Boolean(busy) ||
-                    (s.id === 'undo' && history.length === 0) ||
-                    (s.id === 'annulla' && !(tool === 'vocale' ? filtriDiPrima : telaDiPrima)),
-                  onClick: GESTI[s.id],
+                    (str.id === 'undo' && history.length === 0) ||
+                    (str.id === 'annulla' && !(tool === 'vocale' ? filtriDiPrima : telaDiPrima)),
+                  onClick: GESTI[str.id],
                 }));
               })()}
             >
@@ -2195,6 +2322,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               <button className="btn ghost" onClick={cleanFromEditor}>
                 {t('editor.clean.label')}
               </button>
+
+              {/* L'editor e' l'unico rimasto senza impianto, quindi e' l'unico
+                  che tiene ancora gli avanzati in colonna. */}
+              {avanzati}
             </>
           ) : tool === 'scontorna' ? (
             <>
@@ -2218,88 +2349,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               )}
 
             </>
-          ) : (
-            <TracePanel presets={TRACE_PRESETS} s={s} set={set} busy={Boolean(busy)} />
-          )}
-
-          {/* Un solo posto nascosto per schermata, e solo per ciò che il
-              lavoro normale non usa: la catena del tasto Zack porta a termine
-              lo scontorno senza aprirlo mai. */}
-          {!isEditor && (
-            <Advanced id={tool}>
-              <BatchPanel
-                files={batchFiles}
-                batch={batch}
-                onPickFiles={pickBatchFiles}
-                onClearFiles={() => {
-                  setBatchFiles([]);
-                  batch.clear();
-                }}
-                onFix={fixFromBatch}
-              />
-
-              <UpscalePanel
-                image={stats?.image}
-                scaleId={s.scale}
-                onScale={(id) => set({ scale: id })}
-                busy={Boolean(busy)}
-                running={upscaling}
-                onRun={runUpscale}
-                onStop={engine.stopUpscale}
-              />
-
-              {result?.meta && (
-                <>
-                  <MetaBlock
-                    title="Risultato"
-                    rows={
-                      result.kind === 'svg'
-                        ? [
-                            ['path', String(result.meta.paths)],
-                            ['peso', `${Math.round(result.meta.bytes / 1024)} KB`],
-                            ['risparmio', `${result.meta.saved}%`],
-                            ['tempo', secs(result.meta.ms)],
-                          ]
-                        : [
-                            ['strategia', STRATEGIE[result.meta.strategy] || 'diretta'],
-                            ['sorgente', px(result.meta.source)],
-                            ['uscita', px(result.meta.output)],
-                            ['la rete ha visto', px(result.meta.modelSaw)],
-                            ['tempo', secs(result.meta.ms)],
-                          ]
-                    }
-                  />
-                  {result.kind === 'svg' && (
-                    <button className="btn ghost small" onClick={sendToEditor}>
-                      Apri nell'editor
-                    </button>
-                  )}
-                </>
-              )}
-
-              {!SENZA_FILE.has(tool) && file && (
-                <FinishPanel
-                  stats={stats}
-                  reading={statsReading}
-                  s={s}
-                  set={set}
-                  busy={Boolean(busy)}
-                  isVector={result?.kind === 'svg'}
-                  mockup={mockup}
-                  onCrop={runCrop}
-                  onMockup={runMockup}
-                />
-              )}
-
-              <ExportPanel
-                presets={PRESETS}
-                backgrounds={Object.keys(BACKGROUNDS)}
-                s={s}
-                set={set}
-                busy={Boolean(busy)}
-              />
-            </Advanced>
-          )}
+          ) : null}
 
           {file && !isEditor && (
             <button className="btn ghost" onClick={reset}>

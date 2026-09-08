@@ -64,6 +64,8 @@ export default function Piano({
   /** L'opzione scelta nel punto oro, per i servizi che ne dichiarano. */
   opzione,
   onOpzione,
+  /** Il pannello aperto sopra la tela: gli avanzati, quando c'è qualcosa. */
+  pannello,
   children,
 }) {
   const [aperto, setAperto] = useState(false);
@@ -112,6 +114,16 @@ export default function Piano({
         onFiles([...e.dataTransfer.files]);
       }}
       data-sopra={sopra || undefined}
+      /* Le colonne degli strumenti sono sovrapposte, non affiancate: senza
+         dirlo alla tela, su 390 px coprirebbero 44 px di lavoro per lato.
+         Contratto § 7.2: «la tela resta grande — 390 − 44 − 44 = 302». */
+      data-fianchi={
+        strumenti.some((x) => x.lato === 'sinistra')
+          ? 'due'
+          : strumenti.length > 0
+            ? 'uno'
+            : undefined
+      }
     >
       {/* Scarica, in alto a destra: il gesto che chiude il lavoro, e non
           appartiene a nessuno dei file in particolare. */}
@@ -221,26 +233,44 @@ export default function Piano({
         </div>
       )}
 
-      {/* Gli strumenti compaiono DOPO il risultato, in colonna a destra, e
+      {/* Gli strumenti compaiono DOPO il risultato, in colonna ai fianchi, e
           sono cerchi: il nome ruba larghezza alla tela in ogni schermata, e
-          qui la tela è il lavoro. Il nome resta nel `title`. */}
-      {strumenti.length > 0 && (
-        <div className="sc-strumenti">
-          {strumenti.map((s) => (
-            <button
-              key={s.id}
-              className="sc-strumento"
-              aria-pressed={s.active || undefined}
-              aria-label={s.label}
-              title={s.label}
-              disabled={s.disabled}
-              onClick={s.onClick}
-            >
-              <Icon name={s.icon} />
-            </button>
-          ))}
-        </div>
-      )}
+          qui la tela è il lavoro. Il nome resta nel `title`.
+
+          Due colonne e non una: il contratto § 7.2 le chiede per il
+          Vettoriale, che di strumenti ne ha troppi per un fianco solo. Chi
+          non dichiara un lato sta a destra, che è dov'erano tutti. */}
+      {['sinistra', 'destra'].map((lato) => {
+        const quelli = strumenti.filter((s) => (s.lato || 'destra') === lato);
+        if (quelli.length === 0) return null;
+        return (
+          <div className="sc-strumenti" data-lato={lato} key={lato}>
+            {quelli.map((s) => (
+              <button
+                key={s.id}
+                className="sc-strumento"
+                aria-pressed={s.active || undefined}
+                aria-label={s.label}
+                title={s.label}
+                disabled={s.disabled}
+                onClick={s.onClick}
+              >
+                <Icon name={s.icon} />
+              </button>
+            ))}
+          </div>
+        );
+      })}
+
+      {/* Il pannello degli avanzati, sopra la tela.
+
+          § 5.4 toglie dalla colonna blocco, ingrandimento, rifinitura ed
+          esportazione, e § 7.2 dice dove vanno: qui. Quando i servizi sono
+          entrati nell'impianto la colonna e' sparita con dentro tutto — un
+          `display: none` che si portava via quattro pannelli senza dirlo.
+          Sopra la tela e non di fianco, perche' di fianco vorrebbe dire
+          rimettere la colonna. */}
+      {pannello && <div className="sc-pannello">{pannello}</div>}
 
       {/* In basso: la mascotte a sinistra, il tasto a destra. Sopra la fila
           dei servizi, che sta sotto di loro. */}

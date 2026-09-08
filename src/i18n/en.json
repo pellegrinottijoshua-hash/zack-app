@@ -218,7 +218,8 @@
       "label": "Tidy the result",
       "help": "Makes the file lighter: fewer decimals in the paths and fewer stray specks, with the same look."
     },
-    "working": "Turning pixels into shapes…"
+    "working": "Turning pixels into shapes…",
+    "openEditor": "Open in the editor"
   },
   "editor": {
     "edit": "Edit",
