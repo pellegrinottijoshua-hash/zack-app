@@ -569,10 +569,16 @@ export default function Brain({
               </div>
             )}
 
-            {/* L'icona di un documento. Su una tela con venti documenti è
-                l'unica cosa che si legge senza avvicinarsi — il nome no, è
-                troppo piccolo, e sono tutti .md. */}
-            {assetScelto && KIND_TESTO.includes(assetScelto.kind) && (
+            {/* L'icona di un file. Su una tela con venti file è l'unica cosa
+                che si legge senza avvicinarsi — il nome no, è troppo piccolo.
+
+                Era riservata ai `.md`, dietro `KIND_TESTO.includes(kind)`.
+                Richiesta del committente del 2026-09-04: «deve essere
+                possibile aggiungere anche un file e dargli un'icona». Era
+                costruito e chiuso a chiave — `iconaDocumento` leggeva
+                `meta.icona` per QUALUNQUE asset, il selettore esisteva, e
+                mancava solo il permesso. */}
+            {assetScelto && (
               <div className="brain-icone">
                 {ICONE_DOCUMENTO.map((nome) => (
                   <button

@@ -177,3 +177,28 @@ test('le icone si disegnano come contorni, non come macchie', () => {
   assert.match(tag, /fill="none"/, 'Icon.jsx non dichiara fill="none": i contorni si riempiono di nero');
   assert.match(tag, /stroke="currentColor"/, 'Icon.jsx non dichiara lo stroke: i contorni spariscono');
 });
+
+test('l’icona si sceglie per qualunque file, non solo per i .md', () => {
+  /*
+   * `iconaDocumento(asset)` legge `asset.meta.icona` per QUALUNQUE asset, e il
+   * selettore esisteva — ma era dietro `KIND_TESTO.includes(kind)`, e
+   * `KIND_TESTO = ['md']`. Quindi solo i .md potevano avere un'icona, mentre
+   * su una tela con venti file e' proprio l'icona a dire cosa sono.
+   *
+   * Richiesta del committente del 2026-09-04: era costruito e chiuso a chiave.
+   */
+  const BRAIN = readFileSync(new URL('../src/components/Brain.jsx', import.meta.url), 'utf8');
+  const i = BRAIN.indexOf('brain-icona');
+  assert.notEqual(i, -1, 'il selettore delle icone non esiste piu’');
+  // La finestra risale fino alla condizione che apre il blocco. Larga, perche'
+  // il commento sopra racconta perche' il lucchetto c'era: troppo stretta, e
+  // il test boccerebbe la riga giusta (e' gia' successo, 2026-09-04).
+  const intorno = BRAIN.slice(Math.max(0, i - 900), i);
+  const ultimaCondizione = intorno.lastIndexOf('{assetScelto');
+  assert.notEqual(ultimaCondizione, -1, 'la condizione che apre il selettore non si trova');
+  assert.doesNotMatch(
+    intorno.slice(ultimaCondizione),
+    /KIND_TESTO\.includes\([^)]*\)\s*&&/,
+    'il selettore delle icone e’ ancora riservato ai .md',
+  );
+});

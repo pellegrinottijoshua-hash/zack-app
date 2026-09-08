@@ -78,3 +78,49 @@ test('un documento senza titolo non se ne inventa uno', () => {
   assert.equal(titoloDocumento('solo testo, nessun cancelletto'), null);
   assert.equal(titoloDocumento(''), null);
 });
+
+/*
+ * L'icona per QUALUNQUE file, non solo per i .md.
+ *
+ * Richiesta del committente del 2026-09-04: «deve essere possibile aggiungere
+ * anche un file e dargli un'icona». Era costruito e chiuso a chiave —
+ * `iconaDocumento` leggeva `meta.icona` per qualunque asset, il selettore
+ * esisteva, ma stava dietro `KIND_TESTO.includes(kind)` e `KIND_TESTO` e'
+ * `['md']`.
+ */
+
+test('un file qualunque senza icona non finisce sulla stessa di tutti', () => {
+  /*
+   * E' la meta' che il piano segnalava e che sarebbe stata facile saltare:
+   * togliere il lucchetto senza toccare il ripiego vuol dire che dieci file
+   * su una tela diventano dieci cartelle identiche — cioe' esattamente il
+   * difetto che questo lavoro doveva risolvere, spostato di un passo.
+   */
+  const di = (kind) => iconaDocumento(makeAsset({ name: `x.${kind}`, kind, bytes: 1 }));
+  assert.equal(di('wav'), 'wave', 'un audio dovrebbe suonare, non essere una cartella');
+  assert.equal(di('mp4'), 'film');
+  assert.equal(di('png'), 'image');
+  assert.notEqual(di('wav'), di('mp4'), 'due tipi diversi con la stessa icona');
+  assert.notEqual(di('mp4'), di('png'));
+});
+
+test('l’icona scelta a mano vince sempre sul ripiego per tipo', () => {
+  // Il ripiego e' un punto di partenza, non una regola: chi mette la stella su
+  // un audio la vuole li'.
+  const a = makeAsset({ name: 'urlo.wav', kind: 'wav', bytes: 1, meta: { icona: 'stella' } });
+  assert.equal(iconaDocumento(a), 'stella');
+});
+
+test('un tipo che non conosciamo ha comunque un’icona', () => {
+  /*
+   * Un buco nel disegno resta peggio di una scelta banale.
+   *
+   * Non passa da `makeAsset`, che un tipo sconosciuto lo rifiuta — ed e'
+   * giusto cosi'. Ma `iconaDocumento` legge quello che trova, e cio' che
+   * trova puo' venire da un archivio vecchio: deve rispondere comunque, non
+   * restituire `undefined` e lasciare un buco sulla scheda.
+   */
+  for (const finto of [{ kind: 'zip' }, { kind: undefined }, {}, null]) {
+    assert.ok(ICONE_DOCUMENTO.includes(iconaDocumento(finto)), `niente icona per ${JSON.stringify(finto)}`);
+  }
+});
