@@ -8,6 +8,8 @@ import {
   impulseResponse,
   detectOnsets,
   describeRhythm,
+  NEUTRA,
+  fondiRicetta,
 } from '../src/engine/sound.js';
 
 test('ogni ricetta è completa e traducibile', () => {
@@ -125,4 +127,84 @@ test('il ritmo si descrive in colpi e battute al minuto', () => {
 test('un solo colpo non ha una velocità', () => {
   assert.deepEqual(describeRhythm([{ time: 0.3 }]), { count: 1, bpm: null });
   assert.deepEqual(describeRhythm([]), { count: 0, bpm: null });
+});
+
+/*
+ * Dalla descrizione al suono: il pezzo che mancava.
+ *
+ * `apply` in `useSound` sapeva applicare le sei ricette dal 2026, e NESSUNA
+ * di loro era raggiungibile dall'interfaccia — nessun `sound.apply`, nessuna
+ * `sound.giant.label` in un componente. Il dizionario produce filtri sciolti
+ * (`{semitones: -5}`), la catena Web Audio vuole una ricetta COMPLETA: senza
+ * qualcosa che le unisca, la frase scritta dall'utente non arriva mai alle
+ * casse — «i filtri si muovono» sullo schermo e il suono resta identico.
+ */
+
+test('la ricetta neutra non fa niente, ed è completa', () => {
+  // È la base di chi non sceglie nessun effetto: deve poter passare per la
+  // catena senza cambiare il suono, e senza far esplodere niente.
+  assert.equal(NEUTRA.semitones, 0);
+  assert.equal(NEUTRA.formants, 0);
+  assert.equal(NEUTRA.drive, 0);
+  assert.equal(NEUTRA.reverb.mix, 0, 'la neutra bagnerebbe il suono di riverbero');
+  assert.ok(NEUTRA.reverb.seconds > 0, 'un riverbero di durata zero non si può costruire');
+  assert.ok(NEUTRA.filter?.type, 'senza un filtro la catena non si monta');
+});
+
+test('i filtri del dizionario si sommano alla ricetta scelta', () => {
+  /*
+   * «più grave» su «vento» vuol dire ANCORA più grave, non «grave e basta»:
+   * il tasto imposta uno scostamento, non sostituisce la scelta dell'utente.
+   *
+   * Non su «gigante»: quella e' gia' a -24, cioe' al limite, e sommarci -5
+   * lascia -24. Sbagliavo il test, non il limite — questa riga esiste perche'
+   * il primo tentativo diceva -29 e il codice aveva ragione.
+   */
+  const base = getRecipe('vento');
+  const dopo = fondiRicetta(base, { semitones: -5 });
+  assert.equal(dopo.semitones, base.semitones - 5);
+  assert.equal(dopo.formants, base.formants, 'ha toccato ciò che nessuno gli ha chiesto');
+});
+
+test('un filtro intero sostituisce, non si somma', () => {
+  // Un filtro è un oggetto: sommare un passa-basso a un passa-banda non
+  // vuol dire niente. L'ultimo detto vince.
+  const dopo = fondiRicetta(NEUTRA, { filter: { type: 'bandpass', freq: 1600, q: 1.4 } });
+  assert.equal(dopo.filter.type, 'bandpass');
+  assert.equal(dopo.filter.freq, 1600);
+});
+
+test('fondere non modifica la ricetta di partenza', () => {
+  // Le ricette sono costanti condivise: se `fondiRicetta` le toccasse, la
+  // seconda frase partirebbe dai filtri della prima e nessuno saprebbe perché.
+  const base = getRecipe('radio');
+  const prima = JSON.stringify(base);
+  fondiRicetta(base, { semitones: -12, drive: 0.5 });
+  assert.equal(JSON.stringify(base), prima, 'ha modificato la ricetta di partenza');
+});
+
+test('la distorsione resta in scala anche sommando', () => {
+  /*
+   * `driveCurve` con un valore fuori scala non protesta: restituisce una
+   * curva sbagliata, e il suono esce come uno scoppio. Due frasi «sporca» di
+   * seguito farebbero 1,2 senza questo limite.
+   */
+  const dopo = fondiRicetta(getRecipe('motore'), { drive: 0.9 });
+  assert.ok(dopo.drive <= 1 && dopo.drive >= 0, `distorsione fuori scala: ${dopo.drive}`);
+});
+
+test('l’intonazione non può andare oltre due ottave', () => {
+  /*
+   * Oltre, `playbackRate` allunga la clip di sedici volte: non è un effetto,
+   * è un file che non finisce più. «Gigante» e' gia' esattamente al limite,
+   * quindi e' il caso giusto: sommarci altro non deve portarlo piu' giu'.
+   */
+  const giu = fondiRicetta(getRecipe('gigante'), { semitones: -12 });
+  assert.equal(giu.semitones, -24, `intonazione fuori scala: ${giu.semitones}`);
+});
+
+test('senza filtri da fondere la ricetta resta quella scelta', () => {
+  const base = getRecipe('mostro');
+  assert.deepEqual(fondiRicetta(base, {}), { ...base });
+  assert.deepEqual(fondiRicetta(base, null), { ...base });
 });

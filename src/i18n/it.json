@@ -38,6 +38,14 @@
       "help": "Taglia una clip, estrai i fotogrammi, togli lo sfondo. Tutto sul tuo computer."
     }
   },
+  "menu": {
+    "nota": "Nota",
+    "gruppo": "Gruppo",
+    "file": "Un file",
+    "registra": "Registra",
+    "aggiungi": "Aggiungi",
+    "effetto": "Un effetto"
+  },
   "drop": {
     "title": "Trascina qui un'immagine",
     "hint": "PNG, JPG o WebP, anche file di stampa grandi. Non lascia questo computer.",
@@ -454,6 +462,11 @@
     "startAlmeno": "almeno {wait} di attesa"
   },
   "sound": {
+    "base": {
+      "neutra": "Naturale"
+    },
+    "claim": "Registra la tua voce o portane una, e trasformala.",
+    "saveVoice": "Salva questa voce",
     "record": "Registra",
     "again": "Registra di nuovo",
     "stop": "Ferma",
@@ -507,7 +520,15 @@
     "scordaRitmo": "Scorda il ritmo",
     "ascolta": "Ascolta",
     "suona": "Sta suonando…",
-    "salva": "Salva in libreria"
+    "salva": "Salva in libreria",
+    "saved": "Voce salvata in libreria.",
+    "descrivi": "Cosa vuoi ottenere",
+    "descriviAiuto": "Scrivilo a parole: «più calda», «meno sibilante», «da radio». Quello che imposta resta modificabile a mano.",
+    "capito": "Ho capito: {parole}.",
+    "nonCapito": "Non conosco: {parole}. Il resto l'ho applicato.",
+    "nienteCapito": "Non ho riconosciuto nessuna parola, quindi non ho toccato niente.",
+    "contraddizione": "«{a}» e «{b}» chiedono il contrario: ho applicato tutt’e due, guarda tu quale tenere.",
+    "illeggibile": "Non riesco a leggere questo file audio. Il browser non lo apre: potrebbe essere incompleto, oppure non essere un file audio."
   },
   "finish": {
     "title": "Prima della stampa",
@@ -632,6 +653,14 @@
     "help": "I comandi che non servono all'uso normale. Restano aperti se li lasci aperti."
   },
   "brain": {
+    "pacco": "Fai un pacco",
+    "riordina": {
+      "gruppi": "Per gruppi",
+      "tipo": "Per tipo",
+      "compatta": "Compatta",
+      "frecce": "Segui le frecce"
+    },
+    "claim": "Butta giù tutto: note, gruppi, i tuoi file. Poi il tasto mette in ordine.",
     "add": {
       "note": "Nota",
       "group": "Gruppo",

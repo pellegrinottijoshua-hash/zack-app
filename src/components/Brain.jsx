@@ -3,8 +3,6 @@ import { t } from '../i18n/index.js';
 import { KIND_AUDIO, KIND_VIDEO, KIND_TESTO, ICONE_DOCUMENTO, iconaDocumento, anteprimaTesto, kindFromFile } from '../store/model.js';
 import {
   nuovoAsset,
-  nuovaNota,
-  nuovoCerchio,
   nuovaFreccia,
   muovi,
   aggiorna,
@@ -198,14 +196,34 @@ function Documento({ asset, leggi, onSalva, onScarica, onChiudi }) {
   );
 }
 
-export default function Brain({ items, assets, leggi, onChange, onUse, onImport, onPacco, onApriPacco, onSalvaDoc, onIcona, onFoto, onScarica }) {
+export default function Brain({
+  items,
+  assets,
+  leggi,
+  onChange,
+  onUse,
+  onImport,
+  onPacco,
+  onApriPacco,
+  onSalvaDoc,
+  onIcona,
+  onFoto,
+  onScarica,
+  /*
+   * La freccia in corso arriva da FUORI: il comando ora e' un cerchio
+   * dell'impianto, come i tre gesti di FilmLab. Tenerne anche uno qui dentro
+   * vorrebbe dire due comandi per la stessa cosa, e il secondo che si accende
+   * senza che il primo se ne accorga.
+   */
+  collega,
+  onCollega,
+}) {
   const [scelto, setScelto] = useState(null);
   /* Il documento aperto a tutto schermo sopra la tela. Non è un secondo
      stato del prodotto: è una lettura, e si chiude con Esc come ogni altro
      pannello che copre il lavoro. */
   const [aperto, setAperto] = useState(null);
   const [vista, setVista] = useState({ x: 40, y: 40, z: 1 });
-  const [collega, setCollega] = useState(null);
   const piano = useRef(null);
   const preso = useRef(null);
 
@@ -265,7 +283,7 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
   useEffect(() => {
     const tasti = (e) => {
       if (e.key === 'Escape') {
-        setCollega(null);
+        onCollega(null);
         setScelto(null);
       }
       if ((e.key === 'Backspace' || e.key === 'Delete') && scelto) {
@@ -276,7 +294,7 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
     };
     document.addEventListener('keydown', tasti);
     return () => document.removeEventListener('keydown', tasti);
-  }, [items, scelto, onChange]);
+  }, [items, scelto, onChange, onCollega]);
 
   const oggetto = items.find((o) => o.id === scelto) || null;
   const assetScelto = oggetto?.t === 'asset' ? perId.get(oggetto.assetId) : null;
@@ -285,22 +303,13 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
   return (
     <div className="brain">
       {/* Una riga sola di comandi: se un giorno non ci stanno, il problema è
-          la fila, non la riga. */}
+          la fila, non la riga.
+
+          Nota, gruppo e freccia non sono più qui: le prime due stanno nel `+`
+          dell'impianto, la terza è un cerchio a lato. Lasciarle anche qui
+          sarebbe stato lo stesso comando in due posti — e il giorno che ne
+          cambia uno solo, due comandi che fanno cose diverse. */}
       <div className="brain-barra">
-        <button onClick={() => aggiungi((d) => nuovaNota({ ...d }))}>
-          <Icon name="nota" draw /> {t('brain.add.note')}
-        </button>
-        <button onClick={() => aggiungi((d) => nuovoCerchio({ ...d }))}>
-          <Icon name="gruppo" draw /> {t('brain.add.group')}
-        </button>
-        <button
-          aria-pressed={Boolean(collega)}
-          disabled={items.filter((o) => o.t !== 'freccia').length < 2}
-          onClick={() => setCollega(collega ? null : { da: null })}
-        >
-          <Icon name="freccia" draw /> {t('brain.add.arrow')}
-        </button>
-        <span className="brain-spazio" />
         <button onClick={centra} disabled={items.length === 0}>
           {t('brain.center')}
         </button>
@@ -332,9 +341,12 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
           {t('brain.foto')}
         </button>
 
+        {/* Si chiamava «Zack», e adesso che Brain sta nell'impianto c'e' un
+            tasto Zack vero a due dita da qui che fa tutt'altro. Un tasto si
+            chiama come la cosa che fa: questo fa un pacco. */}
         <button className="brain-zack" disabled={items.length === 0} onClick={onPacco}>
           <Icon name="feather" draw />
-          {t('zack.label')}
+          {t('brain.pacco')}
         </button>
       </div>
 
@@ -392,7 +404,7 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
           onPointerDown={(e) => {
             if (e.target === e.currentTarget || e.target.classList.contains('brain-tela')) {
               setScelto(null);
-              setCollega(null);
+              onCollega(null);
             }
           }}
         >
@@ -473,10 +485,10 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
                       // il tasto ogni volta è una tassa. Si esce con Esc o
                       // ripremendo FRECCIA.
                       e.stopPropagation();
-                      if (!collega.da) setCollega({ da: o.id });
+                      if (!collega.da) onCollega({ da: o.id });
                       else if (collega.da !== o.id) {
                         onChange([...items, nuovaFreccia({ da: collega.da, a: o.id })]);
-                        setCollega({ da: null });
+                        onCollega({ da: null });
                       }
                       return;
                     }
@@ -557,10 +569,16 @@ export default function Brain({ items, assets, leggi, onChange, onUse, onImport,
               </div>
             )}
 
-            {/* L'icona di un documento. Su una tela con venti documenti è
-                l'unica cosa che si legge senza avvicinarsi — il nome no, è
-                troppo piccolo, e sono tutti .md. */}
-            {assetScelto && KIND_TESTO.includes(assetScelto.kind) && (
+            {/* L'icona di un file. Su una tela con venti file è l'unica cosa
+                che si legge senza avvicinarsi — il nome no, è troppo piccolo.
+
+                Era riservata ai `.md`, dietro `KIND_TESTO.includes(kind)`.
+                Richiesta del committente del 2026-09-04: «deve essere
+                possibile aggiungere anche un file e dargli un'icona». Era
+                costruito e chiuso a chiave — `iconaDocumento` leggeva
+                `meta.icona` per QUALUNQUE asset, il selettore esisteva, e
+                mancava solo il permesso. */}
+            {assetScelto && (
               <div className="brain-icone">
                 {ICONE_DOCUMENTO.map((nome) => (
                   <button

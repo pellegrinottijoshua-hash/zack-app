@@ -1,5 +1,7 @@
 import scontorna from './scontorna.js';
 import filmato from './filmato.js';
+import brain from './brain.js';
+import vocale from './vocale.js';
 
 /**
  * I descrittori dei servizi: dove vive il comportamento di ognuno.
@@ -9,7 +11,18 @@ import filmato from './filmato.js';
  * che non compare mai non solleva niente. Va dove i test la vedono, in Node.
  * Stessa ragione di `ricette.js`, `holes.js`, `keying.js`.
  */
-export const DESCRITTORI = { scontorna, filmato };
+/*
+ * La chiave è l'`id` dentro il descrittore, e un test lo verifica.
+ *
+ * ⚠️ **Registrare un descrittore È il cablaggio**, non un passo prima: la
+ * riga `DESCRITTORI[tool] ? <Piano>` in `App.jsx` è l'interruttore che porta
+ * un servizio dentro l'impianto. Registrarne uno prima che i suoi gesti
+ * esistano vuol dire cerchi che si accendono e non fanno niente — il difetto
+ * del righello del 2026-09-04 — e il test «ogni strumento dichiarato ha un
+ * gesto che lo esegue» lo rifiuta, giustamente. Il Vocale (`vocale.js`, id
+ * `suono`) entra qui insieme ai suoi gesti, non prima.
+ */
+export const DESCRITTORI = { scontorna, filmato, brain, suono: vocale };
 
 /**
  * Gli stati in cui uno strumento può comparire. **Lista chiusa.**
@@ -64,6 +77,24 @@ export function validaDescrittore(d) {
       throw new Error(`Descrittore ${d.id}, strumento ${s.id}: «${s.quando}» non è uno stato noto.`);
     }
   }
+  /*
+   * Le opzioni del punto oro sono `{id, label}`, non stringhe: la label e' una
+   * chiave i18n, e senza di lei il componente condiviso dovrebbe indovinare il
+   * prefisso — cioe' avere dentro una regola di UN servizio. Ci ha provato:
+   * `t(`brain.riordina.${o}`)` scritto in `Piano.jsx`, e il Vocale avrebbe
+   * mostrato «sound.riordina.gigante».
+   */
+  for (const o of d.tasto?.opzioni || []) {
+    if (!o?.id || !o?.label) {
+      throw new Error(`Descrittore ${d.id}: un'opzione senza «id» o «label».`);
+    }
+  }
+  if (d.tasto?.opzioni && !d.tasto.opzioni.some((o) => o.id === d.tasto.predefinita)) {
+    // Una predefinita che non e' fra le opzioni vuol dire nessuna pastiglia
+    // accesa all'apertura, e il tasto che fa una cosa che nessuno ha scelto.
+    throw new Error(`Descrittore ${d.id}: «${d.tasto.predefinita}» non è fra le opzioni.`);
+  }
+
   const quanti = d.accetta?.quanti;
   if (!Number.isInteger(quanti) || quanti < 1) {
     throw new Error(`Descrittore ${d.id}: «accetta.quanti» deve essere un intero ≥ 1.`);

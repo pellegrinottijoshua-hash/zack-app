@@ -7,6 +7,8 @@ import {
   validaDescrittore,
   DESCRITTORI,
 } from '../src/servizi/index.js';
+import it from '../src/i18n/it.json' with { type: 'json' };
+import en from '../src/i18n/en.json' with { type: 'json' };
 
 /*
  * Il descrittore di un servizio: cosa accetta il `+`, cosa fa il tasto Zack,
@@ -59,6 +61,28 @@ test('ogni descrittore registrato e’ valido', () => {
   for (const [id, d] of Object.entries(DESCRITTORI)) {
     assert.doesNotThrow(() => validaDescrittore(d), `${id} non passa il validatore`);
     assert.equal(d.id, id, `${id}: l’id dentro non combacia con la chiave`);
+  }
+});
+
+test('ogni etichetta di ogni descrittore esiste in tutt’e due le lingue', () => {
+  /*
+   * `claim` e `label` sono CHIAVI i18n, non testo. Una scritta storta non fa
+   * fallire niente: `t()` restituisce la chiave, e sullo schermo compare
+   * «sound.saveVoice» sotto un'icona. E' il tipo di difetto che si nota solo
+   * guardando la sezione giusta nella lingua giusta — cioe' quasi mai.
+   */
+  const at = (dict, key) => key.split('.').reduce((o, p) => (o == null ? o : o[p]), dict);
+  for (const [id, d] of Object.entries(DESCRITTORI)) {
+    const opzioni = (d.tasto.opzioni || []).map((o) => o.label);
+    for (const chiave of [d.claim, ...d.strumenti.map((s) => s.label), ...opzioni]) {
+      for (const [lang, dict] of [['it', it], ['en', en]]) {
+        assert.equal(
+          typeof at(dict, chiave),
+          'string',
+          `${id}: la chiave «${chiave}» non esiste in ${lang}`,
+        );
+      }
+    }
   }
 });
 

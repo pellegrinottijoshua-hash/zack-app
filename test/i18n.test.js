@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { readFileSync, readdirSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import it from '../src/i18n/it.json' with { type: 'json' };
 import en from '../src/i18n/en.json' with { type: 'json' };
@@ -182,4 +183,46 @@ test('esiste un messaggio per il file che davvero non si apre', () => {
     assert.ok(dict.engine.unreadable?.title?.trim(), `manca ${lang}.engine.unreadable.title`);
     assert.ok(dict.engine.unreadable?.body?.trim(), `manca ${lang}.engine.unreadable.body`);
   }
+});
+
+test('ogni chiave scritta a mano nel codice esiste davvero', () => {
+  /*
+   * Il difetto che questo test impedisce di ripetere (2026-09-07): le sei
+   * stringhe del dizionario della voce erano finite dentro `tool.sound` — il
+   * blocco che tiene il NOME del servizio — invece che dentro `sound`. In
+   * tutt'e due le lingue, quindi la prova di parita' non se ne accorgeva: le
+   * chiavi c'erano, erano solo nel posto sbagliato.
+   *
+   * `t()` su una chiave che non esiste restituisce la chiave, apposta e
+   * giustamente: meglio «sound.capito» sullo schermo che una schermata
+   * bianca. Ma nessuno lo vede finche' non apre quella sezione in quella
+   * lingua, cioe' quasi mai. Qui si guarda il sorgente e si chiede a
+   * ciascuna: esisti?
+   *
+   * Solo le chiavi scritte per intero: `t(`sound.par.${k}`)` non si puo'
+   * verificare da qui, e fingere di farlo sarebbe peggio che non provarci.
+   */
+  const dir = new URL('../src/', import.meta.url);
+  const sorgenti = [];
+  const scendi = (d) => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      const u = new URL(e.name + (e.isDirectory() ? '/' : ''), d);
+      if (e.isDirectory()) scendi(u);
+      else if (/\.jsx?$/.test(e.name)) sorgenti.push(u);
+    }
+  };
+  scendi(dir);
+
+  const mancanti = [];
+  for (const f of sorgenti) {
+    const testo = readFileSync(f, 'utf8');
+    for (const m of testo.matchAll(/\bt\(\s*'([a-zA-Z][\w.]*)'/g)) {
+      const chiave = m[1];
+      for (const [lang, dict] of [['it', it], ['en', en]]) {
+        const v = chiave.split('.').reduce((o, p) => (o == null ? o : o[p]), dict);
+        if (typeof v !== 'string') mancanti.push(`${chiave} (${lang}, ${f.pathname.split('/src/')[1]})`);
+      }
+    }
+  }
+  assert.deepEqual(mancanti, [], `chiavi inesistenti:\n  ${mancanti.join('\n  ')}`);
 });

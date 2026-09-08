@@ -43,14 +43,32 @@ export const KIND_IMMAGINE = ['png', 'jpg', 'svg'];
 export const KIND_TESTO = ['md'];
 
 /**
+ * Il ripiego, per tipo di file.
+ *
+ * Non «cartella» per tutti: su una tela con dieci file diventerebbero dieci
+ * icone identiche, cioè il difetto che l'icona esiste per risolvere. Un audio
+ * mostra un'onda, una clip una pellicola, un'immagine un'immagine — e chi
+ * vuole altro lo sceglie, che è il punto.
+ */
+function iconaDelTipo(kind) {
+  if (KIND_AUDIO.includes(kind)) return 'wave';
+  if (KIND_VIDEO.includes(kind)) return 'film';
+  if (KIND_IMMAGINE.includes(kind)) return 'image';
+  return ICONE_DOCUMENTO[0];
+}
+
+/**
  * L'icona di un documento, sempre una.
  *
  * Un buco nel disegno è peggio di una scelta banale: la scheda resterebbe
  * vuota proprio nel punto in cui l'occhio cerca di che cosa parla il file.
+ *
+ * La scelta a mano vince sempre: il ripiego è un punto di partenza, non una
+ * regola, e chi mette la stella su un audio la vuole lì.
  */
 export function iconaDocumento(asset) {
   const scelta = asset?.meta?.icona;
-  return isFolderIcon(scelta) ? scelta : ICONE_DOCUMENTO[0];
+  return isFolderIcon(scelta) ? scelta : iconaDelTipo(asset?.kind);
 }
 
 /**
@@ -270,6 +288,18 @@ export const FOLDER_ICONS = [
   'occhio',
   'tag',
   'cerchio',
+  /*
+   * Le tre dei tipi. Sono arrivate quando l'icona ha smesso di essere una cosa
+   * dei soli `.md`: senza di loro un audio, una clip e un'immagine potevano
+   * scegliere fra otto simboli che non dicono cosa sono, e il ripiego li
+   * faceva finire tutti su «cartella».
+   *
+   * Sono gia' disegnate in `lib/icons.js` — le usano i servizi — quindi qui
+   * non si aggiunge un disegno, si toglie un divieto.
+   */
+  'wave',
+  'film',
+  'image',
 ];
 
 export function isFolderColor(c) {

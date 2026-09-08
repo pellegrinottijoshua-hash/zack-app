@@ -58,6 +58,12 @@ export default function Piano({
   onModello,
   onScarica,
   puoiScaricare,
+  /** Il menu del `+`, aperto: un momento, non uno stato del prodotto. */
+  menu,
+  onMenu,
+  /** L'opzione scelta nel punto oro, per i servizi che ne dichiarano. */
+  opzione,
+  onOpzione,
   children,
 }) {
   const [aperto, setAperto] = useState(false);
@@ -164,6 +170,20 @@ export default function Piano({
         </div>
       )}
 
+      {/* Il menu del `+`, per i servizi che non prendono un file ma una
+          scelta: su una tela non si «aggiunge un file», si sceglie cosa
+          mettere. E' un MOMENTO e non uno stato — si apre, si sceglie, e non
+          resta niente aperto — come l'ovale del punto oro. */}
+      {menu && servizio.accetta.menu && (
+        <div className="sc-menu" role="menu">
+          {servizio.accetta.menu.map((voce) => (
+            <button key={voce} role="menuitem" className="pastiglia" onClick={() => onMenu(voce)}>
+              {t(`menu.${voce}`)}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* La tela. Vuota c'è il `+` e basta: è il gesto con cui si comincia, ed
           è grande perché intorno non c'è nient'altro. */}
       <div className="sc-tela">
@@ -239,11 +259,14 @@ export default function Piano({
         <button
           className="zack-oval"
           aria-label={t('zack.label')}
-          title={vuota ? t('zack.empty') : t('zack.title')}
+          title={servizio.tasto.azione === 'catena' && vuota ? t('zack.empty') : t('zack.title')}
           /* Col piano vuoto il tasto NON e' spento: e' il secondo modo di
              cominciare, insieme al `+`. Si spegne solo quando c'e' un file e
              la catena e' vuota — li' non c'e' niente da fare. */
-          disabled={busy || (!vuoto && quanti <= 1 && vuota)}
+          /* La catena vuota spegne il tasto solo di chi HA una catena: su
+             Brain `piano` e' sempre nullo — non c'e' un'immagine da
+             misurare — e questa riga l'avrebbe spento per sempre. */
+          disabled={busy || (servizio.tasto.azione === 'catena' && !vuoto && quanti <= 1 && vuota)}
           onClick={vuoto ? onPick : onZack}
         >
           <img
@@ -310,22 +333,46 @@ export default function Piano({
               </div>
             )}
 
-            <div className="sc-catena">
-              {PASSI.map((passo) => {
-                const acceso = ricetta.includes(passo);
-                return (
+            {/* La catena e' dello scontorno e di chi gli somiglia. Su Brain
+                «Scontorna · Ingrandisci · Vettorializza» sarebbero tre
+                pastiglie che non toccano niente: il tasto li' riordina. */}
+            {servizio.tasto.azione === 'catena' && (
+              <div className="sc-catena">
+                {PASSI.map((passo) => {
+                  const acceso = ricetta.includes(passo);
+                  return (
+                    <button
+                      key={passo}
+                      className="pastiglia"
+                      aria-pressed={acceso}
+                      title={t(`zack.stepHelp.${passo}`)}
+                      onClick={() => onRicetta(commutaPasso(ricetta, passo))}
+                    >
+                      {t(`zack.step.${passo}`)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Le opzioni del tasto, per chi non ha una catena: su Brain sono
+                le quattro regole di riordino. Rispondono alla stessa domanda
+                del punto oro — «cosa fara' quando lo premo» — quindi stanno
+                dove sta gia' quella risposta. */}
+            {servizio.tasto.opzioni && (
+              <div className="sc-fattori" role="group" aria-label={t('zack.what')}>
+                {servizio.tasto.opzioni.map((o) => (
                   <button
-                    key={passo}
+                    key={o.id}
                     className="pastiglia"
-                    aria-pressed={acceso}
-                    title={t(`zack.stepHelp.${passo}`)}
-                    onClick={() => onRicetta(commutaPasso(ricetta, passo))}
+                    aria-pressed={opzione === o.id}
+                    onClick={() => onOpzione(o.id)}
                   >
-                    {t(`zack.step.${passo}`)}
+                    {t(o.label)}
                   </button>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
