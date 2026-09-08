@@ -5192,3 +5192,60 @@ body {
   background: var(--inchiostro);
   color: var(--fondo);
 }
+
+/* ══ Il desktop (contratto § 8) ══════════════════════════════════════════
+   Stesso impianto, e la mappa di § 5.1 vale identica. Due differenze sole:
+
+   - i servizi passano dalla fila in basso alla colonna a sinistra — e quello
+     lo fa gia' il `.toolrail`, che sopra i 760 px e' una colonna;
+   - **il tasto Zack sta nella tela in alto a destra, medio-grande**, sotto la
+     striscia, che resta di libreria, faccia e scarica.
+
+   Gli strumenti restano ATTACCATI al tasto, in colonna sotto di lui: e' la
+   stessa forma che hanno su mobile, ruotata dal basso al lato. Il bordo destro
+   diventa una cosa sola — chi fa il lavoro, e con cosa lo si corregge.
+
+   La mascotte resta in basso a sinistra della tela, accanto alla colonna dei
+   servizi: e' l'unica cosa che NON si sposta, ed e' voluto — e' il punto fermo
+   che dice che e' la stessa schermata. */
+@media (min-width: 761px) {
+  .sc-tasto {
+    /* Sotto `.sc-scarica`, che sta a filo in alto ed e' 46 px. */
+    top: 58px;
+    right: 0;
+    bottom: auto;
+    /* «Medio grande» (committente, 2026-09-04): piu' piccolo dei 340 px che
+       aveva in basso, dove riempiva l'angolo, e piu' grande di un pulsante. */
+    width: clamp(200px, 20vw, 260px);
+  }
+
+  /* Il pannello del punto oro si apre in GIU', non in su: da un tasto in alto
+     si aprirebbe fuori dalla tela, e la meta' di sopra finirebbe sotto la
+     striscia nera. */
+  .sc-tuo {
+    top: calc(100% + 10px);
+    bottom: auto;
+  }
+
+  /* La colonna degli strumenti scende da sotto il tasto invece di partire
+     dall'alto: attaccata a lui, non parcheggiata al bordo.
+
+     Il valore e' calcolato, non indovinato: 58 (dove comincia il tasto) + la
+     sua altezza — larghezza per 670/1200, che e' la proporzione
+     dell'immagine — + 14 di respiro. */
+  .sc-strumenti[data-lato='destra'] {
+    top: calc(58px + clamp(200px, 20vw, 260px) * 0.558 + 14px);
+  }
+
+  /* A sinistra non c'e' nessun tasto sopra: la colonna resta dove sta su
+     mobile, sotto il `+` e la croce dell'angolo. */
+  .sc-strumenti[data-lato='sinistra'] {
+    top: 112px;
+  }
+
+  /* Lo spazio in fondo serviva al tasto, che ora non e' piu' li'. Resta
+     quello della mascotte, che in basso a sinistra ci sta ancora. */
+  .sc {
+    padding-bottom: clamp(60px, 9vh, 96px);
+  }
+}
