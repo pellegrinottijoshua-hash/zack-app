@@ -66,6 +66,29 @@ export const ICONS = {
   film: ['M3.5 5h17v14h-17z', 'M8.5 5v14', 'M15.5 5v14', 'M3.5 9.5h5', 'M15.5 9.5h5', 'M3.5 14.5h5', 'M15.5 14.5h5'],
   wave: ['M3.5 12h2', 'M8 7.5v9', 'M12 4v16', 'M16 8.5v7', 'M18.5 12h2'],
 
+  /*
+   * Gli effetti sonori: uno scoppio.
+   *
+   * Non un'altra onda. `wave` e' la VOCE — un'onda registrata — e le due
+   * sezioni stanno una accanto all'altra nella fila dei servizi: due icone
+   * parenti li' vuol dire due cerchi che si scambiano, cioe' il difetto che
+   * `icons.js` esiste per non ripetere.
+   *
+   * Uno scoppio invece dice cosa fa il laboratorio: tonfi, impatti, passi,
+   * whoosh. Otto raggi e non quattro, perche' quattro sono un sole.
+   */
+  scoppio: [
+    cerchio(12, 12, 3),
+    'M12 3.5v2.2',
+    'M12 18.3v2.2',
+    'M3.5 12h2.2',
+    'M18.3 12h2.2',
+    'M6 6l1.6 1.6',
+    'M16.4 16.4l1.6 1.6',
+    'M18 6l-1.6 1.6',
+    'M7.6 16.4l-1.6 1.6',
+  ],
+
   // ---- il tasto Zack ----------------------------------------------------
   // La piuma. È l'unico oggetto del canone che entra nell'interfaccia come
   // segno, ed è quello giusto: è il potere del personaggio, non la sua faccia.

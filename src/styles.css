@@ -4782,8 +4782,9 @@ body {
   cursor: pointer;
 }
 /* Come per `.brain-barra`: dentro l'impianto il `+` e la croce stanno in alto
-   a sinistra, e una fila che comincia a filo li finisce sotto. */
-.sc .sound-famiglie {
+   a sinistra (`.sc-angolo`, 46px), e ciò che comincia a filo ci finisce sotto.
+   Misurato: la croce copriva la prima manopola. */
+.sc .sound-manopole {
   padding-left: 62px;
 }
 

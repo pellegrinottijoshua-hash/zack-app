@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { DESCRITTORI } from '../src/servizi/index.js';
 
 /*
@@ -217,4 +217,20 @@ test('non restano liste di id: tutti i servizi passano dal descrittore', () => {
    */
   const liste = APP.match(/\[[^\]]*'(?:brain|suono)'[^\]]*\]\.includes\(tool\)/g) || [];
   assert.deepEqual(liste, [], `restano ${liste.length} liste di id in App.jsx`);
+});
+
+test('ogni faccia della striscia e’ un file che esiste davvero', () => {
+  /*
+   * Il percorso e' costruito a mano — `/zack/servizi/${tool}-320.webp` — e un
+   * id senza la sua immagine da' un riquadro rotto in cima allo schermo,
+   * senza un errore in console. E' successo il 2026-09-08 dividendo «suono»
+   * in due: «effetti» e' entrato nell'elenco e ha chiesto un file mai
+   * disegnato.
+   */
+  const elenco = APP.match(/const FACCIA = new Set\(\[([^\]]*)\]\)/);
+  assert.ok(elenco, 'FACCIA non esiste piu’ in App.jsx');
+  for (const id of elenco[1].match(/'([a-z]+)'/g).map((x) => x.slice(1, -1))) {
+    const f = new URL(`../public/zack/servizi/${id}-320.webp`, import.meta.url);
+    assert.ok(existsSync(f), `la striscia mostrerebbe «${id}», che non ha un'immagine`);
+  }
 });

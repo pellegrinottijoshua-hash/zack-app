@@ -1,38 +1,27 @@
 /**
  * Il vocale, dichiarato.
  *
- * ⚠️ L'`id` è **`suono`**, non «vocale»: è la chiave che `App.jsx` usa in
- * `tool === 'suono'` e che `services.js` dichiara. Registrato con l'altro
- * nome, `DESCRITTORI[tool]` non l'avrebbe mai trovato — e il servizio
- * sarebbe restato fuori dall'impianto senza che niente si lamentasse. Il
- * file si chiama `vocale.js` perché è il nome della sezione per chi la usa;
- * l'`id` è il nome che il codice conosce già, e cambiarlo sarebbe stato un
- * rinominare travestito da aggiungere.
+ * Si chiamava `suono` ed era **due mestieri su una schermata sola**:
+ * registrare una voce e trasformarla, e costruire un tonfo da zero. Divisi il
+ * 2026-09-08 su decisione del committente — qui resta la voce, gli effetti
+ * stanno in `effetti.js`.
  *
  * Il `+` dà due scelte perché sono due gesti diversi: **registrare** apre il
  * microfono, **aggiungere** prende un file che hai già. Metterli in uno solo
  * avrebbe voluto dire scegliere al posto dell'utente quale dei due intendeva.
+ * La terza voce, «un effetto», se n'è andata con gli effetti: era li' perché
+ * il laboratorio abitava questa schermata, e ora ha la sua.
  *
  * Il tasto imposta i filtri dalla descrizione scritta in basso, con
  * `engine/dizionarioVoce.js`: locale, istantaneo, e onesto su ciò che non ha
  * capito. Niente modelli, quindi niente attesa e niente costo.
  */
 export default {
-  id: 'suono',
+  id: 'vocale',
   claim: 'sound.claim',
 
-  /*
-   * Tre voci, non due. Le prime due sono i due gesti del contratto § 7.3 —
-   * registrare apre il microfono, aggiungere prende una voce che hai gia'.
-   *
-   * La terza c'e' perche' il servizio ha DUE meta': la voce, e il laboratorio
-   * degli effetti sintetizzati (`engine/synth.js`), che non ha bisogno di
-   * nessuna registrazione. Senza questa voce, entrando nell'impianto il
-   * laboratorio sarebbe sparito dietro un «prima registra qualcosa» che non
-   * gli serve — una funzione persa in silenzio mentre si sistemava la
-   * schermata.
-   */
-  accetta: { menu: ['registra', 'aggiungi', 'effetto'], quanti: 1 },
+  /** I due gesti del contratto § 7.3, e nessun terzo. */
+  accetta: { menu: ['registra', 'aggiungi'], quanti: 1 },
 
   tasto: {
     azione: 'filtriDaDescrizione',

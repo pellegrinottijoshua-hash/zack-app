@@ -25,9 +25,13 @@
       "label": "Video",
       "help": "Generate a video from a description and your references."
     },
-    "sound": {
-      "label": "Sound",
-      "help": "Build a sound effect by imitating it with your voice and describing it."
+    "vocale": {
+      "label": "Voice",
+      "help": "Record your voice, or bring one in, and transform it: deeper, radio, far away."
+    },
+    "effetti": {
+      "label": "Effects",
+      "help": "Build a sound effect from scratch: a thud, a whoosh, footsteps. No files to hunt for."
     },
     "brain": {
       "label": "Brain",
@@ -44,7 +48,8 @@
     "file": "A file",
     "registra": "Record",
     "aggiungi": "Add",
-    "effetto": "A sound effect"
+    "costruisci": "Build one",
+    "ritmo": "Tap a rhythm"
   },
   "drop": {
     "title": "Drop an image here",
@@ -528,7 +533,8 @@
     "nonCapito": "I don't know: {parole}. I applied the rest.",
     "nienteCapito": "I didn't recognise a single word, so I changed nothing.",
     "contraddizione": "“{a}” and “{b}” ask for opposites: I applied both, you pick which to keep.",
-    "illeggibile": "I can't read this audio file. The browser won't open it: it may be incomplete, or not an audio file at all."
+    "illeggibile": "I can't read this audio file. The browser won't open it: it may be incomplete, or not an audio file at all.",
+    "registrando": "Recording… tap the rhythm, then press again."
   },
   "finish": {
     "title": "Before printing",
@@ -738,5 +744,8 @@
     "tolto": "Background dropped · {n} islands kept",
     "toltoDubbio": "Background dropped, but no islands kept: look at a frame before using it.",
     "togliOraAttesa": "Remove the background — at least {s}s of waiting"
+  },
+  "effetti": {
+    "claim": "Build a sound effect from scratch. Tap a rhythm with your voice and the effect follows it."
   }
 }

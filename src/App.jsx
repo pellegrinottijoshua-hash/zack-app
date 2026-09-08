@@ -19,6 +19,7 @@ import Piano from './components/Piano.jsx';
 import MaskBrush from './components/MaskBrush.jsx';
 import BatchPanel from './components/BatchPanel.jsx';
 import SoundLab from './components/SoundLab.jsx';
+import VoceLab from './components/VoceLab.jsx';
 import FinishPanel from './components/FinishPanel.jsx';
 import Advanced from './components/Advanced.jsx';
 import Brain from './components/Brain.jsx';
@@ -38,8 +39,9 @@ import { nuovaNota, nuovoCerchio, prossimoPosto } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
 import { leggiDescrizione } from './engine/dizionarioVoce.js';
 import { NEUTRA, fondiRicetta, getRecipe } from './engine/sound.js';
+import { famiglia, genera, suRitmo, SR } from './engine/synth.js';
 import { caricaFileDiProva, deveMostrareProva, segnaProvaVista } from './engine/prova.js';
-import { SERVICES, getService, firstReady } from './services.js';
+import { SERVICES, getService, firstReady, NOMI_VECCHI } from './services.js';
 
 /** La catena salvata per un servizio, o quella di fabbrica se non c'è. */
 function leggiRicetta(servizio) {
@@ -72,7 +74,30 @@ const px = (d) => (d ? `${d.w}×${d.h}` : '—');
  * d'oro dello scontorno, la nota del suono, il tracciato del vettoriale. Sta
  * in cima, e dice dove sei.
  */
-const FACCIA = new Set(['brain', 'scontorna', 'vettorializza', 'filmato', 'suono']);
+/**
+ * La faccia di Zack in cima, una per servizio.
+ *
+ * È un **elenco di file che esistono**, non un insieme di id: era un `Set` e
+ * `/zack/servizi/${tool}-320.webp`, cioè un percorso costruito a mano — alla
+ * divisione del 2026-09-08 «effetti» ci è entrato e ha chiesto un'immagine
+ * che nessuno ha mai disegnato. Un'immagine rotta in cima allo schermo, e
+ * nessun errore in console: si vede solo guardando.
+ *
+ * `effetti` non c'è apposta, e non è una dimenticanza: la sua faccia va
+ * disegnata. Finché non esiste, la striscia resta vuota lì — che è quello che
+ * fa già per i servizi a pagamento.
+ */
+const FACCIA = new Set(['brain', 'scontorna', 'vettorializza', 'filmato', 'vocale']);
+
+/**
+ * I servizi che non lavorano su un file del piano.
+ *
+ * Era `tool !== 'suono'`, cioe' un id scritto a mano — e alla divisione del
+ * 2026-09-08 sarebbe rimasto indietro senza lamentarsi: gli Effetti avrebbero
+ * mostrato il nome di un JPG sopra le loro manopole, che e' esattamente il
+ * difetto gia' costato una volta con `filmato`.
+ */
+const SENZA_FILE = new Set(['vocale', 'effetti']);
 
 const STRATEGIE = {
   mask: 'maschera',
@@ -101,7 +126,7 @@ export default function App() {
   const [tool, setTool] = useState(() => {
     try {
       const chiesto = new URLSearchParams(location.search).get('servizio');
-      const s = SERVICES.find((x) => x.id === chiesto);
+      const s = SERVICES.find((x) => x.id === (NOMI_VECCHI[chiesto] || chiesto));
       return s?.ready ? s.id : 'scontorna';
     } catch {
       return 'scontorna';
@@ -160,7 +185,7 @@ export default function App() {
    * Sta qui e non dentro `SoundLab` per la stessa ragione della regola di
    * Brain: la scelta si fa nel punto oro, che è dell'impianto.
    */
-  const [baseVoce, setBaseVoce] = useState(getDescrittore('suono').tasto.predefinita);
+  const [baseVoce, setBaseVoce] = useState(getDescrittore('vocale').tasto.predefinita);
   /**
    * I filtri impostati dal tasto, come scostamento dalla ricetta scelta.
    *
@@ -170,8 +195,22 @@ export default function App() {
   const [filtriVoce, setFiltriVoce] = useState({});
   /** I filtri di prima, per l'annulla. Una mossa sola, come per la tela. */
   const [filtriDiPrima, setFiltriDiPrima] = useState(null);
-  /** Il laboratorio degli effetti, aperto dal `+` senza passare dal microfono. */
+  /** Le manopole aperte: il `+` degli Effetti le apre senza chiedere un file. */
   const [effettoAperto, setEffettoAperto] = useState(false);
+  /**
+   * L'effetto che si sta costruendo.
+   *
+   * Sta qui e non dentro `SoundLab` perche' il tasto Zack lo SUONA e il
+   * cerchio «un altro cosi'» ne cambia il seme: se lo stato stesse nel
+   * componente, ne' l'uno ne' l'altro potrebbero toccarlo.
+   *
+   * `seme` e' un numero che cambia, non un dado nascosto: lo stesso seme da'
+   * sempre lo stesso suono, quindi cio' che hai appena trovato si ritrova.
+   */
+  const [effetto, setEffetto] = useState(() => {
+    const f = famiglia(getDescrittore('effetti').tasto.predefinita);
+    return { famiglia: f.id, param: { ...f.param }, durata: f.durata, seme: 1 };
+  });
   /**
    * La tela com'era prima dell'ultimo cambiamento.
    *
@@ -358,7 +397,20 @@ export default function App() {
     };
   }, []);
 
-  const sound = useSound();
+  /*
+   * DUE registratori, non uno.
+   *
+   * I due servizi usano il microfono per due cose diverse: il Vocale registra
+   * la MATERIA — la voce che poi si trasforma — e gli Effetti registrano un
+   * RITMO, che serve solo a posizionare le copie di un tonfo. Con un
+   * registratore solo, battere «tum tum tum» negli Effetti riempiva anche il
+   * Vocale, che si sarebbe trovato una voce che nessuno gli ha dato.
+   *
+   * Due istanze vuol dire due AudioContext, e va bene: il commento in
+   * `useSound` mette in guardia dalle DECINE, non da due.
+   */
+  const voce = useSound();
+  const effettiAudio = useSound();
 
   const batch = useBatch({
     engine,
@@ -1308,21 +1360,82 @@ export default function App() {
    * già. Metterli in uno solo avrebbe voluto dire scegliere al posto
    * dell'utente quale dei due intendeva.
    */
-  function menuVocale(voce) {
+  function menuVocale(quale) {
     setMenuPiu(false);
-    if (voce === 'registra') return sound.start();
-    // Il laboratorio degli effetti non ha bisogno di una registrazione: e'
-    // l'altra meta' del servizio, e si apre da sola.
-    if (voce === 'effetto') return setEffettoAperto(true);
+    if (quale === 'registra') return voce.start();
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'audio/*';
     input.onchange = () => {
       const f = input.files?.[0];
-      if (f) sound.apriFile(f);
+      if (f) voce.apriFile(f);
     };
     return input.click();
   }
+
+  /**
+   * Il `+` degli Effetti: da dove parte il suono.
+   *
+   * «Costruisci» apre le manopole sulla famiglia scelta nel punto oro;
+   * «ritmo» apre il microfono per battere il tempo che l'effetto seguira'.
+   * Sono i due modi di cominciare, e nessuno dei due e' «apri un file»:
+   * qui non si porta niente, si fa.
+   */
+  function menuEffetti(quale) {
+    setMenuPiu(false);
+    if (quale === 'ritmo') return effettiAudio.start();
+    return setEffettoAperto(true);
+  }
+
+  /** Il suono di adesso: le manopole più, se c'è, il ritmo battuto. */
+  function costruisciEffetto() {
+    const colpo = genera(effetto.famiglia, {
+      param: effetto.param,
+      durata: effetto.durata,
+      seme: effetto.seme,
+    });
+    const ritmo = effettiAudio.rhythm?.onsets?.length ? effettiAudio.rhythm.onsets : null;
+    return ritmo ? suRitmo(colpo, ritmo) : colpo;
+  }
+
+  async function salvaEffetto() {
+    setNotice(null);
+    await library.save(effettiAudio.comeFile(costruisciEffetto(), SR), {
+      name: `suono-${effetto.famiglia}`,
+      kind: 'wav',
+      meta: { op: 'sound', recipe: effetto.famiglia },
+    });
+    setNotice(t('sound.save'));
+  }
+
+  /**
+   * Chi risponde alle pastiglie del punto oro, per servizio.
+   *
+   * Una mappa e non tre `tool === ...` di fila: il punto oro fa la stessa
+   * domanda a tutti — «cosa farà il tasto quando lo premo» — e chi aggiunge
+   * un servizio nuovo deve trovare UN posto dove rispondere, non tre righe
+   * gemelle sparse fra le props.
+   */
+  const OPZIONE = {
+    brain: { valore: regolaRiordino, cambia: setRegolaRiordino },
+    vocale: { valore: baseVoce, cambia: setBaseVoce },
+    effetti: {
+      valore: effetto.famiglia,
+      // Cambiare famiglia riporta le manopole a quelle di casa sua: le
+      // manopole di «vento» su «click» sarebbero numeri che non vogliono dire
+      // niente, e il suono uscirebbe sbagliato senza che si capisca perche'.
+      cambia: (id) => {
+        const f = famiglia(id);
+        setEffetto({ famiglia: id, param: { ...f.param }, durata: f.durata, seme: 1 });
+      },
+    },
+  };
+
+  /** La ricetta della voce: quella scelta nel punto oro più i filtri del tasto. */
+  const ricettaVoce = fondiRicetta(
+    baseVoce === 'neutra' ? NEUTRA : getRecipe(baseVoce),
+    filtriVoce,
+  );
 
   /** Il tasto imposta, non decide: si fonde con ciò che c'è già. */
   function applicaFiltriVoce(nuovi) {
@@ -1338,7 +1451,7 @@ export default function App() {
    * venga dopo — varianti, cast, clonazione — non ha su cosa appoggiarsi.
    */
   async function salvaVoce() {
-    const blob = sound.voceComeFile();
+    const blob = voce.voceComeFile();
     if (!blob) return;
     await library.save(blob, {
       name: `voce-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}`,
@@ -1359,7 +1472,7 @@ export default function App() {
    */
   async function salvaVoceLavorata() {
     const ricetta = fondiRicetta(baseVoce === 'neutra' ? NEUTRA : getRecipe(baseVoce), filtriVoce);
-    const out = await sound.apply(ricetta);
+    const out = await voce.apply(ricetta);
     if (!out) return;
     await library.save(out.blob, {
       name: `voce-${baseVoce}`,
@@ -1603,27 +1716,24 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               onNotice={setNotice}
               onError={setError}
             />
-          ) : tool === 'suono' ? (
-            <SoundLab
-              sound={sound}
+          ) : tool === 'vocale' ? (
+            <VoceLab
+              sound={voce}
               descrizione={descrizioneVoce}
               onDescrizione={setDescrizioneVoce}
               /* Gia' fusa: la ricetta scelta nel punto oro piu' i filtri che
                  il tasto ha impostato dalla frase. */
-              ricettaVoce={fondiRicetta(
-                baseVoce === 'neutra' ? NEUTRA : getRecipe(baseVoce),
-                filtriVoce,
-              )}
-              onSalvaLavorata={salvaVoceLavorata}
-              onSave={async (blob, recipe) => {
-                setNotice(null);
-                await library.save(blob, {
-                  name: `suono-${recipe.id}`,
-                  kind: 'wav',
-                  meta: { op: 'sound', recipe: recipe.id },
-                });
-                setNotice(t('sound.save'));
-              }}
+              ricetta={ricettaVoce}
+              onSalva={salvaVoceLavorata}
+            />
+          ) : tool === 'effetti' ? (
+            <SoundLab
+              effetto={effetto}
+              onEffetto={setEffetto}
+              ritmo={effettiAudio.rhythm?.onsets?.length ? effettiAudio.rhythm.onsets : null}
+              registrando={effettiAudio.recording}
+              errore={effettiAudio.error}
+              onScordaRitmo={effettiAudio.reset}
             />
           ) : isEditor ? (
             <SvgEditor
@@ -1748,7 +1858,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               dappertutto: chi apriva Filmato si trovava sopra il nome di un
               JPG e il tasto Zack, che avrebbe scontornato l'immagine mentre
               lui guardava una clip. */}
-          {!isEditor && !DESCRITTORI[tool] && tool !== 'suono' && (
+          {!isEditor && !DESCRITTORI[tool] && (
             <StageBar
               file={file}
               image={stats?.image}
@@ -1805,9 +1915,11 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   ? !filmato
                   : tool === 'brain'
                     ? tela.length === 0
-                    : tool === 'suono'
-                      ? !sound.clip && !effettoAperto
-                      : !file && batchFiles.length === 0 && batch.results.length === 0
+                    : tool === 'vocale'
+                      ? !voce.clip
+                      : tool === 'effetti'
+                        ? !effettoAperto && !effettiAudio.rhythm
+                        : !file && batchFiles.length === 0 && batch.results.length === 0
               }
               ricetta={ricetta}
               piano={stats?.image ? pianoZack(ricetta, stats.image) : null}
@@ -1818,11 +1930,15 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               quanti={
                 tool === 'brain'
                   ? tela.length
-                  : tool === 'suono'
-                    ? sound.clip || effettoAperto
+                  : tool === 'vocale'
+                    ? voce.clip
                       ? 1
                       : 0
-                    : batchFiles.length > 1
+                    : tool === 'effetti'
+                      ? effettoAperto || effettiAudio.rhythm
+                        ? 1
+                        : 0
+                      : batchFiles.length > 1
                       ? batchFiles.length
                       : file
                         ? 1
@@ -1855,20 +1971,24 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                     : scegliFile
               }
               menu={menuPiu}
-              onMenu={(voce) => {
-                if (tool === 'suono') return menuVocale(voce);
+              /* Il parametro si chiama `quale` e non `voce`: `voce` è il
+                 registratore del Vocale, e come nome di parametro lo copriva
+                 dentro questo blocco. */
+              onMenu={(quale) => {
+                if (tool === 'vocale') return menuVocale(quale);
+                if (tool === 'effetti') return menuEffetti(quale);
                 setMenuPiu(false);
-                if (voce === 'file') return scegliFile();
+                if (quale === 'file') return scegliFile();
                 // `prossimoPosto` sa dove c'è spazio: due note nate insieme
                 // non devono nascere una sopra l'altra.
                 const dove = prossimoPosto(tela);
                 return cambiaTela([
                   ...tela,
-                  voce === 'gruppo' ? nuovoCerchio({ ...dove }) : nuovaNota({ ...dove }),
+                  quale === 'gruppo' ? nuovoCerchio({ ...dove }) : nuovaNota({ ...dove }),
                 ]);
               }}
-              opzione={tool === 'suono' ? baseVoce : regolaRiordino}
-              onOpzione={tool === 'suono' ? setBaseVoce : setRegolaRiordino}
+              opzione={OPZIONE[tool]?.valore ?? regolaRiordino}
+              onOpzione={OPZIONE[tool]?.cambia ?? setRegolaRiordino}
               /* Togliere il file singolo: senza conferma, perche' e' un
                  gesto piccolo e reversibile — il file sta ancora sul disco
                  dell'utente, e il `+` e' li' accanto. */
@@ -1881,12 +2001,14 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   ? null
                   : tool === 'filmato'
                     ? () => setFilmato(null)
-                    : tool === 'suono'
-                      ? () => {
-                          sound.reset();
-                          setEffettoAperto(false);
-                        }
-                      : reset
+                    : tool === 'vocale'
+                      ? voce.reset
+                      : tool === 'effetti'
+                        ? () => {
+                            effettiAudio.reset();
+                            setEffettoAperto(false);
+                          }
+                        : reset
               }
               /* Il rilascio segue lo stesso instradamento del `+`: se no il
                  trascinamento di una clip su Filmato finirebbe nel percorso
@@ -1899,7 +2021,14 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   : accettaFile(files, { aggiungi: true })
               }
               onZack={() => {
-                if (tool === 'suono') {
+                if (tool === 'effetti') {
+                  // Il tasto SUONA: e' cio' che si vuole da un effetto, e
+                  // premerlo di nuovo lo risuona senza cambiarlo — lo stesso
+                  // seme da' sempre lo stesso suono.
+                  effettiAudio.suona(costruisciEffetto(), SR);
+                  return;
+                }
+                if (tool === 'vocale') {
                   const letto = leggiDescrizione(descrizioneVoce);
                   if (letto.capito.length === 0) {
                     // Non tocca NIENTE: un tasto che indovina su una parola
@@ -1976,7 +2105,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   fotogrammi: () => setGestoFilm('fotogrammi'),
                   sfondo: () => setGestoFilm('sfondo'),
                   freccia: () => setCollegaBrain((v) => (v ? null : { da: null })),
-                  riascolta: sound.riascolta,
+                  riascolta: voce.riascolta,
+                  unAltro: () => setEffetto((e) => ({ ...e, seme: e.seme + 1 })),
+                  ritmo: () => (effettiAudio.recording ? effettiAudio.stop() : effettiAudio.start()),
+                  salvaEffetto,
                   salvaVoce,
                   /*
                    * «Annulla» vuol dire cose diverse su servizi diversi, e va
@@ -1984,13 +2116,14 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                    * su oggetti diversi. Su Brain la tela, sul Vocale i filtri
                    * che il tasto ha appena impostato.
                    */
-                  annulla: tool === 'suono' ? annullaFiltriVoce : annullaTela,
+                  annulla: tool === 'vocale' ? annullaFiltriVoce : annullaTela,
                 };
                 const acceso = {
                   righello: brushOpen && modoPennello === 'righello',
                   restore: brushOpen && modoPennello === 'restore',
                   erase: brushOpen && modoPennello === 'erase',
                   freccia: Boolean(collegaBrain),
+                  ritmo: effettiAudio.recording,
                 };
                 /*
                  * Cosa vuol dire «c'e' qualcosa sul piano» cambia col
@@ -2004,9 +2137,11 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                     ? Boolean(filmato)
                     : tool === 'brain'
                       ? tela.filter((o) => o.t !== 'freccia').length >= 2
-                      : tool === 'suono'
-                        ? Boolean(sound.clip)
-                        : Boolean(file);
+                      : tool === 'vocale'
+                        ? Boolean(voce.clip)
+                        : tool === 'effetti'
+                          ? effettoAperto || Boolean(effettiAudio.rhythm)
+                          : Boolean(file);
                 return strumentiVisibili(getDescrittore(tool), {
                   file: pieno,
                   risultato: result?.kind === 'png',
@@ -2021,7 +2156,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   disabled:
                     Boolean(busy) ||
                     (s.id === 'undo' && history.length === 0) ||
-                    (s.id === 'annulla' && !(tool === 'suono' ? filtriDiPrima : telaDiPrima)),
+                    (s.id === 'annulla' && !(tool === 'vocale' ? filtriDiPrima : telaDiPrima)),
                   onClick: GESTI[s.id],
                 }));
               })()}
@@ -2039,12 +2174,12 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
              guarda. Senza questo la colonna mostrava i comandi del vettoriale
              accanto al laboratorio dei suoni: un pannello che parla di
              un'altra cosa è peggio di un pannello vuoto. */
-          data-vuota={Boolean(DESCRITTORI[tool]) || tool === 'suono' || undefined}
+          data-vuota={Boolean(DESCRITTORI[tool]) || undefined}
         >
           {/* Brain non ha comandi in colonna: i suoi stanno sulla tela, dove
               si guarda. Una colonna di comandi spenti accanto a una lavagna è
               esattamente il rumore che la regola §6.1 vuole togliere. */}
-          {DESCRITTORI[tool] || tool === 'suono' ? null : isEditor ? (
+          {DESCRITTORI[tool] ? null : isEditor ? (
             <>
               <VectorTools
                 editor={editorRef}
@@ -2142,7 +2277,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 </>
               )}
 
-              {tool !== 'suono' && file && (
+              {!SENZA_FILE.has(tool) && file && (
                 <FinishPanel
                   stats={stats}
                   reading={statsReading}

@@ -19,6 +19,11 @@ export const GROUP_PAID = 'paid';
  * perche' e' il centro del prodotto, ed e' il posto che si raggiunge col
  * pollice senza spostare la mano. I due a consumo restano ultimi e fuori
  * dalla barra finche' non ci sara' cosa premere.
+ *
+ * Dal 2026-09-08 sono SEI: «suono» si e' diviso in Vocale ed Effetti. Lo
+ * scontorno resta terzo, cioe' non piu' esattamente in mezzo — la regola del
+ * pollice regge con sei, ma se un giorno diventassero sette va ridiscussa
+ * invece che lasciata scivolare.
  */
 export const SERVICES = [
   {
@@ -53,12 +58,34 @@ export const SERVICES = [
     ready: true,
   },
   {
-    // Il laboratorio dei suoni sta fra i GRATUITI: non genera niente, filtra
-    // la voce registrata. Nessun modello, nessun costo, nessuna attesa.
-    id: 'suono',
+    /*
+     * La voce. Sta fra i GRATUITI: non genera niente, filtra la voce
+     * registrata. Nessun modello, nessun costo, nessuna attesa.
+     *
+     * Era «suono», ed erano DUE mestieri su una schermata sola: registrare
+     * una voce e trasformarla, e costruire un tonfo da zero. Divisi il
+     * 2026-09-08 su decisione del committente. `wave` resta qui perche'
+     * un'onda registrata E' la voce.
+     */
+    id: 'vocale',
     group: GROUP_LOCAL,
-    key: 'tool.sound',
+    key: 'tool.vocale',
     icon: 'wave',
+    ready: true,
+  },
+  {
+    /*
+     * Gli effetti sonori: qui non si registra niente, si COSTRUISCE. Un
+     * whoosh e' rumore filtrato con un inviluppo — la matematica sta in
+     * `engine/synth.js`, e per questo il servizio e' gratuito come l'altro.
+     *
+     * Il microfono serve anche qui, ma per un'altra cosa: battere un ritmo
+     * che l'effetto poi segue. E' il ponte, non la materia.
+     */
+    id: 'effetti',
+    group: GROUP_LOCAL,
+    key: 'tool.effetti',
+    icon: 'scoppio',
     ready: true,
   },
   {
@@ -100,6 +127,15 @@ export const paidServices = () => SERVICES.filter((s) => s.group === GROUP_PAID)
 export function servizioDelloStrumento(tool) {
   return tool === 'editor' ? 'vettorializza' : tool;
 }
+
+/**
+ * I nomi vecchi che devono ancora portare da qualche parte.
+ *
+ * `?servizio=suono` e' un indirizzo che qualcuno puo' avere salvato. Senza
+ * questa riga `SERVICES.find` non trova niente e si finisce sullo scontorno:
+ * un collegamento che porta altrove senza dirlo e' peggio di uno rotto.
+ */
+export const NOMI_VECCHI = { suono: 'vocale' };
 
 export function getService(id) {
   const s = SERVICES.find((x) => x.id === id);

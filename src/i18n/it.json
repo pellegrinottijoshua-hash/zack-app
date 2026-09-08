@@ -25,9 +25,13 @@
       "label": "Video",
       "help": "Genera un video da una descrizione e dai tuoi riferimenti."
     },
-    "sound": {
-      "label": "Suono",
-      "help": "Costruisci un effetto sonoro imitandolo con la voce e descrivendolo."
+    "vocale": {
+      "label": "Vocale",
+      "help": "Registra la tua voce, o portane una, e trasformala: piu' grave, da radio, lontana."
+    },
+    "effetti": {
+      "label": "Effetti",
+      "help": "Costruisci un effetto sonoro da zero: un tonfo, un whoosh, dei passi. Niente file da cercare."
     },
     "brain": {
       "label": "Brain",
@@ -44,7 +48,8 @@
     "file": "Un file",
     "registra": "Registra",
     "aggiungi": "Aggiungi",
-    "effetto": "Un effetto"
+    "costruisci": "Costruisci",
+    "ritmo": "Batti un ritmo"
   },
   "drop": {
     "title": "Trascina qui un'immagine",
@@ -528,7 +533,8 @@
     "nonCapito": "Non conosco: {parole}. Il resto l'ho applicato.",
     "nienteCapito": "Non ho riconosciuto nessuna parola, quindi non ho toccato niente.",
     "contraddizione": "«{a}» e «{b}» chiedono il contrario: ho applicato tutt’e due, guarda tu quale tenere.",
-    "illeggibile": "Non riesco a leggere questo file audio. Il browser non lo apre: potrebbe essere incompleto, oppure non essere un file audio."
+    "illeggibile": "Non riesco a leggere questo file audio. Il browser non lo apre: potrebbe essere incompleto, oppure non essere un file audio.",
+    "registrando": "Sto registrando… batti il ritmo, poi premi di nuovo."
   },
   "finish": {
     "title": "Prima della stampa",
@@ -738,5 +744,8 @@
     "tolto": "Sfondo tolto · {n} isole salvate",
     "toltoDubbio": "Sfondo tolto, ma nessuna isola salvata: guarda un fotogramma prima di usarlo.",
     "togliOraAttesa": "Togli lo sfondo — almeno {s}s di attesa"
+  },
+  "effetti": {
+    "claim": "Costruisci un effetto sonoro da zero. Batti un ritmo con la voce e l’effetto lo segue."
   }
 }

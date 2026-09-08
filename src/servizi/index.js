@@ -2,6 +2,7 @@ import scontorna from './scontorna.js';
 import filmato from './filmato.js';
 import brain from './brain.js';
 import vocale from './vocale.js';
+import effetti from './effetti.js';
 
 /**
  * I descrittori dei servizi: dove vive il comportamento di ognuno.
@@ -22,7 +23,7 @@ import vocale from './vocale.js';
  * gesto che lo esegue» lo rifiuta, giustamente. Il Vocale (`vocale.js`, id
  * `suono`) entra qui insieme ai suoi gesti, non prima.
  */
-export const DESCRITTORI = { scontorna, filmato, brain, suono: vocale };
+export const DESCRITTORI = { scontorna, filmato, brain, vocale, effetti };
 
 /**
  * Gli stati in cui uno strumento può comparire. **Lista chiusa.**
