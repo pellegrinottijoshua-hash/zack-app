@@ -202,3 +202,19 @@ test('l’icona si sceglie per qualunque file, non solo per i .md', () => {
     'il selettore delle icone e’ ancora riservato ai .md',
   );
 });
+
+test('non restano liste di id: tutti i servizi passano dal descrittore', () => {
+  /*
+   * Erano tre liste identiche da quattro `id`, piu' un Set, piu' due
+   * `tool !== 'scontorna'`. Il pezzo 2 le ha ridotte a `['brain','suono']`, e
+   * qui spariscono: anche quei due hanno un descrittore.
+   *
+   * Restano i `tool === 'suono'` singoli, e vanno bene: sono «cosa vuol dire
+   * PIENO per questo servizio», cioe' una cosa che il descrittore non
+   * dichiara perche' e' una chiusura sullo stato di React. La lista era
+   * un'altra cosa — la domanda «questo servizio passa dall'impianto?», che
+   * ora ha una risposta sola.
+   */
+  const liste = APP.match(/\[[^\]]*'(?:brain|suono)'[^\]]*\]\.includes\(tool\)/g) || [];
+  assert.deepEqual(liste, [], `restano ${liste.length} liste di id in App.jsx`);
+});

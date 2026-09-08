@@ -1154,6 +1154,41 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
+## Com'è andata davvero (2026-09-07)
+
+Il piano si è dimostrato sbagliato in un punto strutturale, e va scritto qui
+perché lo stesso errore è facile da rifare.
+
+**Task 3 non esiste.** Separava «i due descrittori» dal cablaggio, e non si
+può: `DESCRITTORI[tool] ? <Piano>` in `App.jsx` **è** l'interruttore che porta
+un servizio dentro l'impianto. Registrare un descrittore prima dei suoi gesti
+vuol dire cerchi che si accendono e non fanno niente — e il test «ogni
+strumento dichiarato ha un gesto che lo esegue» l'ha rifiutato al primo giro.
+Quindi Task 3 si è fuso dentro Task 4 e Task 5, un servizio per commit.
+
+**Cose che il piano non poteva vedere, trovate strada facendo:**
+
+- `sound.apply` e le sei ricette erano **irraggiungibili** — quarta volta della
+  stessa malattia. Sono diventate le pastiglie del punto oro.
+- Mancava il pezzo in mezzo: il dizionario produce filtri sciolti, la catena
+  Web Audio vuole una ricetta completa. Senza `fondiRicetta` la frase si
+  fermava sullo schermo. Il piano diceva «i filtri si muovono» e non sarebbe
+  stato vero.
+- Le sei stringhe del Task 2 erano finite in `tool.sound` invece che in
+  `sound`, in tutt'e due le lingue: la prova di parità non se ne accorgeva.
+  Ora un test legge il sorgente e chiede a ognuna delle 321 chiavi scritte per
+  intero: esisti?
+- Il `+` del Vocale ha **tre** voci e non due: senza «un effetto», il
+  laboratorio dei suoni sintetizzati sarebbe sparito dietro un «prima registra
+  qualcosa» che non gli serve.
+- L'annulla della tela di Brain non esisteva ed è stato aggiunto.
+
+**Resta aperto, ed è una decisione del committente:** il servizio `suono` ha
+due metà — la voce e il laboratorio degli effetti — su una schermata sola.
+Andrebbero separate in due servizi, o è giusto che convivano?
+
+---
+
 ## Al termine
 
 - `npm test && npm run build` verdi;
