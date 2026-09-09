@@ -209,6 +209,22 @@ export default function App() {
    */
   const [licenza] = useState(() => leggiLicenza());
   const statoConto = statoLicenza(licenza);
+
+  /**
+   * Il muro è **spento** finché B1 non è finito.
+   *
+   * Il 2026-09-09 l'ho spinto su `main` con i Task 4 e 5 — quelli che
+   * permettono di ENTRARE — ancora da fare, e Cloudflare ricostruisce da solo:
+   * lo studio si è chiuso in produzione per tutti, e nessuno aveva modo di
+   * rientrare. Non c'era nemmeno la porta.
+   *
+   * Un interruttore, spento per difetto: si accende con `VITE_MURO=1` al
+   * momento della build, quando ci sarà da che parte entrare. Il muro esiste,
+   * si può provare in locale, e non può più chiudere fuori nessuno per
+   * distrazione.
+   */
+  const muroAcceso = import.meta.env.VITE_MURO === '1';
+  const chiuso = muroAcceso && !puoiLavorare(statoConto);
   /** Per «centra tutto», che ora è un cerchio ma muove la vista di Brain. */
   const brainRef = useRef(null);
   /** Il menu del `+` aperto. È un momento, non uno stato: si apre e si chiude. */
@@ -2090,7 +2106,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               scrive a mano: e' la stessa domanda a cui risponde `servizi/`,
               e due risposte alla stessa domanda divergono al primo servizio
               nuovo. */}
-          {!puoiLavorare(statoConto) ? (
+          {chiuso ? (
             /*
              * Il muro sta DENTRO `.stage`, non intorno a `.shell`: fuori
              * chiuderebbe anche la striscia e la libreria, che e' esattamente
@@ -2498,7 +2514,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
         tutti e cinque, la libreria era diventata IRRAGGIUNGIBILE da qualunque
         schermata. Trovato mettendo il muro, non riferito da nessuno.
       */}
-      {(!puoiLavorare(statoConto) || !DESCRITTORI[tool]) && (
+      {(chiuso || !DESCRITTORI[tool]) && (
         <Library
           store={library}
           open={libOpen}

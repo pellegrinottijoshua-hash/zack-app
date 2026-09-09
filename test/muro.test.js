@@ -28,9 +28,22 @@ test('la libreria si vede ANCHE col muro alzato', () => {
   const condizione = APP.slice(Math.max(0, i - 300), i);
   assert.match(
     condizione,
-    /!puoiLavorare\(/,
+    /chiuso \|\|/,
     'la libreria non si vede col muro alzato: § 3.5 dice che non si chiude mai',
   );
+});
+
+test('il muro e’ SPENTO finche’ non c’e’ da che parte entrare', () => {
+  /*
+   * Il 2026-09-09 il muro e' finito in produzione coi Task 4 e 5 — quelli che
+   * permettono di ENTRARE — ancora da fare, e Cloudflare ricostruisce da solo:
+   * lo studio si e' chiuso per tutti, e non c'era nemmeno la porta.
+   *
+   * Adesso e' un interruttore spento per difetto. Questo test esiste perche'
+   * il giorno che qualcuno lo accende sia una DECISIONE e non una distrazione.
+   */
+  assert.match(APP, /VITE_MURO === '1'/, 'il muro non e’ piu’ dietro un interruttore');
+  assert.match(APP, /const chiuso = muroAcceso &&/, 'il muro si alza senza passare dall’interruttore');
 });
 
 test('il muro prende il posto del PIANO, non della schermata', () => {
