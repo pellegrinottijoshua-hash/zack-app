@@ -35,6 +35,7 @@ import { TARGET_SIDE } from './engine/ready.js';
 import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/ricette.js';
 import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/ritaglio.js';
 import { DESCRITTORI, getDescrittore, strumentiVisibili } from './servizi/index.js';
+import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
 import { nuovaNota, nuovoCerchio, prossimoPosto } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
 import { leggiDescrizione } from './engine/dizionarioVoce.js';
@@ -1441,6 +1442,26 @@ export default function App() {
     },
   };
 
+  /**
+   * Cosa c'è sul piano, in una forma che `servizi/piano.js` sa leggere.
+   *
+   * Un oggetto solo, e non tre ternari sparsi fra le props: era li' che si era
+   * persa la meta' della regola — «il piano e' vuoto quando non c'e' niente
+   * sopra E non sta succedendo niente» — e con lei il tasto per fermare il
+   * microfono.
+   */
+  const statoPiano = {
+    tela: tela.length,
+    clipVoce: voce.clip,
+    registrandoVoce: voce.recording,
+    effettoAperto,
+    ritmo: effettiAudio.rhythm,
+    registrandoRitmo: effettiAudio.recording,
+    file,
+    inColonna: batchFiles.length,
+    risultati: batch.results.length,
+  };
+
   /** La ricetta della voce: quella scelta nel punto oro più i filtri del tasto. */
   const ricettaVoce = fondiRicetta(
     baseVoce === 'neutra' ? NEUTRA : getRecipe(baseVoce),
@@ -1832,6 +1853,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               registrando={effettiAudio.recording}
               errore={effettiAudio.error}
               onScordaRitmo={effettiAudio.reset}
+              onFermaRitmo={effettiAudio.stop}
             />
           ) : isEditor ? (
             <SvgEditor
@@ -2016,40 +2038,14 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               /* Vuoto vuol dire NIENTE sul piano: ne' un file solo, ne' la
                  colonna dei tre scelti, ne' i risultati. Senza i tre scelti
                  il `+` restava in mezzo e la colonna non si vedeva mai. */
-              vuoto={
-                tool === 'filmato'
-                  ? !filmato
-                  : tool === 'brain'
-                    ? tela.length === 0
-                    : tool === 'vocale'
-                      ? !voce.clip
-                      : tool === 'effetti'
-                        ? !effettoAperto && !effettiAudio.rhythm
-                        : !file && batchFiles.length === 0 && batch.results.length === 0
-              }
+              vuoto={tool === 'filmato' ? !filmato : pianoVuoto(tool, statoPiano)}
               ricetta={ricetta}
               piano={stats?.image ? pianoZack(ricetta, stats.image) : null}
               /* Su Brain «quanti» sono gli oggetti sulla tela: da uno in su il
                  `+` piccolo resta in alto a sinistra, e il tetto è 99, cioè
                  non c'è. La croce no: si toglie l'oggetto scelto, non la
                  tela — quello lo fa `onTogli`, che qui è nullo. */
-              quanti={
-                tool === 'brain'
-                  ? tela.length
-                  : tool === 'vocale'
-                    ? voce.clip
-                      ? 1
-                      : 0
-                    : tool === 'effetti'
-                      ? effettoAperto || effettiAudio.rhythm
-                        ? 1
-                        : 0
-                      : batchFiles.length > 1
-                      ? batchFiles.length
-                      : file
-                        ? 1
-                        : 0
-              }
+              quanti={tool === 'filmato' ? (filmato ? 1 : 0) : quantiSulPiano(tool, statoPiano)}
               /* Il lavoro in corso, detto. Col file singolo lo dice gia' il
                  confronto; con la colonna non lo diceva nessuno. */
               lavoro={
@@ -2096,6 +2092,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               /* Gli avanzati, quando il cerchio li apre. Lo stesso contenuto
                  della colonna: non una seconda copia, la stessa. */
               pannello={avanzatiAperti ? avanzati : null}
+              inCorso={statoDelPiano(tool, statoPiano).inCorso}
               opzione={OPZIONE[tool]?.valore ?? regolaRiordino}
               onOpzione={OPZIONE[tool]?.cambia ?? setRegolaRiordino}
               /* Togliere il file singolo: senza conferma, perche' e' un
@@ -2246,16 +2243,25 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                  * due, e con uno solo il cerchio sarebbe li' acceso a non
                  * fare niente.
                  */
+                /*
+                 * Brain e' l'unico con una soglia sua: una freccia collega DUE
+                 * oggetti, e con uno solo il cerchio sarebbe li' acceso a non
+                 * fare niente. Gli altri seguono la regola comune, invece di
+                 * riscriverla — riscriverla e' come si e' persa.
+                 */
                 const pieno =
-                  tool === 'filmato'
-                    ? Boolean(filmato)
-                    : tool === 'brain'
-                      ? tela.filter((o) => o.t !== 'freccia').length >= 2
-                      : tool === 'vocale'
-                        ? Boolean(voce.clip)
-                        : tool === 'effetti'
-                          ? effettoAperto || Boolean(effettiAudio.rhythm)
-                          : Boolean(file);
+                  tool === 'brain'
+                    ? tela.filter((o) => o.t !== 'freccia').length >= 2
+                    : tool === 'filmato'
+                      ? Boolean(filmato)
+                      : /*
+                         * `contenuto`, non `!vuoto`: gli strumenti lavorano su
+                         * quello che C'E', non su quello che STA SUCCEDENDO.
+                         * Mentre il microfono e' acceso il piano non e' vuoto —
+                         * o il tasto Ferma non si disegnerebbe — ma non c'e'
+                         * ancora niente su cui premere «Ascolta».
+                         */
+                        statoDelPiano(tool, statoPiano).contenuto;
                 /*
                  * «C'e' un risultato» vuol dire cose diverse: per lo
                  * scontorno un PNG — i pennelli non hanno su cosa lavorare

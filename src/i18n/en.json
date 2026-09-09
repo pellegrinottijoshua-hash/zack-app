@@ -535,7 +535,9 @@
     "nienteCapito": "I didn't recognise a single word, so I changed nothing.",
     "contraddizione": "“{a}” and “{b}” ask for opposites: I applied both, you pick which to keep.",
     "illeggibile": "I can't read this audio file. The browser won't open it: it may be incomplete, or not an audio file at all.",
-    "registrando": "Recording… tap the rhythm, then press again."
+    "registrando": "Recording… tap the rhythm, then press again.",
+    "parlaOra": "Go ahead and speak. Stop when you are done.",
+    "battiOra": "Tap the rhythm with your voice: “tum tum tum”."
   },
   "finish": {
     "title": "Before printing",

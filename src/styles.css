@@ -5249,3 +5249,60 @@ body {
     padding-bottom: clamp(60px, 9vh, 96px);
   }
 }
+
+/* ── Mentre il microfono è acceso ────────────────────────────────────────
+   Una cosa sola da fare, grande. Il difetto che questo pannello chiude
+   (2026-09-09): si premeva «Registra» e non c'era NESSUN modo di fermare —
+   il tasto viveva in un pannello che si disegnava solo a registrazione
+   finita, cioè mai. */
+.registrazione {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: min(52vh, 380px);
+  text-align: center;
+}
+/* La spia rossa: pulsa, perché un microfono acceso e una schermata ferma
+   sono indistinguibili da un guasto. */
+.reg-spia i {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #c0392b;
+  box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.6);
+  animation: reg-pulsa 1.4s ease-out infinite;
+}
+@keyframes reg-pulsa {
+  70% {
+    box-shadow: 0 0 0 16px rgba(192, 57, 43, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(192, 57, 43, 0);
+  }
+}
+.reg-tempo {
+  margin: 0;
+  font-family: 'Fredoka', var(--display);
+  font-size: clamp(38px, 9vw, 64px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--inchiostro);
+}
+.reg-nota {
+  margin: 0;
+  max-width: 28ch;
+  color: var(--inchiostro-2);
+}
+.reg-ferma {
+  min-width: 180px;
+  padding: 14px 28px;
+  font-size: 17px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reg-spia i {
+    animation: none;
+  }
+}
