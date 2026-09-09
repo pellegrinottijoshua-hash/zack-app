@@ -732,5 +732,23 @@
     "p2": "Already have an image? Press the `+` at the top left and bring it in. Then the ZACK button turns it into shapes you can scale as much as you like.",
     "p3": "In the gold dot — the bead next to ZACK — you choose HOW to trace: flat colours for logos, gradients for photos, black and white for line art.",
     "p4": "With an element selected, the nodes circle lights up: from there you move points and curves. Under Advanced you get colours, alignment and output format."
+  },
+  "muro": {
+    "entra": "Sign in",
+    "abbonati": "Subscribe — €3.99/month",
+    "presto": "Working on it: signing in from here lands soon.",
+    "libreriaTua": "Your assets stay yours: the library opens and downloads from here too.",
+    "scaduto": {
+      "titolo": "Your subscription isn't active",
+      "corpo": "The studio tools are closed. Your library isn't: it's right below, and you can download all of it whenever you like."
+    },
+    "daRicollegare": {
+      "titolo": "Please sign in again",
+      "corpo": "It's been more than seven days since I could last check. Sign in for a moment and pick up where you left off."
+    },
+    "maiEntrato": {
+      "titolo": "Sign in to use the studio",
+      "corpo": "I'll email you a link, no password. The background remover on the home page stays free and asks for nothing."
+    }
   }
 }
