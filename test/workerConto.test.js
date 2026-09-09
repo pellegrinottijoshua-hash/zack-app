@@ -313,3 +313,38 @@ test('un Worker senza segreti, o con Supabase giu’, non esplode', async () => 
   assert.equal(home.status, 200);
   assert.equal(await home.text(), 'la home');
 });
+
+test('⚠️ se la prova non si riesce a SCRIVERE, non si regala lo stesso', async () => {
+  /*
+   * Il difetto piu' insidioso di tutta B1, ed era nel mio codice fino al
+   * 2026-09-10: l'esito della scrittura veniva ignorato.
+   *
+   * Se l'archivio non prende, la volta dopo `contoDi` torna ancora vuoto e
+   * nascono altri quattordici giorni. E quelli dopo ancora. Una prova che non
+   * finisce mai — che e' precisamente cio' che il piano avvertiva di evitare,
+   * rientrato dalla porta di servizio.
+   *
+   * E non si vede: sullo schermo la striscia della prova c'e', uno la guarda,
+   * la crede e va via convinto che funzioni. Si scoprirebbe fra due settimane,
+   * quando non ha ancora pagato nessuno.
+   */
+  const chiamate = rete((url, o) => {
+    if (url.includes('/auth/v1/user')) {
+      return new Response(JSON.stringify({ id: 'u-11', email: 'c@e.it' }), { status: 200 });
+    }
+    if (url.includes('/rest/v1/conti?')) return new Response('[]', { status: 200 });
+    // La scrittura non prende: chiave di servizio scaduta, RLS, rete.
+    if (o?.method === 'POST') return new Response('no', { status: 401 });
+    return null;
+  });
+
+  const res = await worker.fetch(
+    new Request('https://zack-app.com/me', { headers: { authorization: 'Bearer buono' } }),
+    AMBIENTE,
+  );
+
+  assert.equal(res.status, 500, 'ha regalato una prova che non e’ riuscito a scrivere');
+  const corpo = await res.json();
+  assert.equal(corpo.provaFino, undefined, 'ha detto al browser una prova che non esiste');
+  assert.ok(chiamate.some((c) => c.metodo === 'POST'), 'non ha nemmeno provato a scrivere');
+});

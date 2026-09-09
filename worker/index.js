@@ -207,11 +207,31 @@ export default {
        */
       if (!conto) {
         const prova = new Date(Date.now() + PROVA_GIORNI * GIORNO).toISOString();
-        await fetch(`${SUPABASE_URL}/rest/v1/conti`, {
+        const scritta = await fetch(`${SUPABASE_URL}/rest/v1/conti`, {
           method: 'POST',
           headers: conServizio(env),
           body: JSON.stringify({ utente: chi.id, prova_fino: prova }),
         });
+
+        /*
+         * ⚠️ Se la scrittura non prende, NON si regala la prova lo stesso.
+         *
+         * Ignorare l'esito era il difetto che il piano avvertiva di evitare,
+         * entrato dalla porta di servizio: ricalcolare la prova a ogni
+         * chiamata da' una prova che non finisce mai — e una scrittura che
+         * fallisce in silenzio fa esattamente quello, perche' la volta dopo
+         * `conto` e' ancora vuoto e nascono altri quattordici giorni.
+         *
+         * Il guasto vero e' che non si vede: sullo schermo la prova c'e', e
+         * uno la prova, la vede, e va via convinto. Si scoprirebbe fra due
+         * settimane, quando non ha ancora pagato nessuno.
+         *
+         * Rispondere male e' l'unica cosa onesta: il browser lo legge come
+         * «non lo so» e tiene buona l'ultima risposta salvata (§ 3.4), e
+         * l'errore diventa rumoroso invece che invisibile.
+         */
+        if (!scritta.ok) return json({ errore: 'archivio' }, 500);
+
         conto = { prova_fino: prova, abbonato: false, crediti: 0 };
       }
 
