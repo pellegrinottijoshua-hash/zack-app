@@ -4,10 +4,10 @@ Documento di passaggio. Serve ad aprire una chat nuova e ripartire senza
 ricostruire il contesto. Se leggi solo tre cose: la **sezione 2** (le regole),
 la **sezione 6** (cosa manca) e la **sezione 5** (le trappole già pagate).
 
-- **Repo:** `~/jayl-studio` — ramo `main`, **487 test verdi**
+- **Repo:** `~/jayl-studio` — ramo `main`, **574 test verdi**
 - **Online:** [zack-app.com](https://zack-app.com), modelli su R2 · push = deploy
 - **Remoto:** `github.com/pellegrinottijoshua-hash/zack-app`
-- **Ultimo aggiornamento:** 5 settembre 2026
+- **Ultimo aggiornamento:** 10 settembre 2026
 
 ```bash
 cd ~/jayl-studio && npm run dev
@@ -28,7 +28,7 @@ Entrambi devono passare prima di qualunque commit.
 Lo strato di **post-produzione per chi genera con l'AI**. Non un generatore:
 il posto dove l'asset generato viene rifinito, organizzato e preparato.
 
-**3,99 €/mese**, generazione a consumo separata. **Zack App** il prodotto,
+**2,99 €/mese**, generazione a consumo separata. **Zack App** il prodotto,
 **JAYL** il marchio di chi lo fa — sta in alto a sinistra e in fondo, firmato.
 
 ---
@@ -36,7 +36,7 @@ il posto dove l'asset generato viene rifinito, organizzato e preparato.
 ## 2. Le regole che non si negoziano
 
 - **Tutto gratis e in locale.** Scontorno, vettoriale, export, editor, suono,
-  filmato girano **nel browser del cliente**. È il motivo dei 3,99 €.
+  filmato girano **nel browser del cliente**. È il motivo dei 2,99 €.
 - **Palette: panna 60, nero 30, oro 10.** In `styles.css` le variabili portano
   il nome del **ruolo** (`--fondo`, `--inchiostro`), non del colore.
 - **Gli strumenti non coprono la tela.** Unica eccezione dichiarata: l'ovale
@@ -164,6 +164,38 @@ apriva niente e la console diceva «quale is not defined». Stessa cosa con `s`,
 che sono le impostazioni, come parametro di un `.map`. Costa niente
 rinominare, e due volte in un'ora e' un avviso.
 
+### La griglia che conta i propri figli
+
+`.shell` era `grid-template-rows: auto 1fr auto`: il **numero di figli** faceva
+parte del layout. Il 2026-09-10 la riga della prova e' entrata come secondo
+figlio, si e' presa l'`1fr` — 295px per una frase — e ha schiacciato `.main`.
+Due giorni prima lo stesso inciampo aveva portato `.brain` ad **altezza zero**:
+gli oggetti c'erano, la tela non si vedeva.
+
+E' il difetto che non si vede scrivendo, perche' **il CSS non cambia: cambia il
+JSX**. Adesso `.shell` e' una colonna flex e un test glielo impedisce. Quando
+aggiungi un figlio a un contenitore, misuralo nel browser.
+
+### Il disegno nella spec non e' la configurazione
+
+La spec disegnava `api.zack-app.com`, e `src/lib/conto.js` l'ha chiamato
+davvero. Ma `wrangler.jsonc` pubblica **un** Worker su `zack-app.com`: quel
+sottodominio non l'avrebbe servito nessuno.
+
+Sarebbe passato invisibile per **sette giorni** — la grazia copre esattamente
+quello — e all'ottavo il muro si sarebbe alzato a tutti, paganti compresi.
+Prima di scrivere un indirizzo, aprire il file che lo pubblica.
+
+### Il `metadata` che vive una volta sola
+
+Il piano diceva di leggere `data.object.metadata.utente` dal webhook di Stripe.
+Giusto alla prima iscrizione e **mai piu'**: al rinnovo arriva una *fattura*,
+alla disdetta un *abbonamento*, e sono oggetti diversi con `metadata` diversi.
+Il cliente avrebbe pagato il secondo mese e trovato il muro, senza un errore da
+nessuna parte. **Un piano scritto bene puo' avere torto**: leggere la
+documentazione del fornitore, non solo il piano.
+
+
 ## 6. Cosa manca, in ordine
 
 Dal 2026-09-04 il lavoro segue una spec e cinque pezzi:
@@ -249,6 +281,86 @@ SVG, che e' un MODO di ritoccare dentro «Vettoriale», non un servizio.
 - **Niente app su Play Store per risolvere la cache**: una TWA usa la stessa
   memoria del browser, quindi non cambia niente. Solo Capacitor porterebbe i
   176 MB dentro il pacchetto, e sono al limite dei 200 MB di Play.
+
+---
+
+---
+
+## 6-bis. Fase B — il conto. **Scritta tutta, non ancora accesa.**
+
+> Spec: [docs/superpowers/specs/2026-09-09-il-conto-design.md](docs/superpowers/specs/2026-09-09-il-conto-design.md)
+> · Piano: [docs/superpowers/plans/2026-09-09-il-conto.md](docs/superpowers/plans/2026-09-09-il-conto.md)
+
+**B1 e' finito come codice.** Regola del muro, memoria della licenza, muro,
+ingresso con link via email e Google, Worker con `/me` `/checkout` `/webhook`,
+firma di Stripe verificata, quattordici giorni di prova detti ogni giorno, e la
+frase sulla home riscritta perche' era diventata falsa.
+
+### ⚠️ Il muro e' SPENTO, e resta spento
+
+`VITE_MURO=1` al momento della build lo accende. Spento per difetto perche' il
+2026-09-09 e' finito in produzione **senza che ci fosse da che parte entrare**:
+lo studio si e' chiuso per tutti e non c'era nemmeno la porta. Si accende
+quando il resto e' in piedi e provato, e sara' una decisione.
+
+Per vederlo in locale:
+
+```bash
+npx vite --port 5174 --mode muro
+```
+
+### Cosa manca, e non lo puo' fare Claude
+
+Il codice c'e' e i test lo coprono. Manca la configurazione, che sta fuori dal
+repository:
+
+1. **La tabella `conti` su Supabase**, con `alter table conti enable row level
+   security`. Senza RLS chiunque abbia la chiave pubblica — che sta nel bundle,
+   quindi tutti — potrebbe leggersi i conti altrui.
+2. **`https://zack-app.com/app/` fra le Redirect URLs** di Supabase, e il
+   provider Google acceso. Senza, il link magico arriva e riporta altrove.
+3. **I segreti su Cloudflare**, uno per volta, dal terminale:
+
+   ```bash
+   npx wrangler secret put SUPABASE_URL
+   npx wrangler secret put SUPABASE_CHIAVE_PUBBLICA
+   npx wrangler secret put SUPABASE_SERVICE_KEY
+   npx wrangler secret put STRIPE_SECRET_KEY
+   npx wrangler secret put STRIPE_WEBHOOK_SECRET
+   npx wrangler secret put STRIPE_PREZZO
+   ```
+
+   `STRIPE_PREZZO` e' l'id del prezzo su Stripe (`price_…`) del prodotto a
+   **2,99 €/mese**. Le chiavi segrete **non si incollano in chat e non entrano
+   in un file**: `wrangler secret put` le manda a Cloudflare senza farle
+   passare da nessun'altra parte.
+4. **Il webhook su Stripe** puntato a `https://zack-app.com/webhook`, per gli
+   eventi `checkout.session.completed`, `invoice.paid`,
+   `customer.subscription.deleted`.
+
+### La prova che conta di piu', dopo il deploy
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://zack-app.com/webhook \
+  -H 'stripe-signature: t=1,v1=finta' -d '{"type":"checkout.session.completed"}'
+```
+
+Deve rispondere **400**. Se risponde 200, il prodotto e' gratis per chiunque
+sappia fare una POST. (In Node lo prova gia' `test/workerConto.test.js`.)
+
+### Poi
+
+- **B2 — i crediti**: saldo, preventivo, addebito, rimborso se la generazione
+  fallisce. Il campo `crediti` esiste gia' in `/me` e vale zero.
+- **B3 — le tre generazioni**: Nano Banana Pro, Seedance, la voce clonata.
+
+Due decisioni gia' prese e da non rimettere in discussione: **il preventivo e
+l'addebito leggono la stessa tabella** (se divergono, hai mentito a un cliente
+che ti aveva creduto sulla parola), e **se la generazione fallisce i crediti
+tornano**.
+
+⚠️ Una domanda aperta, per il commercialista e non per il codice: se
+`jayl.store` e Zack App fatturano come lo stesso soggetto.
 
 ---
 
