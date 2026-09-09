@@ -45,11 +45,12 @@
   "menu": {
     "nota": "Note",
     "gruppo": "Group",
-    "file": "A file",
     "registra": "Record",
     "aggiungi": "Add",
     "costruisci": "Build one",
-    "ritmo": "Tap a rhythm"
+    "ritmo": "Tap a rhythm",
+    "computer": "From my computer",
+    "libreria": "From my library"
   },
   "drop": {
     "title": "Drop an image here",
