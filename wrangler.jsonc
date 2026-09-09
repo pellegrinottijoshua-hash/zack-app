@@ -26,7 +26,17 @@
    * Wrangler lo pubblica come Worker-di-soli-asset, che è esattamente cosa
    * serve.
    */
+  /*
+   * Da qui il Worker ha del CODICE, non solo file.
+   *
+   * `assets.directory` resta: le richieste che combaciano con un file statico
+   * lo servono come prima, e solo le altre arrivano a `worker/index.js`. Il
+   * sito continua a funzionare identico; cambia che `/me` ora esiste.
+   */
+  "main": "worker/index.js",
+
   "assets": {
+    "binding": "ASSETS",
     "directory": "./dist"
   },
 

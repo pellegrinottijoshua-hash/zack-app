@@ -11,7 +11,7 @@
 
 export const COPY = {
   it: {
-    nav: { app: 'Apri lo studio', price: '3,99 €/mese' },
+    nav: { app: 'Apri lo studio', price: '2,99 €/mese' },
 
 
     // Brain, che il committente chiama «web organizer»: la cosa che nessun
@@ -98,7 +98,7 @@ export const COPY = {
       kicker: 'Per chi crea con l’AI',
       title: 'Genera dove vuoi.\nRifinisci qui.',
       body:
-        'Scontorno, vettoriale, ritocco e archivio per la valanga di immagini che i generatori sputano fuori. Tutto sul tuo computer, illimitato, a 3,99 € al mese.',
+        'Scontorno, vettoriale, ritocco e archivio per la valanga di immagini che i generatori sputano fuori. Tutto sul tuo computer, illimitato, a 2,99 € al mese.',
       cta: 'Comincia',
       note: 'Nessun file lascia il tuo computer.',
     },
@@ -152,7 +152,7 @@ export const COPY = {
       rows: [
         { name: 'Canva Pro', price: '~12 €/mese', note: 'a prescindere da quanto lo usi' },
         { name: 'Adobe', price: '~24 €/mese', note: 'a prescindere da quanto lo usi' },
-        { name: 'Zack App', price: '3,99 €/mese', note: 'strumenti illimitati, generazione a consumo' },
+        { name: 'Zack App', price: '2,99 €/mese', note: 'strumenti illimitati, generazione a consumo' },
       ],
     },
 
@@ -165,7 +165,7 @@ export const COPY = {
   },
 
   en: {
-    nav: { app: 'Open the studio', price: '€3.99/month' },
+    nav: { app: 'Open the studio', price: '€2.99/month' },
 
 
     brain: {
@@ -247,7 +247,7 @@ export const COPY = {
       kicker: 'For people who create with AI',
       title: 'Generate anywhere.\nFinish here.',
       body:
-        'Cutout, vector, retouching and an archive for the flood of images generators produce. All on your own machine, unlimited, for €3.99 a month.',
+        'Cutout, vector, retouching and an archive for the flood of images generators produce. All on your own machine, unlimited, for €2.99 a month.',
       cta: 'Get started',
       note: 'No file leaves your computer.',
     },
@@ -301,7 +301,7 @@ export const COPY = {
       rows: [
         { name: 'Canva Pro', price: '~€12/month', note: 'no matter how much you use it' },
         { name: 'Adobe', price: '~€24/month', note: 'no matter how much you use it' },
-        { name: 'Zack App', price: '€3.99/month', note: 'unlimited tools, generation pay per use' },
+        { name: 'Zack App', price: '€2.99/month', note: 'unlimited tools, generation pay per use' },
       ],
     },
 

@@ -4,7 +4,7 @@
  * Il committente aveva chiesto un modello linguistico che leggesse la frase.
  * L'AI è stata rimandata il 2026-09-04: sarebbe stata la prima cosa nell'app
  * a non girare nel browser del cliente, contro *«tutto gratis e in locale, è
- * il motivo dei 3,99 €»*.
+ * il motivo dell'abbonamento»* (allora 3,99 €, dal 2026-09-09 2,99).
  *
  * Un dizionario fa il 90% di quel lavoro, gratis e all'istante — e fa una cosa
  * che un modello linguistico non fa: **dice quando non ha capito**. Un tasto

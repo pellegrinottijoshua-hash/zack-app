@@ -88,3 +88,20 @@ test('i segnaposto delle frasi con numeri esistono in tutte e due le lingue', ()
   assert.equal(segnaposto(COPY.it.tool.progress), segnaposto(COPY.en.tool.progress));
   assert.ok(segnaposto(COPY.it.tool.progress).includes('{totale}'));
 });
+
+test('il prezzo sulla home e’ quello che Stripe fa pagare', () => {
+  /*
+   * Il 2026-09-09 il prodotto su Stripe e' stato creato a 2,99 € e la home ne
+   * diceva 3,99 in tre punti, tabella di confronto compresa. Chi paga vede
+   * quello di Stripe: un prezzo pubblicato piu' alto di quello vero non e'
+   * generosita', e' una pagina che non corrisponde al prodotto — e un cliente
+   * che se ne accorge si chiede cos'altro non corrisponde.
+   *
+   * ⚠️ Questo test NON puo' controllare Stripe: il numero va cambiato QUI ogni
+   * volta che si cambia di la'. E' il promemoria che serve.
+   */
+  const tutto = JSON.stringify(COPY);
+  assert.doesNotMatch(tutto, /3[.,]99/, 'la home dice ancora 3,99: su Stripe il prodotto e’ 2,99');
+  assert.match(tutto, /2,99 €\/mese/, 'la home non dice piu’ il prezzo in italiano');
+  assert.match(tutto, /€2\.99\/month/, 'la home non dice piu’ il prezzo in inglese');
+});
