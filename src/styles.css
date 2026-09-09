@@ -2850,17 +2850,6 @@ body {
 
 
 
-/* Brain vive DENTRO l'impianto, e l'impianto tiene il `+` e la croce in alto
-   a sinistra (`.sc-angolo`, 46px). Senza questo spazio la barra ci finiva
-   sotto: il `+` copriva «Centra tutto», e due comandi sovrapposti sono due
-   comandi rotti. Misurato, non indovinato: `.sc-angolo` e la barra
-   cominciavano tutt'e due a x=213. */
-.sc .brain-barra {
-  padding-left: 62px;
-}
-
-
-
 
 
 
@@ -2884,12 +2873,7 @@ body {
      e' tutto il lavoro. */
   flex: 1;
   min-height: 0;
-}
-
-
-
-.brain-cassetto h3,
-.brain-scelto h3 {
+}.brain-scelto h3 {
   margin: 0 0 9px;
   font-size: 9.5px;
   font-weight: 500;
@@ -3352,12 +3336,7 @@ body {
 
 .brain-riapri input {
   display: none;
-}
-
-/* Nessun comando della barra va a capo: un'etichetta su due righe fa crescere
-   la riga e sballa l'allineamento di tutti gli altri. */
-.brain-barra button,
-.brain-riapri {
+}.brain-riapri {
   white-space: nowrap;
 }
 
@@ -3388,11 +3367,7 @@ body {
      tutto per far somigliare i pulsanti a uno schizzo sarebbe stato un
      rifacimento del marchio, non un ritocco. */
   --tasto-font: 'Fredoka', 'Space Grotesk', system-ui, sans-serif;
-}
-
-.brain-barra button,
-.brain-riapri,
-.brain-porta,
+}.brain-riapri,
 .zack-go,
 .zack-cosa,
 .sb-tool,
@@ -3425,12 +3400,7 @@ body {
   gap: 9px;
   text-align: center;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
-}
-
-/* Sopra, tutto diventa oro: contorno e scritta insieme. */
-.brain-barra button:hover:not(:disabled),
-.brain-riapri:hover,
-.brain-porta:hover,
+}.brain-riapri:hover,
 .zack-go:hover:not(:disabled),
 .zack-cosa:hover,
 .sb-tool:hover:not(:disabled),
@@ -3444,33 +3414,19 @@ body {
   border-color: var(--oro);
   color: var(--oro);
   background: var(--nero);
-}
-
-/* Acceso: l'oro riempie appena, così si distingue da "ci sto sopra". */
-.brain-barra button[aria-pressed='true'],
-.zack-cosa[aria-expanded='true'],
+}.zack-cosa[aria-expanded='true'],
 .sb-tool[aria-pressed='true'],
 .brain-categoria[aria-pressed='true'] {
   border-color: var(--oro);
   color: var(--oro);
   background: var(--nero);
   box-shadow: inset 0 0 0 2px var(--oro-velo);
-}
-
-/* Spento: il contorno resta, sbiadito. Toglierlo farebbe sparire il tasto, e
-   un comando che sparisce è un comando che l'utente crede di aver sognato. */
-.brain-barra button:disabled,
-.zack-go:disabled {
+}.zack-go:disabled {
   border-color: var(--inchiostro-3);
   color: var(--inchiostro-3);
   background: transparent;
   opacity: 1;
-}
-
-/* Il tasto Zack resta l'unico d'oro anche da fermo: è il più importante della
-   schermata e non deve mimetizzarsi con gli altri. */
-.zack-go,
-.brain-zack {
+}.zack-go {
   border-color: var(--oro) !important;
   background: var(--nero) !important;
   color: var(--oro) !important;
@@ -3720,23 +3676,8 @@ body {
   width: min(280px, 40%);
   opacity: 0.5;
   pointer-events: none;
-}
-
-/* ══════════════════════════════════════════════════════════════════════ *
- * GLI STRUMENTI NON COPRONO LA TELA
- *
- * La tela è lo sfondo, sempre e in ogni sezione. I pannelli non ci stanno
- * sopra come lastre opache: hanno un **bordo nero** e dentro sono
- * **trasparenti**, così il panna passa attraverso e i personaggi che fanno
- * cose arrivano sul panna della pagina, non su un rettangolo appiccicato.
- *
- * Non è solo estetica: un pannello opaco è un pezzo di schermo tolto al
- * lavoro, e su una tela è proprio il lavoro la cosa da guardare.
- * ══════════════════════════════════════════════════════════════════════ */
-.rail,
-.brain-cassetto,
+}.rail,
 .brain-scelto,
-.brain-barra,
 .stagebar,
 .bg-testa {
   background: transparent;
@@ -3752,10 +3693,7 @@ body {
 
 .brain-scelto {
   border-left: 2px solid var(--nero);
-}
-
-.brain-barra,
-.bg-testa {
+}.bg-testa {
   border-bottom: 2px solid var(--nero);
 }
 
@@ -3768,12 +3706,7 @@ body {
 .field,
 .avanzati {
   background: transparent;
-}
-
-/* Il velo dietro un pannello serve solo dove il testo finisce sopra
-   un'immagine — e lì è panna appena velato, non nero. */
-.brain-scelto,
-.brain-cassetto {
+}.brain-scelto {
   background: rgba(245, 240, 232, 0.72);
 }
 
@@ -3932,26 +3865,8 @@ body {
 .drop {
   border: 2px dashed var(--linea-viva);
   border-radius: 22px;
-}
-
-/* ══════════════════════════════════════════════════════════════════════ *
- * LA GERARCHIA DEI TASTI
- *
- * Tre misure, e la misura è l'informazione: quanto è grande un tasto dice
- * quanto conta, prima ancora di leggerlo.
- *
- *   grande    l'azione dello strumento — SCONTORNA, VETTORIALIZZA, ZACK
- *   medio     gli avanzati — ingrandisci, esporta, blocco
- *   iconcina  i gesti continui — gomma, annulla, ritaglia
- *
- * Il resto sta dietro una tendina. Se un giorno servisse una quarta misura,
- * il problema non è la scala: è che i comandi sono tornati troppi.
- * ══════════════════════════════════════════════════════════════════════ */
-
-/* ── GRANDE ─────────────────────────────────────────────────────────── */
-.cta .btn,
+}.cta .btn,
 .zack-go,
-.brain-zack,
 .lp-cta {
   min-height: 58px;
   padding: 0 30px;
@@ -4768,7 +4683,7 @@ body {
   font-size: 15px;
   cursor: pointer;
 }
-/* Come per `.brain-barra`: dentro l'impianto il `+` e la croce stanno in alto
+/* Dentro l'impianto il `+` e la croce stanno in alto
    a sinistra (`.sc-angolo`, 46px), e ciò che comincia a filo ci finisce sotto.
    Misurato: la croce copriva la prima manopola. */
 .sc .sound-manopole {
