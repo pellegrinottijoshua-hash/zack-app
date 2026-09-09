@@ -1,5 +1,6 @@
 import { t } from '../i18n/index.js';
 import { famiglia } from '../engine/synth.js';
+import Registrazione from './Registrazione.jsx';
 
 /**
  * Il laboratorio degli effetti sonori.
@@ -18,9 +19,14 @@ import { famiglia } from '../engine/synth.js';
  * sono i cerchi dell'impianto: erano tutti comandi dentro la tela, e la tela
  * dell'impianto è vuota per contratto (§ 5.4).
  */
-export default function SoundLab({ effetto, onEffetto, ritmo, registrando, errore, onScordaRitmo }) {
+export default function SoundLab({ effetto, onEffetto, ritmo, registrando, errore, onScordaRitmo, onFermaRitmo }) {
   const f = famiglia(effetto.famiglia);
   const cambia = (dentro) => onEffetto({ ...effetto, ...dentro });
+
+  // Stessa ragione del Vocale: si batte il ritmo, e si deve poterlo fermare.
+  if (registrando) {
+    return <Registrazione onFerma={onFermaRitmo} aiuto={t('sound.battiOra')} />;
+  }
 
   return (
     <div className="sound">
@@ -57,13 +63,9 @@ export default function SoundLab({ effetto, onEffetto, ritmo, registrando, error
           serve a QUESTO, non a registrare la materia. */}
       <div className="sound-ritmo">
         <span className="sound-nota">
-          {registrando
-            ? t('sound.registrando')
-            : ritmo
-              ? t('sound.ritmoTrovato', { n: ritmo.length })
-              : t('sound.ritmoNiente')}
+          {ritmo ? t('sound.ritmoTrovato', { n: ritmo.length }) : t('sound.ritmoNiente')}
         </span>
-        {ritmo && !registrando && (
+        {ritmo && (
           <button className="btn ghost small" onClick={onScordaRitmo}>
             {t('sound.scordaRitmo')}
           </button>

@@ -77,6 +77,21 @@ export const ICONS = {
   alleggerisci: ['M5 8h14', 'M6.5 12h11', 'M9 16h6'],
 
   /*
+   * Centra tutto: quattro angoli e un punto in mezzo.
+   *
+   * E' «rimetti tutto nell'inquadratura», che su una tela dove ci si puo'
+   * perdere e' una via d'uscita, non un vezzo. Non `crop`, che e' una
+   * cornice e altrove vuol dire ritagliare.
+   */
+  centra: [
+    'M4 8V5.5h2.5',
+    'M17.5 5.5H20V8',
+    'M20 16v2.5h-2.5',
+    'M6.5 18.5H4V16',
+    punto(12, 12),
+  ],
+
+  /*
    * Gli effetti sonori: uno scoppio.
    *
    * Non un'altra onda. `wave` e' la VOCE — un'onda registrata — e le due

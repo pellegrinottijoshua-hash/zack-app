@@ -2827,8 +2827,20 @@ body {
  * video si guarda e la tastiera funziona senza riscrivere niente.
  * ------------------------------------------------------------------ */
 .brain {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  /*
+   * Colonna flessibile, NON due righe di griglia.
+   *
+   * Era `grid-template-rows: auto minmax(0, 1fr)` — la prima riga per la
+   * barra, la seconda per la tela. Il 2026-09-09 la barra e' stata tolta, e
+   * la tela e' scivolata nella riga `auto`: **altezza zero**. Gli oggetti
+   * c'erano, il conteggio li vedeva, e sullo schermo non compariva niente.
+   * Silenzioso, come sempre quando un numero di righe va contato a mano.
+   *
+   * Con la colonna flessibile il conto non c'e' piu': quel che c'e' dentro si
+   * prende lo spazio, uno o tre che siano.
+   */
+  display: flex;
+  flex-direction: column;
   height: 100%;
   min-height: 0;
   /* Il documento aperto si appoggia qui: senza, `inset: 0` prenderebbe come
@@ -2836,13 +2848,7 @@ body {
   position: relative;
 }
 
-.brain-barra {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--linea);
-}
+
 
 /* Brain vive DENTRO l'impianto, e l'impianto tiene il `+` e la croce in alto
    a sinistra (`.sc-angolo`, 46px). Senza questo spazio la barra ci finiva
@@ -2853,65 +2859,34 @@ body {
   padding-left: 62px;
 }
 
-.brain-barra button {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 9px 13px;
-  background: transparent;
-  border: 1px solid var(--linea-viva);
-  color: var(--inchiostro-2);
-  font-family: var(--display);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
 
-.brain-barra button:hover:not(:disabled),
-.brain-barra button[aria-pressed='true'] {
-  color: var(--inchiostro);
-  border-color: var(--oro);
-}
 
-.brain-barra button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
 
-.brain-barra svg {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.75;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
+
+
+
+
 
 .brain-spazio {
   flex: 1;
 }
 
-.brain-zoom {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  color: var(--inchiostro-2);
-  min-width: 46px;
-  text-align: right;
-}
 
+
+/* Due colonne, non tre: il cassetto dei file a sinistra se n'e' andato il
+   2026-09-09 ed e' diventato un momento (`ScegliAsset`), aperto dal `+`. La
+   terza (`auto`) e' il pannello dell'oggetto scelto, che compare solo quando
+   ne scegli uno. */
 .brain-corpo {
   display: grid;
-  grid-template-columns: 168px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  /* Si prende l'altezza che avanza: e' l'unico figlio di `.brain`, e la tela
+     e' tutto il lavoro. */
+  flex: 1;
   min-height: 0;
 }
 
-.brain-cassetto {
-  border-right: 1px solid var(--linea);
-  padding: 10px;
-  overflow-y: auto;
-}
+
 
 .brain-cassetto h3,
 .brain-scelto h3 {
@@ -3347,47 +3322,17 @@ body {
   display: none;
 }
 
-/* La porta d'ingresso di Brain: un'etichetta che si comporta da pulsante,
-   perché un input file vero è impresentabile in ogni browser. */
-.brain-porta {
-  display: block;
-  margin-bottom: 10px;
-  padding: 8px;
-  border: 1px dashed var(--linea-viva);
-  color: var(--inchiostro-2);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  text-align: center;
-  cursor: pointer;
-}
 
-.brain-porta:hover {
-  color: var(--inchiostro);
-  border-color: var(--oro);
-}
 
-.brain-porta input {
-  display: none;
-}
 
-/* Il tasto Zack di Brain. In Brain non c'è un file sul piano, quindi la barra
-   sopra la tela non esiste: il tasto vive nella riga dei comandi, ed è
-   comunque il più grande della schermata. */
-.brain-zack {
-  background: var(--oro-velo) !important;
-  border-color: var(--oro) !important;
-  color: var(--inchiostro) !important;
-  padding: 9px 18px !important;
-}
 
-.brain-zack svg {
-  stroke: var(--oro);
-}
 
-.brain-zack:disabled {
-  opacity: 0.4;
-}
+
+
+
+
+
+
 
 .brain-riapri {
   padding: 9px 12px;
@@ -3548,11 +3493,7 @@ body {
   text-align: left;
 }
 
-/* La riga dei comandi va a capo invece di stringere i tasti: la forma ovale
-   ha bisogno del suo respiro, e schiacciarla la fa sembrare un rettangolo. */
-.brain-barra {
-  flex-wrap: wrap;
-}
+
 
 .brain-categoria {
   justify-content: flex-start;
@@ -3807,9 +3748,7 @@ body {
   border-left: 2px solid var(--nero);
 }
 
-.brain-cassetto {
-  border-right: 2px solid var(--nero);
-}
+
 
 .brain-scelto {
   border-left: 2px solid var(--nero);
@@ -4070,12 +4009,7 @@ body {
   align-items: center;
 }
 
-/* Anche gli oggetti di Brain sono gesti continui: nota, gruppo, freccia si
-   premono decine di volte in una sessione. */
-.brain-barra button svg {
-  width: 18px;
-  height: 18px;
-}
+
 
 /* ── IL FILMATO: tre gesti, e nient'altro ─────────────────────────────── */
 .film {
@@ -5248,4 +5182,82 @@ body {
   .sc {
     padding-bottom: clamp(60px, 9vh, 96px);
   }
+}
+
+/* ── Mentre il microfono è acceso ────────────────────────────────────────
+   Una cosa sola da fare, grande. Il difetto che questo pannello chiude
+   (2026-09-09): si premeva «Registra» e non c'era NESSUN modo di fermare —
+   il tasto viveva in un pannello che si disegnava solo a registrazione
+   finita, cioè mai. */
+.registrazione {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: min(52vh, 380px);
+  text-align: center;
+}
+/* La spia rossa: pulsa, perché un microfono acceso e una schermata ferma
+   sono indistinguibili da un guasto. */
+.reg-spia i {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #c0392b;
+  box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.6);
+  animation: reg-pulsa 1.4s ease-out infinite;
+}
+@keyframes reg-pulsa {
+  70% {
+    box-shadow: 0 0 0 16px rgba(192, 57, 43, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(192, 57, 43, 0);
+  }
+}
+.reg-tempo {
+  margin: 0;
+  font-family: 'Fredoka', var(--display);
+  font-size: clamp(38px, 9vw, 64px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--inchiostro);
+}
+.reg-nota {
+  margin: 0;
+  max-width: 28ch;
+  color: var(--inchiostro-2);
+}
+.reg-ferma {
+  min-width: 180px;
+  padding: 14px 28px;
+  font-size: 17px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reg-spia i {
+    animation: none;
+  }
+}
+
+/* La scelta di un asset dalla libreria: un MOMENTO, non un cassetto fisso.
+   Vive nel pannello sopra la tela, come gli avanzati. */
+.scegli-asset {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.scegli-testa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.scegli-testa h3 {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--inchiostro-3);
 }

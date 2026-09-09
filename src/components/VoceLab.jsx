@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { t } from '../i18n/index.js';
+import Registrazione from './Registrazione.jsx';
 
 /**
  * Il vocale: registri una voce, o ne porti una, e la trasformi.
@@ -34,6 +35,15 @@ export default function VoceLab({ sound, descrizione = '', onDescrizione, ricett
     }
   }
 
+  /*
+   * Mentre il microfono e' acceso non c'e' nient'altro da fare che fermarlo.
+   * Prima questo ramo non esisteva e il pannello intero non si disegnava:
+   * la registrazione non si poteva fermare.
+   */
+  if (sound.recording) {
+    return <Registrazione onFerma={sound.stop} aiuto={t('sound.parlaOra')} />;
+  }
+
   return (
     <div className="voce-lab">
       {/* La voce sta in ALTO, sopra tutto il resto: contratto UX § 7.3. È la
@@ -51,8 +61,6 @@ export default function VoceLab({ sound, descrizione = '', onDescrizione, ricett
           </div>
         </div>
       )}
-
-      {sound.recording && <p className="voce-registra">{t('sound.registrando')}</p>}
 
       {/* Un codice non è un messaggio: qui usciva «mic-denied» a schermo,
           mentre `sound.micDenied` era scritto in due lingue e non lo chiamava

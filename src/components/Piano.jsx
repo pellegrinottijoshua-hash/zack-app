@@ -66,6 +66,8 @@ export default function Piano({
   onOpzione,
   /** Il pannello aperto sopra la tela: gli avanzati, quando c'è qualcosa. */
   pannello,
+  /** Sta succedendo qualcosa che l'utente deve poter fermare (una registrazione). */
+  inCorso,
   children,
 }) {
   const [aperto, setAperto] = useState(false);
@@ -296,7 +298,12 @@ export default function Piano({
           /* La catena vuota spegne il tasto solo di chi HA una catena: su
              Brain `piano` e' sempre nullo — non c'e' un'immagine da
              misurare — e questa riga l'avrebbe spento per sempre. */
-          disabled={busy || (servizio.tasto.azione === 'catena' && !vuoto && quanti <= 1 && vuota)}
+          /* Spento anche mentre qualcosa e' in corso: durante una
+             registrazione l'unica cosa da fare e' fermarla, e un tasto Zack
+             premibile li' e' un secondo comando che compete con l'unico. */
+          disabled={
+            busy || inCorso || (servizio.tasto.azione === 'catena' && !vuoto && quanti <= 1 && vuota)
+          }
           onClick={vuoto ? onPick : onZack}
         >
           <img

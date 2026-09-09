@@ -22,6 +22,7 @@ import SoundLab from './components/SoundLab.jsx';
 import VoceLab from './components/VoceLab.jsx';
 import FinishPanel from './components/FinishPanel.jsx';
 import Advanced from './components/Advanced.jsx';
+import ScegliAsset from './components/ScegliAsset.jsx';
 import Brain from './components/Brain.jsx';
 import BatchGrid from './components/BatchGrid.jsx';
 import FilmLab from './components/FilmLab.jsx';
@@ -35,7 +36,8 @@ import { TARGET_SIDE } from './engine/ready.js';
 import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/ricette.js';
 import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/ritaglio.js';
 import { DESCRITTORI, getDescrittore, strumentiVisibili } from './servizi/index.js';
-import { nuovaNota, nuovoCerchio, prossimoPosto } from './engine/brain.js';
+import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
+import { nuovaNota, nuovoAsset, nuovoCerchio, prossimoPosto } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
 import { leggiDescrizione } from './engine/dizionarioVoce.js';
 import { NEUTRA, fondiRicetta, getRecipe } from './engine/sound.js';
@@ -168,14 +170,16 @@ export default function App() {
    */
   const [regolaRiordino, setRegolaRiordino] = useState(getDescrittore('brain').tasto.predefinita);
   /**
-   * Gli avanzati aperti sopra la tela.
+   * Cosa è aperto SOPRA la tela: `null`, `'avanzati'` o `'libreria'`.
    *
-   * § 5.4 li toglie dalla colonna e § 7.2 dice dove vanno. Quando i servizi
-   * sono entrati nell'impianto la colonna e' sparita con dentro TUTTO — un
-   * `display: none` che si portava via blocco, ingrandimento, rifinitura ed
-   * esportazione senza dirlo. Ora ci si torna dal cerchio piu' in basso.
+   * Uno stato solo e non due booleani: due booleani possono essere veri
+   * insieme, e infatti lo sono stati — aperta la libreria e poi gli avanzati,
+   * restavano tutt'e due, e la libreria copriva l'altro per sempre. Sopra la
+   * tela ci può stare **una cosa sola**, e adesso lo dice il tipo.
    */
-  const [avanzatiAperti, setAvanzatiAperti] = useState(false);
+  const [sopraLaTela, setSopraLaTela] = useState(null);
+  /** Per «centra tutto», che ora è un cerchio ma muove la vista di Brain. */
+  const brainRef = useRef(null);
   /** Il menu del `+` aperto. È un momento, non uno stato: si apre e si chiude. */
   const [menuPiu, setMenuPiu] = useState(false);
   /**
@@ -1441,6 +1445,26 @@ export default function App() {
     },
   };
 
+  /**
+   * Cosa c'è sul piano, in una forma che `servizi/piano.js` sa leggere.
+   *
+   * Un oggetto solo, e non tre ternari sparsi fra le props: era li' che si era
+   * persa la meta' della regola — «il piano e' vuoto quando non c'e' niente
+   * sopra E non sta succedendo niente» — e con lei il tasto per fermare il
+   * microfono.
+   */
+  const statoPiano = {
+    tela: tela.length,
+    clipVoce: voce.clip,
+    registrandoVoce: voce.recording,
+    effettoAperto,
+    ritmo: effettiAudio.rhythm,
+    registrandoRitmo: effettiAudio.recording,
+    file,
+    inColonna: batchFiles.length,
+    risultati: batch.results.length,
+  };
+
   /** La ricetta della voce: quella scelta nel punto oro più i filtri del tasto. */
   const ricettaVoce = fondiRicetta(
     baseVoce === 'neutra' ? NEUTRA : getRecipe(baseVoce),
@@ -1497,6 +1521,26 @@ export default function App() {
     if (!filtriDiPrima) return;
     setFiltriVoce(filtriDiPrima);
     setFiltriDiPrima(null);
+  }
+
+  /** Un file dal computer: entra in libreria, e da lì sulla tela. */
+  function portaFileInBrain() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept =
+      'image/png,image/jpeg,image/svg+xml,audio/wav,audio/mpeg,video/mp4,video/webm,.md,.markdown,text/markdown';
+    input.onchange = async () => {
+      const scelti = [...input.files];
+      if (scelti.length) await importaFile(scelti);
+    };
+    return input.click();
+  }
+
+  /** Un asset già in libreria, messo sulla tela dove c'è posto. */
+  async function metiSullaTela(asset) {
+    setSopraLaTela(null);
+    await cambiaTela([...tela, nuovoAsset({ assetId: asset.id, ...prossimoPosto(tela) })]);
   }
 
   /** Torna alla tela di prima. Una mossa sola: vedi `telaDiPrima`. */
@@ -1659,6 +1703,42 @@ export default function App() {
    * l'editor (che l'impianto non ha) la tiene nella sua colonna. **Lo stesso
    * contenuto**, non due copie — due copie divergono al primo ritocco.
    */
+  /*
+   * Gli avanzati di BRAIN sono altri: sulla tela non c'è un file del piano,
+   * quindi blocco, ingrandimento, rifinitura ed esportazione non hanno su
+   * cosa lavorare. Qui ci sono i gesti che si fanno a lavoro finito —
+   * portarsi via l'idea intera — e che il 2026-09-09 sono usciti dalla tela.
+   */
+  const avanzatiBrain = (
+    <Advanced id="brain">
+      <div className="field">
+        <button className="btn ghost" disabled={tela.length === 0} onClick={faiPacco}>
+          {t('brain.pacco')}
+        </button>
+        <Help k="brain.packHelp" />
+      </div>
+      <div className="field">
+        <button className="btn ghost" disabled={tela.length === 0} onClick={fotografaLaTela}>
+          {t('brain.foto')}
+        </button>
+      </div>
+      {/* Riaprire un pacco sta accanto al tasto che li fa: chi ne ha uno lo
+          cerca qui, non in un menu impostazioni. */}
+      <label className="brain-riapri field">
+        {t('brain.reopen')}
+        <input
+          type="file"
+          accept=".zip,application/zip"
+          onChange={async (e) => {
+            const f = e.target.files[0];
+            e.target.value = '';
+            if (f) await apriPacco(f);
+          }}
+        />
+      </label>
+    </Advanced>
+  );
+
   const avanzati = (
     <Advanced id={tool}>
           <BatchPanel
@@ -1779,17 +1859,14 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
             />
           ) : tool === 'brain' ? (
             <Brain
+              ref={brainRef}
               items={tela}
               assets={library.assets}
               leggi={library.read}
               onChange={cambiaTela}
               onUse={assetAction}
-              onImport={importaFile}
-              onPacco={faiPacco}
-              onApriPacco={apriPacco}
               onSalvaDoc={salvaDocumento}
               onIcona={iconaDocumentoScelta}
-              onFoto={fotografaLaTela}
               onScarica={scaricaAsset}
               /* Il gesto aperto arriva da fuori, come per FilmLab: il cerchio
                  della freccia sta nell'impianto, e il suo stato con lui. */
@@ -1832,6 +1909,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               registrando={effettiAudio.recording}
               errore={effettiAudio.error}
               onScordaRitmo={effettiAudio.reset}
+              onFermaRitmo={effettiAudio.stop}
             />
           ) : isEditor ? (
             <SvgEditor
@@ -1983,7 +2061,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                  * nell'impianto. Si preme e non succede niente e' peggio di un
                  * comando spento.
                  */
-                setAvanzatiAperti(true);
+                setSopraLaTela('avanzati');
                 const testa = document.querySelector('.avanzati-head');
                 if (testa?.getAttribute('aria-expanded') !== 'true') testa?.click();
                 requestAnimationFrame(() => {
@@ -2016,40 +2094,14 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               /* Vuoto vuol dire NIENTE sul piano: ne' un file solo, ne' la
                  colonna dei tre scelti, ne' i risultati. Senza i tre scelti
                  il `+` restava in mezzo e la colonna non si vedeva mai. */
-              vuoto={
-                tool === 'filmato'
-                  ? !filmato
-                  : tool === 'brain'
-                    ? tela.length === 0
-                    : tool === 'vocale'
-                      ? !voce.clip
-                      : tool === 'effetti'
-                        ? !effettoAperto && !effettiAudio.rhythm
-                        : !file && batchFiles.length === 0 && batch.results.length === 0
-              }
+              vuoto={tool === 'filmato' ? !filmato : pianoVuoto(tool, statoPiano)}
               ricetta={ricetta}
               piano={stats?.image ? pianoZack(ricetta, stats.image) : null}
               /* Su Brain «quanti» sono gli oggetti sulla tela: da uno in su il
                  `+` piccolo resta in alto a sinistra, e il tetto è 99, cioè
                  non c'è. La croce no: si toglie l'oggetto scelto, non la
                  tela — quello lo fa `onTogli`, che qui è nullo. */
-              quanti={
-                tool === 'brain'
-                  ? tela.length
-                  : tool === 'vocale'
-                    ? voce.clip
-                      ? 1
-                      : 0
-                    : tool === 'effetti'
-                      ? effettoAperto || effettiAudio.rhythm
-                        ? 1
-                        : 0
-                      : batchFiles.length > 1
-                      ? batchFiles.length
-                      : file
-                        ? 1
-                        : 0
-              }
+              quanti={tool === 'filmato' ? (filmato ? 1 : 0) : quantiSulPiano(tool, statoPiano)}
               /* Il lavoro in corso, detto. Col file singolo lo dice gia' il
                  confronto; con la colonna non lo diceva nessuno. */
               lavoro={
@@ -2073,7 +2125,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 tool === 'filmato'
                   ? scegliFilmato
                   : getDescrittore(tool).accetta.menu
-                    ? () => setMenuPiu(true)
+                    ? () => {
+                      setSopraLaTela(null);
+                      setMenuPiu(true);
+                    }
                     : scegliFile
               }
               menu={menuPiu}
@@ -2084,7 +2139,12 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 if (tool === 'vocale') return menuVocale(quale);
                 if (tool === 'effetti') return menuEffetti(quale);
                 setMenuPiu(false);
-                if (quale === 'file') return scegliFile();
+                // Dal computer: entra in libreria e finisce sulla tela.
+                if (quale === 'computer') return portaFileInBrain();
+                // Dalla libreria: un pannello che si apre, si sceglie, si
+                // chiude. Era un cassetto FISSO a sinistra della tela — e la
+                // tela di Brain dev'essere vuota.
+                if (quale === 'libreria') return setSopraLaTela('libreria');
                 // `prossimoPosto` sa dove c'è spazio: due note nate insieme
                 // non devono nascere una sopra l'altra.
                 const dove = prossimoPosto(tela);
@@ -2095,7 +2155,19 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               }}
               /* Gli avanzati, quando il cerchio li apre. Lo stesso contenuto
                  della colonna: non una seconda copia, la stessa. */
-              pannello={avanzatiAperti ? avanzati : null}
+              pannello={
+                sopraLaTela === 'libreria' ? (
+                  <ScegliAsset
+                    assets={library.assets.filter((a) => !tela.some((o) => o.assetId === a.id))}
+                    tuttiSulPiano={library.assets.length > 0}
+                    onScegli={metiSullaTela}
+                    onChiudi={() => setSopraLaTela(null)}
+                  />
+                ) : sopraLaTela === 'avanzati' ? (
+                  tool === 'brain' ? avanzatiBrain : avanzati
+                ) : null
+              }
+              inCorso={statoDelPiano(tool, statoPiano).inCorso}
               opzione={OPZIONE[tool]?.valore ?? regolaRiordino}
               onOpzione={OPZIONE[tool]?.cambia ?? setRegolaRiordino}
               /* Togliere il file singolo: senza conferma, perche' e' un
@@ -2220,7 +2292,8 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   salvaEffetto,
                   pulisci: () => set({ clean: !s.clean }),
                   apriEditor: sendToEditor,
-                  avanzati: () => setAvanzatiAperti((v) => !v),
+                  avanzati: () => setSopraLaTela((v) => (v === 'avanzati' ? null : 'avanzati')),
+                  centra: () => brainRef.current?.centra(),
                   salvaVoce,
                   /*
                    * «Annulla» vuol dire cose diverse su servizi diversi, e va
@@ -2237,7 +2310,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   freccia: Boolean(collegaBrain),
                   ritmo: effettiAudio.recording,
                   pulisci: s.clean,
-                  avanzati: avanzatiAperti,
+                  avanzati: sopraLaTela === 'avanzati',
                 };
                 /*
                  * Cosa vuol dire «c'e' qualcosa sul piano» cambia col
@@ -2246,16 +2319,25 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                  * due, e con uno solo il cerchio sarebbe li' acceso a non
                  * fare niente.
                  */
+                /*
+                 * Brain e' l'unico con una soglia sua: una freccia collega DUE
+                 * oggetti, e con uno solo il cerchio sarebbe li' acceso a non
+                 * fare niente. Gli altri seguono la regola comune, invece di
+                 * riscriverla — riscriverla e' come si e' persa.
+                 */
                 const pieno =
-                  tool === 'filmato'
-                    ? Boolean(filmato)
-                    : tool === 'brain'
-                      ? tela.filter((o) => o.t !== 'freccia').length >= 2
-                      : tool === 'vocale'
-                        ? Boolean(voce.clip)
-                        : tool === 'effetti'
-                          ? effettoAperto || Boolean(effettiAudio.rhythm)
-                          : Boolean(file);
+                  tool === 'brain'
+                    ? tela.filter((o) => o.t !== 'freccia').length >= 2
+                    : tool === 'filmato'
+                      ? Boolean(filmato)
+                      : /*
+                         * `contenuto`, non `!vuoto`: gli strumenti lavorano su
+                         * quello che C'E', non su quello che STA SUCCEDENDO.
+                         * Mentre il microfono e' acceso il piano non e' vuoto —
+                         * o il tasto Ferma non si disegnerebbe — ma non c'e'
+                         * ancora niente su cui premere «Ascolta».
+                         */
+                        statoDelPiano(tool, statoPiano).contenuto;
                 /*
                  * «C'e' un risultato» vuol dire cose diverse: per lo
                  * scontorno un PNG — i pennelli non hanno su cosa lavorare

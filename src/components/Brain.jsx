@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
 import { KIND_AUDIO, KIND_VIDEO, KIND_TESTO, ICONE_DOCUMENTO, iconaDocumento, anteprimaTesto, kindFromFile } from '../store/model.js';
 import {
-  nuovoAsset,
   nuovaFreccia,
   muovi,
   aggiorna,
@@ -196,18 +195,14 @@ function Documento({ asset, leggi, onSalva, onScarica, onChiudi }) {
   );
 }
 
-export default function Brain({
+function Brain({
   items,
   assets,
   leggi,
   onChange,
   onUse,
-  onImport,
-  onPacco,
-  onApriPacco,
   onSalvaDoc,
   onIcona,
-  onFoto,
   onScarica,
   /*
    * La freccia in corso arriva da FUORI: il comando ora e' un cerchio
@@ -217,7 +212,7 @@ export default function Brain({
    */
   collega,
   onCollega,
-}) {
+}, ref) {
   const [scelto, setScelto] = useState(null);
   /* Il documento aperto a tutto schermo sopra la tela. Non è un secondo
      stato del prodotto: è una lettura, e si chiude con Esc come ogni altro
@@ -230,16 +225,6 @@ export default function Brain({
   const perId = useMemo(() => new Map(assets.map((a) => [a.id, a])), [assets]);
 
   /** Un oggetto nuovo entra dove c'è posto, non sopra gli altri. */
-  const aggiungi = useCallback(
-    (fai) => {
-      const dove = prossimoPosto(items);
-      const o = fai(dove);
-      onChange([...items, o]);
-      setScelto(o.id);
-    },
-    [items, onChange],
-  );
-
   // Trascinamento. I puntatori si catturano: senza, uscire dalla finestra
   // mentre si trascina lascia l'oggetto attaccato al mouse per sempre.
   function prendi(e, id) {
@@ -296,105 +281,24 @@ export default function Brain({
     return () => document.removeEventListener('keydown', tasti);
   }, [items, scelto, onChange, onCollega]);
 
+  /*
+   * «Centra tutto» arriva da fuori: il comando ora e' un cerchio
+   * dell'impianto, ma la vista (dove si sta guardando, e quanto) e' roba di
+   * qui. Stessa forma che l'editor SVG usa gia' con `editorRef`.
+   */
+  useImperativeHandle(ref, () => ({ centra }), [items]);
+
   const oggetto = items.find((o) => o.id === scelto) || null;
   const assetScelto = oggetto?.t === 'asset' ? perId.get(oggetto.assetId) : null;
-  const daPiazzare = assets.filter((a) => !items.some((o) => o.assetId === a.id));
 
   return (
     <div className="brain">
-      {/* Una riga sola di comandi: se un giorno non ci stanno, il problema è
-          la fila, non la riga.
-
-          Nota, gruppo e freccia non sono più qui: le prime due stanno nel `+`
-          dell'impianto, la terza è un cerchio a lato. Lasciarle anche qui
-          sarebbe stato lo stesso comando in due posti — e il giorno che ne
-          cambia uno solo, due comandi che fanno cose diverse. */}
-      <div className="brain-barra">
-        <button onClick={centra} disabled={items.length === 0}>
-          {t('brain.center')}
-        </button>
-        <span className="brain-zoom">{Math.round(vista.z * 100)}%</span>
-
-        {/* Riaprire un pacco sta accanto al tasto che li fa: chi ne ha uno lo
-            cerca qui, non in un menu impostazioni. */}
-        <label className="brain-riapri">
-          {t('brain.reopen')}
-          <input
-            type="file"
-            accept=".zip,application/zip"
-            onChange={async (e) => {
-              const f = e.target.files[0];
-              e.target.value = '';
-              if (f) await onApriPacco(f);
-            }}
-          />
-        </label>
-
-        {/* Il tasto Zack di Brain: porta via l'idea intera. In Brain non c'è
-            un file sul piano di lavoro, quindi la barra sopra la tela non
-            c'è — il tasto vive qui, dove sta il lavoro. */}
-        {/* La fotografia della tela. Sta accanto al pacco perché sono la
-            stessa famiglia di gesti — portarsi via ciò che si è fatto — ma
-            sono due cose diverse, e la misura lo dice: il pacco si rimette
-            dentro, l'immagine si guarda e si manda a qualcuno. */}
-        <button className="brain-foto" disabled={items.length === 0} onClick={onFoto}>
-          {t('brain.foto')}
-        </button>
-
-        {/* Si chiamava «Zack», e adesso che Brain sta nell'impianto c'e' un
-            tasto Zack vero a due dita da qui che fa tutt'altro. Un tasto si
-            chiama come la cosa che fa: questo fa un pacco. */}
-        <button className="brain-zack" disabled={items.length === 0} onClick={onPacco}>
-          <Icon name="feather" draw />
-          {t('brain.pacco')}
-        </button>
-      </div>
-
+      {/* Solo la tela. La barra (centra, zoom, pacchi, immagine) e il
+          cassetto dei file se ne sono andati il 2026-09-09: «la tela dev'essere
+          vuota, deve essere una mappa concettuale». I comandi non sono spariti
+          — stanno nei cerchi dell'impianto e sotto Avanzati, che e' dove
+          l'impianto li tiene per tutti gli altri servizi. */}
       <div className="brain-corpo">
-        {/* I lavori non ancora sulla tela. Un clic e ci finiscono: prendere un
-            file dalla libreria non deve essere un viaggio. */}
-        <aside className="brain-cassetto">
-          <h3>{t('brain.drawer')}</h3>
-
-          {/* La porta d'ingresso. Senza, Brain poteva mostrare solo ciò che
-              era già uscito da uno strumento: un video di riferimento o una
-              voce registrata altrove non avevano modo di entrare. */}
-          <label className="brain-porta">
-            {t('brain.import')}
-            <input
-              type="file"
-              multiple
-              accept="image/png,image/jpeg,image/svg+xml,audio/wav,audio/mpeg,video/mp4,video/webm,.md,.markdown,text/markdown"
-              onChange={async (e) => {
-                const scelti = [...e.target.files];
-                e.target.value = '';
-                await onImport(scelti);
-              }}
-            />
-          </label>
-          {/* Due vuoti diversi: "non hai ancora salvato niente" e "sono già
-              tutti sulla tela" sono due situazioni opposte, e dire la seconda
-              a chi si trova nella prima lo lascia a cercare un cassetto che
-              non esiste. */}
-          {daPiazzare.length === 0 && (
-            <p className="brain-vuoto">
-              {assets.length === 0 ? t('brain.libraryEmpty') : t('brain.drawerEmpty')}
-            </p>
-          )}
-          <div className="brain-elenco">
-            {daPiazzare.map((a) => (
-              <button
-                key={a.id}
-                className="brain-chip"
-                title={a.name}
-                onClick={() => aggiungi((d) => nuovoAsset({ assetId: a.id, ...d }))}
-              >
-                {a.name}
-              </button>
-            ))}
-          </div>
-        </aside>
-
         <div
           className="brain-piano"
           ref={piano}
@@ -645,3 +549,4 @@ export default function Brain({
   );
 }
 
+export default forwardRef(Brain);
