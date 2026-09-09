@@ -720,5 +720,17 @@
   },
   "effetti": {
     "claim": "Build a sound effect from scratch. Tap a rhythm with your voice and the effect follows it."
+  },
+  "tutorial": {
+    "apri": "How to use it",
+    "titolo": "Vector in four moves",
+    "chiudi": "Got it",
+    "avanti": "Next",
+    "indietro": "Back",
+    "passo": "Step {n} of {tot}",
+    "p1": "The canvas is a drawing sheet, and it starts empty. The tools are the circles on the left: select, pen, pencil, line, rectangle, ellipse, text.",
+    "p2": "Already have an image? Press the `+` at the top left and bring it in. Then the ZACK button turns it into shapes you can scale as much as you like.",
+    "p3": "In the gold dot — the bead next to ZACK — you choose HOW to trace: flat colours for logos, gradients for photos, black and white for line art.",
+    "p4": "With an element selected, the nodes circle lights up: from there you move points and curves. Under Advanced you get colours, alignment and output format."
   }
 }

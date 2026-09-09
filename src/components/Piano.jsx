@@ -301,10 +301,20 @@ export default function Piano({
           /* Spento anche mentre qualcosa e' in corso: durante una
              registrazione l'unica cosa da fare e' fermarla, e un tasto Zack
              premibile li' e' un secondo comando che compete con l'unico. */
+          /*
+             `quanti > 0` e non `!vuoto`: erano la stessa cosa finche' «piano
+             non vuoto» voleva dire «c'e' un file». Sul vettoriale non lo vuol
+             piu' dire — la sua tela e' sempre li' — e la regola spegneva il
+             tasto all'apertura, con niente da tracciare e niente da fare.
+             La regola vera e': c'e' UN file, e la catena e' vuota. */
           disabled={
-            busy || inCorso || (servizio.tasto.azione === 'catena' && !vuoto && quanti <= 1 && vuota)
+            busy ||
+            inCorso ||
+            (servizio.tasto.azione === 'catena' && quanti > 0 && quanti <= 1 && vuota)
           }
-          onClick={vuoto ? onPick : onZack}
+          /* Col piano ancora vuoto il tasto e' il secondo modo di cominciare,
+             insieme al `+`: porta dentro un file invece di lavorare a vuoto. */
+          onClick={quanti === 0 && servizio.accetta.file ? onPick : onZack}
         >
           <img
             src="/zack/tasto-zack.webp"

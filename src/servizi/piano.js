@@ -42,8 +42,15 @@ const COSA_CE = {
     contenuto: Boolean(s.file) || (s.inColonna ?? 0) > 0 || (s.risultati ?? 0) > 0,
     inCorso: false,
   }),
+  /*
+   * Il vettoriale non ha mai il piano vuoto, ed è voluto: la sua tela **è** il
+   * lavoro. Un foglio da disegno vuoto non è «niente sul piano», è il punto di
+   * partenza, e va mostrato subito con gli strumenti intorno — *«il canva
+   * vuoto color panna»* (committente, 2026-09-09). Il `+` resta piccolo
+   * nell'angolo, per portare dentro un'immagine da tracciare.
+   */
+  vettorializza: () => ({ contenuto: true, inCorso: false }),
 };
-COSA_CE.vettorializza = COSA_CE.scontorna;
 
 /** Quanti oggetti conta il piano, per il `+` piccolo e per la croce. */
 const QUANTI = {
@@ -52,6 +59,15 @@ const QUANTI = {
   brain: (s) => s.tela ?? 0,
   scontorna: (s) => ((s.inColonna ?? 0) > 1 ? s.inColonna : s.file ? 1 : 0),
 };
+/*
+ * Il vettoriale conta i FILE, non la tela.
+ *
+ * La tela c'e' sempre — `contenuto` e' sempre vero, e' un foglio da disegno —
+ * ma «quanti ce ne sono sul piano» risponde a un'altra domanda: quante cose
+ * hai PORTATO. Contare uno con la tela vuota spegneva il tasto Zack
+ * all'apertura, perche' la regola «un file e la catena vuota» scattava senza
+ * che ci fosse nessun file.
+ */
 QUANTI.vettorializza = QUANTI.scontorna;
 
 /**

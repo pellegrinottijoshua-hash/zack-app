@@ -720,5 +720,17 @@
   },
   "effetti": {
     "claim": "Costruisci un effetto sonoro da zero. Batti un ritmo con la voce e l’effetto lo segue."
+  },
+  "tutorial": {
+    "apri": "Come si usa",
+    "titolo": "Il vettoriale in quattro mosse",
+    "chiudi": "Ho capito",
+    "avanti": "Avanti",
+    "indietro": "Indietro",
+    "passo": "Passo {n} di {tot}",
+    "p1": "La tela è un foglio da disegno, e comincia vuota. Gli strumenti sono i cerchi a sinistra: scegli, penna, matita, linea, rettangolo, ellisse, testo.",
+    "p2": "Hai già un'immagine? Premi il `+` in alto a sinistra e portala dentro. Poi il tasto ZACK la trasforma in forme che puoi ingrandire quanto vuoi.",
+    "p3": "Nel punto oro — la pallina accanto a ZACK — scegli COME tracciare: colori piatti per i loghi, sfumature per le foto, bianco e nero per i disegni al tratto.",
+    "p4": "Scelto un elemento, il cerchio dei nodi si accende: da lì sposti i punti e le curve. Sotto Avanzati ci sono colori, allineamento e formato di uscita."
   }
 }

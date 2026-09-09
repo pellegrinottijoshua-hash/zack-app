@@ -23,6 +23,7 @@ import VoceLab from './components/VoceLab.jsx';
 import FinishPanel from './components/FinishPanel.jsx';
 import Advanced from './components/Advanced.jsx';
 import ScegliAsset from './components/ScegliAsset.jsx';
+import Tutorial from './components/Tutorial.jsx';
 import Brain from './components/Brain.jsx';
 import BatchGrid from './components/BatchGrid.jsx';
 import { kindFromFile, nomeConSuffisso } from './store/model.js';
@@ -134,6 +135,20 @@ export default function App() {
     }
   });
 
+  /*
+   * L'editor non e' piu' una SCHERMATA a parte.
+   *
+   * Era `tool === 'editor'`, e ci si arrivava solo dopo aver tracciato
+   * un'immagine e premuto «apri nell'editor» — per questo il committente il
+   * 2026-09-09 diceva che gli strumenti erano spariti. Erano dietro una porta.
+   *
+   * `services.js` lo scriveva gia' nel 2026-08: «vettorializza ED editor SVG:
+   * un servizio solo, perche' sono un gesto solo». Adesso e' vero anche nel
+   * codice: aprire Vettoriale apre la tela, vuota, con gli strumenti ai
+   * fianchi. La porta non c'e' piu' perche' non serve piu'.
+   */
+  const isEditor = tool === 'vettorializza';
+
   /**
    * La catena del tasto Zack, una per servizio.
    *
@@ -163,6 +178,15 @@ export default function App() {
    * stato stesse nel componente, il tasto non potrebbe leggerlo.
    */
   const [regolaRiordino, setRegolaRiordino] = useState(getDescrittore('brain').tasto.predefinita);
+  /**
+   * Lo strumento di disegno acceso nel vettoriale.
+   *
+   * Sta qui e non dentro `SvgEditor` per la stessa ragione della freccia di
+   * Brain: i comandi sono cerchi dell'impianto, e il loro stato sta dove
+   * stanno loro. `select` è quello di partenza, come in ogni editor.
+   */
+  const [modoDisegno, setModoDisegno] = useState('select');
+
   /**
    * Cosa è aperto SOPRA la tela: `null`, `'avanzati'` o `'libreria'`.
    *
@@ -443,7 +467,7 @@ export default function App() {
   // La decisione su quale azione eseguire sta in una funzione pura testata a
   // parte; qui resta solo il collegamento.
   useEffect(() => {
-    if (tool !== 'editor') return undefined;
+    if (!isEditor) return undefined;
     const onKey = (ev) => {
       const action = resolveShortcut(ev);
       if (!action) return;
@@ -503,7 +527,7 @@ export default function App() {
     // An SVG dropped anywhere belongs in the editor.
     if (/\.svg$/i.test(f.name)) {
       f.text().then((txt) => {
-        setTool('editor');
+        setTool('vettorializza');
         setTimeout(() => editorRef.current?.setSvg(txt), 120);
       });
     }
@@ -766,7 +790,7 @@ export default function App() {
       let source = file;
       let isVector = false;
 
-      if (tool === 'editor') {
+      if (isEditor) {
         const svg = editorRef.current?.getSvg();
         if (!svg) throw new Error("L'editor è vuoto.");
         source = new File([svg], `${(file?.name || 'disegno').replace(/\.[^.]+$/, '')}.svg`, {
@@ -837,7 +861,7 @@ export default function App() {
   /** Send the traced SVG straight into the editor — the whole point of having both. */
   function sendToEditor() {
     if (result?.kind !== 'svg') return;
-    setTool('editor');
+    setTool('vettorializza');
     setTimeout(() => {
       const ok = editorRef.current?.setSvg(result.text);
       if (!ok) setError("L'editor non è riuscito ad aprire questo SVG.");
@@ -848,7 +872,7 @@ export default function App() {
     try {
       const { file: f } = await library.read(item.id);
       const txt = await f.text();
-      setTool('editor');
+      setTool('vettorializza');
       setTimeout(() => editorRef.current?.setSvg(txt), 120);
     } catch (e) {
       console.error(e);
@@ -1559,7 +1583,7 @@ export default function App() {
       // «Riprendi» rimette il lavoro sul piano e basta: non decide al posto di
       // chi lo riapre cosa vorra' farci.
       if (kind === 'open') {
-        if (item.kind === 'svg') setTool('editor');
+        if (item.kind === 'svg') setTool('vettorializza');
         setNotice(`${t('library.resume')}: ${item.name}`);
         return;
       }
@@ -1658,7 +1682,6 @@ export default function App() {
     );
   }
 
-  const isEditor = tool === 'editor';
   const canExport = isEditor || Boolean(file);
 
   /**
@@ -1876,6 +1899,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
           ) : isEditor ? (
             <SvgEditor
               ref={editorRef}
+              /* Lo strumento acceso arriva da fuori: i cerchi ai fianchi sono
+                 quelli, e la barra di parole dentro l'editor se n'e' andata. */
+              modo={modoDisegno}
+              onModo={setModoDisegno}
               onSelection={setSelCount}
               onRefuseNodes={() => setNotice(t('nodes.needPath'))}
             />
@@ -2123,6 +2150,8 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                     onScegli={metiSullaTela}
                     onChiudi={() => setSopraLaTela(null)}
                   />
+                ) : sopraLaTela === 'tutorial' ? (
+                  <Tutorial onChiudi={() => setSopraLaTela(null)} />
                 ) : sopraLaTela === 'avanzati' ? (
                   tool === 'brain' ? avanzatiBrain : avanzati
                 ) : null
@@ -2245,6 +2274,18 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   apriEditor: sendToEditor,
                   avanzati: () => setSopraLaTela((v) => (v === 'avanzati' ? null : 'avanzati')),
                   centra: () => brainRef.current?.centra(),
+                  tutorial: () => setSopraLaTela((v) => (v === 'tutorial' ? null : 'tutorial')),
+                  /*
+                   * Gli otto strumenti di disegno: il cerchio accende il modo,
+                   * e l'editor lo esegue. Un `id` solo per tutt'e due — quello
+                   * che `SvgEditor` usa gia' — cosi' non c'e' una tabella di
+                   * traduzione in mezzo che si puo' sfasare.
+                   */
+                  ...Object.fromEntries(
+                    ['select', 'path', 'fhpath', 'line', 'rect', 'ellipse', 'text', 'pathedit'].map(
+                      (m) => [m, () => setModoDisegno(m)],
+                    ),
+                  ),
                   salvaVoce,
                   /*
                    * «Annulla» vuol dire cose diverse su servizi diversi, e va
@@ -2260,6 +2301,8 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   erase: brushOpen && modoPennello === 'erase',
                   freccia: Boolean(collegaBrain),
                   ritmo: effettiAudio.recording,
+                  tutorial: sopraLaTela === 'tutorial',
+                  [modoDisegno]: isEditor,
                   pulisci: s.clean,
                   avanzati: sopraLaTela === 'avanzati',
                 };
@@ -2314,7 +2357,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   disabled:
                     Boolean(busy) ||
                     (str.id === 'undo' && history.length === 0) ||
-                    (str.id === 'annulla' && !(tool === 'vocale' ? filtriDiPrima : telaDiPrima)),
+                    (str.id === 'annulla' && !(tool === 'vocale' ? filtriDiPrima : telaDiPrima)) ||
+                    // I nodi non hanno cosa modificare finche' non e' scelto un
+                    // tracciato: acceso, sarebbe un comando che non risponde.
+                    (str.id === 'pathedit' && selCount === 0),
                   onClick: GESTI[str.id],
                 }));
               })()}
