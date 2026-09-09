@@ -288,3 +288,28 @@ test('il browser e il Worker sono d’accordo su DOVE stanno le porte', () => {
     `il browser chiama ${host}, che wrangler.jsonc non pubblica: /me fallirebbe sempre`,
   );
 });
+
+test('un Worker pubblicato senza segreti non esplode: dice «non collegato»', async () => {
+  /*
+   * Il caso del deploy fatto prima dei `wrangler secret put`. Senza
+   * `SUPABASE_URL` la fetch andrebbe verso «undefined/auth/v1/user»: in un
+   * Worker un'eccezione non gestita e' una pagina d'errore di Cloudflare al
+   * posto del sito. Fallire chiuso e in silenzio e' l'unica risposta che non
+   * fa danno — e il sito continua a servirsi da solo.
+   */
+  const nudo = { ASSETS: AMBIENTE.ASSETS };
+  rete(() => {
+    throw new TypeError('Failed to parse URL from undefined/auth/v1/user');
+  });
+
+  const res = await worker.fetch(
+    new Request('https://zack-app.com/me', { headers: { authorization: 'Bearer qualcosa' } }),
+    nudo,
+  );
+  assert.equal(res.status, 401);
+
+  // E soprattutto: il sito continua a esistere.
+  const home = await worker.fetch(new Request('https://zack-app.com/'), nudo);
+  assert.equal(home.status, 200);
+  assert.equal(await home.text(), 'la home');
+});

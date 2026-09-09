@@ -39,12 +39,27 @@ async function chiEsegue(req, env) {
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
   if (!token) return null;
 
-  const res = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
-    headers: { authorization: `Bearer ${token}`, apikey: env.SUPABASE_CHIAVE_PUBBLICA },
-  });
-  if (!res.ok) return null;
-  const u = await res.json();
-  return u?.id ? { id: u.id, email: u.email } : null;
+  /*
+   * Senza configurazione si dice «non collegato», non si esplode.
+   *
+   * Il caso e' il Worker pubblicato prima dei `wrangler secret put`: senza
+   * `SUPABASE_URL` la fetch andrebbe verso «undefined/auth/v1/user», e
+   * un'eccezione non gestita in un Worker e' una pagina d'errore di
+   * Cloudflare al posto del sito. Fallire chiuso e in silenzio e' l'unica
+   * risposta che non fa danno.
+   */
+  if (!env.SUPABASE_URL) return null;
+
+  try {
+    const res = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+      headers: { authorization: `Bearer ${token}`, apikey: env.SUPABASE_CHIAVE_PUBBLICA },
+    });
+    if (!res.ok) return null;
+    const u = await res.json();
+    return u?.id ? { id: u.id, email: u.email } : null;
+  } catch {
+    return null;
+  }
 }
 
 const conServizio = (env) => ({
