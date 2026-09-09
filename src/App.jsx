@@ -25,7 +25,6 @@ import Advanced from './components/Advanced.jsx';
 import ScegliAsset from './components/ScegliAsset.jsx';
 import Brain from './components/Brain.jsx';
 import BatchGrid from './components/BatchGrid.jsx';
-import FilmLab from './components/FilmLab.jsx';
 import { kindFromFile, nomeConSuffisso } from './store/model.js';
 import { impacchetta, spacchetta, fotografaTela } from './store/brainBundle.js';
 import StageBar from './components/StageBar.jsx';
@@ -89,7 +88,7 @@ const px = (d) => (d ? `${d.w}×${d.h}` : '—');
  * disegnata. Finché non esiste, la striscia resta vuota lì — che è quello che
  * fa già per i servizi a pagamento.
  */
-const FACCIA = new Set(['brain', 'scontorna', 'vettorializza', 'filmato', 'vocale']);
+const FACCIA = new Set(['brain', 'scontorna', 'vettorializza', 'vocale']);
 
 /**
  * I servizi che non lavorano su un file del piano.
@@ -154,11 +153,6 @@ export default function App() {
    * sola alla prima apertura — chiedere un nome prima di aver visto la tela è
    * un modulo davanti a una porta.
    */
-  /** Il filmato aperto nel servizio Filmato: non è il file del piano di
-   *  lavoro, che resta un'immagine. Tenerli separati evita che aprire una
-   *  clip butti via il ritaglio a cui si stava lavorando. */
-  const [filmato, setFilmato] = useState(null);
-
   const [telaId, setTelaId] = useState(null);
   const [tela, setTela] = useState([]);
 
@@ -184,9 +178,9 @@ export default function App() {
   const [menuPiu, setMenuPiu] = useState(false);
   /**
    * La freccia in corso: `null` spenta, `{da: null}` accesa, `{da: id}` a
-   * metà. Lifted da `Brain` per la stessa ragione di `gestoFilm`: il comando
-   * ora è un cerchio dell'impianto, e due comandi per la stessa cosa — uno
-   * dentro e uno fuori — sono un comando di troppo.
+   * metà. Sollevato fuori da `Brain` perché il comando è un cerchio
+   * dell'impianto, e due comandi per la stessa cosa — uno dentro e uno fuori —
+   * sono un comando di troppo.
    */
   const [collegaBrain, setCollegaBrain] = useState(null);
 
@@ -318,8 +312,6 @@ export default function App() {
   const [batchFiles, setBatchFiles] = useState([]);
   /** Con quale strumento si e' aperto il pennello, per accendere il cerchio. */
   const [modoPennello, setModoPennello] = useState('erase');
-  /** Quale dei tre gesti del filmato e' aperto sulla tela. Nessuno: `null`. */
-  const [gestoFilm, setGestoFilm] = useState(null);
   // Da quale lavoro in libreria viene il file aperto: serve a registrare la
   // provenienza, che è ciò che rende ritrovabile un file di cui non si
   // ricorda il nome.
@@ -1122,18 +1114,6 @@ export default function App() {
     setBrushOpen(true);
   }
 
-  /** Il `+` del filmato: un file solo, dei tipi che il descrittore dichiara. */
-  function scegliFilmato() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = getDescrittore('filmato').accetta.file.join(',');
-    input.onchange = () => {
-      const f = input.files?.[0];
-      if (f) setFilmato(f);
-    };
-    input.click();
-  }
-
   /** Cambia il file sul piano di lavoro senza passare dal cestino. */
   function swapFile() {
     const input = document.createElement('input');
@@ -1868,28 +1848,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               onSalvaDoc={salvaDocumento}
               onIcona={iconaDocumentoScelta}
               onScarica={scaricaAsset}
-              /* Il gesto aperto arriva da fuori, come per FilmLab: il cerchio
-                 della freccia sta nell'impianto, e il suo stato con lui. */
+              /* Il gesto aperto arriva da fuori: il cerchio della freccia sta
+                 nell'impianto, e il suo stato con lui. */
               collega={collegaBrain}
               onCollega={setCollegaBrain}
-            />
-          ) : tool === 'filmato' ? (
-            <FilmLab
-              file={filmato}
-              /* Il gesto aperto arriva da fuori: i tre cerchi dell'impianto
-                 sono gli stessi tre gesti, e tenerli anche dentro FilmLab
-                 vorrebbe dire due comandi per la stessa cosa. */
-              gesto={gestoFilm}
-              onGesto={setGestoFilm}
-              onSave={async (blob, { kind, op }) =>
-                library.save(blob, {
-                  name: (filmato?.name || 'filmato').replace(/\.[^.]+$/, ''),
-                  kind,
-                  meta: { op },
-                })
-              }
-              onNotice={setNotice}
-              onError={setError}
             />
           ) : tool === 'vocale' ? (
             <VoceLab
@@ -2094,14 +2056,14 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               /* Vuoto vuol dire NIENTE sul piano: ne' un file solo, ne' la
                  colonna dei tre scelti, ne' i risultati. Senza i tre scelti
                  il `+` restava in mezzo e la colonna non si vedeva mai. */
-              vuoto={tool === 'filmato' ? !filmato : pianoVuoto(tool, statoPiano)}
+              vuoto={pianoVuoto(tool, statoPiano)}
               ricetta={ricetta}
               piano={stats?.image ? pianoZack(ricetta, stats.image) : null}
               /* Su Brain «quanti» sono gli oggetti sulla tela: da uno in su il
                  `+` piccolo resta in alto a sinistra, e il tetto è 99, cioè
                  non c'è. La croce no: si toglie l'oggetto scelto, non la
                  tela — quello lo fa `onTogli`, che qui è nullo. */
-              quanti={tool === 'filmato' ? (filmato ? 1 : 0) : quantiSulPiano(tool, statoPiano)}
+              quanti={quantiSulPiano(tool, statoPiano)}
               /* Il lavoro in corso, detto. Col file singolo lo dice gia' il
                  confronto; con la colonna non lo diceva nessuno. */
               lavoro={
@@ -2122,14 +2084,12 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               /* Su una tela non si «aggiunge un file»: si sceglie cosa
                  mettere. Il `+` apre il menu che il descrittore dichiara. */
               onPick={
-                tool === 'filmato'
-                  ? scegliFilmato
-                  : getDescrittore(tool).accetta.menu
-                    ? () => {
+                getDescrittore(tool).accetta.menu
+                  ? () => {
                       setSopraLaTela(null);
                       setMenuPiu(true);
                     }
-                    : scegliFile
+                  : scegliFile
               }
               menu={menuPiu}
               /* Il parametro si chiama `quale` e non `voce`: `voce` è il
@@ -2180,9 +2140,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               onTogli={
                 tool === 'brain'
                   ? null
-                  : tool === 'filmato'
-                    ? () => setFilmato(null)
-                    : tool === 'vocale'
+                  : tool === 'vocale'
                       ? voce.reset
                       : tool === 'effetti'
                         ? () => {
@@ -2195,12 +2153,8 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                  trascinamento di una clip su Filmato finirebbe nel percorso
                  delle immagini, che la rifiuta in silenzio — il `+` funziona
                  e il trascinamento no, sulla stessa schermata. */
-              onFile={(f) => (tool === 'filmato' ? setFilmato(f) : accettaFile([f], { aggiungi: true }))}
-              onFiles={(files) =>
-                tool === 'filmato'
-                  ? files[0] && setFilmato(files[0])
-                  : accettaFile(files, { aggiungi: true })
-              }
+              onFile={(f) => accettaFile([f], { aggiungi: true })}
+              onFiles={(files) => accettaFile(files, { aggiungi: true })}
               onZack={() => {
                 if (tool === 'effetti') {
                   // Il tasto SUONA: e' cio' che si vuole da un effetto, e
@@ -2282,9 +2236,6 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   erase: () => apriPennello('erase'),
                   undo: undoResult,
                   swap: swapFile,
-                  taglia: () => setGestoFilm('taglia'),
-                  fotogrammi: () => setGestoFilm('fotogrammi'),
-                  sfondo: () => setGestoFilm('sfondo'),
                   freccia: () => setCollegaBrain((v) => (v ? null : { da: null })),
                   riascolta: voce.riascolta,
                   unAltro: () => setEffetto((e) => ({ ...e, seme: e.seme + 1 })),
@@ -2328,9 +2279,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 const pieno =
                   tool === 'brain'
                     ? tela.filter((o) => o.t !== 'freccia').length >= 2
-                    : tool === 'filmato'
-                      ? Boolean(filmato)
-                      : /*
+                    : /*
                          * `contenuto`, non `!vuoto`: gli strumenti lavorano su
                          * quello che C'E', non su quello che STA SUCCEDENDO.
                          * Mentre il microfono e' acceso il piano non e' vuoto —

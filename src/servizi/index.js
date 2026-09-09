@@ -1,5 +1,4 @@
 import scontorna from './scontorna.js';
-import filmato from './filmato.js';
 import brain from './brain.js';
 import vocale from './vocale.js';
 import effetti from './effetti.js';
@@ -24,7 +23,7 @@ import vettorializza from './vettorializza.js';
  * gesto che lo esegue» lo rifiuta, giustamente. Il Vocale (`vocale.js`, id
  * `suono`) entra qui insieme ai suoi gesti, non prima.
  */
-export const DESCRITTORI = { scontorna, filmato, brain, vocale, effetti, vettorializza };
+export const DESCRITTORI = { scontorna, brain, vocale, effetti, vettorializza };
 
 /**
  * Gli stati in cui uno strumento può comparire. **Lista chiusa.**

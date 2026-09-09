@@ -89,15 +89,6 @@ export const SERVICES = [
     ready: true,
   },
   {
-    // Tre gesti su un filmato, non un montaggio: il confine è dichiarato in
-    // `engine/clip.js` e va tenuto.
-    id: 'filmato',
-    group: GROUP_LOCAL,
-    key: 'tool.film',
-    icon: 'film',
-    ready: true,
-  },
-  {
     id: 'immagine',
     group: GROUP_PAID,
     key: 'tool.image',
@@ -136,6 +127,16 @@ export function servizioDelloStrumento(tool) {
  * un collegamento che porta altrove senza dirlo e' peggio di uno rotto.
  */
 export const NOMI_VECCHI = { suono: 'vocale' };
+
+/*
+ * ⚠️ `filmato` NON sta qui, ed è voluto.
+ *
+ * Il servizio è stato tolto il 2026-09-09: la rimozione dello sfondo da un
+ * video richiede il modello su OGNI fotogramma — circa otto minuti per dieci
+ * secondi — e il committente ha deciso che non ha senso. Mandare
+ * `?servizio=filmato` a un altro servizio direbbe che c'è ancora qualcosa lì.
+ * Non c'è: si finisce sullo scontorno, che è dove l'app comincia.
+ */
 
 export function getService(id) {
   const s = SERVICES.find((x) => x.id === id);
