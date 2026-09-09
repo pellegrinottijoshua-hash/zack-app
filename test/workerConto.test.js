@@ -1,6 +1,7 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import worker from '../worker/index.js';
 
 /*
@@ -24,7 +25,6 @@ const AMBIENTE = {
   STRIPE_SECRET_KEY: 'sk_test_finta',
   STRIPE_WEBHOOK_SECRET: SEGRETO,
   STRIPE_PREZZO: 'price_finto',
-  SITO: 'https://zack-app.com',
   ASSETS: { fetch: async () => new Response('la home', { status: 200 }) },
 };
 
@@ -225,6 +225,10 @@ test('/checkout dice a Stripe di chi e’ l’abbonamento, non solo la sessione'
   );
   // Il prezzo viene da Stripe, non dal codice: scritto due volte, diverge.
   assert.match(inviato, /line_items%5B0%5D%5Bprice%5D=price_finto/);
+  // E il ritorno da Stripe punta all'origine da cui e' arrivata la richiesta,
+  // non a un indirizzo scritto in una variabile che qualcuno deve ricordarsi
+  // di configurare — e che il giorno che sbaglia manda il cliente altrove.
+  assert.match(inviato, /success_url=https%3A%2F%2Fapi\.zack-app\.com%2Fapp%2F%3Fpagato%3D1/);
 });
 
 test('senza il prezzo configurato /checkout lo dice, invece di aprire un pagamento storto', async () => {
@@ -252,4 +256,35 @@ test('tutto il resto resta il sito di prima', async () => {
   const res = await worker.fetch(new Request('https://zack-app.com/'), AMBIENTE);
   assert.equal(res.status, 200);
   assert.equal(await res.text(), 'la home');
+});
+
+test('il browser e il Worker sono d’accordo su DOVE stanno le porte', () => {
+  /*
+   * Il difetto trovato il 2026-09-10, un momento prima di spedirlo.
+   *
+   * `src/lib/conto.js` chiamava `https://api.zack-app.com`, perche' cosi'
+   * diceva il disegno nella spec. Ma `wrangler.jsonc` pubblica UN Worker, su
+   * `zack-app.com` e `www.zack-app.com`: quel sottodominio non lo serviva
+   * nessuno.
+   *
+   * Cosa sarebbe successo: `/me` fallisce sempre — `fetch` verso un host che
+   * non esiste — e `chiediLicenza` torna sempre «non lo so». Per sette giorni
+   * non se ne accorge nessuno, perche' la grazia copre. All'ottavo il muro si
+   * alza a TUTTI, paganti compresi, e il motivo e' una stringa.
+   *
+   * Il test non chiede di stare alla stessa origine: chiede che se il browser
+   * NOMINA un host, quell'host sia fra quelli che pubblichiamo.
+   */
+  const conto = readFileSync(new URL('../src/lib/conto.js', import.meta.url), 'utf8');
+  const wrangler = readFileSync(new URL('../wrangler.jsonc', import.meta.url), 'utf8');
+
+  const base = conto.match(/const BASE = '([^']*)'/)?.[1];
+  assert.notEqual(base, undefined, 'conto.js non dice piu’ dove sta il Worker');
+  if (base === '') return; // Stessa origine: non c'e' host da confrontare.
+
+  const host = new URL(base).host;
+  assert.ok(
+    wrangler.includes(`"${host}"`),
+    `il browser chiama ${host}, che wrangler.jsonc non pubblica: /me fallirebbe sempre`,
+  );
 });

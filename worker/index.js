@@ -15,13 +15,16 @@ import { cosaFare } from './eventi.js';
 
 const GIORNO = 86400000;
 
+/*
+ * Niente intestazioni CORS: il Worker e' lo STESSO che serve il sito, quindi
+ * lo studio e `/me` stanno alla stessa origine e non c'e' nessun confine da
+ * attraversare. Il `api.zack-app.com` della spec non e' mai esistito — e un
+ * pezzo che non c'e' non si puo' rompere.
+ */
 const json = (dati, stato = 200) =>
   new Response(JSON.stringify(dati), {
     status: stato,
-    headers: {
-      'content-type': 'application/json',
-      'access-control-allow-origin': 'https://zack-app.com',
-    },
+    headers: { 'content-type': 'application/json' },
   });
 
 /**
@@ -69,6 +72,7 @@ async function contoDi(id, env) {
  * vuol dire aver mentito a un cliente che ci aveva creduto sulla parola.
  */
 async function checkout(req, env) {
+  const sito = new URL(req.url).origin;
   const chi = await chiEsegue(req, env);
   if (!chi) return json({ errore: 'non-collegato' }, 401);
   if (!env.STRIPE_PREZZO || !env.STRIPE_SECRET_KEY) return json({ errore: 'non-configurato' }, 503);
@@ -91,8 +95,10 @@ async function checkout(req, env) {
      * senza che niente si lamenti da nessuna parte.
      */
     'subscription_data[metadata][utente]': chi.id,
-    success_url: `${env.SITO}/app/?pagato=1`,
-    cancel_url: `${env.SITO}/app/`,
+    // L'origine da cui e' arrivata la richiesta: sempre giusta, anche in un
+    // deploy di prova, e una cosa in meno da configurare a mano.
+    success_url: `${sito}/app/?pagato=1`,
+    cancel_url: `${sito}/app/`,
   });
 
   const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
@@ -160,16 +166,6 @@ async function webhookStripe(req, env) {
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
-
-    if (req.method === 'OPTIONS') {
-      return new Response(null, {
-        headers: {
-          'access-control-allow-origin': 'https://zack-app.com',
-          'access-control-allow-headers': 'authorization,content-type',
-          'access-control-allow-methods': 'GET,POST,OPTIONS',
-        },
-      });
-    }
 
     if (url.pathname === '/me') {
       const chi = await chiEsegue(req, env);

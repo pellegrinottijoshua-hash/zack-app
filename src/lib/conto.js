@@ -8,7 +8,21 @@
 
 import { SUPABASE_URL, SUPABASE_CHIAVE_PUBBLICA } from './supabase.js';
 
-const BASE = 'https://api.zack-app.com';
+/**
+ * Dove sta il Worker: **qui**, alla stessa origine del sito.
+ *
+ * La spec disegnava un `api.zack-app.com` a parte, e per un po' questo file
+ * l'ha chiamato davvero — ma nessuno serviva quel nome. `wrangler.jsonc`
+ * pubblica UN Worker su `zack-app.com`, che risponde a `/me` e lascia passare
+ * tutto il resto ai file statici. Chiamare un dominio che non esiste voleva
+ * dire: `/me` fallisce sempre, `chiediLicenza` torna sempre «non lo so», e
+ * dopo sette giorni di grazia il muro si alza a TUTTI, paganti compresi.
+ *
+ * Stessa origine e' anche meglio di com'era disegnato: niente CORS, niente
+ * preflight, niente sottodominio da configurare. Un pezzo che non c'e' non si
+ * puo' rompere.
+ */
+const BASE = '';
 
 /**
  * Chiede al server chi siamo e se abbiamo pagato.
