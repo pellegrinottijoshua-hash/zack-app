@@ -322,13 +322,17 @@ repository:
 3. **I segreti su Cloudflare**, uno per volta, dal terminale:
 
    ```bash
-   npx wrangler secret put SUPABASE_URL
-   npx wrangler secret put SUPABASE_CHIAVE_PUBBLICA
    npx wrangler secret put SUPABASE_SERVICE_KEY
    npx wrangler secret put STRIPE_SECRET_KEY
    npx wrangler secret put STRIPE_WEBHOOK_SECRET
    npx wrangler secret put STRIPE_PREZZO
    ```
+
+   Sono quattro e non sei: l'indirizzo di Supabase e la sua chiave pubblica il
+   Worker li importa da `src/lib/supabase.js`, lo stesso file del browser.
+   Devono combaciare — se il Worker interrogasse un progetto e lo studio un
+   altro, i token del secondo non varrebbero per il primo e `/me` direbbe 401 a
+   chi e' entrato regolarmente.
 
    `STRIPE_PREZZO` e' l'id del prezzo su Stripe (`price_…`) del prodotto a
    **2,99 €/mese**. Le chiavi segrete **non si incollano in chat e non entrano

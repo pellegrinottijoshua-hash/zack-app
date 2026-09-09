@@ -289,13 +289,13 @@ test('il browser e il Worker sono d’accordo su DOVE stanno le porte', () => {
   );
 });
 
-test('un Worker pubblicato senza segreti non esplode: dice «non collegato»', async () => {
+test('un Worker senza segreti, o con Supabase giu’, non esplode', async () => {
   /*
-   * Il caso del deploy fatto prima dei `wrangler secret put`. Senza
-   * `SUPABASE_URL` la fetch andrebbe verso «undefined/auth/v1/user»: in un
-   * Worker un'eccezione non gestita e' una pagina d'errore di Cloudflare al
-   * posto del sito. Fallire chiuso e in silenzio e' l'unica risposta che non
-   * fa danno — e il sito continua a servirsi da solo.
+   * In un Worker un'eccezione non gestita e' una pagina d'errore di Cloudflare
+   * al posto del sito — e questo Worker serve anche il sito. Vale per il
+   * deploy fatto prima dei `wrangler secret put` come per Supabase irrag-
+   * giungibile: fallire chiuso e in silenzio e' l'unica risposta che non fa
+   * danno a chi stava solo aprendo la home.
    */
   const nudo = { ASSETS: AMBIENTE.ASSETS };
   rete(() => {

@@ -10,6 +10,19 @@
  */
 
 import { PROVA_GIORNI } from '../src/engine/licenza.js';
+/*
+ * Le due chiavi pubbliche le importa dallo STESSO file del browser.
+ *
+ * Non perche' sia comodo: perche' devono combaciare. Se il Worker
+ * interrogasse un progetto Supabase e lo studio un altro, i token del secondo
+ * non varrebbero niente per il primo, e `/me` risponderebbe 401 a chi e'
+ * entrato regolarmente. Un valore scritto in due posti diverge al primo
+ * ripensamento — e' la stessa regola del prezzo.
+ *
+ * Sono pubbliche: stanno nel bundle comunque. La chiave di servizio, quella
+ * sì pericolosa, resta un segreto vero e non compare da nessuna parte.
+ */
+import { SUPABASE_URL, SUPABASE_CHIAVE_PUBBLICA } from '../src/lib/supabase.js';
 import { verificaFirma } from './firma.js';
 import { cosaFare } from './eventi.js';
 
@@ -40,19 +53,16 @@ async function chiEsegue(req, env) {
   if (!token) return null;
 
   /*
-   * Senza configurazione si dice «non collegato», non si esplode.
+   * Se qualcosa va storto si dice «non collegato», non si esplode.
    *
-   * Il caso e' il Worker pubblicato prima dei `wrangler secret put`: senza
-   * `SUPABASE_URL` la fetch andrebbe verso «undefined/auth/v1/user», e
-   * un'eccezione non gestita in un Worker e' una pagina d'errore di
-   * Cloudflare al posto del sito. Fallire chiuso e in silenzio e' l'unica
-   * risposta che non fa danno.
+   * Un'eccezione non gestita in un Worker e' una pagina d'errore di Cloudflare
+   * al posto del sito — e questo Worker serve anche il sito. Supabase giu', un
+   * timeout, una risposta che non e' JSON: fallire chiuso e in silenzio e'
+   * l'unica risposta che non fa danno a chi stava solo aprendo la home.
    */
-  if (!env.SUPABASE_URL) return null;
-
   try {
-    const res = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
-      headers: { authorization: `Bearer ${token}`, apikey: env.SUPABASE_CHIAVE_PUBBLICA },
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { authorization: `Bearer ${token}`, apikey: SUPABASE_CHIAVE_PUBBLICA },
     });
     if (!res.ok) return null;
     const u = await res.json();
@@ -70,7 +80,7 @@ const conServizio = (env) => ({
 
 /** La riga di `conti` di questo utente, o `null`. */
 async function contoDi(id, env) {
-  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/conti?utente=eq.${id}&select=*`, {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/conti?utente=eq.${id}&select=*`, {
     headers: conServizio(env),
   });
   if (!res.ok) return null;
@@ -158,7 +168,7 @@ async function webhookStripe(req, env) {
   // riguardano, e rispondere male gli farebbe riprovare all'infinito.
   if (!fatto) return json({ ok: true });
 
-  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/conti`, {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/conti`, {
     method: 'POST',
     headers: {
       ...conServizio(env),
@@ -197,7 +207,7 @@ export default {
        */
       if (!conto) {
         const prova = new Date(Date.now() + PROVA_GIORNI * GIORNO).toISOString();
-        await fetch(`${env.SUPABASE_URL}/rest/v1/conti`, {
+        await fetch(`${SUPABASE_URL}/rest/v1/conti`, {
           method: 'POST',
           headers: conServizio(env),
           body: JSON.stringify({ utente: chi.id, prova_fino: prova }),
