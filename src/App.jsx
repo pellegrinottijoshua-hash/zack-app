@@ -37,7 +37,7 @@ import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/
 import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/ritaglio.js';
 import { DESCRITTORI, getDescrittore, strumentiVisibili } from './servizi/index.js';
 import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
-import { statoLicenza, puoiLavorare } from './engine/licenza.js';
+import { statoLicenza, puoiLavorare, giorniAllaProva } from './engine/licenza.js';
 import { leggiLicenza, salvaLicenza } from './store/licenza.js';
 import { chiediLicenza, sessione, entraConEmail, entraConGoogle } from './lib/conto.js';
 import Muro from './components/Muro.jsx';
@@ -2040,6 +2040,25 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
           />
         )}
       </header>
+
+      {/*
+       * I quattordici giorni si DICONO, ogni giorno, in una riga.
+       *
+       * Chi e' in prova lavora: non e' un muro, e non deve fermare niente. Ma
+       * una prova che finisce senza preavviso e' una porta chiusa in faccia —
+       * apri lo studio una mattina e non funziona piu', senza aver visto
+       * arrivare niente. Sta qui sotto la striscia e non sul muro, perche' sul
+       * muro ci finisce quando e' troppo tardi.
+       */}
+      {statoConto === 'prova' &&
+        (() => {
+          const giorni = giorniAllaProva(licenza);
+          return (
+            <p className="avviso-prova">
+              {giorni <= 1 ? t('muro.provaUltimo') : t('muro.provaResta', { giorni })}
+            </p>
+          );
+        })()}
 
       {showOnboarding && <Onboarding onClose={() => setShowOnboarding(false)} />}
 

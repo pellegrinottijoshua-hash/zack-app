@@ -79,3 +79,32 @@ test('nessuna regola misura un’altezza SOLO in vh', () => {
     'queste altezze seguono il viewport grande invece di quello vero',
   );
 });
+
+/*
+ * La schermata non conta i propri figli.
+ *
+ * Il 2026-09-09 `.shell` era `grid-template-rows: auto 1fr auto`, e il numero
+ * di figli faceva parte del layout. La riga della prova e' entrata come
+ * secondo figlio, si e' presa l'`1fr` — 295px per una frase — e ha schiacciato
+ * `.main` a 353. Due giorni prima lo stesso inciampo aveva portato `.brain` ad
+ * altezza ZERO: gli oggetti c'erano, la tela non si vedeva.
+ *
+ * E' il difetto che non si vede scrivendo: il CSS non cambia, cambia il JSX.
+ * In colonna flex un figlio in piu' e' alto quanto il suo contenuto, e chi
+ * deve crescere lo dichiara da se'.
+ */
+test('la schermata sta in colonna flex, non a righe contate', () => {
+  for (const blocco of dichiarazioni('.shell')) {
+    assert.doesNotMatch(
+      blocco,
+      /grid-template-rows/,
+      '.shell conta le proprie righe: il prossimo figlio si prende l’1fr',
+    );
+  }
+  const flex = dichiarazioni('.shell').some((b) => /flex-direction:\s*column/.test(b));
+  assert.ok(flex, '.shell non e’ piu’ una colonna flex');
+  assert.ok(
+    dichiarazioni('.main').some((b) => /flex:\s*1/.test(b)),
+    '.main non dice piu’ di volersi prendere lo spazio che avanza',
+  );
+});

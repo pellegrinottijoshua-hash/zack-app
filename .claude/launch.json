@@ -4,8 +4,23 @@
     {
       "name": "jayl-studio",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:web"],
+      "runtimeArgs": [
+        "run",
+        "dev:web"
+      ],
       "port": 5173
+    },
+    {
+      "name": "jayl-studio-muro",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "--port",
+        "5174",
+        "--mode",
+        "muro"
+      ],
+      "port": 5174
     }
   ]
 }

@@ -69,9 +69,15 @@ body {
 
 /* ─── shell ─────────────────────────────────────────────────────────────── */
 
+/* In COLONNA FLEX e non a griglia.
+   Con `grid-template-rows: auto 1fr auto` il numero di figli era parte del
+   layout: il 2026-09-09 la riga della prova e' entrata come secondo figlio,
+   si e' presa l'`1fr` — 295px per una frase — e ha schiacciato `.main`.
+   E' lo stesso inciampo di `.brain` due giorni fa. In flex un figlio in piu'
+   e' alto quanto il suo contenuto, e chi deve crescere lo dice da se'. */
 .shell {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
+  display: flex;
+  flex-direction: column;
   height: 100%;
   overflow: hidden;
 }
@@ -189,6 +195,9 @@ body {
 .main {
   display: grid;
   grid-template-columns: var(--toolrail) 1fr var(--rail);
+  /* E' lui che si prende lo spazio che avanza, e lo dice qui invece di
+     ereditarlo dall'essere il secondo figlio di qualcosa. */
+  flex: 1;
   min-height: 0;
   /* NIENTE transizione su grid-template-columns: con un valore che arriva da
      una variabile CSS la traccia resta congelata al vecchio valore e il
@@ -1705,7 +1714,6 @@ body {
   }
 
   .shell {
-    grid-template-rows: auto 1fr auto;
     /* Spazio per la barra strumenti fissa in fondo. */
     padding-bottom: 60px;
   }
@@ -5265,4 +5273,52 @@ body {
   max-width: 44ch;
   font-size: 13px;
   color: var(--inchiostro-3);
+}
+
+/* Il campo dell'email dentro il muro. In colonna e non in riga: su un telefono
+   una riga con campo e due tasti si stringe fino a rendere il campo inusabile,
+   ed e' il campo l'unica cosa da cui si passa. */
+.muro-entra {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(320px, 100%);
+}
+.muro-entra input {
+  padding: 11px 14px;
+  border: 1px solid var(--inchiostro-3);
+  border-radius: 10px;
+  background: var(--panna);
+  font: inherit;
+  color: var(--inchiostro);
+  text-align: center;
+}
+.muro-entra input:focus-visible {
+  outline: 2px solid var(--oro);
+  outline-offset: 1px;
+}
+.muro-mandato,
+.muro-errore {
+  margin: 0;
+  max-width: 40ch;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.muro-mandato {
+  color: var(--inchiostro-2);
+}
+.muro-errore {
+  color: #a4342b;
+}
+
+/* La riga della prova. Non ferma niente e non si puo' chiudere: chi e' in
+   prova lavora, ma deve vedere arrivare la fine invece di sbatterci contro. */
+.avviso-prova {
+  margin: 0;
+  padding: 7px 14px;
+  background: var(--oro-velo);
+  border-bottom: 1px solid var(--oro);
+  font-size: 13px;
+  text-align: center;
+  color: var(--inchiostro-2);
 }
