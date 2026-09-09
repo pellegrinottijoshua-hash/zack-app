@@ -41,8 +41,24 @@ test('mentre registra, il piano conta come OCCUPATO anche per gli strumenti', ()
 
 test('senza niente sopra e senza niente in corso, il piano e’ vuoto', () => {
   for (const tool of Object.keys(DESCRITTORI)) {
+    // Il vettoriale e' l'eccezione DICHIARATA: la sua tela e' un foglio da
+    // disegno, e un foglio vuoto e' il punto di partenza, non «niente».
+    if (tool === 'vettorializza') continue;
     assert.equal(pianoVuoto(tool, {}), true, `${tool}: il piano appena aperto non risulta vuoto`);
   }
+});
+
+test('il vettoriale apre GIA’ sulla sua tela, non su un invito', () => {
+  /*
+   * Il difetto che questo test impedisce di ripetere (2026-09-09, riferito dal
+   * committente: «sono spariti tutti gli strumenti»): l'editor era una
+   * schermata a parte, e ci si arrivava solo dopo aver tracciato un'immagine e
+   * premuto «apri nell'editor». Aprire Vettoriale mostrava un `+` e basta.
+   *
+   * Adesso apre il foglio, con gli otto strumenti ai fianchi.
+   */
+  assert.equal(pianoVuoto('vettorializza', {}), false);
+  assert.equal(statoDelPiano('vettorializza', {}).contenuto, true);
 });
 
 test('ogni servizio dice sia cosa c’e’ sopra sia cosa sta succedendo', () => {
@@ -94,4 +110,18 @@ test('mentre registra non c’e’ ancora NIENTE su cui usare uno strumento', ()
   const s = statoDelPiano('vocale', { registrandoVoce: true });
   assert.equal(s.inCorso, true);
   assert.equal(s.contenuto, false, 'gli strumenti comparirebbero senza niente su cui lavorare');
+});
+
+test('il vettoriale conta i FILE, non la sua tela', () => {
+  /*
+   * La tela c'e' sempre — e' un foglio da disegno — ma «quanti ce ne sono sul
+   * piano» risponde a un'altra domanda: quante cose hai PORTATO.
+   *
+   * Contare uno con la tela vuota spegneva il tasto Zack all'apertura: la
+   * regola «c'e' un file e la catena e' vuota» scattava senza nessun file.
+   */
+  assert.equal(quantiSulPiano('vettorializza', {}), 0, 'il tasto Zack si spegnerebbe all’apertura');
+  assert.equal(quantiSulPiano('vettorializza', { file: {} }), 1);
+  // E il piano resta «non vuoto»: sono due domande diverse.
+  assert.equal(pianoVuoto('vettorializza', {}), false);
 });

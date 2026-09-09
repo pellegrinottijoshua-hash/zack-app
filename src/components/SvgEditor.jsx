@@ -36,7 +36,10 @@ function canEditNodes(canvas) {
   return els.length === 1 && els[0].tagName.toLowerCase() === 'path';
 }
 
-const SvgEditor = forwardRef(function SvgEditor({ onReady, onSelection, onRefuseNodes }, ref) {
+const SvgEditor = forwardRef(function SvgEditor(
+  { onReady, onSelection, onRefuseNodes, modo, onModo },
+  ref,
+) {
   const hostRef = useRef(null);
   const canvasRef = useRef(null);
   const [mode, setMode] = useState('select');
@@ -143,6 +146,22 @@ const SvgEditor = forwardRef(function SvgEditor({ onReady, onSelection, onRefuse
       return false;
     }
   };
+
+  /*
+   * Il modo scelto fuori — i cerchi dell'impianto — entra qui.
+   *
+   * Se l'editor lo RIFIUTA (i nodi senza un tracciato scelto), `applyMode`
+   * restituisce falso e si rimanda indietro `select`: senza, il cerchio
+   * resterebbe acceso su un modo che l'editor non ha preso, e sarebbe un
+   * comando che mente su cosa sta facendo.
+   */
+  useEffect(() => {
+    if (!modo || modo === mode) return;
+    if (!applyMode(modo)) onModo?.('select');
+    // `applyMode` e' ricreata a ogni render ma non ha stato suo: metterla
+    // nelle dipendenze rifarebbe il giro a ogni disegno.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modo, mode]);
 
   useImperativeHandle(ref, () => ({
     canvas: () => canvasRef.current,
@@ -310,21 +329,11 @@ const SvgEditor = forwardRef(function SvgEditor({ onReady, onSelection, onRefuse
 
   return (
     <div className="editor-wrap">
-      <div className="tools">
-        {/* `tool`, non `t`: `t` è la funzione di traduzione e verrebbe oscurata. */}
-        {TOOLS.map((tool) => (
-          <button
-            key={tool.id}
-            className="tool"
-            aria-pressed={mode === tool.id}
-            disabled={Boolean(error) || (tool.id === 'pathedit' && !nodesReady)}
-            title={t(`${tool.key}.help`)}
-            onClick={() => applyMode(tool.id)}
-          >
-            {t(`${tool.key}.label`)}
-          </button>
-        ))}
-      </div>
+      {/* La barra degli strumenti non e' piu' qui.
+          Erano otto PAROLE sopra la tela; il 2026-09-09 sono diventate gli
+          otto cerchi a sinistra dell'impianto — «il canva vuoto e a fianco una
+          serie di strumenti». Il modo arriva dalla prop `modo`, e la lista
+          `TOOLS` resta qui perche' e' l'editor a sapere quali modi accetta. */}
 
       {error && (
         <div className="alert">

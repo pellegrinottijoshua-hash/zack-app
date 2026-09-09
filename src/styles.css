@@ -5176,3 +5176,56 @@ body {
   text-transform: uppercase;
   color: var(--inchiostro-3);
 }
+
+/* Il tutorial del vettoriale: quattro schermate, non un video.
+   Un video va scaricato, non si cerca dentro, e il giorno che un comando si
+   sposta mente senza che nessuno se ne accorga. */
+.tutorial {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tutorial h3 {
+  margin: 0;
+  font-family: 'Fredoka', var(--display);
+  font-size: 19px;
+  color: var(--inchiostro);
+}
+.tut-passo {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--inchiostro-3);
+}
+.tut-testo {
+  margin: 0;
+  max-width: 58ch;
+  line-height: 1.5;
+  color: var(--inchiostro);
+}
+.tut-azioni {
+  display: flex;
+  gap: 10px;
+}
+.tut-pallini {
+  display: flex;
+  gap: 6px;
+}
+.tut-pallini i {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--linea-viva);
+}
+.tut-pallini i[data-qui] {
+  background: var(--oro);
+}
+
+/* L'editor dentro l'impianto: la tela si prende tutto lo spazio, perche' la
+   barra degli strumenti che le stava sopra non c'e' piu'. */
+.sc .editor-wrap {
+  height: 100%;
+  min-height: 0;
+}

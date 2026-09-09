@@ -36,10 +36,6 @@
     "brain": {
       "label": "Brain",
       "help": "La tela dove metti in ordine le idee: asset, note colorate, gruppi e frecce."
-    },
-    "film": {
-      "label": "Filmato",
-      "help": "Taglia una clip, estrai i fotogrammi, togli lo sfondo. Tutto sul tuo computer."
     }
   },
   "menu": {
@@ -722,34 +718,19 @@
     "fotoFatta": "Immagine scaricata: {nome}",
     "fotoVuota": "La tela è vuota: non c'è niente da fotografare."
   },
-  "film": {
-    "vuoto": "Porta un filmato",
-    "vuotoNota": "MP4, WebM o MOV. Tre gesti: taglia, estrai i fotogrammi, togli lo sfondo. Niente montaggio.",
-    "scegli": "Scegli un filmato",
-    "taglia": "Taglia e ritaglia",
-    "da": "Da",
-    "a": "A",
-    "formato": {
-      "originale": "Originale",
-      "quadrato": "Quadrato",
-      "verticale": "9:16",
-      "orizzontale": "16:9",
-      "ritratto": "4:5"
-    },
-    "tagliaOra": "Taglia — almeno {s}s di attesa",
-    "tagliato": "Tagliato: {s}s",
-    "frames": "Estrai fotogrammi",
-    "quanti": "{n} fotogrammi",
-    "estraiOra": "Estrai",
-    "estratti": "Estratti {n} fotogrammi",
-    "sfondo": "Togli lo sfondo",
-    "sfondoNota": "Funziona sui filmati girati su fondo panna: il panna che tocca il bordo se ne va, quello dentro il personaggio resta.",
-    "sfondoAttesa": "{n} fotogrammi da guardare uno a uno: circa {sec} secondi.",
-    "tolto": "Sfondo tolto · {n} isole salvate",
-    "toltoDubbio": "Sfondo tolto, ma nessuna isola salvata: guarda un fotogramma prima di usarlo.",
-    "togliOraAttesa": "Togli lo sfondo — almeno {s}s di attesa"
-  },
   "effetti": {
     "claim": "Costruisci un effetto sonoro da zero. Batti un ritmo con la voce e l’effetto lo segue."
+  },
+  "tutorial": {
+    "apri": "Come si usa",
+    "titolo": "Il vettoriale in quattro mosse",
+    "chiudi": "Ho capito",
+    "avanti": "Avanti",
+    "indietro": "Indietro",
+    "passo": "Passo {n} di {tot}",
+    "p1": "La tela è un foglio da disegno, e comincia vuota. Gli strumenti sono i cerchi a sinistra: scegli, penna, matita, linea, rettangolo, ellisse, testo.",
+    "p2": "Hai già un'immagine? Premi il `+` in alto a sinistra e portala dentro. Poi il tasto ZACK la trasforma in forme che puoi ingrandire quanto vuoi.",
+    "p3": "Nel punto oro — la pallina accanto a ZACK — scegli COME tracciare: colori piatti per i loghi, sfumature per le foto, bianco e nero per i disegni al tratto.",
+    "p4": "Scelto un elemento, il cerchio dei nodi si accende: da lì sposti i punti e le curve. Sotto Avanzati ci sono colori, allineamento e formato di uscita."
   }
 }

@@ -77,6 +77,30 @@ export const ICONS = {
   alleggerisci: ['M5 8h14', 'M6.5 12h11', 'M9 16h6'],
 
   /*
+   * Gli otto strumenti di disegno del vettoriale.
+   *
+   * Erano una barra di PAROLE sopra la tela, dentro `SvgEditor`. Il
+   * committente il 2026-09-09: «voglio copiare Adobe e Canva, deve esserci il
+   * canva vuoto e a fianco una serie di strumenti». Ai fianchi non ci stanno
+   * le parole, ci stanno i segni — quindi eccoli.
+   *
+   * Griglia 3…21 e tratto 1,75 come tutti gli altri: sono icone piccole che
+   * devono leggersi accanto a una tela, non illustrazioni.
+   */
+  // La freccia del cursore: la punta in alto a sinistra, la coda in basso.
+  cursore: ['M6 4l12 7.5-5 1.2-1.6 5.3z'],
+  // I nodi: un segmento con due punti presi.
+  nodi: ['M6.5 16.5C9 9 15 9 17.5 6.5', 'M4.6 18.4h3.6v-3.6H4.6z', 'M15.8 8.2h3.6V4.6h-3.6z'],
+  // La penna: un pennino con la punta in basso.
+  penna: ['M12 20.5 8.5 13 12 3.5 15.5 13z', 'M8.5 13h7', 'M12 16v4.5'],
+  // La linea: due estremi e il tratto in mezzo.
+  linea: ['M6.2 17.8 17.8 6.2', punto(5, 19), punto(19, 5)],
+  rettangolo: ['M4 6.5h16v11H4z'],
+  ellisse: ['M12 6c4.4 0 8 2.7 8 6s-3.6 6-8 6-8-2.7-8-6 3.6-6 8-6z'],
+  // Il testo: la T con le grazie, che si legge anche a 17px.
+  testo: ['M5 5.5h14', 'M12 5.5v13', 'M9 18.5h6'],
+
+  /*
    * Centra tutto: quattro angoli e un punto in mezzo.
    *
    * E' «rimetti tutto nell'inquadratura», che su una tela dove ci si puo'

@@ -49,6 +49,30 @@ export default {
 
   strumenti: [
     /*
+     * Gli OTTO strumenti di disegno, a sinistra.
+     *
+     * Esistevano gia' — `SvgEditor` li dichiara da sempre, testo compreso — ma
+     * vivevano in una barra di parole sopra la tela, dentro una schermata a
+     * parte (`tool === 'editor'`) che si raggiungeva solo dopo aver tracciato
+     * un'immagine e premuto «apri nell'editor». Il committente il 2026-09-09:
+     * *«sono spariti tutti gli strumenti»*. Non erano spariti: erano dietro
+     * una porta che quasi nessuno apriva.
+     *
+     * `sempre`, non `con-file`: la tela nasce vuota e ci si disegna sopra
+     * subito. E' un foglio, non un ritocco — «il canva vuoto color panna».
+     */
+    { id: 'select', icon: 'cursore', label: 'tools.select.label', quando: 'sempre', lato: 'sinistra' },
+    { id: 'path', icon: 'penna', label: 'tools.pen.label', quando: 'sempre', lato: 'sinistra' },
+    { id: 'fhpath', icon: 'pencil', label: 'tools.pencil.label', quando: 'sempre', lato: 'sinistra' },
+    { id: 'line', icon: 'linea', label: 'tools.line.label', quando: 'sempre', lato: 'sinistra' },
+    { id: 'rect', icon: 'rettangolo', label: 'tools.rect.label', quando: 'sempre', lato: 'sinistra' },
+    { id: 'ellipse', icon: 'ellisse', label: 'tools.ellipse.label', quando: 'sempre', lato: 'sinistra' },
+    { id: 'text', icon: 'testo', label: 'tools.text.label', quando: 'sempre', lato: 'sinistra' },
+    // I nodi si modificano solo dentro un tracciato gia' scelto: il cerchio
+    // resta, ma spento finche' non c'e' cosa modificare — lo dice `disabled`.
+    { id: 'pathedit', icon: 'nodi', label: 'tools.nodes.label', quando: 'sempre', lato: 'sinistra' },
+
+    /*
      * A sinistra: come esce il file. Sono scelte che si fanno prima di
      * premere, e stanno dalla parte da cui si legge. Il TIPO di tracciato non
      * è qui: sta nel punto oro, insieme alle altre risposte a «cosa farà il
@@ -56,11 +80,15 @@ export default {
      */
     // Un interruttore, non un comando: alleggerisce il file che uscirà. Il
     // cerchio lo dice con `aria-pressed`, che è quello che un interruttore fa.
-    { id: 'pulisci', icon: 'alleggerisci', label: 'vector.clean.label', quando: 'con-file', lato: 'sinistra' },
+    { id: 'pulisci', icon: 'alleggerisci', label: 'vector.clean.label', quando: 'con-file' },
 
     /* A destra: cosa farne dopo. */
-    { id: 'apriEditor', icon: 'pencil', label: 'vector.openEditor', quando: 'con-risultato' },
-    { id: 'undo', icon: 'undo', label: 'bar.undo', quando: 'con-file' },
+    /*
+     * «Apri nell'editor» non c'e' piu': l'editor E' questa schermata. Era la
+     * porta, e la porta e' stata tolta.
+     */
+    { id: 'tutorial', icon: 'domanda', label: 'tutorial.apri', quando: 'sempre' },
+    { id: 'undo', icon: 'undo', label: 'bar.undo', quando: 'sempre' },
     { id: 'swap', icon: 'swap', label: 'bar.swap', quando: 'con-file-senza-risultato' },
     /*
      * Ultimo della colonna destra, e `sempre`: gli avanzati contengono

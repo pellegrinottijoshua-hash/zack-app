@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
  * Ogni URL tiene in vita il blob a cui punta, quindi tre file e una manciata
  * di ridisegni bastano a tenere in memoria decine di copie della stessa
  * immagine — e in un'app che lavora su file di stampa le copie non sono
- * piccole. In `FilmLab` era un filmato intero.
+ * piccole. Nel servizio Filmato, tolto il 2026-09-09, era un video intero.
  *
  * Non e' la causa della lentezza riferita dal committente (quella era il
  * modello che partiva sempre): e' un difetto a se', e si corregge perche' e'
@@ -23,7 +23,6 @@ import { readFileSync } from 'node:fs';
 const FILES = [
   ['src/App.jsx', '../src/App.jsx'],
   ['src/components/BatchPanel.jsx', '../src/components/BatchPanel.jsx'],
-  ['src/components/FilmLab.jsx', '../src/components/FilmLab.jsx'],
 ];
 
 for (const [nome, percorso] of FILES) {

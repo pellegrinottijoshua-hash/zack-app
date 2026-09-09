@@ -42,13 +42,16 @@ test('il piano vuoto non mostra nessuno strumento', () => {
   assert.deepEqual(s, []);
 });
 
-test('il filmato mostra i suoi tre gesti, e solo con un file sul piano', () => {
-  const d = getDescrittore('filmato');
-  assert.deepEqual(
-    strumentiVisibili(d, { file: true, risultato: false }).map((x) => x.id),
-    ['taglia', 'fotogrammi', 'sfondo'],
-  );
-  assert.deepEqual(strumentiVisibili(d, { file: false, risultato: false }), []);
+test('un servizio tolto non risponde piu’', () => {
+  /*
+   * «Filmato» e' stato tolto il 2026-09-09: la rimozione dello sfondo da un
+   * video vuole il modello su OGNI fotogramma — circa otto minuti per dieci
+   * secondi di clip — e il committente ha deciso che non ha senso.
+   *
+   * Il test non e' cerimonia: `getDescrittore` deve DIRLO, non restituire
+   * `undefined`, o una schermata resterebbe vuota senza errore.
+   */
+  assert.throws(() => getDescrittore('filmato'), /filmato/);
 });
 
 test('un servizio sconosciuto lo dice, non restituisce undefined', () => {
