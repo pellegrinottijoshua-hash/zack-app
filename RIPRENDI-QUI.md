@@ -196,6 +196,33 @@ nessuna parte. **Un piano scritto bene puo' avere torto**: leggere la
 documentazione del fornitore, non solo il piano.
 
 
+### La verifica di sicurezza che non poteva fallire
+
+Il 2026-09-10 ho dichiarato «la RLS e' spenta, chiunque puo' leggere e
+scrivere i conti» basandomi su una `SELECT` e una `UPDATE` anonime che
+rispondevano `200 []`. **Quella prova non poteva distinguere niente.**
+
+**La RLS filtra le righe, non nega la frase.** A tabella chiusa e senza policy:
+una `SELECT` vede zero righe (`200 []`), una `UPDATE` ne modifica zero
+(`200 []`), una `DELETE` ne cancella zero (`200 []`). A tabella aperta e vuota,
+le stesse tre rispondono identico. Le risposte erano le stesse prima e dopo
+l'`alter table`.
+
+**Solo l'`INSERT` distingue**, perche' una riga nuova non si puo' filtrare: o
+una policy la ammette, o Postgres solleva `42501 new row violates row-level
+security policy`. E' quello il controllo da fare.
+
+E' la stessa forma del test del muro che passava a vuoto: **una prova che da'
+lo stesso esito nei due mondi non prova niente**, e in sicurezza costa il
+doppio — allarme falso oggi, o falsa quiete domani.
+
+⚠️ E una prova di sicurezza non si scrive come una scrittura larga. Per
+provare la `DELETE` ho mandato un filtro `neq.<id-inventato>`, che a tabella
+aperta avrebbe cancellato **tutto**. La tabella era vuota e la RLS l'ha
+respinto, ma il filtro era sbagliato a prescindere dall'esito: si prova con un
+bersaglio che non esiste, non col complemento di uno che non esiste.
+
+
 ## 6. Cosa manca, in ordine
 
 Dal 2026-09-04 il lavoro segue una spec e cinque pezzi:
@@ -349,7 +376,10 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST https://zack-app.com/webhook \
   -H 'stripe-signature: t=1,v1=finta' -d '{"type":"checkout.session.completed"}'
 ```
 
-Deve rispondere **400**. Se risponde 200, il prodotto e' gratis per chiunque
+Deve rispondere **400**.
+
+E che la tabella sia chiusa si prova con un `INSERT` anonimo, non con una
+lettura — vedi la trappola in § 5. Deve rispondere `42501`. Se risponde 200, il prodotto e' gratis per chiunque
 sappia fare una POST. (In Node lo prova gia' `test/workerConto.test.js`.)
 
 ### Poi
