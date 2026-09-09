@@ -17,6 +17,7 @@
     "@fastify/cors": "^11.0.1",
     "@fastify/multipart": "^9.0.3",
     "@neplex/vectorizer": "^0.1.0",
+    "@supabase/supabase-js": "^2.116.0",
     "@svgedit/svgcanvas": "^7.4.2",
     "@visioncortex/vtracer": "^1.0.0-alpha.3",
     "archiver": "^8.0.0",

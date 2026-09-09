@@ -734,9 +734,14 @@
     "p4": "With an element selected, the nodes circle lights up: from there you move points and curves. Under Advanced you get colours, alignment and output format."
   },
   "muro": {
-    "entra": "Sign in",
     "abbonati": "Subscribe — €2.99/month",
-    "presto": "Working on it: signing in from here lands soon.",
+    "abbonatiPresto": "Payment lands in a few days. Meanwhile your library and the home page's background remover stay open.",
+    "email": "your@email.com",
+    "mandaLink": "Email me the link",
+    "mando": "Sending…",
+    "conGoogle": "Continue with Google",
+    "linkMandato": "I've emailed you a link. Open it on this device, not another one.",
+    "nonMandato": "I couldn't send the link. Try again in a moment.",
     "libreriaTua": "Your assets stay yours: the library opens and downloads from here too.",
     "scaduto": {
       "titolo": "Your subscription isn't active",

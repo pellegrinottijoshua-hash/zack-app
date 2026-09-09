@@ -38,7 +38,8 @@ import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/rit
 import { DESCRITTORI, getDescrittore, strumentiVisibili } from './servizi/index.js';
 import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
 import { statoLicenza, puoiLavorare } from './engine/licenza.js';
-import { leggiLicenza } from './store/licenza.js';
+import { leggiLicenza, salvaLicenza } from './store/licenza.js';
+import { chiediLicenza, sessione, entraConEmail, entraConGoogle } from './lib/conto.js';
 import Muro from './components/Muro.jsx';
 import { nuovaNota, nuovoAsset, nuovoCerchio, prossimoPosto } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
@@ -207,7 +208,7 @@ export default function App() {
    * vedrebbe per mezzo secondo la cosa che non può usare, che è peggio di un
    * muro netto.
    */
-  const [licenza] = useState(() => leggiLicenza());
+  const [licenza, setLicenza] = useState(() => leggiLicenza());
   const statoConto = statoLicenza(licenza);
 
   /**
@@ -225,6 +226,34 @@ export default function App() {
    */
   const muroAcceso = import.meta.env.VITE_MURO === '1';
   const chiuso = muroAcceso && !puoiLavorare(statoConto);
+
+  /**
+   * Chiede al server chi siamo, e se ne ricorda.
+   *
+   * Se il server non risponde **non si tocca la licenza salvata**: la grazia
+   * dei sette giorni esiste apposta (spec § 3.4), e sovrascriverla con un
+   * fallimento di rete vorrebbe dire chiudere fuori chi ha pagato per colpa
+   * di un wifi. `chiediLicenza` torna `null` per dire «non lo so», e chi non
+   * lo sa tiene buona l'ultima risposta.
+   */
+  const aggiornaLicenza = useCallback(async () => {
+    const token = await sessione();
+    if (!token) return;
+    const fresca = await chiediLicenza(token);
+    if (!fresca) return;
+    salvaLicenza(fresca);
+    setLicenza(fresca);
+  }, []);
+
+  /*
+   * DOPO il primo disegno, mai prima (spec § 8). Lo studio gira sul computer
+   * di chi lo usa: farlo aspettare una risposta da Internet per aprire uno
+   * strumento locale e' il modo di farsi odiare anche da chi ha pagato. Il
+   * muro del primo istante lo decide `leggiLicenza()`, che e' sincrono.
+   */
+  useEffect(() => {
+    aggiornaLicenza();
+  }, [aggiornaLicenza]);
   /** Per «centra tutto», che ora è un cerchio ma muove la vista di Brain. */
   const brainRef = useRef(null);
   /** Il menu del `+` aperto. È un momento, non uno stato: si apre e si chiude. */
@@ -2115,8 +2144,9 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
              */
             <Muro
               stato={statoConto}
-              onEntra={() => setNotice(t('muro.presto'))}
-              onAbbona={() => setNotice(t('muro.presto'))}
+              onEntra={entraConEmail}
+              onGoogle={entraConGoogle}
+              onAbbona={() => setNotice(t('muro.abbonatiPresto'))}
             />
           ) : DESCRITTORI[tool] ? (
             <Piano

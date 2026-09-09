@@ -734,9 +734,14 @@
     "p4": "Scelto un elemento, il cerchio dei nodi si accende: da lì sposti i punti e le curve. Sotto Avanzati ci sono colori, allineamento e formato di uscita."
   },
   "muro": {
-    "entra": "Entra",
     "abbonati": "Abbonati — 2,99 €/mese",
-    "presto": "Ci sto lavorando: fra poco si potrà entrare da qui.",
+    "abbonatiPresto": "Il pagamento arriva a giorni. Intanto la libreria e lo scontorno sulla home restano aperti.",
+    "email": "la-tua@email.it",
+    "mandaLink": "Mandami il link",
+    "mando": "Mando…",
+    "conGoogle": "Entra con Google",
+    "linkMandato": "Ti ho mandato un link. Aprilo da questo dispositivo, non da un altro.",
+    "nonMandato": "Non sono riuscito a mandare il link. Riprova fra un momento.",
     "libreriaTua": "I tuoi asset restano tuoi: la libreria si apre e si scarica anche da qui.",
     "scaduto": {
       "titolo": "L'abbonamento non è attivo",
