@@ -5229,3 +5229,40 @@ body {
   height: 100%;
   min-height: 0;
 }
+
+/* Il muro: prende il posto del PIANO, non della schermata. La libreria resta
+   sotto, e si scarica — spec § 3.5. */
+.muro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: min(60vh, 480px);
+  padding: 24px;
+  text-align: center;
+}
+.muro-zack {
+  width: 120px;
+  height: 120px;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+.muro h2 {
+  margin: 0;
+  font-family: 'Fredoka', var(--display);
+  font-size: clamp(20px, 3.4vw, 27px);
+  color: var(--inchiostro);
+}
+.muro-corpo {
+  margin: 0;
+  max-width: 46ch;
+  line-height: 1.5;
+  color: var(--inchiostro-2);
+}
+.muro-libreria {
+  margin: 6px 0 0;
+  max-width: 44ch;
+  font-size: 13px;
+  color: var(--inchiostro-3);
+}

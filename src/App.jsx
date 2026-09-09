@@ -37,6 +37,9 @@ import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/
 import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/ritaglio.js';
 import { DESCRITTORI, getDescrittore, strumentiVisibili } from './servizi/index.js';
 import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
+import { statoLicenza, puoiLavorare } from './engine/licenza.js';
+import { leggiLicenza } from './store/licenza.js';
+import Muro from './components/Muro.jsx';
 import { nuovaNota, nuovoAsset, nuovoCerchio, prossimoPosto } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
 import { leggiDescrizione } from './engine/dizionarioVoce.js';
@@ -196,6 +199,16 @@ export default function App() {
    * tela ci può stare **una cosa sola**, e adesso lo dice il tipo.
    */
   const [sopraLaTela, setSopraLaTela] = useState(null);
+
+  /**
+   * La licenza, letta dalla memoria PRIMA di disegnare.
+   *
+   * Il muro non deve comparire un istante dopo lo studio: chi non ha pagato
+   * vedrebbe per mezzo secondo la cosa che non può usare, che è peggio di un
+   * muro netto.
+   */
+  const [licenza] = useState(() => leggiLicenza());
+  const statoConto = statoLicenza(licenza);
   /** Per «centra tutto», che ora è un cerchio ma muove la vista di Brain. */
   const brainRef = useRef(null);
   /** Il menu del `+` aperto. È un momento, non uno stato: si apre e si chiude. */
@@ -2077,7 +2090,19 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               scrive a mano: e' la stessa domanda a cui risponde `servizi/`,
               e due risposte alla stessa domanda divergono al primo servizio
               nuovo. */}
-          {DESCRITTORI[tool] ? (
+          {!puoiLavorare(statoConto) ? (
+            /*
+             * Il muro sta DENTRO `.stage`, non intorno a `.shell`: fuori
+             * chiuderebbe anche la striscia e la libreria, che e' esattamente
+             * cio' che la spec § 3.5 vieta — la libreria non si chiude mai, e
+             * un test legge questo file per assicurarsene.
+             */
+            <Muro
+              stato={statoConto}
+              onEntra={() => setNotice(t('muro.presto'))}
+              onAbbona={() => setNotice(t('muro.presto'))}
+            />
+          ) : DESCRITTORI[tool] ? (
             <Piano
               servizio={getDescrittore(tool)}
               /* Vuoto vuol dire NIENTE sul piano: ne' un file solo, ne' la
@@ -2463,7 +2488,17 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
       {/* La libreria non compare nello scontorno: il piano e' vuoto, e
           «scarica tutto» e' diventato l'icona in alto a destra. Resta in
           tutti gli altri servizi, dove il lavoro si accumula. */}
-      {!DESCRITTORI[tool] && (
+      {/*
+        ⚠️ **La libreria si vede anche col muro alzato** (spec § 3.5): chi non
+        ha pagato deve poter guardare e scaricare i propri file. Un prodotto
+        che li tiene in ostaggio non e' un prodotto.
+
+        E fin qui era `!DESCRITTORI[tool]`, cioe' «solo nei servizi fuori
+        dall'impianto» — che dal 2026-09-09 non sono piu' nessuno: entrati
+        tutti e cinque, la libreria era diventata IRRAGGIUNGIBILE da qualunque
+        schermata. Trovato mettendo il muro, non riferito da nessuno.
+      */}
+      {(!puoiLavorare(statoConto) || !DESCRITTORI[tool]) && (
         <Library
           store={library}
           open={libOpen}
