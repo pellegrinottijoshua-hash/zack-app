@@ -105,3 +105,38 @@ test('il prezzo sulla home e’ quello che Stripe fa pagare', () => {
   assert.match(tutto, /2,99 €\/mese/, 'la home non dice piu’ il prezzo in italiano');
   assert.match(tutto, /€2\.99\/month/, 'la home non dice piu’ il prezzo in inglese');
 });
+
+test('la home non promette piu’ che non c’e’ un server', () => {
+  /*
+   * «Non c'e' un server che li guarda, perche' non c'e' un server» era vero
+   * fino al 2026-09-09 ed e' diventato falso alla lettera: la Fase B ne mette
+   * uno, che sa chi sei e se hai pagato. Una promessa smentita dal prodotto la
+   * trova un cliente, non noi — e vale meno di zero, perche' fa mettere in
+   * dubbio anche quelle vere.
+   *
+   * Cio' che resta vero e' la parte che conta, e si continua a dire: i file non
+   * escono dal computer di chi lavora. Regge lo stesso confronto con Canva e
+   * Adobe, e ha il pregio di essere ancora vera.
+   *
+   * ⚠️ Resta scritto — ed e' giusto — che gli STRUMENTI non girano su un
+   * server. Quello non e' cambiato: e' il motivo per cui possono essere
+   * illimitati. Il test guarda la promessa sull'archivio, non quella sul
+   * calcolo.
+   */
+  const tutto = JSON.stringify(COPY);
+  assert.doesNotMatch(
+    tutto,
+    /non c.è un server|no server watching|there.s no server/i,
+    'la home promette ancora che un server non esiste',
+  );
+  assert.match(
+    tutto,
+    /non escono da questo computer/,
+    'la home non dice piu’ dove stanno i file, in italiano',
+  );
+  assert.match(
+    tutto,
+    /never leave this computer/,
+    'la home non dice piu’ dove stanno i file, in inglese',
+  );
+});

@@ -23,7 +23,7 @@ export const COPY = {
         'Immagini, video, voci registrate e i tuoi appunti .md sulla stessa tela. Li raggruppi per progetto, tiri due frecce, e il progetto smette di essere sparso in otto cartelle.',
       pitch:
         'Poi scarichi il pacco e lo dai in pasto a Claude: dentro c\u2019\u00e8 IDEE.md, la panoramica che gli fa ritrovare i tuoi progetti invece di ricominciare da capo ogni volta.',
-      note: 'Nessuna sincronizzazione, nessun server. \u00c8 uno zip.',
+      note: 'Nessuna sincronizzazione, niente da caricare. \u00c8 uno zip.',
     },
 
     cast: {
@@ -143,7 +143,7 @@ export const COPY = {
       kicker: 'Dove stanno i tuoi file',
       title: 'Sul tuo computer. Punto.',
       body:
-        'Lo scontorno gira nel tuo browser. L’archivio sta nel tuo disco. Non c’è un server che li guarda, perché non c’è un server.',
+        'Lo scontorno gira nel tuo browser. L’archivio sta nel tuo disco. I tuoi file non escono da questo computer: il server sa soltanto chi sei e quanto ti resta.',
     },
 
     compare: {
@@ -175,7 +175,7 @@ export const COPY = {
         'Images, video, voice notes and your own .md files on one canvas. Group them by project, draw a couple of arrows, and the project stops being scattered across eight folders.',
       pitch:
         'Then you download the bundle and hand it to Claude: inside is IDEE.md, the overview that lets it pick your projects back up instead of starting over every time.',
-      note: 'No syncing, no server. It\u2019s a zip.',
+      note: 'No syncing, nothing to upload. It\u2019s a zip.',
     },
 
     cast: {
@@ -292,7 +292,7 @@ export const COPY = {
       kicker: 'Where your files live',
       title: 'On your computer. That’s it.',
       body:
-        "The cutout runs in your browser. The archive sits on your disk. There's no server watching them, because there's no server.",
+        "The cutout runs in your browser. The archive sits on your disk. Your files never leave this computer: the server only knows who you are and what you have left.",
     },
 
     compare: {
