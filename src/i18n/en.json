@@ -735,7 +735,7 @@
   },
   "muro": {
     "abbonati": "Subscribe — €2.99/month",
-    "abbonatiPresto": "Payment lands in a few days. Meanwhile your library and the home page's background remover stay open.",
+    "pagamentoNo": "I couldn't open the payment page. Try again in a moment.",
     "provaResta": "Free trial: {giorni} days left.",
     "provaUltimo": "Free trial: last day.",
     "email": "your@email.com",

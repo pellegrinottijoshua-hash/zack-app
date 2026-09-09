@@ -39,7 +39,7 @@ import { DESCRITTORI, getDescrittore, strumentiVisibili } from './servizi/index.
 import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
 import { statoLicenza, puoiLavorare, giorniAllaProva } from './engine/licenza.js';
 import { leggiLicenza, salvaLicenza } from './store/licenza.js';
-import { chiediLicenza, sessione, entraConEmail, entraConGoogle } from './lib/conto.js';
+import { chiediLicenza, sessione, entraConEmail, entraConGoogle, vaiAlPagamento } from './lib/conto.js';
 import Muro from './components/Muro.jsx';
 import { nuovaNota, nuovoAsset, nuovoCerchio, prossimoPosto } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
@@ -2165,7 +2165,13 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               stato={statoConto}
               onEntra={entraConEmail}
               onGoogle={entraConGoogle}
-              onAbbona={() => setNotice(t('muro.abbonatiPresto'))}
+              onAbbona={async () => {
+                try {
+                  await vaiAlPagamento();
+                } catch {
+                  setNotice(t('muro.pagamentoNo'));
+                }
+              }}
             />
           ) : DESCRITTORI[tool] ? (
             <Piano

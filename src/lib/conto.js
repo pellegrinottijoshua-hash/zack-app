@@ -102,3 +102,24 @@ export async function esci() {
   const sb = await cliente();
   await sb.auth.signOut();
 }
+
+/**
+ * Porta a Stripe.
+ *
+ * Il prezzo lo decide Stripe, non il browser: qui non c'e' nessuna cifra, e
+ * non deve essercene nessuna. Una cifra scritta due volte diverge al primo
+ * ripensamento, e divergere qui vuol dire aver mentito a un cliente che ci
+ * aveva creduto sulla parola.
+ */
+export async function vaiAlPagamento() {
+  const token = await sessione();
+  if (!token) throw new Error('non-collegato');
+  const res = await fetch(`${BASE}/checkout`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('checkout');
+  const { url } = await res.json();
+  if (!url) throw new Error('checkout');
+  location.href = url;
+}

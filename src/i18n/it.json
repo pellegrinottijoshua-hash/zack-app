@@ -735,7 +735,7 @@
   },
   "muro": {
     "abbonati": "Abbonati — 2,99 €/mese",
-    "abbonatiPresto": "Il pagamento arriva a giorni. Intanto la libreria e lo scontorno sulla home restano aperti.",
+    "pagamentoNo": "Non sono riuscito ad aprire il pagamento. Riprova fra un momento.",
     "provaResta": "Prova gratuita: restano {giorni} giorni.",
     "provaUltimo": "Prova gratuita: è l’ultimo giorno.",
     "email": "la-tua@email.it",

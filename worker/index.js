@@ -10,6 +10,8 @@
  */
 
 import { PROVA_GIORNI } from '../src/engine/licenza.js';
+import { verificaFirma } from './firma.js';
+import { cosaFare } from './eventi.js';
 
 const GIORNO = 86400000;
 
@@ -56,6 +58,103 @@ async function contoDi(id, env) {
   if (!res.ok) return null;
   const righe = await res.json();
   return righe[0] || null;
+}
+
+/**
+ * Apre il pagamento su Stripe.
+ *
+ * Il prezzo non si inventa qui: `STRIPE_PREZZO` è l'id del prodotto su
+ * Stripe, e la cifra che il cliente vede è quella che Stripe gli fa pagare.
+ * Un prezzo scritto due volte diverge al primo ripensamento — e divergere qui
+ * vuol dire aver mentito a un cliente che ci aveva creduto sulla parola.
+ */
+async function checkout(req, env) {
+  const chi = await chiEsegue(req, env);
+  if (!chi) return json({ errore: 'non-collegato' }, 401);
+  if (!env.STRIPE_PREZZO || !env.STRIPE_SECRET_KEY) return json({ errore: 'non-configurato' }, 503);
+
+  const corpo = new URLSearchParams({
+    mode: 'subscription',
+    'line_items[0][price]': env.STRIPE_PREZZO,
+    'line_items[0][quantity]': '1',
+    customer_email: chi.email,
+    // Chi ha pagato lo dice Stripe rimandandoci indietro QUESTO: senza, il
+    // webhook arriverebbe senza sapere a chi accreditarlo.
+    'metadata[utente]': chi.id,
+    /*
+     * ⚠️ E ANCHE sull'abbonamento, che è l'altra metà della stessa cura.
+     *
+     * Il `metadata` della sessione vive quanto la sessione: una volta. Al
+     * rinnovo Stripe manda una fattura che discende dall'ABBONAMENTO, e se
+     * l'abbonamento non sa di chi è, il rinnovo arriva e non trova nessuno a
+     * cui accreditarlo. Il cliente paga il secondo mese e trova il muro,
+     * senza che niente si lamenti da nessuna parte.
+     */
+    'subscription_data[metadata][utente]': chi.id,
+    success_url: `${env.SITO}/app/?pagato=1`,
+    cancel_url: `${env.SITO}/app/`,
+  });
+
+  const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+      'content-type': 'application/x-www-form-urlencoded',
+    },
+    body: corpo,
+  });
+  if (!res.ok) return json({ errore: 'stripe' }, 502);
+  const s = await res.json();
+  return json({ url: s.url });
+}
+
+/** Stripe che dice chi ha pagato. */
+async function webhookStripe(req, env) {
+  /*
+   * Il corpo GREZZO, prima di qualunque `json()`: la firma è su quei byte, e
+   * un `JSON.parse` seguito da uno `stringify` li cambia — chiavi riordinate,
+   * spazi diversi — e la firma non torna più.
+   */
+  const corpo = await req.text();
+  const ok = await verificaFirma(
+    corpo,
+    req.headers.get('stripe-signature'),
+    env.STRIPE_WEBHOOK_SECRET,
+  );
+  // ⚠️ Qui si esce, e non si discute: un webhook non verificato è un
+  // abbonamento gratis per chiunque sappia fare una POST.
+  if (!ok) return json({ errore: 'firma' }, 400);
+
+  let evento;
+  try {
+    evento = JSON.parse(corpo);
+  } catch {
+    return json({ errore: 'corpo' }, 400);
+  }
+
+  const fatto = cosaFare(evento);
+  // Niente da fare non è un errore: Stripe manda decine di eventi che non ci
+  // riguardano, e rispondere male gli farebbe riprovare all'infinito.
+  if (!fatto) return json({ ok: true });
+
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/conti`, {
+    method: 'POST',
+    headers: {
+      ...conServizio(env),
+      // Se la riga c'è si aggiorna, se non c'è nasce: il primo pagamento può
+      // arrivare prima che il conto esista.
+      prefer: 'resolution=merge-duplicates',
+    },
+    body: JSON.stringify(fatto),
+  });
+  /*
+   * Se l'archivio non ha preso, si risponde MALE apposta: Stripe riprova per
+   * tre giorni. Rispondere «va bene» a un pagamento che non abbiamo scritto
+   * vuol dire perderlo per sempre, in silenzio.
+   */
+  if (!res.ok) return json({ errore: 'archivio' }, 500);
+
+  return json({ ok: true });
 }
 
 export default {
@@ -106,6 +205,15 @@ export default {
         crediti: conto.crediti ?? 0,
       });
     }
+
+    if (url.pathname === '/checkout' && req.method === 'POST') return checkout(req, env);
+
+    /*
+     * Il webhook NON ha l'intestazione CORS e non ne ha bisogno: non lo chiama
+     * un browser, lo chiama Stripe. Ed e' l'unica porta che accetta qualcosa
+     * da chi non ha fatto il login — per questo la firma si verifica sempre.
+     */
+    if (url.pathname === '/webhook' && req.method === 'POST') return webhookStripe(req, env);
 
     // Tutto il resto lo servono i file statici, come prima.
     return env.ASSETS.fetch(req);
