@@ -3,6 +3,7 @@ import brain from './brain.js';
 import vocale from './vocale.js';
 import effetti from './effetti.js';
 import vettorializza from './vettorializza.js';
+import { puoiLavorare } from '../engine/licenza.js';
 
 /**
  * I descrittori dei servizi: dove vive il comportamento di ognuno.
@@ -43,6 +44,33 @@ export const QUANDO = ['sempre', 'con-file', 'con-risultato', 'con-file-senza-ri
  * destra, che è dove stanno da sempre.
  */
 export const LATI = ['sinistra', 'destra'];
+
+/**
+ * Cosa serve per usare un servizio. **Lista chiusa**, come `QUANDO` e `LATI`.
+ *
+ * `abbonamento` — gira sul computer del cliente, e l'abbonamento è ciò che lo
+ * paga. `saldo` — chiama un fornitore che ci addebita, e a pagarlo sono i
+ * crediti: quindi si usa **anche senza abbonamento**, perché quei crediti sono
+ * già soldi di chi li ha comprati (decisione del committente, 2026-09-10).
+ */
+export const SERVE = ['abbonamento', 'saldo'];
+
+/**
+ * Questo servizio si può usare adesso?
+ *
+ * Prende il posto del `chiuso` unico: un muro solo per tutto lo studio
+ * chiuderebbe anche la generazione, e chi ha 18 € di credito troverebbe una
+ * porta chiusa davanti a soldi suoi.
+ *
+ * Un `descrittore` assente (`tool` fuori dall'impianto: l'editor, e le altre
+ * viste che non hanno un servizio) non è un caso speciale: `?.serve` va a
+ * `undefined`, mai uguale a `'saldo'`, e si ricade su `puoiLavorare(stato)` —
+ * cioè lo stesso muro di sempre per chi non è nell'impianto.
+ */
+export function servizioAperto(descrittore, { stato, crediti = 0, prezzo = 0 } = {}) {
+  if (descrittore?.serve === 'saldo') return crediti >= prezzo;
+  return puoiLavorare(stato);
+}
 
 /** Il descrittore di un servizio, o un errore che lo nomina. */
 export function getDescrittore(id) {
@@ -115,5 +143,11 @@ export function validaDescrittore(d) {
   const quanti = d.accetta?.quanti;
   if (!Number.isInteger(quanti) || quanti < 1) {
     throw new Error(`Descrittore ${d.id}: «accetta.quanti» deve essere un intero ≥ 1.`);
+  }
+
+  if (!SERVE.includes(d.serve)) {
+    // Un valore inventato non chiuderebbe e non aprirebbe: lo stesso guasto
+    // silenzioso di uno stato fuori da `QUANDO`.
+    throw new Error(`Descrittore ${d.id}: «${d.serve}» non è fra ${SERVE.join(', ')}.`);
   }
 }

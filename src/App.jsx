@@ -35,9 +35,10 @@ import { canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { TARGET_SIDE } from './engine/ready.js';
 import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/ricette.js';
 import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/ritaglio.js';
-import { DESCRITTORI, getDescrittore, strumentiVisibili } from './servizi/index.js';
+import { DESCRITTORI, getDescrittore, strumentiVisibili, servizioAperto } from './servizi/index.js';
 import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
-import { statoLicenza, puoiLavorare, giorniAllaProva } from './engine/licenza.js';
+import { statoLicenza, giorniAllaProva } from './engine/licenza.js';
+import { prezzoDi } from './engine/listino.js';
 import { leggiLicenza, salvaLicenza } from './store/licenza.js';
 import { chiediLicenza, sessione, entraConEmail, entraConGoogle, vaiAlPagamento } from './lib/conto.js';
 import Muro from './components/Muro.jsx';
@@ -94,6 +95,9 @@ const px = (d) => (d ? `${d.w}×${d.h}` : '—');
  * fa già per i servizi a pagamento.
  */
 const FACCIA = new Set(['brain', 'scontorna', 'vettorializza', 'vocale']);
+
+/** Quale voce di listino paga quale strumento. Vuoto per i locali. */
+const LISTINO_DI = { immagine: 'immagine-nbp' };
 
 /**
  * I servizi che non lavorano su un file del piano.
@@ -225,7 +229,36 @@ export default function App() {
    * distrazione.
    */
   const muroAcceso = import.meta.env.VITE_MURO === '1';
-  const chiuso = muroAcceso && !puoiLavorare(statoConto);
+
+  /**
+   * Il muro non è più uno solo.
+   *
+   * I cinque strumenti locali li paga l'abbonamento; la generazione la pagano
+   * i crediti, e quelli restano a chi ha disdetto (decisione del committente,
+   * 2026-09-10). Un `chiuso` unico chiuderebbe anche la generazione, cioè
+   * metterebbe una porta davanti a soldi che il cliente ha già dato.
+   *
+   * Niente `Boolean(DESCRITTORI[tool]) &&`: `tool` non è sempre un
+   * descrittore — l'editor e le altre viste fuori dall'impianto sono murate
+   * come tutto il resto (si veda più sotto `!DESCRITTORI[tool]` e
+   * `DESCRITTORI[tool] ? null : ...`). Con quella guardia smetterebbero di
+   * esserlo nell'istante in cui il muro si accende, e parte del prodotto
+   * diventerebbe gratis. `servizioAperto` gestisce già il descrittore
+   * assente da sola: `?.serve` non è mai `'saldo'`, e si ricade su
+   * `puoiLavorare(stato)` — lo stesso muro di sempre.
+   */
+  const crediti = licenza?.crediti ?? 0;
+  /*
+   * `prezzoDi(voce).total` SENZA riferimenti, cioè il prezzo base: il muro
+   * chiede «hai abbastanza per COMINCIARE», non «per questa esatta
+   * richiesta». I riferimenti si scelgono DOPO aver superato il muro — chi ne
+   * ha messi troppi può sempre toglierne — il preventivo del Task 7 mostrerà
+   * la cifra vera coi riferimenti inclusi, e il Worker resta il giudice
+   * ultimo di quanto si spende davvero.
+   */
+  const prezzoQui = DESCRITTORI[tool]?.serve === 'saldo' ? prezzoDi(LISTINO_DI[tool]).total : 0;
+  const chiuso = muroAcceso &&
+    !servizioAperto(DESCRITTORI[tool], { stato: statoConto, crediti, prezzo: prezzoQui });
 
   /**
    * Chiede al server chi siamo, e se ne ricorda.

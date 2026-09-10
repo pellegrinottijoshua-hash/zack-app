@@ -11,6 +11,8 @@
  */
 export default {
   id: 'brain',
+  /** Gira sul computer del cliente: lo paga l'abbonamento, non i crediti. */
+  serve: 'abbonamento',
   claim: 'brain.claim',
 
   /*

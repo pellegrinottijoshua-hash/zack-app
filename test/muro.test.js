@@ -59,3 +59,37 @@ test('gli stati che fanno lavorare restano due', () => {
   const quali = ['aperto', 'prova', 'scaduto', 'da-ricollegare', 'mai-entrato'].filter(puoiLavorare);
   assert.deepEqual(quali, ['aperto', 'prova']);
 });
+
+test('il muro non e’ piu’ uno solo per tutto lo studio', () => {
+  /*
+   * Il `chiuso` globale chiudeva anche la generazione, e rendeva
+   * irraggiungibili i crediti di chi ha disdetto. Questo test chiede che la
+   * decisione passi da `servizioAperto`, cioe' dal descrittore.
+   */
+  assert.match(APP, /servizioAperto\(/, 'App.jsx decide ancora il muro per tutto lo studio');
+});
+
+test('la guardia sul descrittore non torna a smurare le viste fuori dall’impianto', () => {
+  /*
+   * Il capitolato proponeva `Boolean(DESCRITTORI[tool]) &&` dentro `chiuso`.
+   * Ma `tool` non e' sempre un descrittore — l'editor, e le altre viste fuori
+   * dall'impianto (piu' sotto: `!DESCRITTORI[tool]`,
+   * `DESCRITTORI[tool] ? null : ...`) — ed erano murate come tutto il resto.
+   * Con quella guardia avrebbero smesso di esserlo nell'istante in cui il
+   * muro si accende: parte del prodotto sarebbe diventata gratis.
+   *
+   * `servizioAperto` gestisce gia' il descrittore assente da sola
+   * (`?.serve` non e' mai `'saldo'`, si ricade su `puoiLavorare`), quindi la
+   * guardia non deve tornare. Si legge solo la RIGA di `chiuso`, non tutto il
+   * file: altrove in App.jsx `Boolean(DESCRITTORI[tool])` serve per altro
+   * (`data-vuota`), e cercarlo ovunque avrebbe accusato codice innocente.
+   */
+  const i = APP.indexOf('const chiuso = muroAcceso &&');
+  assert.notEqual(i, -1, '«chiuso» non e’ definito dove il test se lo aspetta');
+  const definizione = APP.slice(i, APP.indexOf(';', i) + 1);
+  assert.doesNotMatch(
+    definizione,
+    /Boolean\(DESCRITTORI\[tool\]\)/,
+    'la guardia e’ tornata: le viste fuori dall’impianto si smurerebbero da sole',
+  );
+});

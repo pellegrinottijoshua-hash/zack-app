@@ -18,6 +18,8 @@
  */
 export default {
   id: 'vocale',
+  /** Gira sul computer del cliente: lo paga l'abbonamento, non i crediti. */
+  serve: 'abbonamento',
   claim: 'sound.claim',
 
   /** I due gesti del contratto § 7.3, e nessun terzo. */
