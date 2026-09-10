@@ -29,9 +29,14 @@ afterEach(() => { globalThis.fetch = fetchVero; });
  * `rimborsoOk` finge un `/rpc/accredita` che risponde male (rete, 500,
  * Supabase giu'): e' il caso che la correzione 2 difende — un rimborso che
  * non prende non deve mai sembrare riuscito.
+ *
+ * `apriLavoroOk` finge la POST di `apriLavoro` verso `/rest/v1/lavori` che
+ * risponde male (un 4xx: la riga NON esiste). Quando e' `false` non si
+ * inserisce niente in `stato.lavori` — e' esattamente cio' che succede
+ * davvero se l'insert fallisce.
  */
-function mondo({ saldo = 5000, googleOk = true, rimborsoOk = true } = {}) {
-  const stato = { saldo, chiamate: [], lavori: [] };
+function mondo({ saldo = 5000, googleOk = true, rimborsoOk = true, apriLavoroOk = true } = {}) {
+  const stato = { saldo, chiamate: [], lavori: [], rimborsi: [] };
   globalThis.fetch = async (u, o = {}) => {
     const url = String(u?.url || u);
     const corpo = o.body ? JSON.parse(o.body) : {};
@@ -46,11 +51,15 @@ function mondo({ saldo = 5000, googleOk = true, rimborsoOk = true } = {}) {
       return new Response(String(stato.saldo), { status: 200 });
     }
     if (url.includes('/rpc/accredita')) {
+      stato.rimborsi.push(corpo);
       if (!rimborsoOk) return new Response('{"errore":"archivio giu’"}', { status: 500 });
       stato.saldo += corpo.p_millesimi;
       return new Response(String(stato.saldo), { status: 200 });
     }
     if (url.includes('/rest/v1/lavori')) {
+      if (o.method === 'POST' && !apriLavoroOk) {
+        return new Response('{"message":"violazione vincolo"}', { status: 400 });
+      }
       stato.lavori.push(corpo);
       return new Response('{}', { status: 201 });
     }
@@ -133,6 +142,57 @@ test('⚠️ se il rimborso fallisce, il lavoro resta in-corso e il saldo non me
   );
 });
 
+test('⚠️ se apriLavoro non riesce, il cliente e’ rimborsato e il saldo torna quello di partenza', async () => {
+  /*
+   * apriLavoro fa una POST verso /rest/v1/lavori DENTRO il try: se Supabase
+   * risponde con uno status che non e' ok (qui un 4xx — un guasto di rete
+   * solleverebbe da solo, e finirebbe nello stesso catch), la riga di lavori
+   * non esiste. genera() deve trattarlo come ogni altro fallimento del
+   * fornitore: rimborsare, e non provare mai a chiudere un lavoro mai nato
+   * (altrimenti la PATCH andrebbe a vuoto, e prima ancora — se si passasse
+   * il suo id al rimborso — l'insert in movimenti violerebbe la chiave
+   * esterna verso una riga di lavori inesistente).
+   */
+  const w = mondo({ saldo: 5000, apriLavoroOk: false });
+  const res = await worker.fetch(chiedi({ servizio: 'immagine-nbp', prompt: 'un cane' }), AMBIENTE);
+  assert.equal(res.status, 502);
+  assert.equal(
+    w.saldo, 5000,
+    `il saldo e’ sceso a ${w.saldo}: l’apertura del lavoro fallita ha fatto pagare comunque`,
+  );
+  assert.ok(w.chiamate.some((c) => c.includes('/rpc/accredita')), 'non ha rimborsato');
+  // Nessuna riga di lavori e' mai nata: chiudiLavoro non va chiamato, o la
+  // PATCH cadrebbe su un id che non esiste in archivio.
+  assert.equal(w.lavori.length, 0, 'ha scritto o chiuso un lavoro che non e’ mai stato creato');
+  // Il rimborso deve passare p_lavoro: null — mai l’id del lavoro mai
+  // creato, che violerebbe la chiave esterna di movimenti.lavoro.
+  assert.equal(
+    w.rimborsi.at(-1)?.p_lavoro, null,
+    'ha passato al rimborso l’id di un lavoro che non esiste: la chiave esterna lo respingerebbe',
+  );
+});
+
+test('apriLavoro non scrive in movimenti: quel movimento nasce dentro addebita', async () => {
+  /*
+   * La regola difesa qui: apriLavoro inserisce SOLO la riga di lavori. Il
+   * movimento di spesa lo scrive gia' la funzione SQL addebita(), nella
+   * STESSA transazione dell'UPDATE che toglie il saldo. Se il Worker ne
+   * inserisse un secondo qui, ogni generazione riuscita lascerebbe DUE
+   * movimenti di spesa invece di uno, e lo storico delle uscite conterebbe
+   * il doppio: proprio il numero con cui si dimostra "di ogni euro, Zack ne
+   * rimette 12 centesimi" direbbe il falso. Zero inserimenti diretti a
+   * /rest/v1/movimenti e' quindi il numero giusto, non un caso limite.
+   */
+  const w = mondo({ saldo: 5000 });
+  const res = await worker.fetch(chiedi({ servizio: 'immagine-nbp', prompt: 'un cane' }), AMBIENTE);
+  assert.equal(res.status, 200);
+  const insertiMovimenti = w.chiamate.filter((c) => c.includes('/rest/v1/movimenti'));
+  assert.equal(
+    insertiMovimenti.length, 0,
+    'il Worker ha scritto in movimenti: quel movimento lo scrive gia’ addebita(), servirebbe raddoppiato',
+  );
+});
+
 test('senza saldo non si genera, e non si chiama il fornitore', async () => {
   const w = mondo({ saldo: 100 });   // meno dei 145 che serve
   const res = await worker.fetch(chiedi({ servizio: 'immagine-nbp', prompt: 'un cane' }), AMBIENTE);
@@ -166,19 +226,30 @@ test('i riferimenti si contano contro il LISTINO', async () => {
   const troppi = (n, ruolo) =>
     Array.from({ length: n }, () => ({ ruolo, immagine: 'data:image/png;base64,AAAA' }));
 
-  for (const [rif, perche] of [
-    [troppi(15, 'oggetto'), 'quindici in tutto'],
-    [troppi(6, 'personaggio'), 'sei personaggi quando il massimo e’ cinque'],
-    [troppi(4, 'stile'), 'quattro stili quando il massimo e’ tre'],
-    [[{ ruolo: 'inventato', immagine: 'data:image/png;base64,AAAA' }], 'un ruolo che non esiste'],
-    // ⚠️ `ruolo: 'toString'` e' un nome EREDITATO da Object, non uno vero:
-    // con `in` passerebbe il controllo (la catena dei prototipi ce l'ha) e
-    // `conta['toString'] += 1` farebbe NaN, scavalcando i limiti per ruolo.
-    [[{ ruolo: 'toString', immagine: 'data:image/png;base64,AAAA' }], 'un nome ereditato da Object, non un ruolo vero'],
+  for (const [rif, perche, erroreAtteso] of [
+    [troppi(15, 'oggetto'), 'quindici in tutto', 'troppi-riferimenti'],
+    [troppi(6, 'personaggio'), 'sei personaggi quando il massimo e’ cinque', 'troppi-personaggio'],
+    [troppi(4, 'stile'), 'quattro stili quando il massimo e’ tre', 'troppi-stile'],
+    [[{ ruolo: 'inventato', immagine: 'data:image/png;base64,AAAA' }], 'un ruolo che non esiste', 'ruolo-sconosciuto'],
+    /*
+     * ⚠️ `ruolo: 'toString'` e' un nome EREDITATO da Object, non uno vero:
+     * con `in` (la versione che il revisore aveva rimesso) la catena dei
+     * prototipi lo fa passare, e lo status resta 400 comunque — non per il
+     * motivo giusto, ma perche' `conta['toString'] += 1` forza la funzione
+     * ereditata a stringa, la scrive come proprieta' PROPRIA, e quella
+     * stringa risulta per coincidenza lessicograficamente maggiore della
+     * gemella non incrementata letta da `limiti['toString']`: l'errore che
+     * ne esce e' `troppi-toString`, non `ruolo-sconosciuto`. Un test che
+     * guarda solo `res.status` non distingue i due mondi: per questo qui si
+     * controlla anche `corpo.errore`.
+     */
+    [[{ ruolo: 'toString', immagine: 'data:image/png;base64,AAAA' }], 'un nome ereditato da Object, non un ruolo vero', 'ruolo-sconosciuto'],
   ]) {
     const res = await worker.fetch(
       chiedi({ servizio: 'immagine-nbp', prompt: 'x', riferimenti: rif }), AMBIENTE);
     assert.equal(res.status, 400, perche);
+    const corpo = await res.json();
+    assert.equal(corpo.errore, erroreAtteso, perche);
   }
   assert.equal(w.saldo, 5000, 'ha addebitato una richiesta che il fornitore avrebbe rifiutato');
 });

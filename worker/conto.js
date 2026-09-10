@@ -58,13 +58,18 @@ export async function rimborsa(utente, prezzo, lavoro, env) {
  * secondo, ogni generazione lascerebbe DUE movimenti di spesa invece di uno,
  * e lo storico conterebbe il doppio delle uscite: proprio il numero con cui
  * si dimostra «di ogni euro, Zack ne rimette 12 centesimi» direbbe il falso.
+ *
+ * Torna `res.ok`: chi chiama deve sapere se la riga esiste DAVVERO, perché
+ * un rimborso che passasse l'id di un lavoro mai creato violerebbe la chiave
+ * esterna di `movimenti.lavoro` — vedi il ramo `catch` di `genera()`.
  */
 export async function apriLavoro({ id, utente, servizio, prezzo }, env) {
-  await fetch(`${SUPABASE_URL}/rest/v1/lavori`, {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/lavori`, {
     method: 'POST',
     headers: intestazioni(env),
     body: JSON.stringify({ id, utente, servizio, prezzo, stato: 'in-corso' }),
   });
+  return res.ok;
 }
 
 /** Chiude il lavoro, col costo vero se c'è. */

@@ -305,9 +305,24 @@ async function genera(req, env) {
   if (rimasto === null) return json({ errore: 'saldo', prezzo }, 402);
 
   const lavoro = crypto.randomUUID();
-  await apriLavoro({ id: lavoro, utente: chi.id, servizio, prezzo }, env);
+  // Diventa vero solo se la riga di `lavori` esiste DAVVERO. Serve nel
+  // `catch`: `movimenti.lavoro` referenzia `lavori(id)`, e un rimborso che
+  // passasse l'id di un lavoro mai creato violerebbe quella chiave esterna
+  // — il rimborso fallirebbe proprio quando serve di più.
+  let lavoroAperto = false;
 
   try {
+    // ⚠️ DENTRO il `try`, non prima: `apriLavoro` fa una `fetch` verso
+    // Supabase, e una `fetch` che solleva per un guasto di rete (non uno
+    // status 4xx, quello lo dice `res.ok`) uscirebbe da `genera()` senza che
+    // nessuno la prenda — non c'è un catch a livello di `export default
+    // { fetch }`. L'addebito sarebbe già avvenuto, nessun rimborso verrebbe
+    // tentato, e non esisterebbe nemmeno una riga in `lavori` per lo
+    // spazzino del Task 5. Sollevare qui invece finisce nel `catch` qui
+    // sotto, e il cliente viene rimborsato come per ogni altro fallimento.
+    lavoroAperto = await apriLavoro({ id: lavoro, utente: chi.id, servizio, prezzo }, env);
+    if (!lavoroAperto) throw Object.assign(new Error('archivio'), { code: 'archivio' });
+
     const misuraGoogle = voce.misure?.[misura] || voce.misure?.grande || '1K';
     const { dati, mime, costoReale } = await generaConGoogle({
       voce, prompt, riferimenti, misura: misuraGoogle, env,
@@ -330,12 +345,28 @@ async function genera(req, env) {
      * trenta minuti, che è il mestiere per cui esiste. E si risponde col
      * saldo che risulta DAVVERO (`rimasto`, il saldo dopo l'addebito), non
      * con quello sperato (`rimasto + prezzo`).
+     *
+     * L'id del lavoro si passa solo se la riga esiste davvero — altrimenti
+     * `null`, che `accredita` accetta (`p_lavoro` ha default `null`): con la
+     * riga mai creata, passare comunque `lavoro` violerebbe la chiave
+     * esterna e farebbe fallire anche il rimborso.
      */
-    const esito = await rimborsa(chi.id, prezzo, lavoro, env);
+    const esito = await rimborsa(chi.id, prezzo, lavoroAperto ? lavoro : null, env);
     if (esito.ok) {
-      await chiudiLavoro(lavoro, 'rimborsato', null, env);
+      if (lavoroAperto) await chiudiLavoro(lavoro, 'rimborsato', null, env);
       return json({ errore: 'fornitore', dettaglio: e.code || 'ignoto', saldo: rimasto + prezzo }, 502);
     }
+    /*
+     * Il rimborso non ha preso: la riga (se esiste) NON si tocca, resta
+     * 'in-corso' com'è nata — lo spazzino ci riprova fra trenta minuti.
+     *
+     * ⚠️ Caso peggiore: riga mai creata E rimborso fallito. Lì lo spazzino
+     * non può aiutare — guarda solo `lavori`, e qui non c'è nessuna riga da
+     * ritrovare. Il denaro uscito resta comunque tracciato: la funzione SQL
+     * `addebita` ha già scritto il movimento di spesa nella stessa
+     * transazione dell'addebito, prima ancora che si arrivasse qui. La
+     * riconciliazione lo vede lì, non in `lavori`.
+     */
     return json({ errore: 'fornitore', dettaglio: e.code || 'ignoto', saldo: rimasto }, 502);
   }
 }
@@ -348,8 +379,15 @@ function riferimentiStorti(riferimenti, limiti) {
   for (const r of riferimenti) {
     // ⚠️ `Object.hasOwn`, non `in`: `in` guarda anche la catena dei
     // prototipi, quindi un riferimento con `ruolo: 'toString'` (ereditato da
-    // Object) supererebbe il controllo e `conta['toString'] += 1` farebbe
-    // NaN — scavalcando i limiti per ruolo senza che nessuno se ne accorga.
+    // Object) supererebbe il controllo. Da lì `conta['toString'] += 1` NON fa
+    // `NaN`: forza la funzione ereditata `Object.prototype.toString` a
+    // stringa e la scrive come proprietà PROPRIA di `conta` — che il
+    // controllo dei limiti qui sotto legge con `Object.keys`. Quella
+    // stringa, per puro caso, risulta lessicograficamente maggiore della
+    // gemella non incrementata letta da `limiti['toString']` (la stessa
+    // funzione ereditata, mai chiamata): il confronto dà `true` per
+    // coincidenza e produce un 400 vero ma con l'errore sbagliato
+    // (`troppi-toString` invece di `ruolo-sconosciuto`).
     if (!Object.hasOwn(conta, r?.ruolo)) return 'ruolo-sconosciuto';
     conta[r.ruolo] += 1;
   }
