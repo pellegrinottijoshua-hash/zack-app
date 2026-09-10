@@ -757,5 +757,8 @@
       "titolo": "Sign in to use the studio",
       "corpo": "I'll email you a link, no password. The background remover on the home page stays free and asks for nothing."
     }
+  },
+  "listino": {
+    "immagine": "Image"
   }
 }

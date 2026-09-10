@@ -757,5 +757,8 @@
       "titolo": "Entra per usare lo studio",
       "corpo": "Ti mando un link via email, senza password. Lo scontorno sulla home resta gratis e non chiede niente."
     }
+  },
+  "listino": {
+    "immagine": "Immagine"
   }
 }
