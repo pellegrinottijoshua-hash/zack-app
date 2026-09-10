@@ -424,13 +424,37 @@ I 12 centesimi per euro **non sono «a noi»**: vanno a Zack, cioè al progetto.
 Il committente lo ha chiesto esplicitamente, e vuole che si dica in modo
 simpatico invece che contabile.
 
-Segnaposto in attesa della sua versione:
+Le sue parole (2026-09-10): *«every price for each generation is clear and
+visible before clicking, every dollar you spend, zack invest 12 cents on its
+brand»*. Due frasi, non una: **prima il prezzo, poi dove finisce.**
 
-> **Su ogni euro, Zack si tiene 12 centesimi.**
-> Il resto se lo prende chi fa i conti al posto tuo.
+**Italiano**
 
-Il numero è il 12,1% verificato al § 6.1, non una cifra tonda scelta a occhio —
-e il § 9 ha un test che fallisce il giorno che smette di essere vero.
+> **Ogni generazione ti dice quanto costa prima che tu prema.**
+> E di ogni euro che spendi, Zack ne rimette 12 centesimi su di sé.
+
+**English**
+
+> **Every generation shows you its price before you click.**
+> And of every euro you spend, Zack puts 12 cents back into its own brand.
+
+Perché funziona, e perché non è televendita: non promette niente, dice due
+numeri. Il primo è una regola verificabile a ogni clic; il secondo è il
+guadagno del progetto detto per intero, che è la cosa che nessun concorrente
+scrive da nessuna parte.
+
+⚠️ **Euro e non dollaro.** Il committente ha detto «dollar», ma il prodotto
+prezza in euro in tutt'e due le lingue (`2,99 €` e `€2.99`) e Stripe incassa in
+euro. Passare al dollaro sarebbe una decisione sulla valuta di Stripe, non sul
+testo, e cambierebbe anche il § 8.
+
+Il 12 è il 12,1% verificato al § 6.1, non una cifra tonda scelta a occhio — e il
+§ 9 ha un test che fallisce il giorno che smette di essere vero. **Se il listino
+cambia e il numero non torna, si cambia la frase**, non si lascia lì.
+
+⚠️ La prima riga è una **promessa operativa**, non uno slogan: obbliga
+l'interfaccia a mostrare il preventivo prima del tasto, in ogni servizio, per
+sempre. Vale per Seedance e ElevenLabs quanto per le immagini.
 
 ---
 
@@ -474,10 +498,26 @@ e il § 9 ha un test che fallisce il giorno che smette di essere vero.
 - il giro intero in modalità di prova di Stripe: compro 5 €, genero, il saldo
   scende di 14 centesimi.
 
-**Da misurare prima di scrivere:** quanto ci mette Nano Banana Pro a rispondere.
-Se supera i trenta secondi, `/genera` non può essere una richiesta sola e serve
-un giro in due tempi (chiedi, poi ritira) — che cambierebbe il § 6.3 e va saputo
-prima, non a metà.
+### 9.1 Il tempo di risposta, e cosa non ho potuto misurare
+
+`/genera` è **una richiesta sola** — chiedi, aspetti, ricevi — e regge finché
+il fornitore risponde in meno di trenta secondi. Oltre, servirebbe un giro in
+due tempi (chiedi, poi ritira), che è un'altra forma.
+
+**Quel che si sa** (fonti pubbliche, 2026-09-10): Nano Banana Pro sta fra i **5
+e i 20 secondi**; i 15–20 sono il 4K, che non facciamo; a 2K con
+`thinking_level: low` scende sotto gli 8. Il modello ha un passo di
+«ragionamento» che su richieste semplici aggiunge attesa senza aggiungere
+niente.
+
+⚠️ **Questi numeri non li ho misurati io**: senza una chiave Google non si
+chiama l'API, quindi vengono da terzi e valgono quanto vale una fonte terza.
+
+**Il primo passo del piano è misurarli davvero**, con la chiave vera, con
+**cinque immagini di riferimento** — non con un prompt di due parole, che è il
+caso migliore e quindi quello che non dice niente. Se la mediana supera i venti
+secondi, il § 6.3 va rifatto in due tempi **prima** di scrivere il resto, non a
+metà.
 
 ---
 
