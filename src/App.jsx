@@ -26,6 +26,8 @@ import ScegliAsset from './components/ScegliAsset.jsx';
 import Tutorial from './components/Tutorial.jsx';
 import Brain from './components/Brain.jsx';
 import BatchGrid from './components/BatchGrid.jsx';
+import Preventivo from './components/Preventivo.jsx';
+import Riferimenti from './components/Riferimenti.jsx';
 import { kindFromFile, nomeConSuffisso } from './store/model.js';
 import { impacchetta, spacchetta, fotografaTela } from './store/brainBundle.js';
 import StageBar from './components/StageBar.jsx';
@@ -40,7 +42,14 @@ import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
 import { statoLicenza, giorniAllaProva } from './engine/licenza.js';
 import { prezzoDi } from './engine/listino.js';
 import { leggiLicenza, salvaLicenza } from './store/licenza.js';
-import { chiediLicenza, sessione, entraConEmail, entraConGoogle, vaiAlPagamento } from './lib/conto.js';
+import {
+  chiediLicenza,
+  sessione,
+  entraConEmail,
+  entraConGoogle,
+  vaiAlPagamento,
+  generaImmagine,
+} from './lib/conto.js';
 import Muro from './components/Muro.jsx';
 import { nuovaNota, nuovoAsset, nuovoCerchio, prossimoPosto } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
@@ -423,6 +432,12 @@ export default function App() {
   // qui perché attraversano gli strumenti: si scelgono guardando l'archivio e
   // si usano generando.
   const [references, setReferences] = useState([]);
+  /** Cosa si vuole vedere. Vive qui e non in un componente suo: il tasto Zack
+   *  dell'impianto lo legge per generare, esattamente come per Vocale ed
+   *  Effetti. */
+  const [promptImmagine, setPromptImmagine] = useState('');
+  /** La misura scelta nel punto oro: costano uguale, vedi immagine.js. */
+  const [misuraImmagine, setMisuraImmagine] = useState(getDescrittore('immagine').tasto.predefinita);
   const [brushOpen, setBrushOpen] = useState(false);
   const [batchFiles, setBatchFiles] = useState([]);
   /** Con quale strumento si e' aperto il pennello, per accendere il cerchio. */
@@ -1495,6 +1510,101 @@ export default function App() {
     return setEffettoAperto(true);
   }
 
+  /**
+   * Il `+` di Immagine: le tre voci sono i RUOLI del listino, non un tipo di
+   * oggetto da creare — a differenza del `+` di Brain, che con lo stesso
+   * meccanismo sceglie fra nota/gruppo/computer/libreria. Qualunque ruolo si
+   * scelga porta allo stesso pannello: i ruoli si ridiscutono lì dentro, con
+   * le loro schede (`Riferimenti.jsx`) — qui basta non lasciare che il `+`
+   * cada nel ramo di default, che è quello di Brain e scriverebbe una nota
+   * nella tela sbagliata.
+   */
+  function menuImmagine() {
+    setMenuPiu(false);
+    setSopraLaTela('riferimenti');
+  }
+
+  /**
+   * Il conto aggiornato dal Worker, dopo un `/genera`.
+   *
+   * Il Worker e' il giudice ultimo di quanto resta: si scrive il saldo che ha
+   * risposto LUI, non si ricalcola sottraendo il prezzo qui — un calcolo
+   * duplicato diverge dal vero al primo arrotondamento o al primo rimborso.
+   */
+  function aggiornaSaldo(saldo) {
+    if (saldo == null) return;
+    const aggiornata = { ...licenza, crediti: saldo, chiestoIl: new Date().toISOString() };
+    salvaLicenza(aggiornata);
+    setLicenza(aggiornata);
+  }
+
+  /**
+   * Il tasto che spende denaro vero.
+   *
+   * ⚠️ Il tasto si spegne SUBITO (`setBusy`, prima di ogni `await`): senza,
+   * diciotto secondi davanti a un tasto muto sono un invito a premere una
+   * seconda volta, e la seconda volta si addebita di nuovo. `Piano` lo
+   * disabilita da sola quando `busy` e' valorizzato — e' la stessa riga che
+   * ferma ogni altro tasto Zack mentre lavora.
+   */
+  async function runImmagine() {
+    setError(null);
+    setNotice(null);
+    if (!promptImmagine.trim()) {
+      // Niente addebito per una richiesta vuota: il Worker la rifiuterebbe
+      // comunque, ma e' piu' onesto dirlo prima di far partire una chiamata.
+      setNotice(t('immagine.vuoto'));
+      return;
+    }
+    const descrittore = getDescrittore('immagine');
+    const prezzo = prezzoDi(descrittore.listino, { riferimenti: references.length }).total;
+    if (crediti < prezzo) {
+      setNotice(t('immagine.saldoCorto'));
+      return;
+    }
+
+    setBusy(t('immagine.attendi'));
+    try {
+      const corpo = await generaImmagine({
+        prompt: promptImmagine,
+        riferimenti: references,
+        misura: misuraImmagine,
+        leggiAsset: async (assetId) => {
+          try {
+            const { file: f } = await library.read(assetId);
+            return f;
+          } catch {
+            // Un asset cancellato fra la scelta e la generazione non deve
+            // fermare gli altri riferimenti: `generaImmagine` salta chi
+            // torna `null`.
+            return null;
+          }
+        },
+      });
+      const byte = Uint8Array.from(atob(corpo.dati), (c) => c.charCodeAt(0));
+      const blob = new Blob([byte], { type: corpo.mime || 'image/jpeg' });
+      pushResult({ url: own(blob), blob, kind: 'jpg', meta: { strategy: 'immagine' } });
+      aggiornaSaldo(corpo.saldo);
+    } catch (e) {
+      console.error(e);
+      aggiornaSaldo(e.saldo);
+      setError(e.code === 'saldo' ? t('immagine.saldoCorto') : t('immagine.errore'));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** Salva il risultato generato: lo stesso gesto di `salvaEffetto`/`salvaVoce`. */
+  async function salvaImmagineGenerata() {
+    if (!result?.blob) return;
+    await library.save(result.blob, {
+      name: `immagine-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}`,
+      kind: 'jpg',
+      meta: { op: 'immagine', prompt: promptImmagine },
+    });
+    setNotice(t('immagine.salvato'));
+  }
+
   /** Il suono di adesso: le manopole più, se c'è, il ritmo battuto. */
   function costruisciEffetto() {
     const colpo = genera(effetto.famiglia, {
@@ -1538,6 +1648,7 @@ export default function App() {
         setEffetto({ famiglia: id, param: { ...f.param }, durata: f.durata, seme: 1 });
       },
     },
+    immagine: { valore: misuraImmagine, cambia: setMisuraImmagine },
   };
 
   /**
@@ -1558,6 +1669,7 @@ export default function App() {
     file,
     inColonna: batchFiles.length,
     risultati: batch.results.length,
+    riferimenti: references.length,
   };
 
   /** La ricetta della voce: quella scelta nel punto oro più i filtri del tasto. */
@@ -1987,6 +2099,47 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               onScordaRitmo={effettiAudio.reset}
               onFermaRitmo={effettiAudio.stop}
             />
+          ) : tool === 'immagine' ? (
+            /*
+             * Il piano di Immagine e' un prompt che si scrive, come la tela
+             * del vettoriale e' un foglio che si disegna — mai «vuoto»
+             * (`servizi/piano.js`). Il PREZZO sta qui, PRIMA del tasto Zack:
+             * e' la promessa pubblicata sulla home, non un dettaglio
+             * d'interfaccia.
+             */
+            <div className="immagine-lab">
+              <p className="sc-claim">{t(getDescrittore('immagine').claim)}</p>
+              <textarea
+                className="immagine-prompt"
+                value={promptImmagine}
+                onChange={(e) => setPromptImmagine(e.target.value)}
+                placeholder={t('immagine.claim')}
+                aria-label={t('immagine.claim')}
+                disabled={Boolean(busy)}
+              />
+              {references.length > 0 && (
+                <ul className="riferimenti-scelti">
+                  {references.map((r, i) => (
+                    <li key={`${r.assetId}-${i}`}>
+                      {t(`immagine.ruolo.${r.ruolo}`)}: {r.nome}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {/*
+                 Il prezzo sale coi riferimenti gia' scelti: e' il motivo per
+                 cui «prima che tu prema» resta letterale invece che
+                 approssimativo (vedi `Preventivo.jsx`).
+               */}
+              <Preventivo
+                servizio={getDescrittore('immagine').listino}
+                saldo={crediti}
+                riferimenti={references.length}
+              />
+              {result?.kind === 'jpg' && (
+                <img className="immagine-risultato" src={result.url} alt="" />
+              )}
+            </div>
           ) : isEditor ? (
             <SvgEditor
               ref={editorRef}
@@ -2231,7 +2384,16 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                       }),
                       nota: batch.eta != null ? t('batch.eta', { sec: batch.eta }) : engine.phase,
                     }
-                  : null
+                  : /*
+                     * Step 7-bis del capitolato: diciotto secondi davanti a un
+                     * tasto muto sono un invito a premere una seconda volta —
+                     * e la seconda volta si addebita di nuovo. `busy` GIA'
+                     * contiene `t('immagine.attendi')` (vedi `runImmagine`):
+                     * lo si mostra qui, non un nuovo stato da tenere sincrono.
+                     */
+                    tool === 'immagine' && busy
+                    ? { testo: busy }
+                    : null
               }
               busy={Boolean(busy)}
               models={engine.models}
@@ -2254,6 +2416,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               onMenu={(quale) => {
                 if (tool === 'vocale') return menuVocale(quale);
                 if (tool === 'effetti') return menuEffetti(quale);
+                // Su Immagine il `+` NON aggiunge un oggetto: cadere nel
+                // ramo di default qui sotto scriverebbe una nota nella tela
+                // di Brain, che per questo servizio non c'entra niente.
+                if (tool === 'immagine') return menuImmagine(quale);
                 setMenuPiu(false);
                 // Dal computer: entra in libreria e finisce sulla tela.
                 if (quale === 'computer') return portaFileInBrain();
@@ -2281,6 +2447,14 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   />
                 ) : sopraLaTela === 'tutorial' ? (
                   <Tutorial onChiudi={() => setSopraLaTela(null)} />
+                ) : sopraLaTela === 'riferimenti' ? (
+                  <Riferimenti
+                    servizio={getDescrittore('immagine').listino}
+                    scelti={references}
+                    onCambia={setReferences}
+                    assets={library.assets}
+                    onChiudi={() => setSopraLaTela(null)}
+                  />
                 ) : sopraLaTela === 'avanzati' ? (
                   tool === 'brain' ? avanzatiBrain : avanzati
                 ) : null
@@ -2305,7 +2479,12 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                             effettiAudio.reset();
                             setEffettoAperto(false);
                           }
-                        : reset
+                        : tool === 'immagine'
+                          // La croce compare solo con UN riferimento
+                          // (`quanti === 1`): toglierlo svuota la lista, non
+                          // tocca il prompt gia' scritto ne' il risultato.
+                          ? () => setReferences([])
+                          : reset
               }
               /* Il rilascio segue lo stesso instradamento del `+`: se no il
                  trascinamento di una clip su Filmato finirebbe nel percorso
@@ -2314,6 +2493,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               onFile={(f) => accettaFile([f], { aggiungi: true })}
               onFiles={(files) => accettaFile(files, { aggiungi: true })}
               onZack={() => {
+                if (tool === 'immagine') {
+                  runImmagine();
+                  return;
+                }
                 if (tool === 'effetti') {
                   // Il tasto SUONA: e' cio' che si vuole da un effetto, e
                   // premerlo di nuovo lo risuona senza cambiarlo — lo stesso
@@ -2402,6 +2585,8 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   pulisci: () => set({ clean: !s.clean }),
                   apriEditor: sendToEditor,
                   avanzati: () => setSopraLaTela((v) => (v === 'avanzati' ? null : 'avanzati')),
+                  riferimenti: () => setSopraLaTela((v) => (v === 'riferimenti' ? null : 'riferimenti')),
+                  salva: salvaImmagineGenerata,
                   centra: () => brainRef.current?.centra(),
                   tutorial: () => setSopraLaTela((v) => (v === 'tutorial' ? null : 'tutorial')),
                   /*
@@ -2434,6 +2619,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   [modoDisegno]: isEditor,
                   pulisci: s.clean,
                   avanzati: sopraLaTela === 'avanzati',
+                  riferimenti: sopraLaTela === 'riferimenti',
                 };
                 /*
                  * Cosa vuol dire «c'e' qualcosa sul piano» cambia col
@@ -2467,7 +2653,11 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                  * MAI: un cerchio dichiarato, un gesto scritto, e nessun modo
                  * di arrivarci.
                  */
-                const uscita = tool === 'vettorializza' ? 'svg' : 'png';
+                // Google risponde sempre JPEG (misurato — vedi listino.js):
+                // senza questo ramo «salva» non comparirebbe MAI dopo una
+                // generazione riuscita, perche' `result.kind` sarebbe 'jpg' e
+                // non 'png'.
+                const uscita = tool === 'vettorializza' ? 'svg' : tool === 'immagine' ? 'jpg' : 'png';
                 return strumentiVisibili(getDescrittore(tool), {
                   file: pieno,
                   risultato: result?.kind === uscita,

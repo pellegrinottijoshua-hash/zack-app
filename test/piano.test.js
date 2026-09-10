@@ -40,10 +40,12 @@ test('mentre registra, il piano conta come OCCUPATO anche per gli strumenti', ()
 });
 
 test('senza niente sopra e senza niente in corso, il piano e’ vuoto', () => {
+  // Il vettoriale e Immagine sono le eccezioni DICHIARATE: la loro «tela» e'
+  // un foglio da disegno o un prompt da scrivere, e vuoto e' il punto di
+  // partenza, non «niente» — la stessa ragione, due servizi.
+  const ECCEZIONI = new Set(['vettorializza', 'immagine']);
   for (const tool of Object.keys(DESCRITTORI)) {
-    // Il vettoriale e' l'eccezione DICHIARATA: la sua tela e' un foglio da
-    // disegno, e un foglio vuoto e' il punto di partenza, non «niente».
-    if (tool === 'vettorializza') continue;
+    if (ECCEZIONI.has(tool)) continue;
     assert.equal(pianoVuoto(tool, {}), true, `${tool}: il piano appena aperto non risulta vuoto`);
   }
 });
@@ -90,6 +92,19 @@ test('lo scontorno: un file, o la colonna, o i risultati', () => {
   assert.equal(pianoVuoto('scontorna', { risultati: 2 }), false);
   assert.equal(quantiSulPiano('scontorna', { inColonna: 3 }), 3);
   assert.equal(quantiSulPiano('scontorna', { file: {} }), 1);
+});
+
+test('Immagine conta i RIFERIMENTI, e la sua tela non e’ mai vuota', () => {
+  /*
+   * Senza questa riga il piano di Immagine sarebbe SEMPRE vuoto (un servizio
+   * non elencato in `COSA_CE` vale «niente e niente»): il claim e il `+`
+   * grande comparirebbero, ma il prompt, il preventivo e i riferimenti scelti
+   * — cio' per cui il servizio esiste — non si vedrebbero mai. E' lo stesso
+   * guasto silenzioso del righello del 2026-09-04.
+   */
+  assert.equal(pianoVuoto('immagine', {}), false, 'il prompt sparirebbe dietro il «+» grande');
+  assert.equal(quantiSulPiano('immagine', {}), 0);
+  assert.equal(quantiSulPiano('immagine', { riferimenti: 3 }), 3);
 });
 
 test('un servizio sconosciuto non esplode e non mente', () => {

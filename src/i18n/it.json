@@ -46,7 +46,10 @@
     "costruisci": "Costruisci",
     "ritmo": "Batti un ritmo",
     "computer": "Dal computer",
-    "libreria": "Dalla libreria"
+    "libreria": "Dalla libreria",
+    "personaggio": "Personaggio",
+    "oggetto": "Oggetto",
+    "stile": "Stile"
   },
   "drop": {
     "title": "Trascina qui un'immagine",
@@ -760,5 +763,22 @@
   },
   "listino": {
     "immagine": "Immagine"
+  },
+  "immagine": {
+    "claim": "Scrivi cosa vuoi vedere. Aggiungi i tuoi asset come riferimento.",
+    "riferimenti": "Riferimenti",
+    "prezzoNota": "questa generazione, prezzo pieno",
+    "saldoCorto": "Non hai abbastanza credito.",
+    "escono": "I riferimenti che scegli vengono mandati al fornitore: è l’unica cosa che esce dal tuo computer, e senza mandarla non si può generare.",
+    "salva": "Salva in libreria",
+    "salvato": "Salvata in libreria.",
+    "togli": "Togli",
+    "rapida": "Rapida",
+    "grande": "Grande",
+    "attendi": "Zack sta generando. Ci mette una ventina di secondi.",
+    "vuoto": "Scrivi prima cosa vuoi vedere.",
+    "errore": "Non sono riuscito a generare. Riprova fra un momento.",
+    "chiudi": "Va bene così",
+    "ruolo": { "personaggio": "Personaggio", "oggetto": "Oggetto", "stile": "Stile" }
   }
 }

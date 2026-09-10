@@ -3,6 +3,7 @@ import brain from './brain.js';
 import vocale from './vocale.js';
 import effetti from './effetti.js';
 import vettorializza from './vettorializza.js';
+import immagine from './immagine.js';
 import { puoiLavorare } from '../engine/licenza.js';
 
 /**
@@ -22,9 +23,10 @@ import { puoiLavorare } from '../engine/licenza.js';
  * esistano vuol dire cerchi che si accendono e non fanno niente — il difetto
  * del righello del 2026-09-04 — e il test «ogni strumento dichiarato ha un
  * gesto che lo esegue» lo rifiuta, giustamente. Il Vocale (`vocale.js`, id
- * `suono`) entra qui insieme ai suoi gesti, non prima.
+ * `suono`) entra qui insieme ai suoi gesti, non prima. «Immagine» (Task 7)
+ * entra allo stesso modo: descrittore, componenti e gesti in un commit solo.
  */
-export const DESCRITTORI = { scontorna, brain, vocale, effetti, vettorializza };
+export const DESCRITTORI = { scontorna, brain, vocale, effetti, vettorializza, immagine };
 
 /**
  * Gli stati in cui uno strumento può comparire. **Lista chiusa.**

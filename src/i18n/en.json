@@ -46,7 +46,10 @@
     "costruisci": "Build one",
     "ritmo": "Tap a rhythm",
     "computer": "From my computer",
-    "libreria": "From my library"
+    "libreria": "From my library",
+    "personaggio": "Character",
+    "oggetto": "Object",
+    "stile": "Style"
   },
   "drop": {
     "title": "Drop an image here",
@@ -760,5 +763,22 @@
   },
   "listino": {
     "immagine": "Image"
+  },
+  "immagine": {
+    "claim": "Write what you want to see. Add your own assets as references.",
+    "riferimenti": "References",
+    "prezzoNota": "this generation, full price",
+    "saldoCorto": "You don’t have enough credit.",
+    "escono": "The references you pick are sent to the provider: it’s the only thing that leaves your computer, and there’s no generating without sending it.",
+    "salva": "Save to library",
+    "salvato": "Saved to library.",
+    "togli": "Remove",
+    "rapida": "Quick",
+    "grande": "Large",
+    "attendi": "Zack is generating. It takes about twenty seconds.",
+    "vuoto": "Write what you want to see first.",
+    "errore": "I couldn't generate it. Try again in a moment.",
+    "chiudi": "Done",
+    "ruolo": { "personaggio": "Character", "oggetto": "Object", "stile": "Style" }
   }
 }

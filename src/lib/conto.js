@@ -117,6 +117,72 @@ export async function esci() {
   await sb.auth.signOut();
 }
 
+/** La misura su cui il listino ha contato i token. Non è un caso: è una misura. */
+const LATO_RIFERIMENTO = 768;
+
+/**
+ * Un asset della libreria, ridotto a 768 px di lato lungo, in `data:`.
+ *
+ * ⚠️ Non è un'ottimizzazione, è **il prezzo che resta vero**. I 258 token per
+ * riferimento su cui il listino conta sono misurati a questa misura: se
+ * qualcuno manda una foto da 12 megapixel i token salgono, e il numero che gli
+ * abbiamo mostrato prima di premere diventa falso.
+ *
+ * E risolve altre due cose insieme: cinque immagini piene non si mangiano i
+ * nove secondi che restano fra i 21 di Google e i 30 del limite, e il costo
+ * diventa prevedibile invece che scommesso.
+ */
+async function riduci(blob) {
+  const bitmap = await createImageBitmap(blob);
+  const scala = Math.min(1, LATO_RIFERIMENTO / Math.max(bitmap.width, bitmap.height));
+  const tela = new OffscreenCanvas(Math.round(bitmap.width * scala), Math.round(bitmap.height * scala));
+  tela.getContext('2d').drawImage(bitmap, 0, 0, tela.width, tela.height);
+  bitmap.close();
+
+  const ridotto = await tela.convertToBlob({ type: 'image/png' });
+  return await new Promise((risolvi) => {
+    const lettore = new FileReader();
+    lettore.onload = () => risolvi(lettore.result);
+    lettore.readAsDataURL(ridotto);
+  });
+}
+
+/**
+ * Chiede una generazione al Worker.
+ *
+ * I riferimenti partono dalla libreria e diventano `data:` **qui**, non nel
+ * componente: il componente sa quali asset hai scelto, non come si spediscono.
+ */
+export async function generaImmagine({ prompt, riferimenti = [], misura = 'grande', leggiAsset }) {
+  const token = await sessione();
+  if (!token) throw Object.assign(new Error('non-collegato'), { code: 'non-collegato' });
+
+  const conDati = [];
+  for (const r of riferimenti) {
+    const blob = await leggiAsset(r.assetId);
+    // Ridotti QUI, prima di partire: e' cio' che tiene vero il prezzo mostrato.
+    if (blob) conDati.push({ ruolo: r.ruolo, immagine: await riduci(blob) });
+  }
+
+  const res = await fetch(`${BASE}/genera`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ servizio: 'immagine-nbp', prompt, riferimenti: conDati, misura }),
+  });
+
+  const corpo = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    // Il saldo torna comunque: dopo un fallimento il Worker ha gia' rimborsato,
+    // e lo studio deve mostrare il numero giusto senza ricaricare la pagina.
+    throw Object.assign(new Error(corpo.errore || 'genera'), {
+      code: corpo.errore || 'genera',
+      saldo: corpo.saldo,
+      prezzo: corpo.prezzo,
+    });
+  }
+  return corpo; // { dati, mime, prezzo, saldo, lavoro }
+}
+
 /**
  * Porta a Stripe.
  *
