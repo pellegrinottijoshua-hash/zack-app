@@ -26,7 +26,7 @@ import { SUPABASE_URL, SUPABASE_CHIAVE_PUBBLICA } from '../src/lib/supabase.js';
 import { verificaFirma } from './firma.js';
 import { cosaFare, ricaricaDa, PACCHETTI } from './eventi.js';
 import { LISTINO, prezzoDi, limitiDi } from '../src/engine/listino.js';
-import { addebita, rimborsa, apriLavoro, chiudiLavoro } from './conto.js';
+import { addebita, rimborsa, rimborsoRiuscito, apriLavoro, chiudiLavoro } from './conto.js';
 import { generaConGoogle } from './fornitori/google.js';
 
 const GIORNO = 86400000;
@@ -352,7 +352,7 @@ async function genera(req, env) {
      * esterna e farebbe fallire anche il rimborso.
      */
     const esito = await rimborsa(chi.id, prezzo, lavoroAperto ? lavoro : null, env);
-    if (esito.ok) {
+    if (await rimborsoRiuscito(esito)) {
       if (lavoroAperto) await chiudiLavoro(lavoro, 'rimborsato', null, env);
       return json({ errore: 'fornitore', dettaglio: e.code || 'ignoto', saldo: rimasto + prezzo }, 502);
     }
@@ -395,6 +395,49 @@ function riferimentiStorti(riferimenti, limiti) {
     if (conta[ruolo] > limiti[ruolo]) return `troppi-${ruolo}`;
   }
   return null;
+}
+
+/** Oltre questo, un lavoro non sta lavorando: è appeso. */
+const APPESO_MINUTI = 30;
+
+/**
+ * Ogni ora: i lavori rimasti a metà si rimborsano.
+ *
+ * Trenta minuti perché è molto più di qualunque generazione — le immagini sono
+ * secondi, i video di B3 minuti — e molto meno della pazienza di chi ha pagato.
+ *
+ * Un lavoro davvero lento che finisce **dopo** il rimborso trova il proprio
+ * `lavoro` già chiuso e non riaddebita: meglio regalare una generazione che
+ * addebitarne una già restituita.
+ *
+ * ⚠️ Si guarda l'esito di OGNI passo, e non per zelo. Se si chiudesse il
+ * lavoro senza guardare se `rimborsa()` è passato, un rimborso fallito
+ * verrebbe marcato 'rimborsato' lo stesso — la stessa maschera che il
+ * Task 4 ha tolto dal `catch` di `/genera`; qui il lavoro resta 'in-corso'
+ * e ci si riprova al giro dopo, che è il mestiere di questa funzione. E se
+ * invece `rimborsa()` passa ma la `chiudiLavoro` che segue fallisce (una
+ * PATCH storta), il lavoro resta 'in-corso' e il giro dell'ora dopo ci
+ * riprova: senza la chiave di idempotenza dentro `rimborsa()`, quel secondo
+ * tentativo pagherebbe DI NUOVO lo stesso lavoro, e quello dopo ancora — una
+ * perdita illimitata, un lavoro alla volta. `rimborsoRiuscito()` legge quel
+ * secondo tentativo come «già rimborsato», non come un errore: il saldo non
+ * si tocca due volte, ma il lavoro si chiude comunque.
+ */
+async function sbloccaAppesi(env) {
+  const limite = new Date(Date.now() - APPESO_MINUTI * 60000).toISOString();
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/lavori?stato=eq.in-corso&creato_il=lt.${limite}&select=*`,
+    { headers: conServizio(env) },
+  );
+  if (!res.ok) return;
+  for (const l of await res.json()) {
+    const esito = await rimborsa(l.utente, l.prezzo, l.id, env);
+    if (await rimborsoRiuscito(esito)) {
+      await chiudiLavoro(l.id, 'rimborsato', null, env);
+    }
+    // Se non e' riuscito (e non era un duplicato), il lavoro resta
+    // 'in-corso' com'e' nato: ci si riprova al prossimo giro, fra un'ora.
+  }
 }
 
 export default {
@@ -469,5 +512,9 @@ export default {
 
     // Tutto il resto lo servono i file statici, come prima.
     return env.ASSETS.fetch(req);
+  },
+
+  async scheduled(evento, env) {
+    await sbloccaAppesi(env);
   },
 };

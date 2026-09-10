@@ -38,14 +38,51 @@ export async function addebita(utente, prezzo, env) {
  * Ridà i soldi. È la risposta a ogni fallimento, e non è negoziabile.
  *
  * Torna la `Response` grezza e non un booleano: chi chiama deve poter
- * guardare `.ok`, perché un rimborso che fallisce (rete, 500, Supabase giù)
- * è denaro del cliente perso in silenzio se nessuno se ne accorge — vedi il
- * ramo `catch` di `/genera` in `index.js`.
+ * guardare l'esito con `rimborsoRiuscito()`, perché un rimborso che fallisce
+ * (rete, 500, Supabase giù) è denaro del cliente perso in silenzio se
+ * nessuno se ne accorge — vedi il ramo `catch` di `/genera` in `index.js`, e
+ * `sbloccaAppesi` nello stesso file.
+ *
+ * ⚠️ `p_stripe` qui non è un evento Stripe: è presa in prestito come chiave
+ * di idempotenza. La colonna si chiama `stripe_evento` e ha un vincolo
+ * `unique` (Task 3, contro i webhook rimandati); un rimborso porta sempre lo
+ * stesso `'rimborso:<id-lavoro>'`, quindi un secondo tentativo sullo STESSO
+ * lavoro viola quell'unique e la transazione non tocca il saldo una seconda
+ * volta. Senza questo, lo spazzino del Task 5 — che non sa se un rimborso
+ * precedente è già passato — regalerebbe soldi a ogni giro sullo stesso
+ * lavoro appeso, all'infinito. Non si rinomina la colonna: toccherebbe il
+ * Task 3, già chiuso.
+ *
+ * `null` quando non c'è un id di lavoro (il caso peggiore del Task 4, riga
+ * mai creata): `accredita` lo accetta come `p_lavoro`, e qui non c'è nessun
+ * lavoro a cui legare una chiave.
  */
 export async function rimborsa(utente, prezzo, lavoro, env) {
   return rpc('accredita', {
-    p_utente: utente, p_millesimi: prezzo, p_genere: 'rimborso', p_lavoro: lavoro,
+    p_utente: utente,
+    p_millesimi: prezzo,
+    p_genere: 'rimborso',
+    p_lavoro: lavoro,
+    p_stripe: lavoro ? `rimborso:${lavoro}` : null,
   }, env);
+}
+
+/**
+ * Un rimborso è riuscito anche quando è un duplicato: la chiave di
+ * idempotenza di `rimborsa()` fa fallire il secondo tentativo sullo stesso
+ * lavoro con la stessa violazione `unique` (`23505`/409) che il Task 3 usa
+ * contro i webhook rimandati — e lì significa «i soldi sono già tornati»,
+ * non «è andato storto».
+ *
+ * Va riletto così sia nel `catch` di `/genera` sia in `sbloccaAppesi`: se un
+ * duplicato venisse trattato come fallimento, il lavoro resterebbe
+ * 'in-corso' per un rimborso che c'era già stato, e lo spazzino ci
+ * girerebbe intorno in eterno.
+ */
+export async function rimborsoRiuscito(res) {
+  if (res.ok) return true;
+  const testo = await res.text().catch(() => '');
+  return res.status === 409 || testo.includes('23505');
 }
 
 /**
