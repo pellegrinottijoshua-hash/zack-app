@@ -46,7 +46,7 @@ Scritto bene e mai importato. La § 5 dice cosa se ne salva e cosa si butta.
 
 ---
 
-## 3. Le quattro decisioni del committente
+## 3. Le cinque decisioni del committente
 
 | | deciso |
 |---|---|
@@ -54,13 +54,36 @@ Scritto bene e mai importato. La § 5 dice cosa se ne salva e cosa si butta.
 | **Chi disdice** | **I crediti restano suoi e li può spendere.** Non scadono, non si rimborsano. |
 | **Il confine di B2** | **La prima generazione entra qui** (Nano Banana Pro). Seedance ed ElevenLabs restano a B3. |
 | **Quanti servizi a pagamento** | Tre, in quest'ordine: **immagini** (Nano Banana Pro), **video** (Seedance 2 / 2.5), **audio e voci** (ElevenLabs). |
+| **Cosa accetta la generazione** | **Testo *e* immagini di riferimento**, non solo testo. Un generatore che fa solo testo→immagine non serve a questo prodotto. |
 
-### 3.1 La conseguenza della seconda decisione
+### 3.1 La conseguenza della seconda
 
 Se i crediti si spendono senza abbonamento, il muro di B1 — che chiude **tutto**
 lo studio — rende quella decisione irraggiungibile. La § 7 lo sposta.
 
-### 3.2 La conseguenza della quarta
+### 3.2 La quinta è un requisito, non una rifinitura
+
+*«Non posso far sì che possa creare solo un'immagine dal testo, ma anche testo
+più immagini reference.»*
+
+Nano Banana Pro accetta **fino a 14 immagini** per richiesta, e Google le
+distingue già per ruolo (verificato il 2026-09-10): **6 oggetti** ad alta
+fedeltà, **5 personaggi** per la coerenza del personaggio, **3 di stile**. Max
+7 MB l'una; PNG, JPEG, WEBP, HEIC, HEIF.
+
+Quei tre ruoli **sono gli «Elements»** di Higgsfield. Non c'è niente da
+inventare: c'è da far scegliere un asset dalla libreria e dire se è un
+personaggio, un oggetto o uno stile.
+
+Ed è ciò che la home promette già e che oggi non fa nessuno dei sei servizi:
+*«Ritagli un personaggio una volta e diventa un ingrediente: lo metti in una
+moodboard, ci generi sopra, torna nella stessa moodboard.»* La libreria è
+l'archivio degli Elements da prima che ne avessimo bisogno.
+
+Il costo in più è trascurabile: l'immagine in ingresso vale ~$0,0011, cioè
+**un millesimo di euro**. Le reference non cambiano il listino.
+
+### 3.3 La conseguenza della quarta
 
 I tre fornitori arrivano in tre momenti diversi, ma il giro è lo stesso:
 preventivo, addebito, chiamata, esito. **Il listino e il giro della generazione
@@ -90,8 +113,25 @@ Worker non lo guarda mai.
 
 ### 4.1 Le tre tabelle
 
-Il saldo vive dove sta già: `conti.crediti`, in centesimi interi. Le altre due
-tabelle sono nuove.
+Il saldo vive dove sta già: `conti.crediti` — ma **in millesimi di euro**, non
+in centesimi. Le altre due tabelle sono nuove.
+
+⚠️ **Perché millesimi.** Il margine è il 14% *del costo*, cioè il 12,3% del
+prezzo. Ma arrotondato al centesimo su cifre piccole non lo è più: su un costo
+di 12 centesimi il margine diventa 2, cioè il **14,3%** del prezzo invece del
+12,3. Su un prodotto che si vende dicendo «il margine è dichiarato», il margine
+dichiarato deve essere quello che incassi.
+
+Al millesimo l'errore scende a 0,05 centesimi e la frase torna vera. E i due
+fornitori che arrivano lo pretendono comunque: Seedance si paga **al secondo**,
+ElevenLabs **al carattere**, e lì il centesimo è un'unità enorme.
+
+La regola non cambia: **interi, mai virgola mobile.** Cambia solo quanto è
+piccolo l'intero.
+
+Il campo `crediti` esiste già e vale zero per tutti, quindi il cambio di unità
+non tocca nessun saldo esistente. Da fare **prima** che il primo euro entri:
+dopo, vorrebbe dire moltiplicare per mille dei soldi veri.
 
 ⚠️ **`lavori` si crea per prima**, perché `movimenti` la nomina: al contrario,
 Postgres si ferma su «relation "lavori" does not exist».
@@ -102,8 +142,8 @@ create table lavori (
   id            uuid primary key,
   utente        uuid not null references auth.users on delete cascade,
   servizio      text not null,             -- 'immagine-nbp'
-  prezzo        integer not null,          -- centesimi addebitati al cliente
-  costo_reale   integer,                   -- centesimi pagati al fornitore
+  prezzo        integer not null,          -- millesimi addebitati al cliente
+  costo_reale   integer,                   -- millesimi pagati al fornitore
   stato         text not null,             -- 'in-corso' | 'fatto' | 'fallito' | 'rimborsato'
   creato_il     timestamptz not null default now(),
   chiuso_il     timestamptz
@@ -114,7 +154,7 @@ alter table lavori enable row level security;
 create table movimenti (
   id            bigserial primary key,
   utente        uuid not null references auth.users on delete cascade,
-  centesimi     integer not null,          -- positivo accredita, negativo addebita
+  millesimi     integer not null,          -- positivo accredita, negativo addebita
   genere        text not null,             -- 'ricarica' | 'spesa' | 'rimborso'
   lavoro        uuid references lavori(id),
   stripe_evento text unique,               -- ⚠️ vedi § 6.2
@@ -158,9 +198,15 @@ stessa funzione.
 | | |
 |---|---|
 | `MARGIN = 0.14` | il margine dichiarato |
-| `priceFor(costo)` | costo del fornitore → `{ total, cost, margin }` in centesimi |
-| `cents` / `toEuro` | centesimi interi, mai virgola mobile |
+| `priceFor(costo)` | costo del fornitore → `{ total, cost, margin }` in millesimi |
+| `mils` / `toEuro` | millesimi interi, mai virgola mobile |
 | `formatEuro` | il prezzo scritto prima di premere |
+
+**Si cambia** l'arrotondamento del margine: `Math.ceil` diventa `Math.round`.
+Al centesimo, `ceil` era prudenza sensata; al millesimo arrotonda per eccesso
+0,1 centesimi ogni volta e gonfia di nuovo il margine dichiarato. Arrotondare
+al più vicino sbaglia al massimo di 0,05 centesimi, e sbaglia in tutt'e due i
+versi — che è ciò che rende vera la frase «12 centesimi per euro».
 
 **Si butta** la macchina delle prenotazioni — `reserve`, `commit`, `release`,
 `purge`, `available`, `HOLD_TTL_MS`, `topUp`, `emptyLedger`.
@@ -197,18 +243,28 @@ Un file solo, `src/engine/listino.js`: id del servizio → costo del fornitore i
 
 ```js
 export const LISTINO = {
-  'immagine-nbp': { fornitore: 'google', costo: 12, resa: 'png', etichetta: 'immagine' },
+  'immagine-nbp': {
+    fornitore: 'google',
+    costo: 123,                 // millesimi di euro
+    resa: 'png',
+    etichetta: 'immagine',
+    // Quanti riferimenti accetta, per ruolo. Il fornitore successivo porta i
+    // suoi numeri qui dentro e non tocca niente altrove.
+    riferimenti: { personaggio: 5, oggetto: 6, stile: 3, totale: 14 },
+  },
 };
 ```
 
 **Nano Banana Pro (Gemini 3 Pro Image), verificato il 2026-09-10:** $0,134 a
-immagine a 1K–2K sull'API ufficiale, $0,24 a 4K. A 0,92 €/$ fanno **12
-centesimi**; col margine, **14 centesimi al cliente**.
+immagine a 1K–2K sull'API ufficiale, $0,24 a 4K. A 0,92 €/$ fanno **123
+millesimi**; col margine, **140 millesimi = 14,0 centesimi al cliente**, di cui
+17 di margine — il 12,1% del prezzo.
 
-⚠️ **Il fornitore incassa in dollari, noi in euro.** Il listino è in centesimi
-di euro fissi, quindi ogni movimento del cambio si mangia margine: a 14% su 12
-centesimi, un euro che perde il 5% sul dollaro si porta via **più di un terzo**
-del guadagno per immagine (da 1,67 a 1,06 centesimi). Il numero va riguardato quando si aggiunge un fornitore,
+⚠️ **Il fornitore incassa in dollari, noi in euro.** Il listino è in millesimi
+di euro fissi, quindi ogni movimento del cambio si mangia margine: al cliente
+si addebitano 140 millesimi comunque, ma il costo si muove sotto. Un euro che
+perde il 5% sul dollaro porta il guadagno per immagine **da 1,66 a 1,05
+centesimi**: più di un terzo. Il numero va riguardato quando si aggiunge un fornitore,
 e `costo_reale` serve anche a questo — dice quando il listino ha smesso di
 essere vero.
 
@@ -238,7 +294,16 @@ pagandone 5 non deve poter esistere.
 
 ### 6.3 La generazione
 
-`POST /genera` con `{ servizio, richiesta }`:
+`POST /genera` con `{ servizio, prompt, riferimenti }`, dove `riferimenti` è
+un elenco di `{ ruolo, immagine }` — il ruolo è `personaggio`, `oggetto` o
+`stile`, e l'immagine arriva come `data:` o come id di un asset caricato.
+
+I limiti si controllano **contro il listino, non contro una costante scritta a
+mano**: più riferimenti del consentito è `400`, e il numero viene da
+`LISTINO[servizio].riferimenti`. Il fornitore successivo porta i suoi numeri lì
+dentro e non tocca questo codice — è il banco di prova del § 3.3.
+
+Il giro:
 
 1. **chi sei** — come `/me`; senza token, `401`;
 2. **il prezzo** — da `priceFor(LISTINO[servizio].costo)`. Un servizio che non
@@ -264,7 +329,22 @@ pagandone 5 non deve poter esistere.
    `rimborso`, `stato = 'rimborsato'`. § 3.2 di B1, non negoziabile: hai
    incassato per una cosa che non è successa.
 
-### 6.4 I lavori appesi
+### 6.4 Gli Elements sono la libreria
+
+Un riferimento non si carica ogni volta: **si sceglie dalla libreria**, che è
+già l'archivio degli asset di chi lavora. Scegliendolo si dice che ruolo ha, e
+quel ruolo si ricorda insieme all'asset.
+
+È la promessa della home resa vera: *«Ritagli un personaggio una volta e
+diventa un ingrediente.»* Fino a oggi era una frase; qui diventa il modo in cui
+si generano le immagini.
+
+⚠️ **Un riferimento esce dal computer.** È l'unica cosa in tutto il prodotto
+che lo fa, ed è per forza: generare vuol dire mandare a un fornitore. Va detto
+**prima** di premere, accanto al prezzo, e non in una pagina di aiuto — vedi
+§ 11.
+
+### 6.5 I lavori appesi
 
 Se il Worker muore fra il punto 5 e il punto 6 — il fornitore ci mette troppo,
 la richiesta scade — l'addebito resta e il rimborso non arriva mai. Nessuno se
@@ -338,6 +418,20 @@ sostanza — chi sa fare le divisioni ci arriva.
 Se un giorno il pacchetto da 5 € va tolto, sarà una decisione presa guardando
 questa tabella, non una sorpresa.
 
+### 8.1 Come si dice al cliente
+
+I 12 centesimi per euro **non sono «a noi»**: vanno a Zack, cioè al progetto.
+Il committente lo ha chiesto esplicitamente, e vuole che si dica in modo
+simpatico invece che contabile.
+
+Segnaposto in attesa della sua versione:
+
+> **Su ogni euro, Zack si tiene 12 centesimi.**
+> Il resto se lo prende chi fa i conti al posto tuo.
+
+Il numero è il 12,1% verificato al § 6.1, non una cifra tonda scelta a occhio —
+e il § 9 ha un test che fallisce il giorno che smette di essere vero.
+
 ---
 
 ## 9. Cosa si misura, e come si verifica
@@ -357,7 +451,14 @@ questa tabella, non una sorpresa.
   dichiara viene ignorata;
 - **un lavoro appeso da più di trenta minuti si rimborsa**, e un lavoro che
   finisce dopo il rimborso non riaddebita;
-- **niente virgola mobile**: il saldo è sempre un intero.
+- **niente virgola mobile**: il saldo è sempre un intero;
+- **il margine dichiarato è quello incassato**: per ogni voce di listino,
+  `margin / total` sta fra l'11,5% e il 12,8%. È il test che difende la frase
+  sulla home, e che al centesimo sarebbe fallito (14,3%);
+- **i riferimenti si contano contro il listino**: quindici immagini danno
+  `400`, sei personaggi danno `400`, e il messaggio dice quale limite;
+- **un servizio senza `riferimenti` a listino non ne accetta nessuno**, invece
+  di mandarli a un fornitore che non sa cosa farsene.
 
 **Contro Postgres** (perché l'atomicità non si prova in JavaScript):
 
@@ -397,7 +498,26 @@ prima, non a metà.
 
 ---
 
-## 11. Due conseguenze da non dimenticare
+## 11. Tre conseguenze da non dimenticare
+
+⚠️ **La frase sui file ridiventa falsa, e stavolta a metà.**
+
+Il 2026-09-09 *«non c'è un server che li guarda, perché non c'è un server»* è
+diventata *«i tuoi file non escono da questo computer: il server sa soltanto
+chi sei e quanto ti resta»*. Con i riferimenti, **un file esce**: lo mandi a
+Google.
+
+Resta vera per tutto il resto — i sei strumenti locali non mandano niente da
+nessuna parte — quindi la frase va **spaccata in due**, non cancellata:
+
+> Gli strumenti girano nel tuo browser e i tuoi file non escono da qui.
+> Quando *generi*, l'immagine che dai come riferimento va al fornitore: non si
+> può generare senza mandare niente, e preferiamo dirtelo che scoprirtelo.
+
+Riscriverla fa parte di B2, non è un lavoro dopo. È la seconda volta in due
+giorni che una frase della home invecchia per via di qualcosa che costruiamo:
+**quando una promessa e il codice divergono, si cambia la promessa prima di
+spedire il codice.**
 
 **La home dovrà dire che i crediti non scadono.** Oggi non lo dice, e chi compra
 25 € ha diritto di saperlo prima. È una riga, e va scritta con la stessa onestà
