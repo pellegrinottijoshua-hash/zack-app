@@ -15,9 +15,12 @@ const RUOLI = ['personaggio', 'oggetto', 'stile'];
  * che lo fa, ed è per forza: generare vuol dire mandare a un fornitore. Si
  * dice qui, accanto al gesto, non in una pagina di aiuto.
  */
-export default function Riferimenti({ servizio, scelti, onCambia, assets, onChiudi }) {
+export default function Riferimenti({ servizio, scelti, onCambia, assets, onChiudi, ruoloIniziale = 'personaggio' }) {
   const limiti = limitiDi(servizio);
-  const [ruolo, setRuolo] = useState('personaggio');
+  // La scheda con cui il pannello si apre: il ruolo scelto nel `+` di
+  // Immagine, non sempre «personaggio» — altrimenti i tre tasti del `+`
+  // promettono una scheda e ne aprono sempre un'altra.
+  const [ruolo, setRuolo] = useState(ruoloIniziale);
   const quanti = (r) => scelti.filter((s) => s.ruolo === r).length;
   const pieno = quanti(ruolo) >= limiti[ruolo] || scelti.length >= limiti.totale;
 

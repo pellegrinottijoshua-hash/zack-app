@@ -6,6 +6,16 @@ import { formatEuro } from '../src/engine/ledger.js';
 import immagine from '../src/servizi/immagine.js';
 
 const PREVENTIVO = readFileSync(new URL('../src/components/Preventivo.jsx', import.meta.url), 'utf8');
+const RIFERIMENTI = readFileSync(new URL('../src/components/Riferimenti.jsx', import.meta.url), 'utf8');
+const PIANO = readFileSync(new URL('../src/components/Piano.jsx', import.meta.url), 'utf8');
+const APP = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
+
+// Il blocco che ripete il preventivo accanto al prompt: non tutto App.jsx,
+// che e' enorme e ha ragioni sue per contenere cifre (pesi in KB, percentuali)
+// che non sono prezzi.
+const inizioLab = APP.indexOf('<div className="immagine-lab">');
+const fineLab = APP.indexOf('</div>', inizioLab);
+const IMMAGINE_LAB = APP.slice(inizioLab, fineLab);
 
 /*
  * «Ogni generazione ti dice quanto costa prima che tu prema.»
@@ -14,15 +24,62 @@ const PREVENTIVO = readFileSync(new URL('../src/components/Preventivo.jsx', impo
  * una promessa operativa. Questi test la difendono.
  */
 
-test('il preventivo non contiene nessuna cifra scritta a mano', () => {
+test('nessun prezzo scritto a mano nei sorgenti di Immagine', () => {
   /*
    * Una cifra scritta nel componente sarebbe una seconda fonte del prezzo, e
    * il giorno che il listino cambia resterebbe indietro — mostrando un numero
    * e addebitandone un altro. E' la § 3.1: un posto solo.
+   *
+   * Allargato oltre Preventivo.jsx (il Minor della revisione): una cifra in
+   * Riferimenti.jsx o nel blocco che ripete il preventivo accanto al prompt
+   * in App.jsx (`immagine-lab`) sarebbe passata inosservata.
+   *
+   * Il criterio resta "una cifra decimale seguita da €", non un `\d+` nudo:
+   * un `\d+` nudo si sarebbe acceso su «VTracer, 140 KB» (commento vero in
+   * App.jsx, riga 762) o su un peso in KB calcolato a schermo altrove — ne'
+   * l'uno ne' l'altro e' un prezzo, e un test che li segnala si disattiva
+   * alla svelta invece di essere ascoltato.
    */
-  assert.doesNotMatch(PREVENTIVO, /\b\d+[.,]\d{2}\s*€/, 'c’e’ un prezzo scritto a mano');
+  const SORGENTI = {
+    'Preventivo.jsx': PREVENTIVO,
+    'Riferimenti.jsx': RIFERIMENTI,
+    'App.jsx (blocco immagine-lab)': IMMAGINE_LAB,
+  };
+  for (const [nome, testo] of Object.entries(SORGENTI)) {
+    assert.doesNotMatch(testo, /\b\d+[.,]\d{2}\s*€/, `${nome}: c’e’ un prezzo scritto a mano`);
+  }
   assert.match(PREVENTIVO, /prezzoDi\(/, 'il preventivo non legge il listino');
   assert.match(PREVENTIVO, /formatEuro\(/);
+});
+
+test('il preventivo passa il conteggio dei riferimenti a prezzoDi: il prezzo sale con loro', () => {
+  /*
+   * Important 1 della revisione: un `prezzoDi(servizio)` senza `{ riferimenti
+   * }` resta al prezzo base per sempre, e niente nei test lo impediva — il
+   * cuore della promessa della home senza difesa. Si legge il sorgente
+   * perche' questo progetto non disegna componenti (niente jsdom, niente
+   * testing-library): i test sono su funzioni pure e sul testo dei sorgenti.
+   */
+  assert.match(
+    PREVENTIVO,
+    /prezzoDi\(\s*servizio\s*,\s*\{\s*riferimenti\s*\}\s*\)/,
+    'Preventivo chiama prezzoDi senza passargli i riferimenti: il prezzo non sale piu’ con loro',
+  );
+});
+
+test('il tasto Zack in Piano.jsx resta spento mentre un’operazione e’ in corso', () => {
+  /*
+   * Important 2 della revisione: e' la difesa contro il doppio addebito —
+   * diciotto secondi davanti a un tasto muto sono un invito a premere una
+   * seconda volta, e la seconda volta si addebita di nuovo. Togliendo
+   * `disabled` (o togliendo `busy` da dentro) i test restavano verdi.
+   */
+  const i = PIANO.indexOf('className="zack-oval"');
+  assert.notEqual(i, -1, 'il tasto Zack non c’e’ piu’ in Piano.jsx');
+  const dopo = PIANO.slice(i, i + 1800);
+  const disabledMatch = dopo.match(/disabled=\{([\s\S]*?)\}\s*\n/);
+  assert.ok(disabledMatch, 'il tasto Zack non ha un attributo disabled');
+  assert.match(disabledMatch[1], /\bbusy\b/, 'il tasto Zack resta premibile durante un’operazione in corso (busy)');
 });
 
 test('il prezzo mostrato e’ quello che il Worker addebita', () => {

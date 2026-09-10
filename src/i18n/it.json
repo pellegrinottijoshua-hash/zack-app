@@ -778,6 +778,7 @@
     "attendi": "Zack sta generando. Ci mette una ventina di secondi.",
     "vuoto": "Scrivi prima cosa vuoi vedere.",
     "errore": "Non sono riuscito a generare. Riprova fra un momento.",
+    "assetMancante": "Un asset scelto come riferimento non è più nella libreria. Toglilo e riprova.",
     "chiudi": "Va bene così",
     "ruolo": { "personaggio": "Personaggio", "oggetto": "Oggetto", "stile": "Stile" }
   }

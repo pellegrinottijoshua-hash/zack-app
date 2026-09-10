@@ -152,17 +152,35 @@ async function riduci(blob) {
  *
  * I riferimenti partono dalla libreria e diventano `data:` **qui**, non nel
  * componente: il componente sa quali asset hai scelto, non come si spediscono.
+ *
+ * ⚠️ **Un riferimento che non si legge FERMA tutto, non lo scarta.**
+ * `Preventivo` e il controllo del saldo contano `riferimenti.length`, quindi
+ * scartare in silenzio chi non si legge più (cancellato fra la scelta e il
+ * tasto: `leggiAsset` torna `null` proprio per quel cammino) farebbe mostrare
+ * N riferimenti e addebitarne N-1 — la promessa della home rotta in due
+ * punti insieme: quanto si paga, e cosa si e' chiesto. E' gia' cio' che
+ * succede all'asset CORROTTO in `riduci` (l'eccezione di `createImageBitmap`
+ * esce prima del `fetch`): qui i due guasti si allineano allo stesso esito.
+ *
+ * Letto PRIMA di chiedere la sessione: `leggiAsset` e' locale, non tocca la
+ * rete, e non ha senso chiedere un token per una richiesta che non partira'.
  */
 export async function generaImmagine({ prompt, riferimenti = [], misura = 'grande', leggiAsset }) {
-  const token = await sessione();
-  if (!token) throw Object.assign(new Error('non-collegato'), { code: 'non-collegato' });
-
   const conDati = [];
   for (const r of riferimenti) {
     const blob = await leggiAsset(r.assetId);
-    // Ridotti QUI, prima di partire: e' cio' che tiene vero il prezzo mostrato.
-    if (blob) conDati.push({ ruolo: r.ruolo, immagine: await riduci(blob) });
+    if (!blob) {
+      // Nomina il problema, come gli altri errori del file: l'interfaccia lo
+      // traduce in una riga che dice "non e' piu' in libreria", non un
+      // errore generico.
+      throw Object.assign(new Error('asset-mancante'), { code: 'asset-mancante' });
+    }
+    // Ridotto QUI, prima di partire: e' cio' che tiene vero il prezzo mostrato.
+    conDati.push({ ruolo: r.ruolo, immagine: await riduci(blob) });
   }
+
+  const token = await sessione();
+  if (!token) throw Object.assign(new Error('non-collegato'), { code: 'non-collegato' });
 
   const res = await fetch(`${BASE}/genera`, {
     method: 'POST',

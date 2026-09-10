@@ -1,7 +1,7 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { chiediLicenza } from '../src/lib/conto.js';
+import { chiediLicenza, generaImmagine } from '../src/lib/conto.js';
 
 const APP = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
 
@@ -91,6 +91,33 @@ test('un «non lo so» non sovrascrive MAI la licenza salvata', () => {
   const salva = dopo.indexOf('salvaLicenza(');
   assert.notEqual(uscita, -1, 'manca l’uscita su «non lo so»: § 3.4');
   assert.ok(uscita < salva, 'si salva prima di controllare: un wifi chiude fuori chi ha pagato');
+});
+
+test('un riferimento che non si legge piu’: NON si genera, e niente parte verso /genera', async () => {
+  /*
+   * Il Critical della revisione: `Preventivo` e il controllo del saldo
+   * contano `riferimenti.length`, ma scartare in silenzio un riferimento il
+   * cui asset e' stato cancellato fra la scelta e il tasto significherebbe
+   * mostrare N riferimenti e addebitarne N-1 — la promessa della home rotta
+   * in due punti insieme. Qui si verifica che non parta NESSUNA richiesta.
+   */
+  let chiamato = false;
+  globalThis.fetch = async () => {
+    chiamato = true;
+    return risposta({});
+  };
+
+  await assert.rejects(
+    () =>
+      generaImmagine({
+        prompt: 'una prova',
+        riferimenti: [{ ruolo: 'personaggio', assetId: 'cancellato' }],
+        leggiAsset: async () => null, // l’asset non c’e’ piu’: il cammino disegnato in App.jsx
+      }),
+    (e) => e.code === 'asset-mancante',
+    'generaImmagine non ha sollevato l’errore che nomina il problema',
+  );
+  assert.equal(chiamato, false, 'generaImmagine ha chiamato /genera con un riferimento mancante');
 });
 
 test('la sessione di Supabase non sta sulla strada del primo disegno', () => {

@@ -432,6 +432,10 @@ export default function App() {
   // qui perché attraversano gli strumenti: si scelgono guardando l'archivio e
   // si usano generando.
   const [references, setReferences] = useState([]);
+  /** Quale scheda apre il pannello Riferimenti: il ruolo scelto nel `+`,
+   *  perché «Personaggio»/«Oggetto»/«Stile» devono aprire la SCHEDA che
+   *  promettono, non sempre la prima. */
+  const [ruoloMenu, setRuoloMenu] = useState('personaggio');
   /** Cosa si vuole vedere. Vive qui e non in un componente suo: il tasto Zack
    *  dell'impianto lo legge per generare, esattamente come per Vocale ed
    *  Effetti. */
@@ -1519,8 +1523,13 @@ export default function App() {
    * cada nel ramo di default, che è quello di Brain e scriverebbe una nota
    * nella tela sbagliata.
    */
-  function menuImmagine() {
+  function menuImmagine(quale) {
     setMenuPiu(false);
+    // Il tasto dice "Personaggio"/"Oggetto"/"Stile": deve aprire proprio
+    // quella scheda, non sempre la prima — altrimenti promette una scelta e
+    // ne fa un'altra, la stessa classe di difetto del righello del
+    // 2026-09-04.
+    setRuoloMenu(quale);
     setSopraLaTela('riferimenti');
   }
 
@@ -1574,9 +1583,11 @@ export default function App() {
             const { file: f } = await library.read(assetId);
             return f;
           } catch {
-            // Un asset cancellato fra la scelta e la generazione non deve
-            // fermare gli altri riferimenti: `generaImmagine` salta chi
-            // torna `null`.
+            // Un asset cancellato fra la scelta e la generazione:
+            // `library.read` lancia se il record non c'e' piu'. Si torna
+            // `null`, e `generaImmagine` SI FERMA li' — non salta il
+            // riferimento in silenzio, che addebiterebbe meno di quanto il
+            // preventivo ha mostrato.
             return null;
           }
         },
@@ -1588,7 +1599,13 @@ export default function App() {
     } catch (e) {
       console.error(e);
       aggiornaSaldo(e.saldo);
-      setError(e.code === 'saldo' ? t('immagine.saldoCorto') : t('immagine.errore'));
+      setError(
+        e.code === 'saldo'
+          ? t('immagine.saldoCorto')
+          : e.code === 'asset-mancante'
+            ? t('immagine.assetMancante')
+            : t('immagine.errore'),
+      );
     } finally {
       setBusy(null);
     }
@@ -2454,6 +2471,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                     onCambia={setReferences}
                     assets={library.assets}
                     onChiudi={() => setSopraLaTela(null)}
+                    ruoloIniziale={ruoloMenu}
                   />
                 ) : sopraLaTela === 'avanzati' ? (
                   tool === 'brain' ? avanzatiBrain : avanzati

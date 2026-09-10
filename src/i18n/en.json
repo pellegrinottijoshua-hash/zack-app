@@ -778,6 +778,7 @@
     "attendi": "Zack is generating. It takes about twenty seconds.",
     "vuoto": "Write what you want to see first.",
     "errore": "I couldn't generate it. Try again in a moment.",
+    "assetMancante": "One of the assets you picked as a reference is no longer in the library. Remove it and try again.",
     "chiudi": "Done",
     "ruolo": { "personaggio": "Character", "oggetto": "Object", "stile": "Style" }
   }
