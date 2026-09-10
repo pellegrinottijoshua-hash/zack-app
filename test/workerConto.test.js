@@ -249,6 +249,119 @@ test('senza il prezzo configurato /checkout lo dice, invece di aprire un pagamen
 
 /* ---------------------------------------------------------------- */
 
+test('/ricarica manda a Stripe il prezzo del LISTINO, non quello del client', async () => {
+  /*
+   * Un client che dichiara «pacchetto da 25 €» pagandone 5 non deve poter
+   * esistere. Il prezzo si prende dall'id, e l'id e' una chiave chiusa.
+   */
+  const chiamate = rete((url) =>
+    url.includes('/auth/v1/user')
+      ? new Response(JSON.stringify({ id: 'u-9', email: 'c@e.it' }), { status: 200 })
+      : new Response(JSON.stringify({ url: 'https://checkout.stripe.com/x' }), { status: 200 }),
+  );
+
+  const res = await worker.fetch(
+    new Request('https://zack-app.com/ricarica', {
+      method: 'POST',
+      headers: { authorization: 'Bearer buono', 'content-type': 'application/json' },
+      body: JSON.stringify({ pacchetto: 'p5', centesimi: 1, millesimi: 999999 }),
+    }),
+    AMBIENTE,
+  );
+  assert.equal(res.status, 200);
+
+  const aStripe = chiamate.find((c) => c.url.includes('api.stripe.com'));
+  const inviato = String(aStripe.corpo);
+  // La chiave e' annidata alla Stripe — `line_items[0][price_data][unit_amount]`
+  // — e URLSearchParams la codifica: la `]` prima del `=` diventa `%5D`, come
+  // per `price` nel test di /checkout qui sopra.
+  assert.match(inviato, /unit_amount%5D=500/, 'il prezzo non viene dal listino dei pacchetti');
+  assert.doesNotMatch(inviato, /unit_amount%5D=1\b/, 'ha creduto al prezzo del client');
+  assert.match(inviato, /mode=payment/, 'una ricarica non e’ un abbonamento');
+  assert.match(inviato, /metadata%5Bmillesimi%5D=5000/);
+});
+
+test('un pacchetto inventato non apre nessun pagamento', async () => {
+  rete((url) =>
+    url.includes('/auth/v1/user')
+      ? new Response(JSON.stringify({ id: 'u-9', email: 'c@e.it' }), { status: 200 })
+      : null,
+  );
+  const res = await worker.fetch(
+    new Request('https://zack-app.com/ricarica', {
+      method: 'POST',
+      headers: { authorization: 'Bearer buono', 'content-type': 'application/json' },
+      body: JSON.stringify({ pacchetto: 'p1000' }),
+    }),
+    AMBIENTE,
+  );
+  assert.equal(res.status, 400);
+});
+
+test('lo STESSO evento Stripe non accredita due volte', async () => {
+  /*
+   * Stripe riprova i webhook, per un timeout o un deploy a meta'. La difesa e'
+   * il vincolo `unique` su `movimenti.stripe_evento`: la seconda volta la
+   * transazione fallisce, il saldo non si muove, e noi rispondiamo 200 perche'
+   * per Stripe e' andata bene — l'aveva gia' fatta.
+   */
+  const corpo = JSON.stringify({
+    id: 'evt_doppio',
+    type: 'checkout.session.completed',
+    data: { object: { mode: 'payment', metadata: { utente: 'u-1', millesimi: '5000' } } },
+  });
+  const t = Math.floor(Date.now() / 1000);
+  let visto = false;
+  rete((url) => {
+    if (!url.includes('/rpc/accredita')) return null;
+    if (visto) return new Response('{"code":"23505","message":"duplicate key"}', { status: 409 });
+    visto = true;
+    return new Response('5000', { status: 200 });
+  });
+
+  const manda = () =>
+    worker.fetch(posta('/webhook', corpo, { 'stripe-signature': firmaPer(corpo, t) }), AMBIENTE);
+
+  assert.equal((await manda()).status, 200);
+  assert.equal((await manda()).status, 200, 'il rinvio di Stripe deve ricevere 200, non un errore');
+});
+
+test('⚠️ il duplicato riconosciuto anche se PostgREST non rispondesse 409', async () => {
+  /*
+   * Il 409 e' l'UNICA difesa contro un rinvio che gira in tondo: se il
+   * duplicato arrivasse con un altro stato — qui un 500, come farebbe
+   * PostgREST per qualsiasi altro errore del database — «solo 409 = va bene»
+   * risponderebbe 500 anche a un duplicato onesto, e Stripe riproverebbe lo
+   * stesso webhook per giorni, respinto ogni volta. Il codice Postgres del
+   * vincolo `unique`, `23505`, nel CORPO basta da solo.
+   */
+  const corpo = JSON.stringify({
+    id: 'evt_doppio_500',
+    type: 'checkout.session.completed',
+    data: { object: { mode: 'payment', metadata: { utente: 'u-1', millesimi: '5000' } } },
+  });
+  const t = Math.floor(Date.now() / 1000);
+  let visto = false;
+  rete((url) => {
+    if (!url.includes('/rpc/accredita')) return null;
+    if (visto) return new Response('{"code":"23505","message":"duplicate key"}', { status: 500 });
+    visto = true;
+    return new Response('5000', { status: 200 });
+  });
+
+  const manda = () =>
+    worker.fetch(posta('/webhook', corpo, { 'stripe-signature': firmaPer(corpo, t) }), AMBIENTE);
+
+  assert.equal((await manda()).status, 200);
+  assert.equal(
+    (await manda()).status,
+    200,
+    'un duplicato travestito da 500 non deve far riprovare Stripe per giorni',
+  );
+});
+
+/* ---------------------------------------------------------------- */
+
 test('tutto il resto resta il sito di prima', async () => {
   // Il Worker si e' messo DAVANTI ai file statici. Se sbagliasse a lasciarli
   // passare, il sito sparirebbe — ed e' la prima cosa che si nota.

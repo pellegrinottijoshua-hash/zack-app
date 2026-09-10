@@ -24,7 +24,7 @@ import { PROVA_GIORNI } from '../src/engine/licenza.js';
  */
 import { SUPABASE_URL, SUPABASE_CHIAVE_PUBBLICA } from '../src/lib/supabase.js';
 import { verificaFirma } from './firma.js';
-import { cosaFare } from './eventi.js';
+import { cosaFare, ricaricaDa, PACCHETTI } from './eventi.js';
 
 const GIORNO = 86400000;
 
@@ -139,6 +139,50 @@ async function checkout(req, env) {
   return json({ url: s.url });
 }
 
+/**
+ * Apre il pagamento di un pacchetto di crediti.
+ *
+ * `price_data` invece di un Price su Stripe: tre pacchetti sono tre righe qui,
+ * non tre prodotti da creare a mano nel pannello e da tenere allineati.
+ */
+async function ricarica(req, env) {
+  const chi = await chiEsegue(req, env);
+  if (!chi) return json({ errore: 'non-collegato' }, 401);
+  if (!env.STRIPE_SECRET_KEY) return json({ errore: 'non-configurato' }, 503);
+
+  const { pacchetto } = await req.json().catch(() => ({}));
+  const scelto = PACCHETTI[pacchetto];
+  // ⚠️ Il prezzo viene dall'ID, non dal corpo. Un client che dichiara «25 €»
+  // pagandone 5 non deve poter esistere.
+  if (!scelto) return json({ errore: 'pacchetto-sconosciuto' }, 400);
+
+  const sito = new URL(req.url).origin;
+  const corpo = new URLSearchParams({
+    mode: 'payment',
+    'line_items[0][price_data][currency]': 'eur',
+    'line_items[0][price_data][unit_amount]': String(scelto.centesimi),
+    'line_items[0][price_data][product_data][name]': `Crediti Zack — ${scelto.centesimi / 100} €`,
+    'line_items[0][quantity]': '1',
+    customer_email: chi.email,
+    'metadata[utente]': chi.id,
+    'metadata[millesimi]': String(scelto.millesimi),
+    success_url: `${sito}/app/?ricaricato=1`,
+    cancel_url: `${sito}/app/`,
+  });
+
+  const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+      'content-type': 'application/x-www-form-urlencoded',
+    },
+    body: corpo,
+  });
+  if (!res.ok) return json({ errore: 'stripe' }, 502);
+  const s = await res.json();
+  return json({ url: s.url });
+}
+
 /** Stripe che dice chi ha pagato. */
 async function webhookStripe(req, env) {
   /*
@@ -161,6 +205,39 @@ async function webhookStripe(req, env) {
     evento = JSON.parse(corpo);
   } catch {
     return json({ errore: 'corpo' }, 400);
+  }
+
+  const soldi = ricaricaDa(evento);
+  if (soldi) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/accredita`, {
+      method: 'POST',
+      headers: conServizio(env),
+      body: JSON.stringify({
+        p_utente: soldi.utente,
+        p_millesimi: soldi.millesimi,
+        p_genere: 'ricarica',
+        p_stripe: soldi.evento,
+      }),
+    });
+    if (!res.ok) {
+      /*
+       * ⚠️ Il duplicato si riconosce con una condizione ALLARGATA, apposta.
+       *
+       * Il vincolo `unique` su `movimenti.stripe_evento` fa fallire l'insert
+       * con l'errore Postgres `23505`, e PostgREST lo traduce in HTTP 409 —
+       * quasi certamente. Ma il 409 e' l'UNICA difesa contro un rinvio che
+       * gira in tondo: se PostgREST rispondesse alla stessa violazione con un
+       * altro stato, «solo 409 = va bene» risponderebbe 500, e Stripe
+       * riproverebbe lo STESSO webhook per giorni, respinto ogni volta. Si
+       * guarda anche dentro il corpo, per lo stesso `23505` — letto come
+       * testo, non come JSON, cosi' un corpo vuoto o non-JSON non fa
+       * esplodere niente, semplicemente non contiene quella stringa.
+       */
+      const testo = await res.text().catch(() => '');
+      const duplicato = res.status === 409 || testo.includes('23505');
+      if (!duplicato) return json({ errore: 'archivio' }, 500);
+    }
+    return json({ ok: true });
   }
 
   const fatto = cosaFare(evento);
@@ -248,6 +325,7 @@ export default {
     }
 
     if (url.pathname === '/checkout' && req.method === 'POST') return checkout(req, env);
+    if (url.pathname === '/ricarica' && req.method === 'POST') return ricarica(req, env);
 
     /*
      * Il webhook NON ha l'intestazione CORS e non ne ha bisogno: non lo chiama

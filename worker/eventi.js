@@ -76,6 +76,15 @@ export function cosaFare(evento, { adesso = new Date() } = {}) {
   if (!apre && !chiude) return null;
 
   const oggetto = evento.data?.object || {};
+  /*
+   * ⚠️ Una RICARICA non e' un abbonamento.
+   *
+   * `checkout.session.completed` scatta per tutt'e due, e distinguono solo per
+   * `mode`. Senza questa riga, chiunque compri 5 € di crediti diventerebbe
+   * abbonato — e non se ne accorgerebbe nessuno, perche' il cliente e'
+   * contento e il difetto lavora a favore suo.
+   */
+  if (oggetto.mode === 'payment') return null;
   const utente = chiPaga(oggetto);
   // Senza sapere a chi, non si scrive niente: meglio non fare che accreditare
   // l'abbonamento alla persona sbagliata.
@@ -87,4 +96,42 @@ export function cosaFare(evento, { adesso = new Date() } = {}) {
     valido_fino: apre ? finoA(oggetto, adesso) : new Date(adesso).toISOString(),
     stripe_cliente: typeof oggetto.customer === 'string' ? oggetto.customer : null,
   };
+}
+
+/**
+ * I tre pacchetti. Chiusi: un importo che non e' qui non esiste.
+ *
+ * Due unita' perche' i due mondi ne usano due: Stripe incassa in **centesimi**,
+ * il saldo vive in **millesimi**. Scrivere il fattore mille in due posti vuol
+ * dire vederli divergere al primo pacchetto nuovo, e allora qualcuno paga 5 €
+ * e ne riceve 50.
+ */
+export const PACCHETTI = {
+  p5: { millesimi: 5000, centesimi: 500 },
+  p10: { millesimi: 10000, centesimi: 1000 },
+  p25: { millesimi: 25000, centesimi: 2500 },
+};
+
+/** Un tetto di sicurezza: nessuna ricarica onesta supera i 100 €. */
+const MASSIMO = 100000;
+
+/**
+ * Questo evento e' una ricarica? Se si', quanto e per chi.
+ *
+ * L'importo arriva dal `metadata` che abbiamo messo noi aprendo il pagamento,
+ * ma un evento arriva da fuori: che la firma sia giusta non vuol dire che il
+ * corpo lo sia. Si legge stretto.
+ */
+export function ricaricaDa(evento) {
+  if (evento?.type !== 'checkout.session.completed') return null;
+  const o = evento.data?.object || {};
+  if (o.mode !== 'payment') return null;
+
+  const utente = o.metadata?.utente;
+  const millesimi = Number(o.metadata?.millesimi);
+  if (!utente) return null;
+  if (!Number.isInteger(millesimi) || millesimi <= 0 || millesimi > MASSIMO) return null;
+
+  // L'id dell'evento e' cio' che rende il rinvio innocuo (§ 6.2).
+  return { utente, millesimi, evento: evento.id };
 }

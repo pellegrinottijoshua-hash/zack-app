@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chiPaga, cosaFare } from '../worker/eventi.js';
+import { chiPaga, cosaFare, ricaricaDa, PACCHETTI } from '../worker/eventi.js';
+import { LISTINO, prezzoDi } from '../src/engine/listino.js';
 
 /*
  * Il rinnovo deve trovare la stessa persona della prima volta.
@@ -127,4 +128,73 @@ test('chiPaga guarda in tutti e tre i posti, e non inventa', () => {
   assert.equal(chiPaga({ lines: { data: [{ metadata: { utente: 'c' } }] } }), 'c');
   assert.equal(chiPaga({}), null);
   assert.equal(chiPaga(), null);
+});
+
+/* ---------------------------------------------------------------- */
+
+test('⚠️ comprare crediti NON deve regalare l’abbonamento', () => {
+  /*
+   * `checkout.session.completed` scatta per TUTT'E DUE: l'abbonamento e la
+   * ricarica. Distinguono solo per `mode`. Senza guardarlo, chiunque compri
+   * 5 € di crediti diventerebbe abbonato a vita — e non se ne accorgerebbe
+   * nessuno, perche' il cliente e' contento e il difetto lavora a favore suo.
+   */
+  const ricarica = {
+    type: 'checkout.session.completed',
+    data: { object: { mode: 'payment', metadata: { utente: 'u-1', millesimi: '5000' } } },
+  };
+  assert.equal(cosaFare(ricarica), null, 'una ricarica ha attivato un abbonamento');
+});
+
+test('la ricarica si riconosce, e porta l’id dell’evento', () => {
+  const r = ricaricaDa({
+    id: 'evt_1',
+    type: 'checkout.session.completed',
+    data: { object: { mode: 'payment', metadata: { utente: 'u-1', millesimi: '5000' } } },
+  });
+  assert.deepEqual(r, { utente: 'u-1', millesimi: 5000, evento: 'evt_1' });
+});
+
+test('un abbonamento non e’ una ricarica', () => {
+  assert.equal(ricaricaDa({
+    id: 'evt_2',
+    type: 'checkout.session.completed',
+    data: { object: { mode: 'subscription', metadata: { utente: 'u-1' } } },
+  }), null);
+});
+
+test('una ricarica senza importo, o con un importo storto, non accredita', () => {
+  // L'importo arriva dal `metadata` che abbiamo messo noi, ma un evento
+  // arriva da fuori: che la firma sia giusta non vuol dire che il corpo lo sia.
+  for (const m of [undefined, '', '0', '-100', 'tanti', '99999999999']) {
+    const e = {
+      id: 'evt_3',
+      type: 'checkout.session.completed',
+      data: { object: { mode: 'payment', metadata: { utente: 'u-1', millesimi: m } } },
+    };
+    assert.equal(ricaricaDa(e), null, `«${m}» ha accreditato qualcosa`);
+  }
+});
+
+test('i tre pacchetti sono quelli decisi, e nessun altro', () => {
+  assert.deepEqual(Object.keys(PACCHETTI).sort(), ['p10', 'p25', 'p5']);
+  assert.deepEqual(PACCHETTI.p5,  { millesimi: 5000,  centesimi: 500  });
+  assert.deepEqual(PACCHETTI.p10, { millesimi: 10000, centesimi: 1000 });
+  assert.deepEqual(PACCHETTI.p25, { millesimi: 25000, centesimi: 2500 });
+  // Stripe incassa in centesimi, il saldo vive in millesimi: il fattore mille
+  // scritto due volte diverge al primo pacchetto nuovo.
+  for (const p of Object.values(PACCHETTI)) {
+    assert.equal(p.millesimi, p.centesimi * 10);
+  }
+});
+
+test('un pacchetto vale almeno quanto una generazione', () => {
+  // Vendere 5 € di credito quando la generazione piu' cara ne costa di piu'
+  // sarebbe vendere qualcosa che non si puo' usare. Ma il cliente non compra
+  // COSTI (127 millesimi, quel che paghiamo al fornitore): compra
+  // GENERAZIONI, e una generazione gliene costa 145 — il PREZZO, margine
+  // compreso. Misurare col costo avrebbe fatto passare un pacchetto che non
+  // basta nemmeno per una generazione sola.
+  const piuCara = Math.max(...Object.keys(LISTINO).map((id) => prezzoDi(id).total));
+  assert.ok(PACCHETTI.p5.millesimi > piuCara * 10, 'il pacchetto minimo non compra dieci generazioni');
 });
