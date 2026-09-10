@@ -25,6 +25,9 @@ import { PROVA_GIORNI } from '../src/engine/licenza.js';
 import { SUPABASE_URL, SUPABASE_CHIAVE_PUBBLICA } from '../src/lib/supabase.js';
 import { verificaFirma } from './firma.js';
 import { cosaFare, ricaricaDa, PACCHETTI } from './eventi.js';
+import { LISTINO, prezzoDi, limitiDi } from '../src/engine/listino.js';
+import { addebita, rimborsa, apriLavoro, chiudiLavoro } from './conto.js';
+import { generaConGoogle } from './fornitori/google.js';
 
 const GIORNO = 86400000;
 
@@ -265,6 +268,97 @@ async function webhookStripe(req, env) {
   return json({ ok: true });
 }
 
+/**
+ * Genera. **Addebita prima, chiama dopo, e se fallisce restituisce.**
+ *
+ * L'ordine non è comodità: addebitare dopo la chiamata vorrebbe dire che due
+ * schede in parallelo fanno due generazioni col credito per una, e la seconda
+ * la paghiamo noi al fornitore.
+ */
+async function genera(req, env) {
+  const chi = await chiEsegue(req, env);
+  if (!chi) return json({ errore: 'non-collegato' }, 401);
+
+  // ⚠️ `'grande'` (2K) e non `'rapida'` (1K): costano uguale — stessi 1120
+  // token d'immagine, misurato — e il 2K dà quattro volte i pixel per tre
+  // secondi in più. Non c'è ragione di offrire di meno per default.
+  const { servizio, prompt, riferimenti = [], misura = 'grande' } = await req.json().catch(() => ({}));
+
+  const voce = LISTINO[servizio];
+  if (!voce) return json({ errore: 'servizio-sconosciuto' }, 400);
+  if (typeof prompt !== 'string' || !prompt.trim()) return json({ errore: 'senza-prompt' }, 400);
+
+  // I limiti vengono dal listino, non da costanti scritte qui: il fornitore
+  // successivo porta i suoi e questo codice non si tocca.
+  const errRif = riferimentiStorti(riferimenti, limitiDi(servizio));
+  if (errRif) return json({ errore: errRif }, 400);
+
+  // ⚠️ Il prezzo dipende da QUANTI riferimenti, e questo e' lo stesso conto
+  // che il browser ha mostrato prima del tasto: stessa funzione, stesso
+  // numero. Se qui si dimenticasse `{ riferimenti }`, si addebiterebbe una
+  // cifra diversa da quella promessa — che e' esattamente il § 3.1.
+  const { total: prezzo } = prezzoDi(servizio, { riferimenti: riferimenti.length });
+
+  const rimasto = await addebita(chi.id, prezzo, env);
+  // `null` = il saldo non bastava, e non è successo niente. 402 è lo stato che
+  // vuol dire esattamente «servono soldi».
+  if (rimasto === null) return json({ errore: 'saldo', prezzo }, 402);
+
+  const lavoro = crypto.randomUUID();
+  await apriLavoro({ id: lavoro, utente: chi.id, servizio, prezzo }, env);
+
+  try {
+    const misuraGoogle = voce.misure?.[misura] || voce.misure?.grande || '1K';
+    const { dati, mime, costoReale } = await generaConGoogle({
+      voce, prompt, riferimenti, misura: misuraGoogle, env,
+    });
+    await chiudiLavoro(lavoro, 'fatto', costoReale, env);
+    return json({ dati, mime, prezzo, saldo: rimasto, lavoro });
+  } catch (e) {
+    /*
+     * Hai incassato per una cosa che non è successa. Non è negoziabile — ma
+     * il rimborso stesso può fallire (rete, un 500, Supabase giù), e
+     * `rimborsa()` torna la `Response` grezza apposta perché quell'esito si
+     * possa guardare.
+     *
+     * Se non prendesse e si rispondesse lo stesso «rimborsato», il cliente
+     * leggerebbe soldi tornati che non sono tornati, il lavoro passerebbe a
+     * 'rimborsato', e lo spazzino del Task 5 — che raccoglie SOLO i lavori
+     * 'in-corso' — non lo ritroverebbe mai più. Nessuno se ne accorgerebbe.
+     *
+     * Si lascia invece il lavoro 'in-corso': lo spazzino ci riprova fra
+     * trenta minuti, che è il mestiere per cui esiste. E si risponde col
+     * saldo che risulta DAVVERO (`rimasto`, il saldo dopo l'addebito), non
+     * con quello sperato (`rimasto + prezzo`).
+     */
+    const esito = await rimborsa(chi.id, prezzo, lavoro, env);
+    if (esito.ok) {
+      await chiudiLavoro(lavoro, 'rimborsato', null, env);
+      return json({ errore: 'fornitore', dettaglio: e.code || 'ignoto', saldo: rimasto + prezzo }, 502);
+    }
+    return json({ errore: 'fornitore', dettaglio: e.code || 'ignoto', saldo: rimasto }, 502);
+  }
+}
+
+/** I riferimenti stanno nei limiti? Il nome del limite rotto, o `null`. */
+function riferimentiStorti(riferimenti, limiti) {
+  if (!Array.isArray(riferimenti)) return 'riferimenti-storti';
+  if (riferimenti.length > limiti.totale) return 'troppi-riferimenti';
+  const conta = { personaggio: 0, oggetto: 0, stile: 0 };
+  for (const r of riferimenti) {
+    // ⚠️ `Object.hasOwn`, non `in`: `in` guarda anche la catena dei
+    // prototipi, quindi un riferimento con `ruolo: 'toString'` (ereditato da
+    // Object) supererebbe il controllo e `conta['toString'] += 1` farebbe
+    // NaN — scavalcando i limiti per ruolo senza che nessuno se ne accorga.
+    if (!Object.hasOwn(conta, r?.ruolo)) return 'ruolo-sconosciuto';
+    conta[r.ruolo] += 1;
+  }
+  for (const ruolo of Object.keys(conta)) {
+    if (conta[ruolo] > limiti[ruolo]) return `troppi-${ruolo}`;
+  }
+  return null;
+}
+
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
@@ -326,6 +420,7 @@ export default {
 
     if (url.pathname === '/checkout' && req.method === 'POST') return checkout(req, env);
     if (url.pathname === '/ricarica' && req.method === 'POST') return ricarica(req, env);
+    if (url.pathname === '/genera' && req.method === 'POST') return genera(req, env);
 
     /*
      * Il webhook NON ha l'intestazione CORS e non ne ha bisogno: non lo chiama
