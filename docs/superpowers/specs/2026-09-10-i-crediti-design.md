@@ -255,10 +255,40 @@ export const LISTINO = {
 };
 ```
 
-**Nano Banana Pro (Gemini 3 Pro Image), verificato il 2026-09-10:** $0,134 a
-immagine a 1K–2K sull'API ufficiale, $0,24 a 4K. A 0,92 €/$ fanno **123
-millesimi**; col margine, **140 millesimi = 14,0 centesimi al cliente**, di cui
-17 di margine — il 12,1% del prezzo.
+**Nano Banana Pro, MISURATO il 2026-09-10** — sedici generazioni vere, non un
+listino letto: [docs/2026-09-10-misura-nbp.md](../../2026-09-10-misura-nbp.md).
+
+Il costo non è fisso: **126 millesimi** senza riferimenti, **130** con cinque,
+**133** con quattordici. Un riferimento vale 258 token, cioè **mezzo
+millesimo**.
+
+```
+costo(n)  = 127 + round(n × 0,5)
+prezzo(n) = costo(n) + round(costo(n) × 0,14)
+```
+
+| riferimenti | prezzo | margine |
+|---|---|---|
+| 0 | **145** millesimi | 12,4 % |
+| 5 | **148** | 12,2 % |
+| 14 | **153** | 12,4 % |
+
+⚠️ **Il prezzo deve salire coi riferimenti**, o il margine dichiarato è vero
+solo per la richiesta media: a prezzo fisso sarebbe il 15,4% su una richiesta
+nuda e il 10,7% su una piena, mentre la home ne dichiara 12. E il numero si sa
+**prima di premere**, perché i riferimenti sono già stati scelti quando si
+preme.
+
+La base è 127 e non 126 perché i token di «pensiero» ballano di ±2: meglio
+stimare un millesimo sopra che trovarsi sotto.
+
+**Il 2K è gratis.** 2816×1536 e 1024×1024 consumano gli stessi 1120 token
+d'immagine: quattro volte i pixel allo stesso prezzo, tre secondi in più. La
+differenza di listino pubblicata riguarda solo il 4K, che non facciamo.
+Deciso col committente: **sceglie il cliente**, due pastiglie sul punto oro.
+
+Google risponde **JPEG**, sempre. E `thinkingLevel` **non esiste**: `400` a
+ogni chiamata. `imageConfig` sì.
 
 ⚠️ **Il fornitore incassa in dollari, noi in euro.** Il listino è in millesimi
 di euro fissi, quindi ogni movimento del cambio si mangia margine: al cliente
@@ -270,6 +300,16 @@ essere vero.
 
 Solo **1K–2K** in B2. Il 4K raddoppia il costo e si aggiunge quando c'è un
 motivo, non perché il fornitore lo offre.
+
+### 6.1-bis I riferimenti si ridimensionano a 768 px, nel browser
+
+I 258 token per riferimento sono contati **a quella misura**. Google ne
+accetta fino a 7 MB: con una foto da 12 megapixel i token salgono, e il prezzo
+mostrato prima di premere diventa falso.
+
+Ridurli risolve tre cose insieme: il prezzo resta quello annunciato, il
+caricamento non si mangia i nove secondi che restano fra i 21 di Google e i 30
+del limite, e il costo diventa prevedibile invece che scommesso.
 
 ### 6.2 La ricarica, e la riga che regala soldi
 
@@ -510,14 +550,25 @@ e i 20 secondi**; i 15–20 sono il 4K, che non facciamo; a 2K con
 «ragionamento» che su richieste semplici aggiunge attesa senza aggiungere
 niente.
 
-⚠️ **Questi numeri non li ho misurati io**: senza una chiave Google non si
-chiama l'API, quindi vengono da terzi e valgono quanto vale una fonte terza.
+✅ **Misurato il 2026-09-10**, con cinque riferimenti veri:
+[docs/2026-09-10-misura-nbp.md](../../2026-09-10-misura-nbp.md).
 
-**Il primo passo del piano è misurarli davvero**, con la chiave vera, con
-**cinque immagini di riferimento** — non con un prompt di due parole, che è il
-caso migliore e quindi quello che non dice niente. Se la mediana supera i venti
-secondi, il § 6.3 va rifatto in due tempi **prima** di scrivere il resto, non a
-metà.
+| | mediana | peggiore |
+|---|---|---|
+| 1K | **18,1 s** | 18,2 s |
+| 2K | **21,2 s** | 26,9 s |
+
+Sotto i trenta: **`/genera` resta una richiesta sola** e questo paragrafo
+regge.
+
+⚠️ **Ma con nove secondi di margine, non con venti.** Dentro quei nove ci
+devono stare il caricamento dei riferimenti dal browser al Worker e dal Worker
+a Google — che è il secondo motivo del § 6.1-bis.
+
+E una conseguenza che il disegno non aveva previsto: **diciotto secondi davanti
+a un tasto sono tantissimi**. Non è un problema tecnico, è che senza niente che
+si muova l'utente preme una seconda volta — e la seconda volta si addebita di
+nuovo. L'attesa va mostrata, e va detto **quanto** dura.
 
 ---
 
