@@ -127,6 +127,28 @@ begin
   update conti set crediti = crediti + p_millesimi
    where utente = p_utente
    returning crediti into rimasto;
+  /*
+   * ⚠️ Se la riga di `conti` non c'e', l'UPDATE sopra non trova niente e
+   * `rimasto` resta NULL. SENZA questa riga la funzione tornerebbe NULL senza
+   * sollevare, e la transazione COMMETTEREBBE lo stesso: il movimento
+   * dell'INSERT qui sopra resterebbe scritto, il vincolo `unique` su
+   * `stripe_evento` avrebbe gia' consumato l'id dell'evento, e il saldo non
+   * si sarebbe mosso. PostgREST risponderebbe 200 con corpo `null`, Stripe
+   * non riproverebbe mai piu' (per lui e' andata bene), e un rinvio manuale
+   * verrebbe respinto come duplicato: soldi incassati, spariti,
+   * irrecuperabili.
+   *
+   * Sollevare QUI fa tornare indietro anche l'INSERT: stessa transazione,
+   * niente resta scritto, l'id dell'evento resta libero e Stripe riprova per
+   * tre giorni. E' la stessa asimmetria di `addebita()` sopra, chiusa nel
+   * verso opposto: li' si scrive il movimento SOLO se `rimasto is not null`
+   * (l'update viene prima); qui l'INSERT deve stare prima dell'UPDATE per il
+   * vincolo `unique` contro il rinvio di Stripe (vedi il commento sopra), e
+   * quindi la guardia sullo stesso `rimasto` arriva DOPO, non prima.
+   */
+  if rimasto is null then
+    raise exception 'conto-inesistente';
+  end if;
   return rimasto;
 end $$;
 

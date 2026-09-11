@@ -36,10 +36,10 @@ test('il prezzo SALE coi riferimenti, e resta dentro il margine dichiarato', () 
   const nudo = prezzoDi('immagine-nbp', { riferimenti: 0 });
   const pieno = prezzoDi('immagine-nbp', { riferimenti: 14 });
 
-  assert.equal(nudo.cost, 127, 'la base non e’ quella misurata');
-  assert.equal(nudo.total, 145);
-  assert.equal(pieno.cost, 134);
-  assert.equal(pieno.total, 153);
+  assert.equal(nudo.cost, 128, 'la base non e’ quella misurata');
+  assert.equal(nudo.total, 146);
+  assert.equal(pieno.cost, 135);
+  assert.equal(pieno.total, 154);
   assert.ok(pieno.total > nudo.total, 'quattordici riferimenti costano come zero');
 
   for (let n = 0; n <= 14; n += 1) {
@@ -50,11 +50,15 @@ test('il prezzo SALE coi riferimenti, e resta dentro il margine dichiarato', () 
 });
 
 test('la stima non sta MAI sotto il costo misurato', () => {
-  // Misurati: 126 a zero riferimenti, 130 a cinque, 133 a quattordici. La base
-  // e' 127 e non 126 perche' i token di «pensiero» ballano di ±2 millesimi:
-  // meglio stimare un millesimo sopra che trovarsi sotto, e scoprire a fine
-  // mese che il margine dichiarato non c'era.
-  for (const [n, misurato] of [[0, 126], [5, 130], [14, 133]]) {
+  /*
+   * Misurati: 126 a zero riferimenti, 131 a cinque, 133 a quattordici (lo
+   * stesso 131 di `test/genera.test.js`, ricalcolato dal vero `usageMetadata`
+   * — due file dello stesso task non possono dirsi due costi diversi per la
+   * stessa chiamata misurata). La base e' 128 e non 126 perche' i token di
+   * «pensiero» ballano di ±2 millesimi: meglio stimare sopra che trovarsi
+   * sotto, e scoprire a fine mese che il margine dichiarato non c'era.
+   */
+  for (const [n, misurato] of [[0, 126], [5, 131], [14, 133]]) {
     assert.ok(
       prezzoDi('immagine-nbp', { riferimenti: n }).cost >= misurato,
       `con ${n} riferimenti stimiamo meno di quanto costa davvero`,

@@ -392,7 +392,8 @@
     "balance": "Balance",
     "soon": "soon",
     "open": "Show the names",
-    "close": "Icons only"
+    "close": "Icons only",
+    "da": "from {prezzo}"
   },
   "soon": {
     "title": "This service isn't here yet",
@@ -787,7 +788,7 @@
     "titolo": "Credits",
     "hai": "You have {saldo}.",
     "no": "I couldn’t open the payment page. Try again in a moment.",
-    "dodici": "Every generation shows you its price before you click. And of every euro you spend, Zack puts 12 cents back into its own brand.",
+    "dodici": "Every generation shows you its price before you click. And of every euro you spend, Zack puts about 12 cents back into its own brand.",
     "nonScadono": "Credits never expire, and they stay yours even if you cancel your subscription.",
     "chiudi": "Done"
   }

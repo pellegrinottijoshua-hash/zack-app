@@ -109,9 +109,17 @@ export async function apriLavoro({ id, utente, servizio, prezzo }, env) {
   return res.ok;
 }
 
-/** Chiude il lavoro, col costo vero se c'è. */
+/**
+ * Chiude il lavoro, col costo vero se c'è.
+ *
+ * ⚠️ Torna `res.ok`, non lo butta via (Task 3 della revisione): se la PATCH
+ * non prende, il chiamante deve poterlo sapere, non rispondere 200 credendo
+ * il lavoro chiuso. Un `'fatto'` che non prende lascia il lavoro 'in-corso':
+ * un'ora dopo lo spazzino lo trova e lo rimborsa, il cliente tiene
+ * l'immagine E i soldi, e noi abbiamo pagato Google per niente.
+ */
 export async function chiudiLavoro(id, stato, costoReale, env) {
-  await fetch(`${SUPABASE_URL}/rest/v1/lavori?id=eq.${id}`, {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/lavori?id=eq.${id}`, {
     method: 'PATCH',
     headers: intestazioni(env),
     body: JSON.stringify({
@@ -120,4 +128,5 @@ export async function chiudiLavoro(id, stato, costoReale, env) {
       chiuso_il: new Date().toISOString(),
     }),
   });
+  return res.ok;
 }

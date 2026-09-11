@@ -103,11 +103,11 @@ test('una generazione riuscita costa esattamente il preventivo', async () => {
   // Google risponde JPEG, sempre: e' misurato, non e' la finzione della
   // prima stesura (che diceva PNG e certificava un errore).
   assert.equal(corpo.mime, 'image/jpeg');
-  // 145 = 127 (costo, zero riferimenti) + 18 (margine 14%, arrotondato).
+  // 146 = 128 (costo, zero riferimenti) + 18 (margine 14%, arrotondato).
   // Non 140: quel numero e' rimasto da quando il costo si credeva 123,
   // prima che si misurasse la misura ('1K'/'2K').
-  assert.equal(corpo.prezzo, 145, 'il prezzo risposto non e’ quello del listino');
-  assert.equal(w.saldo, 5000 - 145);
+  assert.equal(corpo.prezzo, 146, 'il prezzo risposto non e’ quello del listino');
+  assert.equal(w.saldo, 5000 - 146);
 });
 
 test('⚠️ una generazione fallita non costa NIENTE', async () => {
@@ -132,10 +132,10 @@ test('⚠️ se il rimborso fallisce, il lavoro resta in-corso e il saldo non me
   const res = await worker.fetch(chiedi({ servizio: 'immagine-nbp', prompt: 'un cane' }), AMBIENTE);
   assert.equal(res.status, 502);
   const corpo = await res.json();
-  // Il saldo e' sceso di 145 e ci resta: si risponde col saldo VERO, non con
+  // Il saldo e' sceso di 146 e ci resta: si risponde col saldo VERO, non con
   // quello sperato (rimasto + prezzo).
-  assert.equal(corpo.saldo, 5000 - 145, 'ha millantato un rimborso che non e’ successo');
-  assert.equal(w.saldo, 5000 - 145);
+  assert.equal(corpo.saldo, 5000 - 146, 'ha millantato un rimborso che non e’ successo');
+  assert.equal(w.saldo, 5000 - 146);
   assert.equal(
     w.lavori.at(-1).stato, 'in-corso',
     'il lavoro si e’ chiuso anche se il rimborso e’ fallito: lo spazzino non lo ritrova piu’',
@@ -194,7 +194,7 @@ test('apriLavoro non scrive in movimenti: quel movimento nasce dentro addebita',
 });
 
 test('senza saldo non si genera, e non si chiama il fornitore', async () => {
-  const w = mondo({ saldo: 100 });   // meno dei 145 che serve
+  const w = mondo({ saldo: 100 });   // meno dei 146 che serve
   const res = await worker.fetch(chiedi({ servizio: 'immagine-nbp', prompt: 'un cane' }), AMBIENTE);
   assert.equal(res.status, 402);
   assert.equal(w.saldo, 100);
@@ -212,6 +212,32 @@ test('l’addebito viene PRIMA della chiamata al fornitore', async () => {
   const iAddebito = w.chiamate.findIndex((c) => c.includes('/rpc/addebita'));
   const iGoogle = w.chiamate.findIndex((c) => c.includes('googleapis'));
   assert.ok(iAddebito >= 0 && iAddebito < iGoogle, 'ha chiamato il fornitore prima di addebitare');
+});
+
+test('⚠️ se addebita() stessa rigetta (guasto di rete), non esce senza risposta e prova a rimborsare', async () => {
+  /*
+   * Task 4 della revisione: `addebita()` stava FUORI dal `try`. Una `fetch`
+   * che rigetta per un guasto di rete (non uno status 4xx/5xx, quello lo
+   * gestisce gia' `res.ok`) usciva da `genera()` senza che nessuno la
+   * prendesse — non c'e' un catch a livello di `export default { fetch }`.
+   * Se il rigetto arrivasse DOPO che Postgres ha gia' commesso, il saldo
+   * sarebbe sceso, nessuna riga di `lavori` esisterebbe, e lo spazzino non
+   * avrebbe niente da guardare.
+   */
+  const w = mondo({ saldo: 5000 });
+  const fetchMondo = globalThis.fetch;
+  globalThis.fetch = async (u, o) => {
+    const url = String(u?.url || u);
+    if (url.includes('/rpc/addebita')) throw new TypeError('fetch failed');
+    return fetchMondo(u, o);
+  };
+
+  const res = await worker.fetch(chiedi({ servizio: 'immagine-nbp', prompt: 'un cane' }), AMBIENTE);
+  assert.equal(res.status, 502, 'un guasto di rete sull’addebito non deve uscire come eccezione non gestita');
+  assert.ok(
+    w.chiamate.some((c) => c.includes('/rpc/accredita')),
+    'non ha nemmeno provato a rimborsare un addebito di cui non conosce l’esito',
+  );
 });
 
 test('un servizio che non e’ a listino non addebita niente', async () => {
@@ -254,6 +280,28 @@ test('i riferimenti si contano contro il LISTINO', async () => {
   assert.equal(w.saldo, 5000, 'ha addebitato una richiesta che il fornitore avrebbe rifiutato');
 });
 
+test('⚠️ un riferimento con immagine non valida viene rifiutato PRIMA di addebitare, non scartato dopo', async () => {
+  /*
+   * Il difetto di Task 2: `worker/fornitori/google.js` fa
+   * `riferimenti.map(pezzo).filter(Boolean)` — un riferimento che il regex
+   * di `pezzo()` non riconosce sparisce DOPO che il prezzo e' gia' stato
+   * calcolato su `riferimenti.length`. Il cliente paga per cinque, Google ne
+   * vede quattro. La difesa sta PRIMA dell'addebito, con lo stesso criterio.
+   */
+  const w = mondo({ saldo: 5000 });
+  const buoni = Array.from({ length: 4 }, () => ({ ruolo: 'oggetto', immagine: 'data:image/png;base64,AAAA' }));
+  const storto = { ruolo: 'oggetto', immagine: 'non-e-un-data-uri' };
+
+  const res = await worker.fetch(
+    chiedi({ servizio: 'immagine-nbp', prompt: 'un cane', riferimenti: [...buoni, storto] }),
+    AMBIENTE,
+  );
+  assert.equal(res.status, 400, 'ha addebitato un riferimento che Google avrebbe scartato in silenzio');
+  const corpo = await res.json();
+  assert.equal(corpo.errore, 'riferimento-illeggibile');
+  assert.equal(w.saldo, 5000, 'ha addebitato prima di scoprire che il riferimento era storto');
+});
+
 test('il costo REALE si registra: 131 millesimi esatti, non un tipo qualsiasi', async () => {
   /*
    * Senza quel numero, «di ogni euro Zack ne rimette 12 centesimi» e' una
@@ -274,6 +322,67 @@ test('il costo REALE si registra: 131 millesimi esatti, non un tipo qualsiasi', 
   const chiuso = w.lavori.at(-1);
   assert.equal(chiuso?.costo_reale, 131);
   assert.equal(chiuso.stato, 'fatto');
+});
+
+test('⚠️ se chiudiLavoro non prende nemmeno al secondo tentativo, lo dice in risposta invece di nasconderlo', async () => {
+  /*
+   * Task 3 della revisione: `chiudiLavoro` buttava via `res.ok`. Se la PATCH
+   * `stato: 'fatto'` falliva, si rispondeva 200 col JPEG e il lavoro restava
+   * 'in-corso' — un'ora dopo lo spazzino lo trova e lo rimborsa: il cliente
+   * tiene l'immagine E riprende i soldi, e noi abbiamo pagato Google.
+   */
+  const { prezzoDi } = await import('../src/engine/listino.js');
+  const { total } = prezzoDi('immagine-nbp');
+  const w = mondo({ saldo: 5000 });
+  const fetchMondo = globalThis.fetch;
+  let tentativiPatch = 0;
+  globalThis.fetch = async (u, o = {}) => {
+    const url = String(u?.url || u);
+    if (url.includes('/rest/v1/lavori?id=eq.') && o.method === 'PATCH') {
+      tentativiPatch += 1;
+      return new Response('{"message":"lock"}', { status: 500 });
+    }
+    return fetchMondo(u, o);
+  };
+
+  const res = await worker.fetch(chiedi({ servizio: 'immagine-nbp', prompt: 'un cane' }), AMBIENTE);
+  assert.equal(res.status, 200, 'il cliente ha comunque pagato e ricevuto l’immagine: la risposta resta 200');
+  const corpo = await res.json();
+  assert.equal(tentativiPatch, 2, 'non ha ritentato la chiusura del lavoro riuscito');
+  assert.equal(
+    corpo.avviso, 'lavoro-non-chiuso',
+    'non ha detto che il lavoro non si e’ chiuso: lo spazzino lo rimborserebbe da solo senza che nessuno se ne accorga',
+  );
+  assert.equal(w.saldo, 5000 - total, 'il prezzo addebitato non deve cambiare per un guasto sulla sola chiusura');
+});
+
+test('⚠️ misura: "toString" non deve rompere l’imageConfig mandato a Google', async () => {
+  /*
+   * Task 8 della revisione: `voce.misure?.[misura]` legge la catena dei
+   * prototipi come farebbe `in`. Con `misura: 'toString'` trova
+   * `Object.prototype.toString` — una funzione, non una misura — che e'
+   * truthy e non fa scattare il `||`: `JSON.stringify` elimina i valori
+   * funzione dalle proprieta' degli oggetti, e Google riceve un
+   * `imageConfig` senza `imageSize`. Verificato dal revisore: risponde 200,
+   * non 400 — un silenzioso, non un rifiuto onesto.
+   */
+  const w = mondo({ saldo: 5000 });
+  const fetchMondo = globalThis.fetch;
+  let corpoGoogle = null;
+  globalThis.fetch = async (u, o = {}) => {
+    const url = String(u?.url || u);
+    if (url.includes('generativelanguage.googleapis.com')) corpoGoogle = JSON.parse(o.body);
+    return fetchMondo(u, o);
+  };
+
+  const res = await worker.fetch(
+    chiedi({ servizio: 'immagine-nbp', prompt: 'un cane', misura: 'toString' }), AMBIENTE);
+  assert.equal(res.status, 200);
+  assert.ok(corpoGoogle, 'non ha nemmeno chiamato Google');
+  assert.equal(
+    typeof corpoGoogle.generationConfig?.imageConfig?.imageSize, 'string',
+    'l’imageConfig mandato a Google non ha una imageSize valida: "toString" ha rotto la scelta',
+  );
 });
 
 test('senza token non si genera', async () => {

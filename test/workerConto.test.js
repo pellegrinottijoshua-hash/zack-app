@@ -281,6 +281,46 @@ test('/ricarica manda a Stripe il prezzo del LISTINO, non quello del client', as
   assert.match(inviato, /metadata%5Bmillesimi%5D=5000/);
 });
 
+test('⚠️ /ricarica crea la riga di conti PRIMA di mandare il cliente a Stripe, se non c’e’ ancora', async () => {
+  /*
+   * Task 1b della revisione: `accredita` (Task 1a) adesso SOLLEVA quando il
+   * webhook prova ad accreditare un conto che non esiste — giusto, ma da
+   * sola quella difesa lascia il rimedio ai soli tentativi di Stripe, che si
+   * arrende dopo tre giorni. `/ricarica` e' l'altro momento in cui sappiamo
+   * chi e' e che sta per pagare: deve garantire la riga PRIMA di aprire il
+   * pagamento, non sperare che `/me` sia gia' passato di la'.
+   */
+  const chiamate = rete((url, o) => {
+    if (url.includes('/auth/v1/user')) {
+      return new Response(JSON.stringify({ id: 'u-20', email: 'c@e.it' }), { status: 200 });
+    }
+    if (url.includes('/rest/v1/conti?')) return new Response('[]', { status: 200 }); // non c'e' ancora
+    if (url.includes('api.stripe.com')) {
+      return new Response(JSON.stringify({ url: 'https://checkout.stripe.com/x' }), { status: 200 });
+    }
+    if (url.includes('/rest/v1/conti') && o.method === 'POST') return new Response('{}', { status: 201 });
+    return null;
+  });
+
+  const res = await worker.fetch(
+    new Request('https://zack-app.com/ricarica', {
+      method: 'POST',
+      headers: { authorization: 'Bearer buono', 'content-type': 'application/json' },
+      body: JSON.stringify({ pacchetto: 'p5' }),
+    }),
+    AMBIENTE,
+  );
+  assert.equal(res.status, 200);
+
+  const iCrea = chiamate.findIndex((c) => c.metodo === 'POST' && c.url.includes('/rest/v1/conti'));
+  const iStripe = chiamate.findIndex((c) => c.url.includes('api.stripe.com'));
+  assert.notEqual(
+    iCrea, -1,
+    '/ricarica non ha creato la riga di conti: accredita() la troverebbe assente e solleverebbe quando arriva il webhook',
+  );
+  assert.ok(iCrea < iStripe, 'la riga di conti nasce DOPO aver gia’ mandato il cliente a Stripe');
+});
+
 test('un pacchetto inventato non apre nessun pagamento', async () => {
   rete((url) =>
     url.includes('/auth/v1/user')

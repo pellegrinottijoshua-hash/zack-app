@@ -100,7 +100,7 @@ export const COPY = {
       body:
         'Scontorno, vettoriale, ritocco e archivio per la valanga di immagini che i generatori sputano fuori. Tutto sul tuo computer, illimitato, a 2,99 € al mese.',
       cta: 'Comincia',
-      note: 'Nessun file lascia il tuo computer.',
+      note: 'Gli strumenti restano sul tuo computer. Generare è l’unica eccezione.',
     },
 
     problem: {
@@ -136,7 +136,7 @@ export const COPY = {
       body:
         'Immagini, video e suoni dai modelli migliori, con il prezzo scritto prima di premere. Nessun abbonamento gonfiato per funzioni che non usi.',
       example: 'Ogni generazione ti dice quanto costa prima che tu prema.',
-      note: 'E di ogni euro che spendi, Zack ne rimette 12 centesimi su di sé. I crediti non scadono e restano tuoi anche se disdici.',
+      note: 'E di ogni euro che spendi, Zack ne rimette circa 12 centesimi su di sé. I crediti non scadono e restano tuoi anche se disdici.',
     },
 
     privacy: {
@@ -249,7 +249,7 @@ export const COPY = {
       body:
         'Cutout, vector, retouching and an archive for the flood of images generators produce. All on your own machine, unlimited, for €2.99 a month.',
       cta: 'Get started',
-      note: 'No file leaves your computer.',
+      note: 'The tools stay on your computer. Generating is the only exception.',
     },
 
     problem: {
@@ -285,7 +285,7 @@ export const COPY = {
       body:
         'Images, video and sound from the best models, with the price written before you press. No inflated subscription for features you never touch.',
       example: 'Every generation shows you its price before you click.',
-      note: "And of every euro you spend, Zack puts 12 cents back into its own brand. Credits never expire and stay yours even if you cancel.",
+      note: "And of every euro you spend, Zack puts about 12 cents back into its own brand. Credits never expire and stay yours even if you cancel.",
     },
 
     privacy: {

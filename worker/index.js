@@ -27,7 +27,7 @@ import { verificaFirma } from './firma.js';
 import { cosaFare, ricaricaDa, PACCHETTI } from './eventi.js';
 import { LISTINO, prezzoDi, limitiDi } from '../src/engine/listino.js';
 import { addebita, rimborsa, rimborsoRiuscito, apriLavoro, chiudiLavoro } from './conto.js';
-import { generaConGoogle } from './fornitori/google.js';
+import { generaConGoogle, immagineValida } from './fornitori/google.js';
 
 const GIORNO = 86400000;
 
@@ -89,6 +89,34 @@ async function contoDi(id, env) {
   if (!res.ok) return null;
   const righe = await res.json();
   return righe[0] || null;
+}
+
+/**
+ * La riga di `conti` di questo utente, creandola con la prova se non c'e'
+ * ancora. Torna la riga (nuova o esistente), o `null` se la scrittura non ha
+ * preso.
+ *
+ * Usata da `/me` (dove la prova nasce e si racconta) e da `/ricarica` (Task
+ * 1b della revisione): senza questa seconda chiamata, un cliente che paga
+ * prima di aver mai aperto `/me` arriva a Stripe senza una riga di `conti` ad
+ * aspettarlo, e `accredita` (Task 1a) solleva quando il webhook prova ad
+ * accreditarlo — un guasto che Stripe ripete per tre giorni e poi abbandona.
+ * `/ricarica` e' l'altro momento in cui sappiamo chi e' e che sta per pagare:
+ * meglio garantire la riga qui, prima di aprire il pagamento, che sperare che
+ * `/me` sia gia' passato di la'.
+ */
+async function contoOCrealo(id, env) {
+  const esistente = await contoDi(id, env);
+  if (esistente) return esistente;
+
+  const prova = new Date(Date.now() + PROVA_GIORNI * GIORNO).toISOString();
+  const scritta = await fetch(`${SUPABASE_URL}/rest/v1/conti`, {
+    method: 'POST',
+    headers: conServizio(env),
+    body: JSON.stringify({ utente: id, prova_fino: prova }),
+  });
+  if (!scritta.ok) return null;
+  return { prova_fino: prova, abbonato: false, crediti: 0 };
 }
 
 /**
@@ -158,6 +186,18 @@ async function ricarica(req, env) {
   // ⚠️ Il prezzo viene dall'ID, non dal corpo. Un client che dichiara «25 €»
   // pagandone 5 non deve poter esistere.
   if (!scelto) return json({ errore: 'pacchetto-sconosciuto' }, 400);
+
+  /*
+   * ⚠️ Task 1b della revisione: la riga di `conti` deve esistere PRIMA di
+   * mandare il cliente a Stripe, non dopo. `accredita` (Task 1a) adesso
+   * SOLLEVA quando il webhook prova ad accreditare un conto che non c'e' —
+   * giusto, perche' altrimenti incasserebbe senza accreditare — ma sollevare
+   * da sola lascia il rimedio ai soli tentativi di Stripe, che si arrende
+   * dopo tre giorni. Qui e' il momento buono: sappiamo gia' chi e' e che sta
+   * per pagare, e non serve sperare che `/me` sia gia' passato di la' prima.
+   */
+  const conto = await contoOCrealo(chi.id, env);
+  if (!conto) return json({ errore: 'archivio' }, 500);
 
   const sito = new URL(req.url).origin;
   const corpo = new URLSearchParams({
@@ -299,19 +339,49 @@ async function genera(req, env) {
   // cifra diversa da quella promessa — che e' esattamente il § 3.1.
   const { total: prezzo } = prezzoDi(servizio, { riferimenti: riferimenti.length });
 
-  const rimasto = await addebita(chi.id, prezzo, env);
-  // `null` = il saldo non bastava, e non è successo niente. 402 è lo stato che
-  // vuol dire esattamente «servono soldi».
-  if (rimasto === null) return json({ errore: 'saldo', prezzo }, 402);
-
   const lavoro = crypto.randomUUID();
   // Diventa vero solo se la riga di `lavori` esiste DAVVERO. Serve nel
   // `catch`: `movimenti.lavoro` referenzia `lavori(id)`, e un rimborso che
   // passasse l'id di un lavoro mai creato violerebbe quella chiave esterna
   // — il rimborso fallirebbe proprio quando serve di più.
   let lavoroAperto = false;
+  /*
+   * ⚠️ Task 4 della revisione: resta `null` finche' `addebita()` non torna
+   * DAVVERO — non solo quando il saldo non basta (quel ramo esce subito, sotto,
+   * senza mai arrivare al `catch`), ma anche se la sua `fetch` rigetta per un
+   * guasto di rete: in quel caso non sappiamo se l'addebito e' passato, e
+   * `rimasto` resta questo valore iniziale. Nel `catch` distingue i due mondi:
+   * `null` vuol dire «non lo so», un numero vuol dire «l'addebito e' successo
+   * per certo».
+   */
+  let rimasto = null;
 
   try {
+    /*
+     * ⚠️ Task 4 della revisione: `addebita()` stava PRIMA di questo `try`.
+     * La sua `fetch` verso Supabase puo' rigettare per un guasto di rete (non
+     * uno status 4xx/5xx, quello lo dice `res.ok`: qui parliamo di un rigetto
+     * vero), ed e' identico al problema che il commento sotto per
+     * `apriLavoro` gia' risolveva nello stesso modo — portarla DENTRO,
+     * cosi' finisce nello stesso `catch`. Se il rigetto arriva DOPO che
+     * Postgres ha gia' commesso, il saldo e' sceso e non c'e' modo di
+     * saperlo se non riprovando: si sceglie di fidarsi e tentare comunque il
+     * rimborso, la stessa regola gia' scritta qui sotto — «hai incassato per
+     * una cosa che non e' successa. Non e' negoziabile» — vale anche quando
+     * non si e' sicuri di aver incassato: il dubbio si scioglie a favore del
+     * cliente, non della cassa. (L'alternativa era un `try/catch` dentro
+     * `addebita()` stessa, ma li' un guasto di rete diventerebbe
+     * indistinguibile da «saldo insufficiente» — due esiti che qui devono
+     * restare diversi, uno e' un rifiuto onesto, l'altro un guasto da
+     * rimborsare.)
+     */
+    rimasto = await addebita(chi.id, prezzo, env);
+    // `null` = il saldo non bastava, e non è successo niente. 402 è lo stato
+    // che vuol dire esattamente «servono soldi». E' un `return` dentro il
+    // `try`, non un `throw`: esce diretto, senza passare dal `catch` — non
+    // c'e' niente da rimborsare per un addebito che non e' mai avvenuto.
+    if (rimasto === null) return json({ errore: 'saldo', prezzo }, 402);
+
     // ⚠️ DENTRO il `try`, non prima: `apriLavoro` fa una `fetch` verso
     // Supabase, e una `fetch` che solleva per un guasto di rete (non uno
     // status 4xx, quello lo dice `res.ok`) uscirebbe da `genera()` senza che
@@ -323,12 +393,40 @@ async function genera(req, env) {
     lavoroAperto = await apriLavoro({ id: lavoro, utente: chi.id, servizio, prezzo }, env);
     if (!lavoroAperto) throw Object.assign(new Error('archivio'), { code: 'archivio' });
 
-    const misuraGoogle = voce.misure?.[misura] || voce.misure?.grande || '1K';
+    // ⚠️ `Object.hasOwn`, non `?.` (Task 8): `?.[misura]` guarda anche la
+    // catena dei prototipi come farebbe `in`, quindi `misura: 'toString'`
+    // trova `Object.prototype.toString` — una funzione, non una misura. E'
+    // truthy, quindi `||` non scatta: Google riceverebbe quella funzione al
+    // posto di '1K'/'2K', `JSON.stringify` la elimina dal corpo (i valori
+    // funzione spariscono dalle proprieta' degli oggetti), e Google vede un
+    // `imageConfig` senza `imageSize` — 200, non 400. E' la stessa trappola
+    // che `riferimentiStorti` evita quaranta righe sopra.
+    const misuraGoogle = (voce.misure && Object.hasOwn(voce.misure, misura))
+      ? voce.misure[misura]
+      : voce.misure?.grande || '1K';
     const { dati, mime, costoReale } = await generaConGoogle({
       voce, prompt, riferimenti, misura: misuraGoogle, env,
     });
-    await chiudiLavoro(lavoro, 'fatto', costoReale, env);
-    return json({ dati, mime, prezzo, saldo: rimasto, lavoro });
+
+    /*
+     * ⚠️ Task 3 della revisione: `chiudiLavoro` buttava via `res.ok`. Se la
+     * PATCH `stato: 'fatto'` non prendeva, si rispondeva 200 col JPEG e il
+     * lavoro restava 'in-corso' — un'ora dopo lo spazzino lo trovava e lo
+     * rimborsava: il cliente teneva l'immagine E i soldi, e noi avevamo
+     * pagato Google. Un secondo tentativo copre un guasto isolato (una PATCH
+     * che scade, una rete che singhiozza); se fallisce anche quello, meglio
+     * dirlo nella risposta e lasciarne traccia nei log che scoprirlo mesi
+     * dopo da un saldo che non torna.
+     */
+    let chiuso = await chiudiLavoro(lavoro, 'fatto', costoReale, env);
+    if (!chiuso) chiuso = await chiudiLavoro(lavoro, 'fatto', costoReale, env);
+    if (!chiuso) {
+      console.error(`chiudiLavoro('${lavoro}', 'fatto') ha fallito due volte: il lavoro resta 'in-corso' e lo spazzino lo rimborserebbe fra trenta minuti nonostante sia riuscito`);
+    }
+    return json({
+      dati, mime, prezzo, saldo: rimasto, lavoro,
+      ...(chiuso ? {} : { avviso: 'lavoro-non-chiuso' }),
+    });
   } catch (e) {
     /*
      * Hai incassato per una cosa che non è successa. Non è negoziabile — ma
@@ -354,7 +452,15 @@ async function genera(req, env) {
     const esito = await rimborsa(chi.id, prezzo, lavoroAperto ? lavoro : null, env);
     if (await rimborsoRiuscito(esito)) {
       if (lavoroAperto) await chiudiLavoro(lavoro, 'rimborsato', null, env);
-      return json({ errore: 'fornitore', dettaglio: e.code || 'ignoto', saldo: rimasto + prezzo }, 502);
+      // `rimasto` resta `null` solo nel caso nuovo del Task 4: `addebita()`
+      // stessa ha rigettato, e non si sa quale fosse il saldo prima. Meglio
+      // dire «non lo so» (il browser tiene buono l'ultimo saldo noto, come
+      // fa gia' per `/me`) che inventare un numero da un `rimasto` che non
+      // e' mai esistito.
+      return json({
+        errore: 'fornitore', dettaglio: e.code || 'ignoto',
+        saldo: rimasto === null ? null : rimasto + prezzo,
+      }, 502);
     }
     /*
      * Il rimborso non ha preso: la riga (se esiste) NON si tocca, resta
@@ -389,6 +495,16 @@ function riferimentiStorti(riferimenti, limiti) {
     // coincidenza e produce un 400 vero ma con l'errore sbagliato
     // (`troppi-toString` invece di `ruolo-sconosciuto`).
     if (!Object.hasOwn(conta, r?.ruolo)) return 'ruolo-sconosciuto';
+    /*
+     * ⚠️ Task 2 della revisione: senza questo controllo, un riferimento la
+     * cui `immagine` non e' un `data:` valido passa QUI, viene ADDEBITATO
+     * (il prezzo conta `riferimenti.length`, non quanti sopravvivono), e
+     * sparisce in silenzio dietro `riferimenti.map(pezzo).filter(Boolean)`
+     * in `worker/fornitori/google.js`: il cliente paga per N riferimenti,
+     * Google ne vede M. Stesso criterio di `pezzo()` — non una copia — e
+     * PRIMA dell'addebito, non dopo.
+     */
+    if (!immagineValida(r)) return 'riferimento-illeggibile';
     conta[r.ruolo] += 1;
   }
   for (const ruolo of Object.keys(conta)) {
@@ -448,44 +564,29 @@ export default {
       const chi = await chiEsegue(req, env);
       if (!chi) return json({ errore: 'non-collegato' }, 401);
 
-      let conto = await contoDi(chi.id, env);
-
       /*
-       * La prova nasce alla PRIMA apparizione e poi si rilegge.
+       * La prova nasce alla PRIMA apparizione e poi si rilegge — la crea
+       * `contoOCrealo` qui sopra, la stessa funzione che usa `/ricarica`
+       * (Task 1b): un solo posto che sa come nasce una riga di `conti`.
        *
-       * Calcolarla a ogni chiamata — «da adesso, quattordici giorni» — dà una
-       * prova che non finisce mai: un difetto che non si vede provando, si
-       * vede fra due settimane quando nessuno ha ancora pagato.
+       * ⚠️ Se la scrittura non prende, NON si regala la prova lo stesso.
+       *
+       * Ignorare l'esito era il difetto che il piano avvertiva di evitare,
+       * entrato dalla porta di servizio: ricalcolare la prova a ogni
+       * chiamata da' una prova che non finisce mai — e una scrittura che
+       * fallisce in silenzio fa esattamente quello, perche' la volta dopo
+       * `conto` e' ancora vuoto e nascono altri quattordici giorni.
+       *
+       * Il guasto vero e' che non si vede: sullo schermo la prova c'e', e
+       * uno la prova, la vede, e va via convinto. Si scoprirebbe fra due
+       * settimane, quando non ha ancora pagato nessuno.
+       *
+       * Rispondere male e' l'unica cosa onesta: il browser lo legge come
+       * «non lo so» e tiene buona l'ultima risposta salvata (§ 3.4), e
+       * l'errore diventa rumoroso invece che invisibile.
        */
-      if (!conto) {
-        const prova = new Date(Date.now() + PROVA_GIORNI * GIORNO).toISOString();
-        const scritta = await fetch(`${SUPABASE_URL}/rest/v1/conti`, {
-          method: 'POST',
-          headers: conServizio(env),
-          body: JSON.stringify({ utente: chi.id, prova_fino: prova }),
-        });
-
-        /*
-         * ⚠️ Se la scrittura non prende, NON si regala la prova lo stesso.
-         *
-         * Ignorare l'esito era il difetto che il piano avvertiva di evitare,
-         * entrato dalla porta di servizio: ricalcolare la prova a ogni
-         * chiamata da' una prova che non finisce mai — e una scrittura che
-         * fallisce in silenzio fa esattamente quello, perche' la volta dopo
-         * `conto` e' ancora vuoto e nascono altri quattordici giorni.
-         *
-         * Il guasto vero e' che non si vede: sullo schermo la prova c'e', e
-         * uno la prova, la vede, e va via convinto. Si scoprirebbe fra due
-         * settimane, quando non ha ancora pagato nessuno.
-         *
-         * Rispondere male e' l'unica cosa onesta: il browser lo legge come
-         * «non lo so» e tiene buona l'ultima risposta salvata (§ 3.4), e
-         * l'errore diventa rumoroso invece che invisibile.
-         */
-        if (!scritta.ok) return json({ errore: 'archivio' }, 500);
-
-        conto = { prova_fino: prova, abbonato: false, crediti: 0 };
-      }
+      const conto = await contoOCrealo(chi.id, env);
+      if (!conto) return json({ errore: 'archivio' }, 500);
 
       return json({
         email: chi.email,

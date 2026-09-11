@@ -191,9 +191,9 @@ test('i tre pacchetti sono quelli decisi, e nessun altro', () => {
 test('un pacchetto vale almeno quanto una generazione', () => {
   // Vendere 5 € di credito quando la generazione piu' cara ne costa di piu'
   // sarebbe vendere qualcosa che non si puo' usare. Ma il cliente non compra
-  // COSTI (127 millesimi, quel che paghiamo al fornitore): compra
-  // GENERAZIONI, e una generazione gliene costa 145 — il PREZZO, margine
-  // compreso. Misurare col costo avrebbe fatto passare un pacchetto che non
+  // COSTI (quel che paghiamo al fornitore): compra GENERAZIONI, e una
+  // generazione costa il PREZZO, margine compreso — sempre di piu' del
+  // costo. Misurare col costo avrebbe fatto passare un pacchetto che non
   // basta nemmeno per una generazione sola.
   const piuCara = Math.max(...Object.keys(LISTINO).map((id) => prezzoDi(id).total));
   assert.ok(PACCHETTI.p5.millesimi > piuCara * 10, 'il pacchetto minimo non compra dieci generazioni');

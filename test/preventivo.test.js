@@ -6,6 +6,8 @@ import { formatEuro } from '../src/engine/ledger.js';
 import immagine from '../src/servizi/immagine.js';
 import { SERVICES } from '../src/services.js';
 import { DESCRITTORI } from '../src/servizi/index.js';
+import it from '../src/i18n/it.json' with { type: 'json' };
+import en from '../src/i18n/en.json' with { type: 'json' };
 
 const PREVENTIVO = readFileSync(new URL('../src/components/Preventivo.jsx', import.meta.url), 'utf8');
 const RIFERIMENTI = readFileSync(new URL('../src/components/Riferimenti.jsx', import.meta.url), 'utf8');
@@ -108,6 +110,24 @@ test('la barra legge il prezzo di un servizio acceso dal listino, non da un nume
   assert.match(TOOLRAIL, /formatEuro\(/, 'la barra non formatta col resto del progetto');
 });
 
+test('il prezzo in barra si legge come «da», non come il prezzo finale (Important 5 della revisione)', () => {
+  /*
+   * La barra chiama `prezzoDi(listino)` con ZERO riferimenti — non li conosce
+   * ancora, si scelgono dopo — mentre il preventivo li passa sempre. Oggi
+   * coincidono per caso (`formatEuro` schiaccia 146, 149 e 154 tutti su
+   * «0,15 €»): al primo fornitore che non arrotondi cosi' bene, le due cifre
+   * sulla stessa schermata divergeranno — lo stesso difetto gia' corretto una
+   * volta con «Immagine». Il numero in barra e' un «da», non il prezzo di
+   * questa generazione: deve leggersi cosi'.
+   */
+  assert.match(
+    TOOLRAIL, /t\(\s*'rail\.da'/,
+    'la barra non usa piu’ la chiave del «da»: torna a leggersi come il prezzo finale',
+  );
+  assert.match(it.rail.da, /\bda\b/i, 'la chiave italiana del prezzo in barra non dice «da»');
+  assert.match(en.rail.da, /\bfrom\b/i, 'la chiave inglese del prezzo in barra non dice «from»');
+});
+
 test('il preventivo passa il conteggio dei riferimenti a prezzoDi: il prezzo sale con loro', () => {
   /*
    * Important 1 della revisione: un `prezzoDi(servizio)` senza `{ riferimenti
@@ -143,13 +163,13 @@ test('il prezzo mostrato e’ quello che il Worker addebita', () => {
    * Le due strade partono dalla stessa funzione: qui si verifica che il
    * numero che finisce sullo schermo sia proprio quello.
    *
-   * 145 e non 140: il costo misurato di NBP e' 127 millesimi (Task 0), non i
-   * 123 di una stesura precedente — 127 + 18 di margine fa 145. Lo stesso
-   * numero e' gia' verificato in test/listino.test.js; qui si controlla che
-   * ARRIVI FINO ALLO SCHERMO, formattato.
+   * 146 e non 140: il costo misurato di NBP e' 128 millesimi (Task 6 della
+   * revisione), non i 123 di una stesura precedente — 128 + 18 di margine fa
+   * 146. Lo stesso numero e' gia' verificato in test/listino.test.js; qui si
+   * controlla che ARRIVI FINO ALLO SCHERMO, formattato.
    */
   const { total } = prezzoDi('immagine-nbp');
-  assert.equal(total, 145);
+  assert.equal(total, 146);
   // U+00A0 (spazio unificatore) fra numero e simbolo, non uno spazio normale:
   // e' cio' che `Intl.NumberFormat('it-IT')` scrive davvero (ruling Task 1),
   // e impedisce che «0,15» e «€» finiscano su due righe in pagina.

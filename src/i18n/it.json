@@ -392,7 +392,8 @@
     "balance": "Saldo",
     "soon": "presto",
     "open": "Mostra i nomi",
-    "close": "Solo icone"
+    "close": "Solo icone",
+    "da": "da {prezzo}"
   },
   "soon": {
     "title": "Questo servizio non c'è ancora",
@@ -787,7 +788,7 @@
     "titolo": "Crediti",
     "hai": "Hai {saldo}.",
     "no": "Non sono riuscito ad aprire il pagamento. Riprova fra un momento.",
-    "dodici": "Ogni generazione ti dice quanto costa prima che tu prema. E di ogni euro che spendi, Zack ne rimette 12 centesimi su di sé.",
+    "dodici": "Ogni generazione ti dice quanto costa prima che tu prema. E di ogni euro che spendi, Zack ne rimette circa 12 centesimi su di sé.",
     "nonScadono": "I crediti non scadono, e restano tuoi anche se disdici l’abbonamento.",
     "chiudi": "Va bene così"
   }

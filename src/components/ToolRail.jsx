@@ -43,6 +43,16 @@ function Item({ service, active, collapsed, lampo, onPick }) {
    * stessa lettura. Un servizio SPENTO (»presto«) non ha ancora un
    * fornitore, quindi nessuna voce di listino da leggere — per lui resta la
    * stima scritta a mano in `service.price`, gestita piu' sotto.
+   *
+   * ⚠️ Important 5 della revisione: `prezzoDi(listino)` qui non passa
+   * `riferimenti` — la barra li mostra PRIMA che esistano, non li conosce
+   * ancora — mentre il preventivo li passa sempre. Oggi coincidono per caso
+   * (`formatEuro` arrotonda i pochi millesimi di differenza allo stesso
+   * centesimo), ma al primo fornitore che non arrotondi cosi' bene le due
+   * cifre sulla stessa schermata divergeranno — lo stesso difetto gia'
+   * corretto una volta con «Immagine». Il prezzo qui e' quindi un «da», non
+   * il prezzo di questa generazione: si legge cosi', con la chiave
+   * `rail.da`, non come il numero nudo di prima.
    */
   const listino = DESCRITTORI[service.id]?.listino;
   const prezzoAcceso = listino ? formatEuro(prezzoDi(listino).total, getLang()) : null;
@@ -75,7 +85,9 @@ function Item({ service, active, collapsed, lampo, onPick }) {
           davvero necessaria. */}
       {!collapsed &&
         (service.ready ? (
-          prezzoAcceso != null && <span className="tool-price">{prezzoAcceso}</span>
+          prezzoAcceso != null && (
+            <span className="tool-price">{t('rail.da', { prezzo: prezzoAcceso })}</span>
+          )
         ) : (
           // Qui SI' resta `service.price`: e' l'unico numero che esiste per
           // un servizio senza fornitore, ed e' una stima ammessa perche' il

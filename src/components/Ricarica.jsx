@@ -46,9 +46,10 @@ export default function Ricarica({ saldo, onErrore, onChiudi }) {
         ))}
       </div>
 
-      {/* La frase del committente (§ 6.1): «12 centesimi» è il margine
-          dichiarato in `ledger.js` (14% del costo = 12,3% del prezzo),
-          arrotondato — non un numero tondo scelto a occhio. */}
+      {/* La frase del committente (§ 6.1): «circa 12 centesimi» viene dal
+          margine dichiarato in `ledger.js` (14% del costo), che sui riferimenti
+          varia fra il 12 e il 13% del prezzo secondo quanti se ne passano —
+          «circa», non un numero esatto scelto a occhio (Task 6 della revisione). */}
       <p className="ricarica-margine">{t('ricarica.dodici')}</p>
       <p className="ricarica-durata">{t('ricarica.nonScadono')}</p>
 

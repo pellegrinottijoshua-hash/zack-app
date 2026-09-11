@@ -136,10 +136,27 @@ test('la home non promette piu’ che NESSUN file esce', () => {
    *
    * Resta vera per gli strumenti locali, quindi si SPACCA IN DUE invece di
    * cancellarla: la parte vera e' il vantaggio piu' grande del prodotto.
+   *
+   * ⚠️ Task 7 della revisione: `hero.note` diceva la stessa promessa assoluta
+   * con un verbo diverso — «lascia»/«leaves» invece di «escono»/«leave» — e
+   * questo test, tesa la rete accanto al buco, non se n'era accorto: la rete
+   * ora prende anche quella forma. Non basta pero' vietare «lascia»/«leaves»
+   * ovunque: `privacy.body` (in inglese) li usa gia' bene, in «something
+   * leaves», per dire QUANDO qualcosa esce davvero — e quella frase deve
+   * restare passabile. Il divieto e' quindi sulla costruzione assoluta
+   * («nessun file lascia»/«no file leaves»), non sulla parola da sola.
    */
   const tutto = JSON.stringify(COPY);
-  assert.doesNotMatch(tutto, /non escono da questo computer/, 'promette ancora che niente esce');
-  assert.doesNotMatch(tutto, /never leave this computer/);
+  assert.doesNotMatch(
+    tutto,
+    /non escono da questo computer|nessun file lascia (il tuo|questo) computer/i,
+    'promette ancora che niente esce',
+  );
+  assert.doesNotMatch(
+    tutto,
+    /never leave this computer|no file leaves your computer/i,
+    'promette ancora che niente esce (inglese)',
+  );
   assert.match(tutto, /Quando generi|When you generate/i, 'non dice cosa succede generando');
 });
 
@@ -150,17 +167,26 @@ test('la home dice che i crediti non scadono', () => {
   assert.match(JSON.stringify(COPY), /never expire/);
 });
 
-test('la frase dei dodici centesimi dice il numero vero', () => {
+test('la frase dei dodici centesimi dice il numero vero, per ogni numero di riferimenti', () => {
   /*
    * Il 12 non e' una cifra tonda scelta a occhio: e' `margin / total` del
-   * listino. Il giorno che il listino cambia e il numero non torna, si cambia
-   * la FRASE — non si lascia li'.
+   * listino, arrotondato. Ma dipende da QUANTI riferimenti (Important 6 della
+   * revisione: il margine sale con loro), quindi «12 centesimi» come cifra
+   * ESATTA e' gia' una promessa piu' precisa di quella vera — la frase dice
+   * «circa», e questo test controlla che il «circa» regga davvero su tutt'e
+   * tre i casi che il prodotto genera (0, 5, 14 riferimenti), non solo su
+   * quello nudo con cui si era fermato prima.
    */
-  const { margin, total } = prezzoDi('immagine-nbp');
-  const centesimiPerEuro = Math.round((margin / total) * 100);
-  assert.equal(centesimiPerEuro, 12, `il margine e’ ${centesimiPerEuro} centesimi per euro, non 12`);
-  assert.match(JSON.stringify(COPY), /12 centesimi/);
-  assert.match(JSON.stringify(COPY), /12 cents/);
+  for (const riferimenti of [0, 5, 14]) {
+    const { margin, total } = prezzoDi('immagine-nbp', { riferimenti });
+    const centesimiPerEuro = Math.round((margin / total) * 100);
+    assert.equal(
+      centesimiPerEuro, 12,
+      `con ${riferimenti} riferimenti il margine e’ ${centesimiPerEuro} centesimi per euro, non vicino a 12`,
+    );
+  }
+  assert.match(JSON.stringify(COPY), /circa 12 centesimi/);
+  assert.match(JSON.stringify(COPY), /about 12 cents/);
 });
 
 test('privacy.body conta gli strumenti locali com’è nel listino, non a occhio', () => {

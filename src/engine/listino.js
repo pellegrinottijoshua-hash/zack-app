@@ -19,14 +19,18 @@ export const LISTINO = {
     modello: 'gemini-3-pro-image',
     /*
      * MISURATO, non letto da un listino pubblicato: 126 millesimi a zero
-     * riferimenti, 130 a cinque, 133 a quattordici. La base è 127 e non 126
-     * perché i token di «pensiero» ballano di ±2 fra una chiamata e l'altra —
-     * meglio stimare un millesimo sopra che trovarsi sotto.
+     * riferimenti, 131 a cinque, 133 a quattordici. La base è 128 e non 126
+     * perché i token di «pensiero» ballano di ±2 fra una chiamata e l'altra:
+     * a 127 la stima a cinque riferimenti (127 + 3 = 130) sarebbe scesa
+     * SOTTO il 131 misurato quella volta — un millesimo che basta a rompere
+     * «la stima non sta mai sotto il costo vero» (revisione, Task 6). A 128
+     * resta sopra in tutt'e tre i casi, anche quando il conteggio dei token
+     * di pensiero sale.
      *
      * Il 4K costa il doppio e non lo facciamo. Il 2K invece **costa uguale al
      * 1K**: stessi 1120 token d'immagine, quattro volte i pixel.
      */
-    costo: 127,
+    costo: 128,
     /** Mezzo millesimo per riferimento: 258 token l'uno, a 768 px. */
     costoPerRiferimento: 0.5,
     // Google risponde JPEG, sempre. Non PNG, come diceva la prima stesura.

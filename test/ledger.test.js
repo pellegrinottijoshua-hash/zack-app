@@ -28,10 +28,10 @@ test('gli euro diventano millesimi interi', () => {
 });
 
 test('il margine dichiarato e’ quello incassato', () => {
-  // 127 millesimi e' il costo vero di un'immagine Nano Banana Pro, misurato il
-  // 2026-09-10 (docs/2026-09-10-misura-nbp.md) — lo stesso numero di
-  // test/listino.test.js: due file dello stesso task non possono dirsi due
-  // costi diversi per la stessa cosa.
+  // 127 e' un costo d'esempio per provare l'aritmetica PURA di `priceFor()`
+  // — non deve piu' combaciare col costo base del listino (128 dal Task 6
+  // della revisione, docs/2026-09-10-misura-nbp.md): qui si prova la
+  // funzione, non una cifra specifica di Nano Banana Pro.
   const p = priceFor(127);
   assert.equal(p.cost, 127);
   assert.equal(p.margin, 18, '14% di 127 fa 17,78, arrotondato al piu’ vicino 18');

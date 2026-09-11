@@ -10,10 +10,27 @@
  */
 const BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
+/** Il `data:` d'immagine che Google accetta. Una fonte sola per il criterio. */
+const DATA_IMMAGINE = /^data:(image\/(?:png|jpeg|webp|heic|heif));base64,(.+)$/;
+
 /** Un `data:` in ciò che Google si aspetta, o `null` se non è un'immagine. */
 function pezzo(riferimento) {
-  const m = /^data:(image\/(?:png|jpeg|webp|heic|heif));base64,(.+)$/.exec(riferimento.immagine || '');
+  const m = DATA_IMMAGINE.exec(riferimento.immagine || '');
   return m ? { inlineData: { mimeType: m[1], data: m[2] } } : null;
+}
+
+/**
+ * L'`immagine` di un riferimento è quella che Google accetta?
+ *
+ * Esportata perché `riferimentiStorti` (worker/index.js, Task 2 della
+ * revisione) deve rifiutare PRIMA di addebitare un riferimento che questo
+ * modulo scarterebbe DOPO: `riferimenti.map(pezzo).filter(Boolean)` toglie in
+ * silenzio ogni riferimento che il regex non riconosce, ma il prezzo si è
+ * già calcolato su `riferimenti.length` — il cliente paga per N, Google ne
+ * vede M. Stesso criterio, non una copia che potrebbe divergere.
+ */
+export function immagineValida(riferimento) {
+  return DATA_IMMAGINE.test(riferimento?.immagine || '');
 }
 
 /** Il listino di Google, in dollari per milione di token (misurato 2026-09-10). */
