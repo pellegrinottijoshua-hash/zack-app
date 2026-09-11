@@ -2374,24 +2374,47 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               e due risposte alla stessa domanda divergono al primo servizio
               nuovo. */}
           {chiuso ? (
-            /*
-             * Il muro sta DENTRO `.stage`, non intorno a `.shell`: fuori
-             * chiuderebbe anche la striscia e la libreria, che e' esattamente
-             * cio' che la spec § 3.5 vieta — la libreria non si chiude mai, e
-             * un test legge questo file per assicurarsene.
-             */
-            <Muro
-              stato={statoConto}
-              onEntra={entraConEmail}
-              onGoogle={entraConGoogle}
-              onAbbona={async () => {
-                try {
-                  await vaiAlPagamento();
-                } catch {
-                  setNotice(t('muro.pagamentoNo'));
-                }
-              }}
-            />
+            <>
+              {/*
+               * Il muro sta DENTRO `.stage`, non intorno a `.shell`: fuori
+               * chiuderebbe anche la striscia e la libreria, che e' esattamente
+               * cio' che la spec § 3.5 vieta — la libreria non si chiude mai, e
+               * un test legge questo file per assicurarsene.
+               */}
+              <Muro
+                stato={statoConto}
+                onEntra={entraConEmail}
+                onGoogle={entraConGoogle}
+                onAbbona={async () => {
+                  try {
+                    await vaiAlPagamento();
+                  } catch {
+                    setNotice(t('muro.pagamentoNo'));
+                  }
+                }}
+              />
+              {/*
+               * Correzione 2 (giro di correzioni Task 8): col muro alzato
+               * `<Piano>` non si monta, e Ricarica viveva SOLO nel suo
+               * `pannello` — un clic sul saldo, su uno strumento locale
+               * murato, non apriva niente. Stessa strada della libreria qui
+               * sopra: un pannello che deve restare raggiungibile a muro
+               * alzato esce da dentro `<Piano>`, non si duplica un secondo
+               * muro tecnico sopra quello commerciale. Il muro esiste per
+               * VENDERE — chi lo vede e' esattamente chi deve poter pagare.
+               *
+               * `.sc-pannello` e' la stessa classe con cui Piano avvolge
+               * questo stesso pannello quando NON e' murato (vedi piu' sotto):
+               * nessuno stile nuovo, solo un secondo posto da cui montarla.
+               * Scavalca il muro solo LEI (col saldo, gia' fuori da `.stage`):
+               * gli strumenti del servizio chiuso restano dietro `<Muro>`.
+               */}
+              {sopraLaTela === 'ricarica' && (
+                <div className="sc-pannello">
+                  <Ricarica saldo={crediti} onErrore={setNotice} onChiudi={() => setSopraLaTela(null)} />
+                </div>
+              )}
+            </>
           ) : DESCRITTORI[tool] ? (
             <Piano
               servizio={getDescrittore(tool)}

@@ -6,8 +6,14 @@
  * e mescolarli in una lista piatta nasconde proprio l'informazione che serve
  * prima di cliccare.
  *
- * `price` è indicativo e serve solo a dare l'ordine di grandezza nella barra;
- * il prezzo esatto lo calcola l'adattatore prima di ogni generazione.
+ * `price` NON è più un campo che ogni servizio a pagamento porta: un servizio
+ * che il listino già conosce (`immagine`) mostra in barra lo stesso numero del
+ * preventivo, calcolato da `prezzoDi` in `ToolRail.jsx` — due cifre diverse
+ * per la stessa generazione, visibili insieme sulla stessa schermata,
+ * romperebbero la promessa della home («ogni generazione ti dice quanto
+ * costa prima che tu prema»). `price` resta SOLO sui servizi che il listino
+ * non conosce ancora perché non hanno un fornitore costruito (`video`, in
+ * arrivo con B3): lì è l'unica stima possibile, e resta dichiaratamente tale.
  */
 
 export const GROUP_LOCAL = 'local';
@@ -100,7 +106,11 @@ export const SERVICES = [
     key: 'tool.image',
     icon: 'image',
     ready: true,
-    price: 0.13,
+    // NIENTE `price` qui: il listino (`immagine-nbp`) esiste già, e la barra
+    // legge il prezzo vero da lì — vedi `ToolRail.jsx`. Un letterale qui
+    // sarebbe una seconda fonte, ed è esattamente il difetto della
+    // correzione 1: 0,13 € indicativi accanto a 0,15 € veri, sulla stessa
+    // schermata.
   },
   {
     id: 'video',
@@ -108,6 +118,11 @@ export const SERVICES = [
     key: 'tool.video',
     icon: 'film',
     ready: false,
+    // `price` letterale, e resta: `video` non ha ANCORA una voce di listino
+    // (nessun fornitore costruito, arriva con B3), quindi non c'è nessun
+    // `prezzoDi` da cui leggere un numero vero. E' una stima per un tasto che
+    // non si può premere, non una seconda fonte per uno che si preme — la
+    // barra lo scrive col trattino «~» apposta per dirlo.
     price: 0.21,
   },
 ];

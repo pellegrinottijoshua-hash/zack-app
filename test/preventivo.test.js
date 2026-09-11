@@ -4,12 +4,15 @@ import { readFileSync } from 'node:fs';
 import { prezzoDi, limitiDi } from '../src/engine/listino.js';
 import { formatEuro } from '../src/engine/ledger.js';
 import immagine from '../src/servizi/immagine.js';
+import { SERVICES } from '../src/services.js';
+import { DESCRITTORI } from '../src/servizi/index.js';
 
 const PREVENTIVO = readFileSync(new URL('../src/components/Preventivo.jsx', import.meta.url), 'utf8');
 const RIFERIMENTI = readFileSync(new URL('../src/components/Riferimenti.jsx', import.meta.url), 'utf8');
 const PIANO = readFileSync(new URL('../src/components/Piano.jsx', import.meta.url), 'utf8');
 const RICARICA = readFileSync(new URL('../src/components/Ricarica.jsx', import.meta.url), 'utf8');
 const APP = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
+const TOOLRAIL = readFileSync(new URL('../src/components/ToolRail.jsx', import.meta.url), 'utf8');
 
 // Il blocco che ripete il preventivo accanto al prompt: non tutto App.jsx,
 // che e' enorme e ha ragioni sue per contenere cifre (pesi in KB, percentuali)
@@ -44,18 +47,65 @@ test('nessun prezzo scritto a mano nei sorgenti di Immagine', () => {
    * App.jsx, riga 762) o su un peso in KB calcolato a schermo altrove — ne'
    * l'uno ne' l'altro e' un prezzo, e un test che li segnala si disattiva
    * alla svelta invece di essere ascoltato.
+   *
+   * Allargato di nuovo per il giro di correzioni di Task 8 (correzione 1):
+   * ToolRail.jsx e' la barra dove «Immagine» e' diventato raggiungibile, ed
+   * e' li' che il vecchio `price: 0.13` di `services.js` finiva stampato —
+   * accanto, sulla stessa schermata, al 0,15 € vero del preventivo. Questo
+   * regex non l'avrebbe mai preso (il numero era un letterale JS, non testo
+   * con «€»): la copertura vera per QUEL difetto e' il test strutturale qui
+   * sotto, che legge i dati invece del testo sorgente.
    */
   const SORGENTI = {
     'Preventivo.jsx': PREVENTIVO,
     'Riferimenti.jsx': RIFERIMENTI,
     'App.jsx (blocco immagine-lab)': IMMAGINE_LAB,
     'Ricarica.jsx': RICARICA,
+    'ToolRail.jsx': TOOLRAIL,
   };
   for (const [nome, testo] of Object.entries(SORGENTI)) {
     assert.doesNotMatch(testo, /\b\d+[.,]\d{2}\s*€/, `${nome}: c’e’ un prezzo scritto a mano`);
   }
   assert.match(PREVENTIVO, /prezzoDi\(/, 'il preventivo non legge il listino');
   assert.match(PREVENTIVO, /formatEuro\(/);
+});
+
+test('un servizio che il listino conosce non porta un prezzo scritto a mano in services.js', () => {
+  /*
+   * Correzione 1 del giro di correzioni di Task 8: `services.js` teneva
+   * `immagine.price: 0.13` («indicativo», diceva il commento) per dare
+   * l'ordine di grandezza in barra — finche' il servizio era spento nessuno
+   * lo vedeva accanto a niente. Acceso, i due numeri sono finiti fianco a
+   * fianco sulla stessa schermata: 0,13 € in barra, 0,15 € nel preventivo.
+   * Due cifre diverse per la stessa generazione rompono la promessa della
+   * home, non per poco.
+   *
+   * Il controllo e' strutturale (sui dati importati, non su testo scritto a
+   * mano) perche' e' l'unico modo di prendere QUESTO difetto: `price: 0.13`
+   * e' un numero JavaScript, non una stringa con «€» dentro, e il regex qui
+   * sopra non l'avrebbe mai visto rosso.
+   */
+  for (const s of SERVICES) {
+    if (DESCRITTORI[s.id]?.listino) {
+      assert.equal(
+        s.price,
+        undefined,
+        `${s.id}: ha sia una voce di listino (${DESCRITTORI[s.id].listino}) sia un "price" scritto a mano in services.js`,
+      );
+    }
+  }
+});
+
+test('la barra legge il prezzo di un servizio acceso dal listino, non da un numero suo', () => {
+  /*
+   * Complemento del test sopra: verifica che `ToolRail.jsx` (la barra)
+   * chiami davvero `prezzoDi`/`formatEuro`, non solo che `services.js` non
+   * porti piu' un `price` per «Immagine» — un letterale nuovo scritto
+   * direttamente in `ToolRail.jsx` avrebbe superato il test precedente senza
+   * problemi.
+   */
+  assert.match(TOOLRAIL, /prezzoDi\(/, 'la barra non legge il listino');
+  assert.match(TOOLRAIL, /formatEuro\(/, 'la barra non formatta col resto del progetto');
 });
 
 test('il preventivo passa il conteggio dei riferimenti a prezzoDi: il prezzo sale con loro', () => {

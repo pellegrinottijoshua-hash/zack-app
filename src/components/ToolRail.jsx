@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { t } from '../i18n/index.js';
+import { getLang, t } from '../i18n/index.js';
 import { localServices, paidServices, servizioDelloStrumento } from '../services.js';
+import { DESCRITTORI } from '../servizi/index.js';
+import { prezzoDi } from '../engine/listino.js';
+import { formatEuro } from '../engine/ledger.js';
 import Icon from './Icon.jsx';
 
 /**
@@ -27,6 +30,22 @@ const PERSONAGGIO = {
 
 function Item({ service, active, collapsed, lampo, onPick }) {
   const label = t(`${service.key}.label`);
+  /*
+   * Il prezzo di un servizio ACCESO viene dal listino, mai da un numero
+   * scritto qui: e' la stessa regola del preventivo (§ 3.1). Due schermate
+   * che mostrano cifre diverse per la stessa generazione romperebbero la
+   * promessa della home — correzione 1 del giro di Task 8, dov'era successo
+   * proprio questo con «Immagine»: tredici centesimi indicativi in barra,
+   * quindici veri nel preventivo, la stessa schermata.
+   *
+   * `DESCRITTORI[service.id]?.listino` e' la STESSA chiave che il preventivo
+   * usa (`getDescrittore('immagine').listino` in App.jsx): non una copia, la
+   * stessa lettura. Un servizio SPENTO (»presto«) non ha ancora un
+   * fornitore, quindi nessuna voce di listino da leggere — per lui resta la
+   * stima scritta a mano in `service.price`, gestita piu' sotto.
+   */
+  const listino = DESCRITTORI[service.id]?.listino;
+  const prezzoAcceso = listino ? formatEuro(prezzoDi(listino).total, getLang()) : null;
   return (
     <button
       className="tool-item"
@@ -56,10 +75,11 @@ function Item({ service, active, collapsed, lampo, onPick }) {
           davvero necessaria. */}
       {!collapsed &&
         (service.ready ? (
-          service.price != null && (
-            <span className="tool-price">{service.price.toFixed(2).replace('.', ',')} €</span>
-          )
+          prezzoAcceso != null && <span className="tool-price">{prezzoAcceso}</span>
         ) : (
+          // Qui SI' resta `service.price`: e' l'unico numero che esiste per
+          // un servizio senza fornitore, ed e' una stima ammessa perche' il
+          // tasto sotto non si puo' premere («~», non un prezzo netto).
           <span className="tool-soon" title={`~${service.price?.toFixed(2).replace('.', ',')} €`}>
             {t('rail.soon')}
           </span>
