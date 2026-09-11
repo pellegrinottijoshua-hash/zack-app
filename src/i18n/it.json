@@ -748,7 +748,7 @@
     "linkMandato": "Ti ho mandato un link. Aprilo da questo dispositivo, non da un altro.",
     "nonMandato": "Non sono riuscito a mandare il link. Riprova fra un momento.",
     "libreriaTua": "I tuoi asset restano tuoi: la libreria si apre e si scarica anche da qui.",
-    "abbonatoSenzaSaldo": "Il tuo abbonamento è attivo: ti serve solo credito per continuare.",
+    "abbonatoSenzaSaldo": "Non ti manca l'abbonamento: ti serve solo credito per continuare.",
     "scaduto": {
       "titolo": "L'abbonamento non è attivo",
       "corpo": "Gli strumenti dello studio sono chiusi. La tua libreria no: è lì sotto, e puoi scaricarla tutta quando vuoi."

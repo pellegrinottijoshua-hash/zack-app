@@ -188,3 +188,47 @@ test('i limiti duplicati in «accetta» restano uguali a quelli del listino', ()
     'i ruoli offerti divergono da quelli del listino',
   );
 });
+
+test('la nota di saldo corto nel preventivo e’ un tasto che apre la ricarica, non una frase ferma', () => {
+  /*
+   * Ri-revisione di Task 8: il capitolato chiedeva un `<button
+   * onClick={onRicarica}>` al posto dello `<span>` di prima — chi scopre di
+   * non avere abbastanza crediti deve poter cliccare, non solo leggere. Il
+   * codice e' stato corretto, ma nessun test lo difendeva: un ri-revisore ha
+   * rimesso lo `<span>` e i 624 test sono rimasti tutti verdi. E' il difetto
+   * in piccolo dello stesso bug appena corretto — un vicolo chiuso fra «non
+   * ho crediti» e «pagare» — ripetuto nello stesso punto.
+   *
+   * Si legge il sorgente, non si disegna il componente (niente jsdom in
+   * questo progetto): si cerca l'elemento che porta il testo di
+   * `immagine.saldoCorto` e si verifica che sia un `<button>` con
+   * `onClick={onRicarica}`, non un `<span>` muto.
+   */
+  const j = PREVENTIVO.indexOf('!basta &&');
+  assert.notEqual(j, -1, 'non trovo piu’ la guardia `!basta` attorno alla nota di saldo corto');
+  const blocco = PREVENTIVO.slice(j, j + 400);
+  assert.match(blocco, /t\('immagine\.saldoCorto'\)/, 'la chiave immagine.saldoCorto non e’ piu’ usata qui');
+
+  // Si scansiona in avanti (non all’indietro dal testo) apposta: un
+  // `onClick={() => ...}` contiene un `>` dentro la freccia, e un lookbehind
+  // che cerca "il tag che si chiude appena prima del testo" ci si impiglia.
+  assert.doesNotMatch(
+    blocco,
+    /<span\b/,
+    'la nota di saldo corto e’ tornata un <span>: e’ di nuovo testo fermo, non un’azione',
+  );
+  assert.match(blocco, /<button\b/, 'la nota di saldo corto non e’ (piu’) un <button>');
+  assert.match(
+    blocco,
+    /onClick=\{onRicarica\}/,
+    'il tasto della nota di saldo corto non chiama onRicarica: non porta piu’ ai pacchetti',
+  );
+
+  // Complemento strutturale: il componente deve ricevere onRicarica come prop,
+  // non solo usarlo per caso in un punto morto del sorgente.
+  assert.match(
+    PREVENTIVO,
+    /function Preventivo\(\{[^}]*\bonRicarica\b[^}]*\}\)/,
+    'Preventivo non dichiara piu’ onRicarica fra le sue props',
+  );
+});
