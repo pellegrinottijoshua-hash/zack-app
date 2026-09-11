@@ -135,15 +135,15 @@ export const COPY = {
       title: 'Paghi la generazione. Al centesimo.',
       body:
         'Immagini, video e suoni dai modelli migliori, con il prezzo scritto prima di premere. Nessun abbonamento gonfiato per funzioni che non usi.',
-      example: 'Questo video costa 0,39 € — 0,34 € di calcolo, 0,05 € a noi.',
-      note: 'Il margine è dichiarato. Nessun altro lo fa.',
+      example: 'Ogni generazione ti dice quanto costa prima che tu prema.',
+      note: 'E di ogni euro che spendi, Zack ne rimette 12 centesimi su di sé. I crediti non scadono e restano tuoi anche se disdici.',
     },
 
     privacy: {
       kicker: 'Dove stanno i tuoi file',
       title: 'Sul tuo computer. Punto.',
       body:
-        'Lo scontorno gira nel tuo browser. L’archivio sta nel tuo disco. I tuoi file non escono da questo computer: il server sa soltanto chi sei e quanto ti resta.',
+        'Lo scontorno gira nel tuo browser. L’archivio sta nel tuo disco. I cinque strumenti non mandano niente da nessuna parte. Quando generi è l’unica volta che qualcosa esce: il riferimento che scegli va al fornitore, perché non si può generare senza mandare niente.',
     },
 
     compare: {
@@ -284,15 +284,15 @@ export const COPY = {
       title: 'You pay for generation. To the cent.',
       body:
         'Images, video and sound from the best models, with the price written before you press. No inflated subscription for features you never touch.',
-      example: 'This video costs €0.39 — €0.34 of compute, €0.05 to us.',
-      note: 'The margin is stated. Nobody else does that.',
+      example: 'Every generation shows you its price before you click.',
+      note: "And of every euro you spend, Zack puts 12 cents back into its own brand. Credits never expire and stay yours even if you cancel.",
     },
 
     privacy: {
       kicker: 'Where your files live',
       title: 'On your computer. That’s it.',
       body:
-        "The cutout runs in your browser. The archive sits on your disk. Your files never leave this computer: the server only knows who you are and what you have left.",
+        "The cutout runs in your browser. The archive sits on your disk. The five tools send nothing anywhere. When you generate is the only time something leaves: the reference you pick goes to the provider, because there's no generating without sending anything.",
     },
 
     compare: {
