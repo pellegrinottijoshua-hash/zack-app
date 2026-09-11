@@ -8,6 +8,7 @@ import immagine from '../src/servizi/immagine.js';
 const PREVENTIVO = readFileSync(new URL('../src/components/Preventivo.jsx', import.meta.url), 'utf8');
 const RIFERIMENTI = readFileSync(new URL('../src/components/Riferimenti.jsx', import.meta.url), 'utf8');
 const PIANO = readFileSync(new URL('../src/components/Piano.jsx', import.meta.url), 'utf8');
+const RICARICA = readFileSync(new URL('../src/components/Ricarica.jsx', import.meta.url), 'utf8');
 const APP = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
 
 // Il blocco che ripete il preventivo accanto al prompt: non tutto App.jsx,
@@ -34,6 +35,10 @@ test('nessun prezzo scritto a mano nei sorgenti di Immagine', () => {
    * Riferimenti.jsx o nel blocco che ripete il preventivo accanto al prompt
    * in App.jsx (`immagine-lab`) sarebbe passata inosservata.
    *
+   * Allargato di nuovo per Task 8: il capitolato di `Ricarica.jsx` disegnava
+   * un secondo elenco di prezzi scritto a mano, proprio sulla schermata dove
+   * si paga — il posto peggiore per una seconda fonte.
+   *
    * Il criterio resta "una cifra decimale seguita da €", non un `\d+` nudo:
    * un `\d+` nudo si sarebbe acceso su «VTracer, 140 KB» (commento vero in
    * App.jsx, riga 762) o su un peso in KB calcolato a schermo altrove — ne'
@@ -44,6 +49,7 @@ test('nessun prezzo scritto a mano nei sorgenti di Immagine', () => {
     'Preventivo.jsx': PREVENTIVO,
     'Riferimenti.jsx': RIFERIMENTI,
     'App.jsx (blocco immagine-lab)': IMMAGINE_LAB,
+    'Ricarica.jsx': RICARICA,
   };
   for (const [nome, testo] of Object.entries(SORGENTI)) {
     assert.doesNotMatch(testo, /\b\d+[.,]\d{2}\s*€/, `${nome}: c’e’ un prezzo scritto a mano`);

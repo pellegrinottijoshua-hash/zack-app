@@ -5311,16 +5311,40 @@ body {
   color: #a4342b;
 }
 
-/* La riga della prova. Non ferma niente e non si puo' chiudere: chi e' in
-   prova lavora, ma deve vedere arrivare la fine invece di sbatterci contro. */
+/* La riga della prova, e il saldo accanto (Task 8): due informazioni diverse
+   — quanto resta della prova gratuita, quanto credito c'e' — che devono
+   potersi vedere insieme invece di scriversi sopra. */
+.top-strip {
+  display: flex;
+  align-items: stretch;
+}
 .avviso-prova {
   margin: 0;
+  flex: 1;
   padding: 7px 14px;
   background: var(--oro-velo);
   border-bottom: 1px solid var(--oro);
   font-size: 13px;
   text-align: center;
   color: var(--inchiostro-2);
+}
+/* Il saldo apre `Ricarica.jsx`: e' un tasto, non una riga che si legge e
+   basta, quindi non prende il fondo pieno e il testo centrato dell'avviso. */
+.saldo {
+  margin: 0;
+  padding: 7px 14px;
+  border: none;
+  border-bottom: 1px solid var(--oro);
+  background: var(--oro-velo);
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--inchiostro);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.saldo:hover {
+  background: var(--oro);
 }
 
 /* ── Immagine: il prezzo prima del tasto, e i riferimenti ────────────────
@@ -5426,6 +5450,31 @@ body {
    nell'angolo — e' l'unico gesto in tutto il prodotto che manda dati fuori
    dal computer di chi lavora. */
 .riferimenti-avviso {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--inchiostro-3);
+}
+
+/* Ricarica: gli stessi spazi di `.riferimenti`, che e' il pannello con cui
+   condivide la posizione — sopra la tela, aperto e chiuso allo stesso modo. */
+.ricarica {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ricarica-saldo {
+  margin: 0;
+  font-size: 13px;
+  color: var(--inchiostro-2);
+}
+.ricarica-pacchetti {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ricarica-margine,
+.ricarica-durata {
   margin: 0;
   font-size: 11.5px;
   line-height: 1.5;

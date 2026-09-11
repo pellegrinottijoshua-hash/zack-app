@@ -221,3 +221,27 @@ export async function vaiAlPagamento() {
   if (!url) throw new Error('checkout');
   location.href = url;
 }
+
+/**
+ * Porta al pagamento di un pacchetto di crediti.
+ *
+ * Manda **solo l'id** del pacchetto: il prezzo lo decide il Worker, che lo
+ * legge dagli stessi `PACCHETTI` di `src/engine/pacchetti.js` — la stessa
+ * fonte da cui legge `Ricarica.jsx` per disegnare i tre tasti. Un browser che
+ * dichiara quanto vuole pagare è un browser che paga quanto vuole, ed è già
+ * difeso lato Worker (`test/workerConto.test.js`): qui basta non dargli mai
+ * una cifra da leggere.
+ */
+export async function vaiAllaRicarica(pacchetto) {
+  const token = await sessione();
+  if (!token) throw new Error('non-collegato');
+  const res = await fetch(`${BASE}/ricarica`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ pacchetto }),
+  });
+  if (!res.ok) throw new Error('ricarica');
+  const { url } = await res.json();
+  if (!url) throw new Error('ricarica');
+  location.href = url;
+}

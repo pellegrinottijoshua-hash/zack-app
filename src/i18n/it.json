@@ -781,5 +781,13 @@
     "assetMancante": "Un asset scelto come riferimento non è più nella libreria. Toglilo e riprova.",
     "chiudi": "Va bene così",
     "ruolo": { "personaggio": "Personaggio", "oggetto": "Oggetto", "stile": "Stile" }
+  },
+  "ricarica": {
+    "titolo": "Crediti",
+    "hai": "Hai {saldo}.",
+    "no": "Non sono riuscito ad aprire il pagamento. Riprova fra un momento.",
+    "dodici": "Ogni generazione ti dice quanto costa prima che tu prema. E di ogni euro che spendi, Zack ne rimette 12 centesimi su di sé.",
+    "nonScadono": "I crediti non scadono, e restano tuoi anche se disdici l’abbonamento.",
+    "chiudi": "Va bene così"
   }
 }

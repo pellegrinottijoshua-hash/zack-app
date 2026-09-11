@@ -28,6 +28,7 @@ import Brain from './components/Brain.jsx';
 import BatchGrid from './components/BatchGrid.jsx';
 import Preventivo from './components/Preventivo.jsx';
 import Riferimenti from './components/Riferimenti.jsx';
+import Ricarica from './components/Ricarica.jsx';
 import { kindFromFile, nomeConSuffisso } from './store/model.js';
 import { impacchetta, spacchetta, fotografaTela } from './store/brainBundle.js';
 import StageBar from './components/StageBar.jsx';
@@ -41,6 +42,7 @@ import { DESCRITTORI, getDescrittore, strumentiVisibili, servizioAperto } from '
 import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
 import { statoLicenza, giorniAllaProva } from './engine/licenza.js';
 import { prezzoDi } from './engine/listino.js';
+import { formatEuro, toEuro } from './engine/ledger.js';
 import { leggiLicenza, salvaLicenza } from './store/licenza.js';
 import {
   chiediLicenza,
@@ -71,7 +73,7 @@ function leggiRicetta(servizio) {
 }
 import { bundleAll, bundleBlobs } from './store/bundle.js';
 import { useEngine } from './hooks/useEngine.js';
-import { t, setLang, detectLang, onLangChange } from './i18n/index.js';
+import { t, setLang, detectLang, onLangChange, getLang } from './i18n/index.js';
 import { onHelpChange, isHelpOn } from './i18n/help.js';
 import { renderExport } from './engine/render.js';
 import { analyze, applyCrop, renderMockup, closeHoles } from './engine/finish.js';
@@ -2253,15 +2255,29 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
        * arrivare niente. Sta qui sotto la striscia e non sul muro, perche' sul
        * muro ci finisce quando e' troppo tardi.
        */}
-      {statoConto === 'prova' &&
-        (() => {
-          const giorni = giorniAllaProva(licenza);
-          return (
-            <p className="avviso-prova">
-              {giorni <= 1 ? t('muro.provaUltimo') : t('muro.provaResta', { giorni })}
-            </p>
-          );
-        })()}
+      {/*
+       * Il saldo sta ACCANTO all'avviso della prova, non dentro: sono due
+       * informazioni diverse — «quanto resta della prova gratuita» e «quanto
+       * credito hai» — e chi non e' mai stato in prova (un abbonato, o chi ha
+       * solo comprato crediti) deve vedere comunque il proprio saldo.
+       */}
+      <div className="top-strip">
+        {statoConto === 'prova' &&
+          (() => {
+            const giorni = giorniAllaProva(licenza);
+            return (
+              <p className="avviso-prova">
+                {giorni <= 1 ? t('muro.provaUltimo') : t('muro.provaResta', { giorni })}
+              </p>
+            );
+          })()}
+
+        {crediti > 0 && (
+          <button className="saldo" onClick={() => setSopraLaTela('ricarica')}>
+            {formatEuro(crediti, getLang())}
+          </button>
+        )}
+      </div>
 
       {showOnboarding && <Onboarding onClose={() => setShowOnboarding(false)} />}
 
@@ -2269,7 +2285,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
         <ToolRail
           current={tool}
           collapsed={isEditor}
-          balance={null}
+          balance={toEuro(crediti)}
           onPick={(svc) => {
             if (!svc.ready) {
               setNotice(`${t('soon.title')} — ${t('soon.body')}`);
@@ -2472,6 +2488,12 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                     assets={library.assets}
                     onChiudi={() => setSopraLaTela(null)}
                     ruoloIniziale={ruoloMenu}
+                  />
+                ) : sopraLaTela === 'ricarica' ? (
+                  <Ricarica
+                    saldo={crediti}
+                    onErrore={setNotice}
+                    onChiudi={() => setSopraLaTela(null)}
                   />
                 ) : sopraLaTela === 'avanzati' ? (
                   tool === 'brain' ? avanzatiBrain : avanzati

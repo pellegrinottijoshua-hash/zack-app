@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
-import { localServices, servizioDelloStrumento } from '../services.js';
+import { localServices, paidServices, servizioDelloStrumento } from '../services.js';
 import Icon from './Icon.jsx';
 
 /**
@@ -183,10 +183,14 @@ export default function ToolRail({ current: strumento, collapsed: forzata, balan
         <Item key={s.id} service={s} active={current === s.id} collapsed={collapsed} lampo={lampo?.id === s.id ? lampo.src : null} onPick={scegli} />
       ))}
 
-      {/* I due a consumo — immagine e video — sono usciti dalla barra il
-          2026-08-31: erano due cerchi spenti che dicevano «presto» in mezzo a
-          cinque che funzionano. Torneranno quando ci sara' cosa premere.
-          `paidServices()` resta in `services.js`, e con lei il gruppo. */}
+      {/* I due a consumo erano usciti dalla barra il 2026-08-31: due cerchi
+          spenti che dicevano «presto» in mezzo a cinque che funzionano.
+          Tornano con Task 8: «Immagine» e' ready (c'e' un modo di comprare
+          crediti), «Video» resta «presto» finche' non e' costruito. */}
+      <p className="group-label">{collapsed ? '·' : t('rail.paid')}</p>
+      {paidServices().map((s) => (
+        <Item key={s.id} service={s} active={current === s.id} collapsed={collapsed} lampo={lampo?.id === s.id ? lampo.src : null} onPick={scegli} />
+      ))}
 
       <div className="rail-foot">
         {collapsed ? (

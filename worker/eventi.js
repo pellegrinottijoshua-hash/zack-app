@@ -99,18 +99,17 @@ export function cosaFare(evento, { adesso = new Date() } = {}) {
 }
 
 /**
- * I tre pacchetti. Chiusi: un importo che non e' qui non esiste.
+ * I tre pacchetti: **una fonte sola**, in `src/engine/pacchetti.js`.
  *
- * Due unita' perche' i due mondi ne usano due: Stripe incassa in **centesimi**,
- * il saldo vive in **millesimi**. Scrivere il fattore mille in due posti vuol
- * dire vederli divergere al primo pacchetto nuovo, e allora qualcuno paga 5 €
- * e ne riceve 50.
+ * Vivevano qui come oggetto letterale finché il capitolato di Task 8 non ne
+ * ha disegnato un secondo dentro `Ricarica.jsx`, con gli stessi importi
+ * ricopiati a mano — due elenchi degli stessi numeri, pronti a divergere al
+ * primo pacchetto nuovo: il browser avrebbe mostrato un prezzo, Stripe ne
+ * avrebbe incassato un altro. Questo file lo RI-ESPORTA, non lo ridefinisce:
+ * chi già fa `import { PACCHETTI } from '../worker/eventi.js'` (Task 3)
+ * continua a funzionare, e la definizione vera sta in un posto solo.
  */
-export const PACCHETTI = {
-  p5: { millesimi: 5000, centesimi: 500 },
-  p10: { millesimi: 10000, centesimi: 1000 },
-  p25: { millesimi: 25000, centesimi: 2500 },
-};
+export { PACCHETTI } from '../src/engine/pacchetti.js';
 
 /** Un tetto di sicurezza: nessuna ricarica onesta supera i 100 €. */
 const MASSIMO = 100000;

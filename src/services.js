@@ -89,11 +89,17 @@ export const SERVICES = [
     ready: true,
   },
   {
+    /*
+     * Acceso da Task 8: prima non c'era modo di comprare crediti, quindi chi
+     * avesse trovato «Immagine» in barra avrebbe avuto zero crediti e nessun
+     * modo di procurarsene. `Ricarica.jsx` e `/ricarica` lo risolvono, e con
+     * loro l'interruttore puo' girare.
+     */
     id: 'immagine',
     group: GROUP_PAID,
     key: 'tool.image',
     icon: 'image',
-    ready: false,
+    ready: true,
     price: 0.13,
   },
   {

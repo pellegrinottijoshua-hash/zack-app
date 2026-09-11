@@ -1,7 +1,7 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { chiediLicenza, generaImmagine } from '../src/lib/conto.js';
+import { chiediLicenza, generaImmagine, vaiAllaRicarica } from '../src/lib/conto.js';
 
 const APP = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
 
@@ -118,6 +118,54 @@ test('un riferimento che non si legge piu’: NON si genera, e niente parte vers
     'generaImmagine non ha sollevato l’errore che nomina il problema',
   );
   assert.equal(chiamato, false, 'generaImmagine ha chiamato /genera con un riferimento mancante');
+});
+
+/* ---------------------------------------------------------------- *
+ * `vaiAllaRicarica` — Task 8.
+ *
+ * In `node --test` non esiste mai una sessione Supabase vera (nessun
+ * `localStorage`, nessun flusso OAuth reale): `sessione()` torna sempre
+ * `null`, cioè lo stesso stato di un cliente che non si è collegato. È lo
+ * stesso limite per cui questo file, più sopra, legge App.jsx come testo
+ * invece di eseguirlo — qui si legge conto.js per la stessa ragione, per la
+ * metà del comportamento che il guasto reale non lascia raggiungere.
+ * ---------------------------------------------------------------- */
+
+test('vaiAllaRicarica senza sessione non apre nessun pagamento', async () => {
+  // Deve fermarsi PRIMA di chiamare /ricarica, non dopo una risposta che non
+  // capirebbe: un «non lo so» che diventasse una chiamata di rete sarebbe lo
+  // stesso guasto che il resto del file difende per `chiediLicenza`.
+  let chiamato = false;
+  globalThis.fetch = async () => {
+    chiamato = true;
+    return risposta({ url: 'https://checkout.stripe.com/x' });
+  };
+  await assert.rejects(() => vaiAllaRicarica('p10'), /non-collegato/);
+  assert.equal(chiamato, false, 'ha chiamato /ricarica senza una sessione');
+});
+
+test('vaiAllaRicarica manda al Worker SOLO l’id del pacchetto', () => {
+  /*
+   * Un browser che dichiara un importo è un browser che paga quanto vuole
+   * (già difeso lato Worker da `test/workerConto.test.js`). Qui si legge il
+   * sorgente perché la richiesta vera non si può eseguire in questo
+   * ambiente: si prova che il corpo che PARTIREBBE non porta mai una cifra.
+   */
+  const conto = readFileSync(new URL('../src/lib/conto.js', import.meta.url), 'utf8');
+  const inizio = conto.indexOf('export async function vaiAllaRicarica');
+  assert.notEqual(inizio, -1, 'vaiAllaRicarica non esiste più in conto.js');
+  const fine = conto.indexOf('\n}', inizio);
+  const corpo = conto.slice(inizio, fine);
+  assert.match(
+    corpo,
+    /body:\s*JSON\.stringify\(\{\s*pacchetto\s*\}\)/,
+    'il corpo della richiesta non manda SOLO il pacchetto',
+  );
+  assert.doesNotMatch(
+    corpo,
+    /millesimi|centesimi|prezzo|importo|amount/i,
+    'una cifra viaggia verso /ricarica: il prezzo lo deve decidere il Worker',
+  );
 });
 
 test('la sessione di Supabase non sta sulla strada del primo disegno', () => {
