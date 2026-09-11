@@ -40,7 +40,7 @@ import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/
 import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/ritaglio.js';
 import { DESCRITTORI, getDescrittore, strumentiVisibili, servizioAperto } from './servizi/index.js';
 import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
-import { statoLicenza, giorniAllaProva } from './engine/licenza.js';
+import { statoLicenza, giorniAllaProva, puoiLavorare } from './engine/licenza.js';
 import { prezzoDi } from './engine/listino.js';
 import { formatEuro, toEuro } from './engine/ledger.js';
 import { leggiLicenza, salvaLicenza } from './store/licenza.js';
@@ -270,6 +270,22 @@ export default function App() {
   const prezzoQui = DESCRITTORI[tool]?.serve === 'saldo' ? prezzoDi(LISTINO_DI[tool]).total : 0;
   const chiuso = muroAcceso &&
     !servizioAperto(DESCRITTORI[tool], { stato: statoConto, crediti, prezzo: prezzoQui });
+
+  /**
+   * Important del giro di correzioni: `chiuso` da solo non dice PERCHÉ.
+   * `<Muro>` guarda `statoConto` e ricade su `FRASE['mai-entrato']` per
+   * qualunque stato che non conosce — e non conosce 'aperto'/'prova', perché
+   * prima che ogni servizio potesse chiudersi da solo sul saldo quegli stati
+   * non chiudevano mai nessuno. Risultato: un abbonato con saldo insufficiente
+   * vedeva «Entra per usare lo studio» e un tasto che apre un SECONDO
+   * abbonamento Stripe — a chi ne ha già uno.
+   *
+   * Chi mostra il muro deve sapere perché è chiuso, non solo che lo è: se il
+   * descrittore chiede il saldo e l'abbonamento è a posto (`puoiLavorare`
+   * vero), il problema sono i crediti, e si mostra la ricarica. Il muro
+   * dell'abbonamento resta per chi l'abbonamento non ce l'ha.
+   */
+  const chiusoPerSaldo = chiuso && DESCRITTORI[tool]?.serve === 'saldo' && puoiLavorare(statoConto);
 
   /**
    * Chiede al server chi siamo, e se ne ricorda.
@@ -2154,6 +2170,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 servizio={getDescrittore('immagine').listino}
                 saldo={crediti}
                 riferimenti={references.length}
+                onRicarica={() => setSopraLaTela('ricarica')}
               />
               {result?.kind === 'jpg' && (
                 <img className="immagine-risultato" src={result.url} alt="" />
@@ -2272,11 +2289,27 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
             );
           })()}
 
-        {crediti > 0 && (
-          <button className="saldo" onClick={() => setSopraLaTela('ricarica')}>
-            {formatEuro(crediti, getLang())}
-          </button>
-        )}
+        {/*
+         * Critical del giro di correzioni: questo tasto era racchiuso in una
+         * guardia che lo toglieva quando il saldo era a zero, ed è l'UNICO
+         * ingresso al pannello della ricarica in tutta l'app (i due montaggi
+         * di `<Ricarica>` dipendono entrambi da `sopraLaTela === 'ricarica'`,
+         * che solo lui imposta). Con un saldo appena aperto — lo stato di
+         * OGNI cliente nuovo, il primo momento d'acquisto per cui Task 8
+         * esiste — il tasto non c'era e non c'era un'alternativa: vicolo
+         * chiuso.
+         *
+         * Il motivo per cui non se n'era accorto nessuno conta più del bug:
+         * ogni verifica a schermo del Task 8 è partita da una licenza con
+         * cinquemila millesimi già in `localStorage` (una sessione
+         * precedente, mai svuotata). Il cammino a saldo vuoto — l'unico che
+         * ogni cliente percorre davvero — non era mai stato provato.
+         * «0,00 €» è onesto, ed è la porta: il tasto si mostra sempre, senza
+         * più nessuna guardia intorno.
+         */}
+        <button className="saldo" onClick={() => setSopraLaTela('ricarica')}>
+          {formatEuro(crediti, getLang())}
+        </button>
       </div>
 
       {showOnboarding && <Onboarding onClose={() => setShowOnboarding(false)} />}
@@ -2374,47 +2407,65 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               e due risposte alla stessa domanda divergono al primo servizio
               nuovo. */}
           {chiuso ? (
-            <>
-              {/*
-               * Il muro sta DENTRO `.stage`, non intorno a `.shell`: fuori
-               * chiuderebbe anche la striscia e la libreria, che e' esattamente
-               * cio' che la spec § 3.5 vieta — la libreria non si chiude mai, e
-               * un test legge questo file per assicurarsene.
-               */}
-              <Muro
-                stato={statoConto}
-                onEntra={entraConEmail}
-                onGoogle={entraConGoogle}
-                onAbbona={async () => {
-                  try {
-                    await vaiAlPagamento();
-                  } catch {
-                    setNotice(t('muro.pagamentoNo'));
-                  }
-                }}
-              />
-              {/*
-               * Correzione 2 (giro di correzioni Task 8): col muro alzato
-               * `<Piano>` non si monta, e Ricarica viveva SOLO nel suo
-               * `pannello` — un clic sul saldo, su uno strumento locale
-               * murato, non apriva niente. Stessa strada della libreria qui
-               * sopra: un pannello che deve restare raggiungibile a muro
-               * alzato esce da dentro `<Piano>`, non si duplica un secondo
-               * muro tecnico sopra quello commerciale. Il muro esiste per
-               * VENDERE — chi lo vede e' esattamente chi deve poter pagare.
-               *
-               * `.sc-pannello` e' la stessa classe con cui Piano avvolge
-               * questo stesso pannello quando NON e' murato (vedi piu' sotto):
-               * nessuno stile nuovo, solo un secondo posto da cui montarla.
-               * Scavalca il muro solo LEI (col saldo, gia' fuori da `.stage`):
-               * gli strumenti del servizio chiuso restano dietro `<Muro>`.
-               */}
-              {sopraLaTela === 'ricarica' && (
-                <div className="sc-pannello">
-                  <Ricarica saldo={crediti} onErrore={setNotice} onChiudi={() => setSopraLaTela(null)} />
-                </div>
-              )}
-            </>
+            chiusoPerSaldo ? (
+              /*
+               * Important del giro di correzioni: chi arriva qui e' abbonato
+               * (`puoiLavorare(statoConto)` vero) e non ha credito. Il muro
+               * dell'abbonamento non ha una FRASE per 'aperto'/'prova' — non
+               * chiudevano nessuno prima che ogni servizio potesse chiudersi
+               * da solo sul saldo — e ricadrebbe su FRASE['mai-entrato']:
+               * «Entra per usare lo studio», con un tasto che apre un
+               * SECONDO abbonamento Stripe a chi ne ha gia' uno. Qui non si
+               * monta il muro: si monta il pannello della ricarica, che e'
+               * cio' che manca davvero.
+               */
+              <div className="sc-pannello">
+                <p className="muro-corpo">{t('muro.abbonatoSenzaSaldo')}</p>
+                <Ricarica saldo={crediti} onErrore={setNotice} onChiudi={() => setSopraLaTela(null)} />
+              </div>
+            ) : (
+              <>
+                {/*
+                 * Il muro sta DENTRO `.stage`, non intorno a `.shell`: fuori
+                 * chiuderebbe anche la striscia e la libreria, che e' esattamente
+                 * cio' che la spec § 3.5 vieta — la libreria non si chiude mai, e
+                 * un test legge questo file per assicurarsene.
+                 */}
+                <Muro
+                  stato={statoConto}
+                  onEntra={entraConEmail}
+                  onGoogle={entraConGoogle}
+                  onAbbona={async () => {
+                    try {
+                      await vaiAlPagamento();
+                    } catch {
+                      setNotice(t('muro.pagamentoNo'));
+                    }
+                  }}
+                />
+                {/*
+                 * Correzione 2 (giro di correzioni Task 8): col muro alzato
+                 * `<Piano>` non si monta, e Ricarica viveva SOLO nel suo
+                 * `pannello` — un clic sul saldo, su uno strumento locale
+                 * murato, non apriva niente. Stessa strada della libreria qui
+                 * sopra: un pannello che deve restare raggiungibile a muro
+                 * alzato esce da dentro `<Piano>`, non si duplica un secondo
+                 * muro tecnico sopra quello commerciale. Il muro esiste per
+                 * VENDERE — chi lo vede e' esattamente chi deve poter pagare.
+                 *
+                 * `.sc-pannello` e' la stessa classe con cui Piano avvolge
+                 * questo stesso pannello quando NON e' murato (vedi piu' sotto):
+                 * nessuno stile nuovo, solo un secondo posto da cui montarla.
+                 * Scavalca il muro solo LEI (col saldo, gia' fuori da `.stage`):
+                 * gli strumenti del servizio chiuso restano dietro `<Muro>`.
+                 */}
+                {sopraLaTela === 'ricarica' && (
+                  <div className="sc-pannello">
+                    <Ricarica saldo={crediti} onErrore={setNotice} onChiudi={() => setSopraLaTela(null)} />
+                  </div>
+                )}
+              </>
+            )
           ) : DESCRITTORI[tool] ? (
             <Piano
               servizio={getDescrittore(tool)}

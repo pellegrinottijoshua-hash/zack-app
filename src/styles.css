@@ -5408,9 +5408,21 @@ body {
 .preventivo-corto {
   border-color: #a4342b;
 }
+/* Era testo fermo (uno `<span>`): il Critical del giro di correzioni l'ha
+   reso un tasto, perche' e' proprio qui che si scopre di aver bisogno di
+   crediti. Il reset sotto lo tiene identico a colpo d'occhio a prima —
+   stessa riga, stesso rosso — e aggiunge solo cio' che un `<button>` porta
+   di suo (bordo, sfondo, font) e che qui non deve vedersi. */
 .preventivo-manca {
   flex-basis: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
   color: #a4342b;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .riferimenti {

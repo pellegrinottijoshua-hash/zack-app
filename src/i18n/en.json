@@ -748,6 +748,7 @@
     "linkMandato": "I've emailed you a link. Open it on this device, not another one.",
     "nonMandato": "I couldn't send the link. Try again in a moment.",
     "libreriaTua": "Your assets stay yours: the library opens and downloads from here too.",
+    "abbonatoSenzaSaldo": "Your subscription is active: you just need credit to continue.",
     "scaduto": {
       "titolo": "Your subscription isn't active",
       "corpo": "The studio tools are closed. Your library isn't: it's right below, and you can download all of it whenever you like."

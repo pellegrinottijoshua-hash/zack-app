@@ -168,6 +168,27 @@ test('vaiAllaRicarica manda al Worker SOLO l’id del pacchetto', () => {
   );
 });
 
+test('il tasto del saldo — l’unico ingresso alla ricarica — si vede ANCHE a saldo zero', () => {
+  /*
+   * Critical del giro di correzioni: era `{crediti > 0 && (<button
+   * className="saldo" ...>)}`, ed e’ l’UNICO ingresso al pannello della
+   * ricarica in tutta l’app — i due montaggi di `<Ricarica>` dipendono
+   * entrambi da `sopraLaTela === 'ricarica'`, che solo questo tasto imposta.
+   * A saldo zero — lo stato di OGNI cliente nuovo, il primo momento
+   * d’acquisto per cui Task 8 esiste — il tasto spariva e non c’era
+   * alternativa: vicolo chiuso. Si legge il sorgente perche’ questo
+   * progetto non disegna componenti (niente jsdom, niente testing-library).
+   */
+  const i = APP.indexOf('className="saldo"');
+  assert.notEqual(i, -1, 'il tasto del saldo non c’e’ piu’ in App.jsx');
+  const prima = APP.slice(Math.max(0, i - 400), i);
+  assert.doesNotMatch(
+    prima,
+    /crediti\s*[><]/,
+    'il tasto del saldo e’ tornato dietro una condizione sui crediti: a saldo zero sparirebbe di nuovo',
+  );
+});
+
 test('la sessione di Supabase non sta sulla strada del primo disegno', () => {
   /*
    * `@supabase/supabase-js` si porta dietro archivio e realtime, che a questo
