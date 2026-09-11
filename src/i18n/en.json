@@ -46,7 +46,10 @@
     "costruisci": "Build one",
     "ritmo": "Tap a rhythm",
     "computer": "From my computer",
-    "libreria": "From my library"
+    "libreria": "From my library",
+    "personaggio": "Character",
+    "oggetto": "Object",
+    "stile": "Style"
   },
   "drop": {
     "title": "Drop an image here",
@@ -389,7 +392,8 @@
     "balance": "Balance",
     "soon": "soon",
     "open": "Show the names",
-    "close": "Icons only"
+    "close": "Icons only",
+    "da": "from {prezzo}"
   },
   "soon": {
     "title": "This service isn't here yet",
@@ -745,6 +749,7 @@
     "linkMandato": "I've emailed you a link. Open it on this device, not another one.",
     "nonMandato": "I couldn't send the link. Try again in a moment.",
     "libreriaTua": "Your assets stay yours: the library opens and downloads from here too.",
+    "abbonatoSenzaSaldo": "It's not the subscription you're missing: you just need credit to continue.",
     "scaduto": {
       "titolo": "Your subscription isn't active",
       "corpo": "The studio tools are closed. Your library isn't: it's right below, and you can download all of it whenever you like."
@@ -757,5 +762,34 @@
       "titolo": "Sign in to use the studio",
       "corpo": "I'll email you a link, no password. The background remover on the home page stays free and asks for nothing."
     }
+  },
+  "listino": {
+    "immagine": "Image"
+  },
+  "immagine": {
+    "claim": "Write what you want to see. Add your own assets as references.",
+    "riferimenti": "References",
+    "prezzoNota": "this generation, full price",
+    "saldoCorto": "You don’t have enough credit.",
+    "escono": "The references you pick are sent to the provider: it’s the only thing that leaves your computer, and there’s no generating without sending it.",
+    "salva": "Save to library",
+    "salvato": "Saved to library.",
+    "togli": "Remove",
+    "rapida": "Quick",
+    "grande": "Large",
+    "attendi": "Zack is generating. It takes about twenty seconds.",
+    "vuoto": "Write what you want to see first.",
+    "errore": "I couldn't generate it. Try again in a moment.",
+    "assetMancante": "One of the assets you picked as a reference is no longer in the library. Remove it and try again.",
+    "chiudi": "Done",
+    "ruolo": { "personaggio": "Character", "oggetto": "Object", "stile": "Style" }
+  },
+  "ricarica": {
+    "titolo": "Credits",
+    "hai": "You have {saldo}.",
+    "no": "I couldn’t open the payment page. Try again in a moment.",
+    "dodici": "Every generation shows you its price before you click. And of every euro you spend, Zack puts about 12 cents back into its own brand.",
+    "nonScadono": "Credits never expire, and they stay yours even if you cancel your subscription.",
+    "chiudi": "Done"
   }
 }

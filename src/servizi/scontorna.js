@@ -7,6 +7,8 @@
  */
 export default {
   id: 'scontorna',
+  /** Gira sul computer del cliente: lo paga l'abbonamento, non i crediti. */
+  serve: 'abbonamento',
   /** La frase sotto il `+` col piano vuoto. Chiave i18n, non testo. */
   claim: 'drop.claim',
 

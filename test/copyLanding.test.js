@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { COPY } from '../src/landing/copy.js';
+import { prezzoDi } from '../src/engine/listino.js';
+import { DESCRITTORI } from '../src/servizi/index.js';
 
 /*
  * Le parole della home, in due lingue.
@@ -114,29 +116,114 @@ test('la home non promette piu’ che non c’e’ un server', () => {
    * trova un cliente, non noi — e vale meno di zero, perche' fa mettere in
    * dubbio anche quelle vere.
    *
-   * Cio' che resta vero e' la parte che conta, e si continua a dire: i file non
-   * escono dal computer di chi lavora. Regge lo stesso confronto con Canva e
-   * Adobe, e ha il pregio di essere ancora vera.
+   * Dove sono finiti i file lo dicono i test qui sotto: quella promessa e'
+   * cambiata di nuovo l'11-09, quando i riferimenti hanno cominciato a
+   * mandare un'immagine a un fornitore. Non si ripete qui il confronto con
+   * una frase precisa: invecchierebbe due volte invece di una.
+   */
+  assert.doesNotMatch(
+    JSON.stringify(COPY),
+    /non c.è un server|no server watching|there.s no server/i,
+    'la home promette ancora che un server non esiste',
+  );
+});
+
+test('la home non promette piu’ che NESSUN file esce', () => {
+  /*
+   * «I tuoi file non escono da questo computer» e' stata scritta il
+   * 2026-09-09 per sostituirne un'altra diventata falsa. Con i riferimenti
+   * diventa falsa a meta': un riferimento va a Google, per forza.
    *
-   * ⚠️ Resta scritto — ed e' giusto — che gli STRUMENTI non girano su un
-   * server. Quello non e' cambiato: e' il motivo per cui possono essere
-   * illimitati. Il test guarda la promessa sull'archivio, non quella sul
-   * calcolo.
+   * Resta vera per gli strumenti locali, quindi si SPACCA IN DUE invece di
+   * cancellarla: la parte vera e' il vantaggio piu' grande del prodotto.
+   *
+   * ⚠️ Task 7 della revisione: `hero.note` diceva la stessa promessa assoluta
+   * con un verbo diverso — «lascia»/«leaves» invece di «escono»/«leave» — e
+   * questo test, tesa la rete accanto al buco, non se n'era accorto: la rete
+   * ora prende anche quella forma. Non basta pero' vietare «lascia»/«leaves»
+   * ovunque: `privacy.body` (in inglese) li usa gia' bene, in «something
+   * leaves», per dire QUANDO qualcosa esce davvero — e quella frase deve
+   * restare passabile. Il divieto e' quindi sulla costruzione assoluta
+   * («nessun file lascia»/«no file leaves»), non sulla parola da sola.
    */
   const tutto = JSON.stringify(COPY);
   assert.doesNotMatch(
     tutto,
-    /non c.è un server|no server watching|there.s no server/i,
-    'la home promette ancora che un server non esiste',
+    /non escono da questo computer|nessun file lascia (il tuo|questo) computer/i,
+    'promette ancora che niente esce',
+  );
+  assert.doesNotMatch(
+    tutto,
+    /never leave this computer|no file leaves your computer/i,
+    'promette ancora che niente esce (inglese)',
+  );
+  assert.match(tutto, /Quando generi|When you generate/i, 'non dice cosa succede generando');
+});
+
+test('la home dice che i crediti non scadono', () => {
+  // Chi compra 25 € ha diritto di saperlo PRIMA. Ed e' un vantaggio, non una
+  // postilla: quasi nessuno lo fa.
+  assert.match(JSON.stringify(COPY), /non scadono/);
+  assert.match(JSON.stringify(COPY), /never expire/);
+});
+
+test('la frase dei dodici centesimi dice il numero vero, per ogni numero di riferimenti', () => {
+  /*
+   * Il 12 non e' una cifra tonda scelta a occhio: e' `margin / total` del
+   * listino, arrotondato. Ma dipende da QUANTI riferimenti (Important 6 della
+   * revisione: il margine sale con loro), quindi «12 centesimi» come cifra
+   * ESATTA e' gia' una promessa piu' precisa di quella vera — la frase dice
+   * «circa», e questo test controlla che il «circa» regga davvero su tutt'e
+   * tre i casi che il prodotto genera (0, 5, 14 riferimenti), non solo su
+   * quello nudo con cui si era fermato prima.
+   */
+  for (const riferimenti of [0, 5, 14]) {
+    const { margin, total } = prezzoDi('immagine-nbp', { riferimenti });
+    const centesimiPerEuro = Math.round((margin / total) * 100);
+    assert.equal(
+      centesimiPerEuro, 12,
+      `con ${riferimenti} riferimenti il margine e’ ${centesimiPerEuro} centesimi per euro, non vicino a 12`,
+    );
+  }
+  assert.match(JSON.stringify(COPY), /circa 12 centesimi/);
+  assert.match(JSON.stringify(COPY), /about 12 cents/);
+});
+
+test('privacy.body conta gli strumenti locali com’è nel listino, non a occhio', () => {
+  /*
+   * Il capitolato di questo task scrive «I sei strumenti non mandano niente
+   * da nessuna parte» — ma i descrittori con `serve: 'abbonamento'`, cioè
+   * quelli che girano davvero sul computer del cliente, sono CINQUE:
+   * scontorna, brain, vocale, effetti, vettorializza. Il sesto, «Immagine»,
+   * ha `serve: 'saldo'` e manda al fornitore per mestiere — esattamente
+   * quello che la frase pretende di escludere.
+   *
+   * Il numero non si scrive a mano nella frase e non si scrive a mano qui:
+   * si CONTA in `src/servizi/index.js`. B3 aggiunge servizi (Seedance,
+   * ElevenLabs); il giorno che un servizio locale si aggiunge o si toglie,
+   * deve essere questo conto a dirlo — non un cliente che legge un numero
+   * sbagliato.
+   */
+  const locali = Object.values(DESCRITTORI).filter((d) => d.serve === 'abbonamento').length;
+  const inLettere = {
+    3: ['tre', 'three'],
+    4: ['quattro', 'four'],
+    5: ['cinque', 'five'],
+    6: ['sei', 'six'],
+    7: ['sette', 'seven'],
+    8: ['otto', 'eight'],
+  };
+  const parole = inLettere[locali];
+  assert.ok(parole, `nessuna parola prevista per ${locali} strumenti locali — allarga la mappa`);
+  const [it, en] = parole;
+  assert.match(
+    JSON.stringify(COPY.it),
+    new RegExp(`\\b${it}\\b`, 'i'),
+    `la home italiana non dice «${it}» strumenti`,
   );
   assert.match(
-    tutto,
-    /non escono da questo computer/,
-    'la home non dice piu’ dove stanno i file, in italiano',
-  );
-  assert.match(
-    tutto,
-    /never leave this computer/,
-    'la home non dice piu’ dove stanno i file, in inglese',
+    JSON.stringify(COPY.en),
+    new RegExp(`\\b${en}\\b`, 'i'),
+    `la home inglese non dice «${en}» tools`,
   );
 });

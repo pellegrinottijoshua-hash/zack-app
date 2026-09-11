@@ -2,9 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   QUANDO,
+  SERVE,
   getDescrittore,
   strumentiVisibili,
   validaDescrittore,
+  servizioAperto,
   DESCRITTORI,
 } from '../src/servizi/index.js';
 import it from '../src/i18n/it.json' with { type: 'json' };
@@ -132,4 +134,64 @@ test('ogni strumento «con-risultato» puo’ davvero comparire', () => {
       assert.ok(visti.includes(x), `${id}: «${x}» non compare nemmeno col risultato`);
     }
   }
+});
+
+/*
+ * Il muro era UNO SOLO per tutto lo studio (`chiuso = muroAcceso &&
+ * !puoiLavorare(statoConto)`), e chiudeva anche la generazione. Ma il
+ * committente ha deciso che i crediti restano a chi disdice e si possono
+ * spendere: chi ha 18 € di credito e nessun abbonamento troverebbe una porta
+ * chiusa davanti a soldi suoi. Da qui in poi la chiusura sta nel
+ * DESCRITTORE, non in un interruttore unico.
+ */
+
+test('ogni servizio dichiara COSA gli serve, e da una lista chiusa', () => {
+  // Chiusa come `QUANDO` e `LATI`: un valore inventato non chiuderebbe e non
+  // aprirebbe, e nessuno saprebbe perche'.
+  for (const [id, d] of Object.entries(DESCRITTORI)) {
+    assert.ok(SERVE.includes(d.serve), `${id}: «${d.serve}» non e’ nella lista`);
+  }
+});
+
+test('i cinque strumenti locali chiedono l’abbonamento', () => {
+  for (const id of ['scontorna', 'brain', 'vocale', 'effetti', 'vettorializza']) {
+    assert.equal(DESCRITTORI[id].serve, 'abbonamento', `${id} ha cambiato regola`);
+  }
+});
+
+test('chi ha crediti e non ha l’abbonamento GENERA', () => {
+  // E' la decisione del committente resa raggiungibile. Senza questo, i suoi
+  // soldi sarebbero dietro una porta chiusa.
+  const gen = { id: 'immagine', serve: 'saldo' };
+  assert.equal(servizioAperto(gen, { stato: 'scaduto', crediti: 5000, prezzo: 140 }), true);
+  assert.equal(servizioAperto(gen, { stato: 'mai-entrato', crediti: 5000, prezzo: 140 }), true);
+});
+
+test('senza crediti la generazione e’ chiusa anche a chi e’ abbonato', () => {
+  // L'abbonamento paga gli strumenti locali, non il fornitore.
+  const gen = { id: 'immagine', serve: 'saldo' };
+  assert.equal(servizioAperto(gen, { stato: 'aperto', crediti: 100, prezzo: 140 }), false);
+  assert.equal(servizioAperto(gen, { stato: 'aperto', crediti: 140, prezzo: 140 }), true);
+});
+
+test('gli strumenti locali non si aprono coi crediti', () => {
+  // Il verso opposto, e sbagliarlo regalerebbe lo studio a chi carica 5 €.
+  const loc = { id: 'scontorna', serve: 'abbonamento' };
+  assert.equal(servizioAperto(loc, { stato: 'scaduto', crediti: 99999, prezzo: 0 }), false);
+  assert.equal(servizioAperto(loc, { stato: 'prova', crediti: 0, prezzo: 0 }), true);
+});
+
+test('uno strumento senza descrittore resta chiuso, non passa gratis quando il muro si accende', () => {
+  /*
+   * Il capitolato proponeva `Boolean(DESCRITTORI[tool]) &&` come guardia. Ma
+   * `tool` non e' sempre un descrittore — l'editor, e le altre viste fuori
+   * dall'impianto (App.jsx righe 2103, 2477, 2482) — ed erano murate come
+   * tutto il resto. Con quella guardia avrebbero smesso di esserlo
+   * nell'istante in cui il muro si accende, e il prodotto sarebbe diventato
+   * in parte gratuito. `servizioAperto` senza descrittore ricade da solo su
+   * `puoiLavorare(stato)`, cioe' esattamente il comportamento di prima — la
+   * guardia non serviva a niente e faceva danno.
+   */
+  assert.equal(servizioAperto(undefined, { stato: 'scaduto', crediti: 99999, prezzo: 0 }), false);
+  assert.equal(servizioAperto(undefined, { stato: 'aperto', crediti: 0, prezzo: 0 }), true);
 });

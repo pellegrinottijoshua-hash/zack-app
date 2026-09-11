@@ -21,6 +21,8 @@
  */
 export default {
   id: 'vettorializza',
+  /** Gira sul computer del cliente: lo paga l'abbonamento, non i crediti. */
+  serve: 'abbonamento',
   claim: 'drop.vectorHint',
 
   /** Un'immagine per volta: il tracciato è su un file solo. */

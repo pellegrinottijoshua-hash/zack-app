@@ -17,6 +17,8 @@
  */
 export default {
   id: 'effetti',
+  /** Gira sul computer del cliente: lo paga l'abbonamento, non i crediti. */
+  serve: 'abbonamento',
   claim: 'effetti.claim',
 
   /*

@@ -53,5 +53,12 @@
   "routes": [
     { "pattern": "zack-app.com", "custom_domain": true },
     { "pattern": "www.zack-app.com", "custom_domain": true }
-  ]
+  ],
+
+  /*
+   * Una volta all'ora, al minuto zero. I lavori rimasti a meta' si rimborsano
+   * da soli: senza questo, un Worker morto fra l'addebito e l'esito lascia il
+   * cliente pagato e senza niente, e non se ne accorge nessuno.
+   */
+  "triggers": { "crons": ["0 * * * *"] }
 }

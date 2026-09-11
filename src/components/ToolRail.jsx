@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { t } from '../i18n/index.js';
-import { localServices, servizioDelloStrumento } from '../services.js';
+import { getLang, t } from '../i18n/index.js';
+import { localServices, paidServices, servizioDelloStrumento } from '../services.js';
+import { DESCRITTORI } from '../servizi/index.js';
+import { prezzoDi } from '../engine/listino.js';
+import { formatEuro } from '../engine/ledger.js';
 import Icon from './Icon.jsx';
 
 /**
@@ -27,6 +30,32 @@ const PERSONAGGIO = {
 
 function Item({ service, active, collapsed, lampo, onPick }) {
   const label = t(`${service.key}.label`);
+  /*
+   * Il prezzo di un servizio ACCESO viene dal listino, mai da un numero
+   * scritto qui: e' la stessa regola del preventivo (§ 3.1). Due schermate
+   * che mostrano cifre diverse per la stessa generazione romperebbero la
+   * promessa della home — correzione 1 del giro di Task 8, dov'era successo
+   * proprio questo con «Immagine»: tredici centesimi indicativi in barra,
+   * quindici veri nel preventivo, la stessa schermata.
+   *
+   * `DESCRITTORI[service.id]?.listino` e' la STESSA chiave che il preventivo
+   * usa (`getDescrittore('immagine').listino` in App.jsx): non una copia, la
+   * stessa lettura. Un servizio SPENTO (»presto«) non ha ancora un
+   * fornitore, quindi nessuna voce di listino da leggere — per lui resta la
+   * stima scritta a mano in `service.price`, gestita piu' sotto.
+   *
+   * ⚠️ Important 5 della revisione: `prezzoDi(listino)` qui non passa
+   * `riferimenti` — la barra li mostra PRIMA che esistano, non li conosce
+   * ancora — mentre il preventivo li passa sempre. Oggi coincidono per caso
+   * (`formatEuro` arrotonda i pochi millesimi di differenza allo stesso
+   * centesimo), ma al primo fornitore che non arrotondi cosi' bene le due
+   * cifre sulla stessa schermata divergeranno — lo stesso difetto gia'
+   * corretto una volta con «Immagine». Il prezzo qui e' quindi un «da», non
+   * il prezzo di questa generazione: si legge cosi', con la chiave
+   * `rail.da`, non come il numero nudo di prima.
+   */
+  const listino = DESCRITTORI[service.id]?.listino;
+  const prezzoAcceso = listino ? formatEuro(prezzoDi(listino).total, getLang()) : null;
   return (
     <button
       className="tool-item"
@@ -56,10 +85,13 @@ function Item({ service, active, collapsed, lampo, onPick }) {
           davvero necessaria. */}
       {!collapsed &&
         (service.ready ? (
-          service.price != null && (
-            <span className="tool-price">{service.price.toFixed(2).replace('.', ',')} €</span>
+          prezzoAcceso != null && (
+            <span className="tool-price">{t('rail.da', { prezzo: prezzoAcceso })}</span>
           )
         ) : (
+          // Qui SI' resta `service.price`: e' l'unico numero che esiste per
+          // un servizio senza fornitore, ed e' una stima ammessa perche' il
+          // tasto sotto non si puo' premere («~», non un prezzo netto).
           <span className="tool-soon" title={`~${service.price?.toFixed(2).replace('.', ',')} €`}>
             {t('rail.soon')}
           </span>
@@ -183,10 +215,14 @@ export default function ToolRail({ current: strumento, collapsed: forzata, balan
         <Item key={s.id} service={s} active={current === s.id} collapsed={collapsed} lampo={lampo?.id === s.id ? lampo.src : null} onPick={scegli} />
       ))}
 
-      {/* I due a consumo — immagine e video — sono usciti dalla barra il
-          2026-08-31: erano due cerchi spenti che dicevano «presto» in mezzo a
-          cinque che funzionano. Torneranno quando ci sara' cosa premere.
-          `paidServices()` resta in `services.js`, e con lei il gruppo. */}
+      {/* I due a consumo erano usciti dalla barra il 2026-08-31: due cerchi
+          spenti che dicevano «presto» in mezzo a cinque che funzionano.
+          Tornano con Task 8: «Immagine» e' ready (c'e' un modo di comprare
+          crediti), «Video» resta «presto» finche' non e' costruito. */}
+      <p className="group-label">{collapsed ? '·' : t('rail.paid')}</p>
+      {paidServices().map((s) => (
+        <Item key={s.id} service={s} active={current === s.id} collapsed={collapsed} lampo={lampo?.id === s.id ? lampo.src : null} onPick={scegli} />
+      ))}
 
       <div className="rail-foot">
         {collapsed ? (

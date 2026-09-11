@@ -117,6 +117,90 @@ export async function esci() {
   await sb.auth.signOut();
 }
 
+/** La misura su cui il listino ha contato i token. Non è un caso: è una misura. */
+const LATO_RIFERIMENTO = 768;
+
+/**
+ * Un asset della libreria, ridotto a 768 px di lato lungo, in `data:`.
+ *
+ * ⚠️ Non è un'ottimizzazione, è **il prezzo che resta vero**. I 258 token per
+ * riferimento su cui il listino conta sono misurati a questa misura: se
+ * qualcuno manda una foto da 12 megapixel i token salgono, e il numero che gli
+ * abbiamo mostrato prima di premere diventa falso.
+ *
+ * E risolve altre due cose insieme: cinque immagini piene non si mangiano i
+ * nove secondi che restano fra i 21 di Google e i 30 del limite, e il costo
+ * diventa prevedibile invece che scommesso.
+ */
+async function riduci(blob) {
+  const bitmap = await createImageBitmap(blob);
+  const scala = Math.min(1, LATO_RIFERIMENTO / Math.max(bitmap.width, bitmap.height));
+  const tela = new OffscreenCanvas(Math.round(bitmap.width * scala), Math.round(bitmap.height * scala));
+  tela.getContext('2d').drawImage(bitmap, 0, 0, tela.width, tela.height);
+  bitmap.close();
+
+  const ridotto = await tela.convertToBlob({ type: 'image/png' });
+  return await new Promise((risolvi) => {
+    const lettore = new FileReader();
+    lettore.onload = () => risolvi(lettore.result);
+    lettore.readAsDataURL(ridotto);
+  });
+}
+
+/**
+ * Chiede una generazione al Worker.
+ *
+ * I riferimenti partono dalla libreria e diventano `data:` **qui**, non nel
+ * componente: il componente sa quali asset hai scelto, non come si spediscono.
+ *
+ * ⚠️ **Un riferimento che non si legge FERMA tutto, non lo scarta.**
+ * `Preventivo` e il controllo del saldo contano `riferimenti.length`, quindi
+ * scartare in silenzio chi non si legge più (cancellato fra la scelta e il
+ * tasto: `leggiAsset` torna `null` proprio per quel cammino) farebbe mostrare
+ * N riferimenti e addebitarne N-1 — la promessa della home rotta in due
+ * punti insieme: quanto si paga, e cosa si e' chiesto. E' gia' cio' che
+ * succede all'asset CORROTTO in `riduci` (l'eccezione di `createImageBitmap`
+ * esce prima del `fetch`): qui i due guasti si allineano allo stesso esito.
+ *
+ * Letto PRIMA di chiedere la sessione: `leggiAsset` e' locale, non tocca la
+ * rete, e non ha senso chiedere un token per una richiesta che non partira'.
+ */
+export async function generaImmagine({ prompt, riferimenti = [], misura = 'grande', leggiAsset }) {
+  const conDati = [];
+  for (const r of riferimenti) {
+    const blob = await leggiAsset(r.assetId);
+    if (!blob) {
+      // Nomina il problema, come gli altri errori del file: l'interfaccia lo
+      // traduce in una riga che dice "non e' piu' in libreria", non un
+      // errore generico.
+      throw Object.assign(new Error('asset-mancante'), { code: 'asset-mancante' });
+    }
+    // Ridotto QUI, prima di partire: e' cio' che tiene vero il prezzo mostrato.
+    conDati.push({ ruolo: r.ruolo, immagine: await riduci(blob) });
+  }
+
+  const token = await sessione();
+  if (!token) throw Object.assign(new Error('non-collegato'), { code: 'non-collegato' });
+
+  const res = await fetch(`${BASE}/genera`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ servizio: 'immagine-nbp', prompt, riferimenti: conDati, misura }),
+  });
+
+  const corpo = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    // Il saldo torna comunque: dopo un fallimento il Worker ha gia' rimborsato,
+    // e lo studio deve mostrare il numero giusto senza ricaricare la pagina.
+    throw Object.assign(new Error(corpo.errore || 'genera'), {
+      code: corpo.errore || 'genera',
+      saldo: corpo.saldo,
+      prezzo: corpo.prezzo,
+    });
+  }
+  return corpo; // { dati, mime, prezzo, saldo, lavoro }
+}
+
 /**
  * Porta a Stripe.
  *
@@ -135,5 +219,29 @@ export async function vaiAlPagamento() {
   if (!res.ok) throw new Error('checkout');
   const { url } = await res.json();
   if (!url) throw new Error('checkout');
+  location.href = url;
+}
+
+/**
+ * Porta al pagamento di un pacchetto di crediti.
+ *
+ * Manda **solo l'id** del pacchetto: il prezzo lo decide il Worker, che lo
+ * legge dagli stessi `PACCHETTI` di `src/engine/pacchetti.js` — la stessa
+ * fonte da cui legge `Ricarica.jsx` per disegnare i tre tasti. Un browser che
+ * dichiara quanto vuole pagare è un browser che paga quanto vuole, ed è già
+ * difeso lato Worker (`test/workerConto.test.js`): qui basta non dargli mai
+ * una cifra da leggere.
+ */
+export async function vaiAllaRicarica(pacchetto) {
+  const token = await sessione();
+  if (!token) throw new Error('non-collegato');
+  const res = await fetch(`${BASE}/ricarica`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ pacchetto }),
+  });
+  if (!res.ok) throw new Error('ricarica');
+  const { url } = await res.json();
+  if (!url) throw new Error('ricarica');
   location.href = url;
 }

@@ -5311,14 +5311,184 @@ body {
   color: #a4342b;
 }
 
-/* La riga della prova. Non ferma niente e non si puo' chiudere: chi e' in
-   prova lavora, ma deve vedere arrivare la fine invece di sbatterci contro. */
+/* La riga della prova, e il saldo accanto (Task 8): due informazioni diverse
+   — quanto resta della prova gratuita, quanto credito c'e' — che devono
+   potersi vedere insieme invece di scriversi sopra. */
+.top-strip {
+  display: flex;
+  align-items: stretch;
+}
 .avviso-prova {
   margin: 0;
+  flex: 1;
   padding: 7px 14px;
   background: var(--oro-velo);
   border-bottom: 1px solid var(--oro);
   font-size: 13px;
   text-align: center;
   color: var(--inchiostro-2);
+}
+/* Il saldo apre `Ricarica.jsx`: e' un tasto, non una riga che si legge e
+   basta, quindi non prende il fondo pieno e il testo centrato dell'avviso. */
+.saldo {
+  margin: 0;
+  padding: 7px 14px;
+  border: none;
+  border-bottom: 1px solid var(--oro);
+  background: var(--oro-velo);
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--inchiostro);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.saldo:hover {
+  background: var(--oro);
+}
+
+/* ── Immagine: il prezzo prima del tasto, e i riferimenti ────────────────
+   Task 7. Il piano di Immagine non e' mai «vuoto» (servizi/piano.js): il
+   claim, il prompt e il preventivo sono la tela stessa, come il foglio del
+   vettoriale — quindi vivono dentro `.sc-tela`, non in un pannello a parte. */
+.immagine-lab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: min(92%, 480px);
+  margin: 0 auto;
+}
+.immagine-prompt {
+  width: 100%;
+  min-height: 96px;
+  padding: 12px 14px;
+  border: 1px solid var(--linea-viva);
+  border-radius: 16px;
+  background: var(--fondo);
+  color: var(--inchiostro);
+  font-family: var(--editoriale);
+  font-size: 16px;
+  line-height: 1.4;
+  resize: vertical;
+}
+.immagine-prompt::placeholder {
+  color: var(--inchiostro-3);
+}
+.immagine-prompt:disabled {
+  opacity: 0.6;
+}
+.immagine-risultato {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid var(--linea);
+}
+
+/* Il preventivo: *«ogni generazione ti dice quanto costa prima che tu
+   prema»*. Il prezzo si legge PRIMA di tutto il resto della riga, quindi sta
+   per primo e in grande — non e' un dettaglio a fianco del tasto. */
+.preventivo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--linea-viva);
+  border-radius: 999px;
+  background: var(--fondo-2);
+  font-size: 13px;
+  color: var(--inchiostro-2);
+}
+.preventivo strong {
+  font-family: var(--display);
+  font-size: 17px;
+  color: var(--inchiostro);
+}
+.preventivo-corto {
+  border-color: #a4342b;
+}
+/* Era testo fermo (uno `<span>`): il Critical del giro di correzioni l'ha
+   reso un tasto, perche' e' proprio qui che si scopre di aver bisogno di
+   crediti. Il reset sotto lo tiene identico a colpo d'occhio a prima —
+   stessa riga, stesso rosso — e aggiunge solo cio' che un `<button>` porta
+   di suo (bordo, sfondo, font) e che qui non deve vedersi. */
+.preventivo-manca {
+  flex-basis: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: #a4342b;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.riferimenti {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.riferimenti-ruoli {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.riferimenti-griglia {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.riferimenti-scelti {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--inchiostro-2);
+}
+.riferimenti-scelti li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+/* La riga che dice la verita' sul confine: si legge, non si nasconde
+   nell'angolo — e' l'unico gesto in tutto il prodotto che manda dati fuori
+   dal computer di chi lavora. */
+.riferimenti-avviso {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--inchiostro-3);
+}
+
+/* Ricarica: gli stessi spazi di `.riferimenti`, che e' il pannello con cui
+   condivide la posizione — sopra la tela, aperto e chiuso allo stesso modo. */
+.ricarica {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ricarica-saldo {
+  margin: 0;
+  font-size: 13px;
+  color: var(--inchiostro-2);
+}
+.ricarica-pacchetti {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ricarica-margine,
+.ricarica-durata {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--inchiostro-3);
 }

@@ -26,6 +26,9 @@ import ScegliAsset from './components/ScegliAsset.jsx';
 import Tutorial from './components/Tutorial.jsx';
 import Brain from './components/Brain.jsx';
 import BatchGrid from './components/BatchGrid.jsx';
+import Preventivo from './components/Preventivo.jsx';
+import Riferimenti from './components/Riferimenti.jsx';
+import Ricarica from './components/Ricarica.jsx';
 import { kindFromFile, nomeConSuffisso } from './store/model.js';
 import { impacchetta, spacchetta, fotografaTela } from './store/brainBundle.js';
 import StageBar from './components/StageBar.jsx';
@@ -35,11 +38,20 @@ import { canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { TARGET_SIDE } from './engine/ready.js';
 import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/ricette.js';
 import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/ritaglio.js';
-import { DESCRITTORI, getDescrittore, strumentiVisibili } from './servizi/index.js';
+import { DESCRITTORI, getDescrittore, strumentiVisibili, servizioAperto } from './servizi/index.js';
 import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
-import { statoLicenza, puoiLavorare, giorniAllaProva } from './engine/licenza.js';
+import { statoLicenza, giorniAllaProva, puoiLavorare } from './engine/licenza.js';
+import { prezzoDi } from './engine/listino.js';
+import { formatEuro, toEuro } from './engine/ledger.js';
 import { leggiLicenza, salvaLicenza } from './store/licenza.js';
-import { chiediLicenza, sessione, entraConEmail, entraConGoogle, vaiAlPagamento } from './lib/conto.js';
+import {
+  chiediLicenza,
+  sessione,
+  entraConEmail,
+  entraConGoogle,
+  vaiAlPagamento,
+  generaImmagine,
+} from './lib/conto.js';
 import Muro from './components/Muro.jsx';
 import { nuovaNota, nuovoAsset, nuovoCerchio, prossimoPosto } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
@@ -61,7 +73,7 @@ function leggiRicetta(servizio) {
 }
 import { bundleAll, bundleBlobs } from './store/bundle.js';
 import { useEngine } from './hooks/useEngine.js';
-import { t, setLang, detectLang, onLangChange } from './i18n/index.js';
+import { t, setLang, detectLang, onLangChange, getLang } from './i18n/index.js';
 import { onHelpChange, isHelpOn } from './i18n/help.js';
 import { renderExport } from './engine/render.js';
 import { analyze, applyCrop, renderMockup, closeHoles } from './engine/finish.js';
@@ -94,6 +106,9 @@ const px = (d) => (d ? `${d.w}×${d.h}` : '—');
  * fa già per i servizi a pagamento.
  */
 const FACCIA = new Set(['brain', 'scontorna', 'vettorializza', 'vocale']);
+
+/** Quale voce di listino paga quale strumento. Vuoto per i locali. */
+const LISTINO_DI = { immagine: 'immagine-nbp' };
 
 /**
  * I servizi che non lavorano su un file del piano.
@@ -225,7 +240,52 @@ export default function App() {
    * distrazione.
    */
   const muroAcceso = import.meta.env.VITE_MURO === '1';
-  const chiuso = muroAcceso && !puoiLavorare(statoConto);
+
+  /**
+   * Il muro non è più uno solo.
+   *
+   * I cinque strumenti locali li paga l'abbonamento; la generazione la pagano
+   * i crediti, e quelli restano a chi ha disdetto (decisione del committente,
+   * 2026-09-10). Un `chiuso` unico chiuderebbe anche la generazione, cioè
+   * metterebbe una porta davanti a soldi che il cliente ha già dato.
+   *
+   * Niente `Boolean(DESCRITTORI[tool]) &&`: `tool` non è sempre un
+   * descrittore — l'editor e le altre viste fuori dall'impianto sono murate
+   * come tutto il resto (si veda più sotto `!DESCRITTORI[tool]` e
+   * `DESCRITTORI[tool] ? null : ...`). Con quella guardia smetterebbero di
+   * esserlo nell'istante in cui il muro si accende, e parte del prodotto
+   * diventerebbe gratis. `servizioAperto` gestisce già il descrittore
+   * assente da sola: `?.serve` non è mai `'saldo'`, e si ricade su
+   * `puoiLavorare(stato)` — lo stesso muro di sempre.
+   */
+  const crediti = licenza?.crediti ?? 0;
+  /*
+   * `prezzoDi(voce).total` SENZA riferimenti, cioè il prezzo base: il muro
+   * chiede «hai abbastanza per COMINCIARE», non «per questa esatta
+   * richiesta». I riferimenti si scelgono DOPO aver superato il muro — chi ne
+   * ha messi troppi può sempre toglierne — il preventivo del Task 7 mostrerà
+   * la cifra vera coi riferimenti inclusi, e il Worker resta il giudice
+   * ultimo di quanto si spende davvero.
+   */
+  const prezzoQui = DESCRITTORI[tool]?.serve === 'saldo' ? prezzoDi(LISTINO_DI[tool]).total : 0;
+  const chiuso = muroAcceso &&
+    !servizioAperto(DESCRITTORI[tool], { stato: statoConto, crediti, prezzo: prezzoQui });
+
+  /**
+   * Important del giro di correzioni: `chiuso` da solo non dice PERCHÉ.
+   * `<Muro>` guarda `statoConto` e ricade su `FRASE['mai-entrato']` per
+   * qualunque stato che non conosce — e non conosce 'aperto'/'prova', perché
+   * prima che ogni servizio potesse chiudersi da solo sul saldo quegli stati
+   * non chiudevano mai nessuno. Risultato: un abbonato con saldo insufficiente
+   * vedeva «Entra per usare lo studio» e un tasto che apre un SECONDO
+   * abbonamento Stripe — a chi ne ha già uno.
+   *
+   * Chi mostra il muro deve sapere perché è chiuso, non solo che lo è: se il
+   * descrittore chiede il saldo e l'abbonamento è a posto (`puoiLavorare`
+   * vero), il problema sono i crediti, e si mostra la ricarica. Il muro
+   * dell'abbonamento resta per chi l'abbonamento non ce l'ha.
+   */
+  const chiusoPerSaldo = chiuso && DESCRITTORI[tool]?.serve === 'saldo' && puoiLavorare(statoConto);
 
   /**
    * Chiede al server chi siamo, e se ne ricorda.
@@ -390,6 +450,16 @@ export default function App() {
   // qui perché attraversano gli strumenti: si scelgono guardando l'archivio e
   // si usano generando.
   const [references, setReferences] = useState([]);
+  /** Quale scheda apre il pannello Riferimenti: il ruolo scelto nel `+`,
+   *  perché «Personaggio»/«Oggetto»/«Stile» devono aprire la SCHEDA che
+   *  promettono, non sempre la prima. */
+  const [ruoloMenu, setRuoloMenu] = useState('personaggio');
+  /** Cosa si vuole vedere. Vive qui e non in un componente suo: il tasto Zack
+   *  dell'impianto lo legge per generare, esattamente come per Vocale ed
+   *  Effetti. */
+  const [promptImmagine, setPromptImmagine] = useState('');
+  /** La misura scelta nel punto oro: costano uguale, vedi immagine.js. */
+  const [misuraImmagine, setMisuraImmagine] = useState(getDescrittore('immagine').tasto.predefinita);
   const [brushOpen, setBrushOpen] = useState(false);
   const [batchFiles, setBatchFiles] = useState([]);
   /** Con quale strumento si e' aperto il pennello, per accendere il cerchio. */
@@ -1462,6 +1532,114 @@ export default function App() {
     return setEffettoAperto(true);
   }
 
+  /**
+   * Il `+` di Immagine: le tre voci sono i RUOLI del listino, non un tipo di
+   * oggetto da creare — a differenza del `+` di Brain, che con lo stesso
+   * meccanismo sceglie fra nota/gruppo/computer/libreria. Qualunque ruolo si
+   * scelga porta allo stesso pannello: i ruoli si ridiscutono lì dentro, con
+   * le loro schede (`Riferimenti.jsx`) — qui basta non lasciare che il `+`
+   * cada nel ramo di default, che è quello di Brain e scriverebbe una nota
+   * nella tela sbagliata.
+   */
+  function menuImmagine(quale) {
+    setMenuPiu(false);
+    // Il tasto dice "Personaggio"/"Oggetto"/"Stile": deve aprire proprio
+    // quella scheda, non sempre la prima — altrimenti promette una scelta e
+    // ne fa un'altra, la stessa classe di difetto del righello del
+    // 2026-09-04.
+    setRuoloMenu(quale);
+    setSopraLaTela('riferimenti');
+  }
+
+  /**
+   * Il conto aggiornato dal Worker, dopo un `/genera`.
+   *
+   * Il Worker e' il giudice ultimo di quanto resta: si scrive il saldo che ha
+   * risposto LUI, non si ricalcola sottraendo il prezzo qui — un calcolo
+   * duplicato diverge dal vero al primo arrotondamento o al primo rimborso.
+   */
+  function aggiornaSaldo(saldo) {
+    if (saldo == null) return;
+    const aggiornata = { ...licenza, crediti: saldo, chiestoIl: new Date().toISOString() };
+    salvaLicenza(aggiornata);
+    setLicenza(aggiornata);
+  }
+
+  /**
+   * Il tasto che spende denaro vero.
+   *
+   * ⚠️ Il tasto si spegne SUBITO (`setBusy`, prima di ogni `await`): senza,
+   * diciotto secondi davanti a un tasto muto sono un invito a premere una
+   * seconda volta, e la seconda volta si addebita di nuovo. `Piano` lo
+   * disabilita da sola quando `busy` e' valorizzato — e' la stessa riga che
+   * ferma ogni altro tasto Zack mentre lavora.
+   */
+  async function runImmagine() {
+    setError(null);
+    setNotice(null);
+    if (!promptImmagine.trim()) {
+      // Niente addebito per una richiesta vuota: il Worker la rifiuterebbe
+      // comunque, ma e' piu' onesto dirlo prima di far partire una chiamata.
+      setNotice(t('immagine.vuoto'));
+      return;
+    }
+    const descrittore = getDescrittore('immagine');
+    const prezzo = prezzoDi(descrittore.listino, { riferimenti: references.length }).total;
+    if (crediti < prezzo) {
+      setNotice(t('immagine.saldoCorto'));
+      return;
+    }
+
+    setBusy(t('immagine.attendi'));
+    try {
+      const corpo = await generaImmagine({
+        prompt: promptImmagine,
+        riferimenti: references,
+        misura: misuraImmagine,
+        leggiAsset: async (assetId) => {
+          try {
+            const { file: f } = await library.read(assetId);
+            return f;
+          } catch {
+            // Un asset cancellato fra la scelta e la generazione:
+            // `library.read` lancia se il record non c'e' piu'. Si torna
+            // `null`, e `generaImmagine` SI FERMA li' — non salta il
+            // riferimento in silenzio, che addebiterebbe meno di quanto il
+            // preventivo ha mostrato.
+            return null;
+          }
+        },
+      });
+      const byte = Uint8Array.from(atob(corpo.dati), (c) => c.charCodeAt(0));
+      const blob = new Blob([byte], { type: corpo.mime || 'image/jpeg' });
+      pushResult({ url: own(blob), blob, kind: 'jpg', meta: { strategy: 'immagine' } });
+      aggiornaSaldo(corpo.saldo);
+    } catch (e) {
+      console.error(e);
+      aggiornaSaldo(e.saldo);
+      setError(
+        e.code === 'saldo'
+          ? t('immagine.saldoCorto')
+          : e.code === 'asset-mancante'
+            ? t('immagine.assetMancante')
+            : t('immagine.errore'),
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** Salva il risultato generato: lo stesso gesto di `salvaEffetto`/`salvaVoce`. */
+  async function salvaImmagineGenerata() {
+    if (!result?.blob) return;
+    await library.save(result.blob, {
+      name: `immagine-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}`,
+      kind: 'jpg',
+      meta: { op: 'immagine', prompt: promptImmagine },
+    });
+    setNotice(t('immagine.salvato'));
+  }
+
   /** Il suono di adesso: le manopole più, se c'è, il ritmo battuto. */
   function costruisciEffetto() {
     const colpo = genera(effetto.famiglia, {
@@ -1505,6 +1683,7 @@ export default function App() {
         setEffetto({ famiglia: id, param: { ...f.param }, durata: f.durata, seme: 1 });
       },
     },
+    immagine: { valore: misuraImmagine, cambia: setMisuraImmagine },
   };
 
   /**
@@ -1525,6 +1704,7 @@ export default function App() {
     file,
     inColonna: batchFiles.length,
     risultati: batch.results.length,
+    riferimenti: references.length,
   };
 
   /** La ricetta della voce: quella scelta nel punto oro più i filtri del tasto. */
@@ -1954,6 +2134,48 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               onScordaRitmo={effettiAudio.reset}
               onFermaRitmo={effettiAudio.stop}
             />
+          ) : tool === 'immagine' ? (
+            /*
+             * Il piano di Immagine e' un prompt che si scrive, come la tela
+             * del vettoriale e' un foglio che si disegna — mai «vuoto»
+             * (`servizi/piano.js`). Il PREZZO sta qui, PRIMA del tasto Zack:
+             * e' la promessa pubblicata sulla home, non un dettaglio
+             * d'interfaccia.
+             */
+            <div className="immagine-lab">
+              <p className="sc-claim">{t(getDescrittore('immagine').claim)}</p>
+              <textarea
+                className="immagine-prompt"
+                value={promptImmagine}
+                onChange={(e) => setPromptImmagine(e.target.value)}
+                placeholder={t('immagine.claim')}
+                aria-label={t('immagine.claim')}
+                disabled={Boolean(busy)}
+              />
+              {references.length > 0 && (
+                <ul className="riferimenti-scelti">
+                  {references.map((r, i) => (
+                    <li key={`${r.assetId}-${i}`}>
+                      {t(`immagine.ruolo.${r.ruolo}`)}: {r.nome}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {/*
+                 Il prezzo sale coi riferimenti gia' scelti: e' il motivo per
+                 cui «prima che tu prema» resta letterale invece che
+                 approssimativo (vedi `Preventivo.jsx`).
+               */}
+              <Preventivo
+                servizio={getDescrittore('immagine').listino}
+                saldo={crediti}
+                riferimenti={references.length}
+                onRicarica={() => setSopraLaTela('ricarica')}
+              />
+              {result?.kind === 'jpg' && (
+                <img className="immagine-risultato" src={result.url} alt="" />
+              )}
+            </div>
           ) : isEditor ? (
             <SvgEditor
               ref={editorRef}
@@ -2050,15 +2272,45 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
        * arrivare niente. Sta qui sotto la striscia e non sul muro, perche' sul
        * muro ci finisce quando e' troppo tardi.
        */}
-      {statoConto === 'prova' &&
-        (() => {
-          const giorni = giorniAllaProva(licenza);
-          return (
-            <p className="avviso-prova">
-              {giorni <= 1 ? t('muro.provaUltimo') : t('muro.provaResta', { giorni })}
-            </p>
-          );
-        })()}
+      {/*
+       * Il saldo sta ACCANTO all'avviso della prova, non dentro: sono due
+       * informazioni diverse — «quanto resta della prova gratuita» e «quanto
+       * credito hai» — e chi non e' mai stato in prova (un abbonato, o chi ha
+       * solo comprato crediti) deve vedere comunque il proprio saldo.
+       */}
+      <div className="top-strip">
+        {statoConto === 'prova' &&
+          (() => {
+            const giorni = giorniAllaProva(licenza);
+            return (
+              <p className="avviso-prova">
+                {giorni <= 1 ? t('muro.provaUltimo') : t('muro.provaResta', { giorni })}
+              </p>
+            );
+          })()}
+
+        {/*
+         * Critical del giro di correzioni: questo tasto era racchiuso in una
+         * guardia che lo toglieva quando il saldo era a zero, ed è l'UNICO
+         * ingresso al pannello della ricarica in tutta l'app (i due montaggi
+         * di `<Ricarica>` dipendono entrambi da `sopraLaTela === 'ricarica'`,
+         * che solo lui imposta). Con un saldo appena aperto — lo stato di
+         * OGNI cliente nuovo, il primo momento d'acquisto per cui Task 8
+         * esiste — il tasto non c'era e non c'era un'alternativa: vicolo
+         * chiuso.
+         *
+         * Il motivo per cui non se n'era accorto nessuno conta più del bug:
+         * ogni verifica a schermo del Task 8 è partita da una licenza con
+         * cinquemila millesimi già in `localStorage` (una sessione
+         * precedente, mai svuotata). Il cammino a saldo vuoto — l'unico che
+         * ogni cliente percorre davvero — non era mai stato provato.
+         * «0,00 €» è onesto, ed è la porta: il tasto si mostra sempre, senza
+         * più nessuna guardia intorno.
+         */}
+        <button className="saldo" onClick={() => setSopraLaTela('ricarica')}>
+          {formatEuro(crediti, getLang())}
+        </button>
+      </div>
 
       {showOnboarding && <Onboarding onClose={() => setShowOnboarding(false)} />}
 
@@ -2066,7 +2318,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
         <ToolRail
           current={tool}
           collapsed={isEditor}
-          balance={null}
+          balance={toEuro(crediti)}
           onPick={(svc) => {
             if (!svc.ready) {
               setNotice(`${t('soon.title')} — ${t('soon.body')}`);
@@ -2155,24 +2407,65 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               e due risposte alla stessa domanda divergono al primo servizio
               nuovo. */}
           {chiuso ? (
-            /*
-             * Il muro sta DENTRO `.stage`, non intorno a `.shell`: fuori
-             * chiuderebbe anche la striscia e la libreria, che e' esattamente
-             * cio' che la spec § 3.5 vieta — la libreria non si chiude mai, e
-             * un test legge questo file per assicurarsene.
-             */
-            <Muro
-              stato={statoConto}
-              onEntra={entraConEmail}
-              onGoogle={entraConGoogle}
-              onAbbona={async () => {
-                try {
-                  await vaiAlPagamento();
-                } catch {
-                  setNotice(t('muro.pagamentoNo'));
-                }
-              }}
-            />
+            chiusoPerSaldo ? (
+              /*
+               * Important del giro di correzioni: chi arriva qui e' abbonato
+               * (`puoiLavorare(statoConto)` vero) e non ha credito. Il muro
+               * dell'abbonamento non ha una FRASE per 'aperto'/'prova' — non
+               * chiudevano nessuno prima che ogni servizio potesse chiudersi
+               * da solo sul saldo — e ricadrebbe su FRASE['mai-entrato']:
+               * «Entra per usare lo studio», con un tasto che apre un
+               * SECONDO abbonamento Stripe a chi ne ha gia' uno. Qui non si
+               * monta il muro: si monta il pannello della ricarica, che e'
+               * cio' che manca davvero.
+               */
+              <div className="sc-pannello">
+                <p className="muro-corpo">{t('muro.abbonatoSenzaSaldo')}</p>
+                <Ricarica saldo={crediti} onErrore={setNotice} onChiudi={() => setSopraLaTela(null)} />
+              </div>
+            ) : (
+              <>
+                {/*
+                 * Il muro sta DENTRO `.stage`, non intorno a `.shell`: fuori
+                 * chiuderebbe anche la striscia e la libreria, che e' esattamente
+                 * cio' che la spec § 3.5 vieta — la libreria non si chiude mai, e
+                 * un test legge questo file per assicurarsene.
+                 */}
+                <Muro
+                  stato={statoConto}
+                  onEntra={entraConEmail}
+                  onGoogle={entraConGoogle}
+                  onAbbona={async () => {
+                    try {
+                      await vaiAlPagamento();
+                    } catch {
+                      setNotice(t('muro.pagamentoNo'));
+                    }
+                  }}
+                />
+                {/*
+                 * Correzione 2 (giro di correzioni Task 8): col muro alzato
+                 * `<Piano>` non si monta, e Ricarica viveva SOLO nel suo
+                 * `pannello` — un clic sul saldo, su uno strumento locale
+                 * murato, non apriva niente. Stessa strada della libreria qui
+                 * sopra: un pannello che deve restare raggiungibile a muro
+                 * alzato esce da dentro `<Piano>`, non si duplica un secondo
+                 * muro tecnico sopra quello commerciale. Il muro esiste per
+                 * VENDERE — chi lo vede e' esattamente chi deve poter pagare.
+                 *
+                 * `.sc-pannello` e' la stessa classe con cui Piano avvolge
+                 * questo stesso pannello quando NON e' murato (vedi piu' sotto):
+                 * nessuno stile nuovo, solo un secondo posto da cui montarla.
+                 * Scavalca il muro solo LEI (col saldo, gia' fuori da `.stage`):
+                 * gli strumenti del servizio chiuso restano dietro `<Muro>`.
+                 */}
+                {sopraLaTela === 'ricarica' && (
+                  <div className="sc-pannello">
+                    <Ricarica saldo={crediti} onErrore={setNotice} onChiudi={() => setSopraLaTela(null)} />
+                  </div>
+                )}
+              </>
+            )
           ) : DESCRITTORI[tool] ? (
             <Piano
               servizio={getDescrittore(tool)}
@@ -2198,7 +2491,16 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                       }),
                       nota: batch.eta != null ? t('batch.eta', { sec: batch.eta }) : engine.phase,
                     }
-                  : null
+                  : /*
+                     * Step 7-bis del capitolato: diciotto secondi davanti a un
+                     * tasto muto sono un invito a premere una seconda volta —
+                     * e la seconda volta si addebita di nuovo. `busy` GIA'
+                     * contiene `t('immagine.attendi')` (vedi `runImmagine`):
+                     * lo si mostra qui, non un nuovo stato da tenere sincrono.
+                     */
+                    tool === 'immagine' && busy
+                    ? { testo: busy }
+                    : null
               }
               busy={Boolean(busy)}
               models={engine.models}
@@ -2221,6 +2523,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               onMenu={(quale) => {
                 if (tool === 'vocale') return menuVocale(quale);
                 if (tool === 'effetti') return menuEffetti(quale);
+                // Su Immagine il `+` NON aggiunge un oggetto: cadere nel
+                // ramo di default qui sotto scriverebbe una nota nella tela
+                // di Brain, che per questo servizio non c'entra niente.
+                if (tool === 'immagine') return menuImmagine(quale);
                 setMenuPiu(false);
                 // Dal computer: entra in libreria e finisce sulla tela.
                 if (quale === 'computer') return portaFileInBrain();
@@ -2248,6 +2554,21 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   />
                 ) : sopraLaTela === 'tutorial' ? (
                   <Tutorial onChiudi={() => setSopraLaTela(null)} />
+                ) : sopraLaTela === 'riferimenti' ? (
+                  <Riferimenti
+                    servizio={getDescrittore('immagine').listino}
+                    scelti={references}
+                    onCambia={setReferences}
+                    assets={library.assets}
+                    onChiudi={() => setSopraLaTela(null)}
+                    ruoloIniziale={ruoloMenu}
+                  />
+                ) : sopraLaTela === 'ricarica' ? (
+                  <Ricarica
+                    saldo={crediti}
+                    onErrore={setNotice}
+                    onChiudi={() => setSopraLaTela(null)}
+                  />
                 ) : sopraLaTela === 'avanzati' ? (
                   tool === 'brain' ? avanzatiBrain : avanzati
                 ) : null
@@ -2272,7 +2593,12 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                             effettiAudio.reset();
                             setEffettoAperto(false);
                           }
-                        : reset
+                        : tool === 'immagine'
+                          // La croce compare solo con UN riferimento
+                          // (`quanti === 1`): toglierlo svuota la lista, non
+                          // tocca il prompt gia' scritto ne' il risultato.
+                          ? () => setReferences([])
+                          : reset
               }
               /* Il rilascio segue lo stesso instradamento del `+`: se no il
                  trascinamento di una clip su Filmato finirebbe nel percorso
@@ -2281,6 +2607,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               onFile={(f) => accettaFile([f], { aggiungi: true })}
               onFiles={(files) => accettaFile(files, { aggiungi: true })}
               onZack={() => {
+                if (tool === 'immagine') {
+                  runImmagine();
+                  return;
+                }
                 if (tool === 'effetti') {
                   // Il tasto SUONA: e' cio' che si vuole da un effetto, e
                   // premerlo di nuovo lo risuona senza cambiarlo — lo stesso
@@ -2369,6 +2699,8 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   pulisci: () => set({ clean: !s.clean }),
                   apriEditor: sendToEditor,
                   avanzati: () => setSopraLaTela((v) => (v === 'avanzati' ? null : 'avanzati')),
+                  riferimenti: () => setSopraLaTela((v) => (v === 'riferimenti' ? null : 'riferimenti')),
+                  salva: salvaImmagineGenerata,
                   centra: () => brainRef.current?.centra(),
                   tutorial: () => setSopraLaTela((v) => (v === 'tutorial' ? null : 'tutorial')),
                   /*
@@ -2401,6 +2733,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   [modoDisegno]: isEditor,
                   pulisci: s.clean,
                   avanzati: sopraLaTela === 'avanzati',
+                  riferimenti: sopraLaTela === 'riferimenti',
                 };
                 /*
                  * Cosa vuol dire «c'e' qualcosa sul piano» cambia col
@@ -2434,7 +2767,11 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                  * MAI: un cerchio dichiarato, un gesto scritto, e nessun modo
                  * di arrivarci.
                  */
-                const uscita = tool === 'vettorializza' ? 'svg' : 'png';
+                // Google risponde sempre JPEG (misurato — vedi listino.js):
+                // senza questo ramo «salva» non comparirebbe MAI dopo una
+                // generazione riuscita, perche' `result.kind` sarebbe 'jpg' e
+                // non 'png'.
+                const uscita = tool === 'vettorializza' ? 'svg' : tool === 'immagine' ? 'jpg' : 'png';
                 return strumentiVisibili(getDescrittore(tool), {
                   file: pieno,
                   risultato: result?.kind === uscita,

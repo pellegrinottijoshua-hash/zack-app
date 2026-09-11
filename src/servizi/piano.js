@@ -50,6 +50,17 @@ const COSA_CE = {
    * nell'angolo, per portare dentro un'immagine da tracciare.
    */
   vettorializza: () => ({ contenuto: true, inCorso: false }),
+  /*
+   * Immagine non ha un file da caricare: la sua tela e' il prompt che si
+   * scrive, come per il vettoriale — «il canva vuoto color panna» — e per lo
+   * stesso motivo `contenuto` e' sempre vero. Senza questa riga il piano
+   * risulterebbe SEMPRE vuoto (un servizio non elencato qui vale «niente e
+   * niente»): il claim e il `+` grande comparirebbero, ma il prompt, il
+   * preventivo e i riferimenti scelti — cioe' tutto quello per cui il
+   * servizio esiste — non si vedrebbero mai. E' lo stesso guasto del
+   * righello del 2026-09-04: un pezzo dichiarato che non fa niente.
+   */
+  immagine: () => ({ contenuto: true, inCorso: false }),
 };
 
 /** Quanti oggetti conta il piano, per il `+` piccolo e per la croce. */
@@ -69,6 +80,13 @@ const QUANTI = {
  * che ci fosse nessun file.
  */
 QUANTI.vettorializza = QUANTI.scontorna;
+
+/*
+ * Immagine conta i RIFERIMENTI scelti, non i file: e' il numero che decide
+ * quando il `+` piccolo compare (fino al tetto del listino, `accetta.quanti`)
+ * — la stessa domanda a cui risponde QUANTI per tutti gli altri servizi.
+ */
+QUANTI.immagine = (s) => s.riferimenti ?? 0;
 
 /**
  * Cosa c'è sul piano. Un servizio sconosciuto risponde «niente e niente»:
