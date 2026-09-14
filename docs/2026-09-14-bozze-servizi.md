@@ -188,3 +188,119 @@ generazione?
 
 **A10** — Lo **spazio che finisce**: vedi l'avvertenza in T6. Si decide
 progettando Brain.
+
+---
+
+## B — Brain, la libreria
+
+### Cosa sparisce
+
+**B1** — *pelle* — **deciso.** Dalle due schermate di oggi resta **il canva e il
++ in alto a sinistra**. Via tutto il resto: i **crediti**, la **colonna destra**
+(download, righello, indietro, tag), la **mascotte**, il **tasto Zack**, le
+**schede-nota** sul canva, e il **menu del file** (scontorna / vettorializza /
+riprendi / togli dalla tela) con la sua fila di iconcine.
+
+Zack se ne va perché in Brain non si genera niente: qui si organizza. Il gesto
+che fa partire il lavoro diventa **trascinare un file su un servizio** (B7).
+
+### Come si presenta un file
+
+**B2** — *impianto* — **deciso.** Si aggiungono **file di qualsiasi tipo**, e
+appena entrano diventano un'**icona circolare con l'immagine del file
+centrata**. È la stessa forma dell'icona output (T2): una sola forma per «un
+file», in tutta l'app.
+
+**B4** — *pelle* — **deciso.** **Niente più oggetti che non siano file**: le
+note come schede spariscono. Il **titolo e la nota si scrivono sull'icona**, e
+sono **ancorate al file** — viaggiano con lui, non con la tela.
+
+### Gli strumenti, a destra
+
+**B3** — *nuovo* — **deciso a metà.** Tre pallini sulla destra:
+
+1. **le tre lineette** — se premuto si aprono tre mini pallini per
+   riorganizzare: **freccia**, **gruppo**, e un terzo (colore?).
+2. **pool dei file importati**.
+3. **pool degli output**.
+
+In **basso a destra**, l'ultima icona: il **cestino**.
+
+### I gesti
+
+**B5** — *impianto* — **deciso.** **Tenere premuta un'icona la prende in mano**,
+e la si posa: sul **pocket**, sul **canva**, **dentro un'altra icona** (che così
+diventa cartella), o su un **servizio in basso**.
+
+**B6** — *nuovo* — **deciso.** Un'icona che ne contiene altre **è una cartella**.
+Si fa trascinandoci dentro un file. Si può **rinominare**. L'**icona madre resta
+sé stessa**: la cartella tiene la faccia che aveva.
+
+**B7** — *impianto* — **deciso.** Un file **trascinato su un servizio diventa il
+riferimento** di quel servizio, e cambiando servizio **è già lì**, senza doverlo
+ricaricare.
+
+**B8** — *impianto* — **deciso.** Un file preso dalla **galleria del telefono**
+entra **nella pool degli importati** (risposta ad A8). Non è un ospite: è un
+file di Brain come gli altri.
+
+### Le domande di Brain
+
+**B-a — Dove stanno i file non organizzati?** (domanda del committente.)
+Proposta mia, vedi **P1** qui sotto.
+
+**B-b — Il tocco semplice cosa fa?** Il disegno dice che tenere premuto **3
+secondi sposta**, e più sotto che tenere premuto più di 3 secondi **scrive la
+nota**. Due gesti uguali per due cose diverse. E manca il terzo: **guardare un
+file**. Un cerchietto con un'immagine minuscola dentro non si vede.
+Proposta: **tocco = apri** (e lì dentro ci sono nome e nota), **tenere premuto =
+prendi in mano**.
+
+**B-c — Come si toglie un file dal canva senza cancellarlo?** «Togli dalla tela»
+è stato crociato insieme al resto del menu. Se l'unico posto dove posare un file
+è il cestino, la tela diventa una stanza in cui si entra e non si esce.
+
+**B-d — Il cestino restituisce?** Con Brain che è la libreria, **il cestino è
+l'unico modo di perdere qualcosa**. Un dito storto su un'icona che vale 15
+centesimi non deve essere definitivo. Proposta: il cestino tiene finché non lo
+svuoti, e si può rovistare dentro.
+
+**B-e — E l'annulla?** L'abbiamo tolto (B1) proprio nell'unico posto dove i file
+vivono davvero. Un gruppo sbagliato, trenta file finiti dentro una cartella per
+sbaglio: in Brain non c'è modo di tornare indietro.
+
+**B-f — Le cartelle:** una cartella può stare dentro un'altra cartella? Un file
+si può tirare fuori? E un file dentro una cartella **resta anche nell'archivio**
+per data (dico di sì: la cartella è una scelta, la data è un fatto).
+
+**B-g — La faccia dei file che non sono immagini.** Un'icona circolare con
+l'immagine centrata funziona per le foto. Un audio cos'ha in mezzo — l'onda? Un
+video il primo fotogramma con un segno di riproduzione? Un SVG?
+
+**B-h — Il terzo mini pallino.** Il colore regge: è l'unico modo di raggruppare
+a colpo d'occhio senza leggere. Ma il buco vero non è quello — vedi **P2**.
+
+### Le proposte in attesa di risposta
+
+**P1 — Le due pool non sono scatole: sono lenti su un archivio solo.**
+
+Il problema della domanda B-a è che se il canva è dove vivono i file, il canva
+diventa una discarica; e se vivono nelle pool, oltre il ventesimo spariscono.
+
+Proposta: **esiste un archivio unico, in ordine di data, che tiene tutto.** Le
+due pool sono due modi di guardarlo — *quelli che ho importato*, *quelli che ho
+generato* — e le ultime venti sono solo ciò che si vede senza scorrere. **Si
+scorre e si continua indietro nel tempo**, fino al primo file.
+
+Il canva allora non è il magazzino: è **solo ciò che hai scelto di organizzare**.
+Un file non organizzato non sta «da nessuna parte» — sta nell'archivio, dove è
+sempre stato, e la pool è la sua porta.
+
+Così «il ventunesimo resta in Brain non organizzato» (T4) smette di essere una
+regola a parte: è solo un file che non è più fra i venti recenti.
+
+**P2 — Manca cercare, non ordinare.** Con quaranta file il colore basta. Con
+quattrocento, l'unica domanda che conta è *dov'è quella cosa di tre settimane
+fa*, e nessun colore ci arriva. Non dico di disegnarlo adesso: dico che
+l'archivio di P1 è il posto dove dovrà stare, e conviene saperlo mentre
+decidiamo la sua forma.
