@@ -153,8 +153,8 @@ test('ogni servizio dichiara COSA gli serve, e da una lista chiusa', () => {
   }
 });
 
-test('i cinque strumenti locali chiedono l’abbonamento', () => {
-  for (const id of ['scontorna', 'brain', 'vocale', 'effetti', 'vettorializza']) {
+test('tre strumenti locali chiedono abbonamento', () => {
+  for (const id of ['vocale', 'effetti', 'vettorializza']) {
     assert.equal(DESCRITTORI[id].serve, 'abbonamento', `${id} ha cambiato regola`);
   }
 });
@@ -194,4 +194,38 @@ test('uno strumento senza descrittore resta chiuso, non passa gratis quando il m
    */
   assert.equal(servizioAperto(undefined, { stato: 'scaduto', crediti: 99999, prezzo: 0 }), false);
   assert.equal(servizioAperto(undefined, { stato: 'aperto', crediti: 0, prezzo: 0 }), true);
+});
+
+
+test('scontorna e brain non chiedono niente a nessuno', () => {
+  for (const id of ['scontorna', 'brain']) {
+    assert.equal(getDescrittore(id).serve, 'niente');
+    assert.equal(
+      servizioAperto(getDescrittore(id), { stato: 'mai-entrato', crediti: 0, prezzo: 0 }),
+      true,
+      id + ' deve aprirsi anche a chi non e mai entrato',
+    );
+  }
+});
+
+test('niente non apre gli altri due livelli', () => {
+  assert.equal(
+    servizioAperto(getDescrittore('vettorializza'), { stato: 'mai-entrato' }),
+    false,
+    'abbonamento non si apre da solo',
+  );
+  assert.equal(
+    servizioAperto(getDescrittore('immagine'), { stato: 'aperto', crediti: 0, prezzo: 146 }),
+    false,
+    'generazione non si apre a saldo zero',
+  );
+});
+
+test('SERVE elenca i tre livelli, e rifiuta il quarto', () => {
+  assert.deepEqual(SERVE, ['niente', 'abbonamento', 'saldo']);
+  assert.throws(
+    () => validaDescrittore({ ...getDescrittore('scontorna'), serve: 'gratis' }),
+    /gratis/,
+    'un livello inventato deve dirlo, non passare in silenzio',
+  );
 });

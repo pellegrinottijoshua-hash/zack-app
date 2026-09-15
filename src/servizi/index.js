@@ -50,12 +50,15 @@ export const LATI = ['sinistra', 'destra'];
 /**
  * Cosa serve per usare un servizio. **Lista chiusa**, come `QUANDO` e `LATI`.
  *
+ * `niente` — gira sul computer del cliente e **non lo vendiamo**: scontorna e
+ * Brain. Scontorna perché è l'amo, Brain perché è la libreria, e chiudere
+ * fuori qualcuno dai suoi stessi file non è un prodotto.
  * `abbonamento` — gira sul computer del cliente, e l'abbonamento è ciò che lo
  * paga. `saldo` — chiama un fornitore che ci addebita, e a pagarlo sono i
  * crediti: quindi si usa **anche senza abbonamento**, perché quei crediti sono
  * già soldi di chi li ha comprati (decisione del committente, 2026-09-10).
  */
-export const SERVE = ['abbonamento', 'saldo'];
+export const SERVE = ['niente', 'abbonamento', 'saldo'];
 
 /**
  * Questo servizio si può usare adesso?
@@ -70,6 +73,10 @@ export const SERVE = ['abbonamento', 'saldo'];
  * cioè lo stesso muro di sempre per chi non è nell'impianto.
  */
 export function servizioAperto(descrittore, { stato, crediti = 0, prezzo = 0 } = {}) {
+  // Gratis per tutti: nessuno stato, nessun saldo, nessun muro. Sta PRIMA
+  // delle altre due domande apposta — chiederle e poi ignorarle sarebbe un
+  // ramo che sembra decidere e non decide.
+  if (descrittore?.serve === 'niente') return true;
   if (descrittore?.serve === 'saldo') return crediti >= prezzo;
   return puoiLavorare(stato);
 }

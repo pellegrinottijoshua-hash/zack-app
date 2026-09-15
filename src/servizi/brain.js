@@ -11,8 +11,8 @@
  */
 export default {
   id: 'brain',
-  /** Gira sul computer del cliente: lo paga l'abbonamento, non i crediti. */
-  serve: 'abbonamento',
+  /** Gratis per tutti: è la libreria, e i file sono di chi li ha fatti. */
+  serve: 'niente',
   claim: 'brain.claim',
 
   /*
