@@ -403,18 +403,31 @@ diventato vivono nello stesso posto**. Un'idea detta camminando, e tre settimane
 dopo, sulla stessa tela, l'immagine che ne è nata. Voicenotes ha i pensieri.
 Nessuno ha i pensieri accanto agli asset.
 
-### Le domande
+### Le risposte — 2026-09-15
 
-**C-a — Dove vivono i pensieri: sul telefono o su un nostro server?** Decide
-tutto il resto: il costo, la frase sulla home, la sincronia, e se «chiedi
-all'archivio» è possibile.
+**C-a — I pensieri vivono sul telefono.** Niente server. Sul desktop si dirà
+apertamente che non si vedono, **finché un server non c'è**.
 
-**C-b — Sta nell'abbonamento?** Con un tetto onesto (tot minuti al mese), o a
-crediti come le generazioni?
+**C-b — Gratuito, a spese del committente**, finché l'app non viene usata. In
+perdita volentieri, e consapevolmente. ⚠️ Vedi la criticità del quadro generale:
+va bene a dieci clienti, non a mille. **Il tetto va messo il primo giorno**, non
+quando fa male.
 
-**C-c — Da quale telefono si parte?** Il committente ha un Android; la strada
-più semplice per una pagina web è però l'iPhone col tasto Azione.
+**C-c — Si parte da Android** (tasto volume su Samsung; sul lato Apple, tasto
+dietro).
 
-**C-d — Quando?** Oggi non esistono ancora: B3 (video e voce), il pacchetto di
-effetti, il vettoriale semplice, il muro acceso, il primo ingresso via email. È
-una scelta di ordine, non di merito.
+**C-d** — Le idee stanno nel quaderno, l'ordine si decide dopo. **ElevenLabs è
+importante** e va integrato.
+
+### Come entra un pensiero
+
+Tre strade, tutte e tre valide:
+
+1. **A mano**, come icona.
+2. **Ancorato** a un'icona o a una cartella che già esiste.
+3. **Camminando**, col tasto — e finisce nella pool.
+
+E una cosa che il committente vorrebbe: **che sia l'AI a capire dove metterlo**,
+da quello che si dice nel vocale. Questo però **contraddice C-a**: capire cosa
+hai detto vuol dire mandare fuori il testo, o far girare un modello sul telefono.
+Vedi il quadro generale, § criticità.
