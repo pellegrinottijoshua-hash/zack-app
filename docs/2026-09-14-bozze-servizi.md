@@ -789,3 +789,64 @@ sotto **«avanzati»**, chiuso, per chi lo cerca.
 
 **Perché conta:** insieme al pacchetto di effetti, è metà di quello che
 l'abbonamento vende oggi. Se resta ostico, l'abbonamento vende una cosa sola.
+
+---
+
+## Le risposte alle bozze — 2026-09-15
+
+**E0 — Brain è un'icona**, e premuta apre **il suo canva a parte**, la sezione
+come l'abbiamo progettata. Non una colonna aperta. Servizi in alto, strumenti a
+destra, Zack in basso: confermato.
+
+**E1 — Immagine.** I **riferimenti stanno in alto, sotto il prompt**, come
+pallini. Le due pastiglie rapida/grande **spariscono**: misura e formato vanno
+**dentro il bottoncino oro** del tasto Zack — **1K, 2K** e **tutti i formati**
+(9:16, 16:9, 1:1 e gli altri). Buona notizia: **il formato non cambia il prezzo**,
+e neanche 1K contro 2K. Quindi si possono dare tutti senza toccare il listino.
+I **prompt salvati** si vedono in un'icona apposta dentro Brain, chiamata
+**«prompts»**, e nel bottoncino oro come prompt 1, 2, 3, 4. **Il rimborso si
+dice**, non si fa in silenzio.
+
+**E2 — Video.** Seedance 2.5 deve fare **le stesse cose che fa dentro Higgsfield
+o Dreamina, senza eccezioni**: stesso numero massimo di riferimenti, stesse
+opzioni nel bottoncino oro.
+
+⚠️ **Il vincolo che non dipende da noi:** Higgsfield e Dreamina sono interfacce
+costruite *sopra* il modello, e una parte di quello che mostrano potrebbero
+farla loro, non l'API. **Primo passo obbligatorio:** leggere la documentazione
+del fornitore e fare la tabella di ciò che l'API espone davvero, accanto a ciò
+che Higgsfield mostra. Dove manca qualcosa, si decide se costruirla noi o
+lasciarla fuori — ma si scopre **prima**, non a metà.
+
+**E3 — Voce: tutto ElevenLabs, non due servizietti.** Creare voci, clonare la
+propria e quella di amici consenzienti, **sovrapporre la propria voce a
+un'altra dentro un video**. Si integra tutto ciò che l'API permette; ciò che non
+permette si cerca altrove.
+
+Resta il consenso: clonare la voce di un amico consenziente **va bene**, ma il
+consenso va **chiesto e registrato**, perché se un domani qualcuno si lamenta
+la richiesta arriva a noi.
+
+**E4 — Effetti.** Il committente comprerà un pacchetto e lo integreremo.
+⚠️ **Attenzione alla licenza, non al prezzo:** un pacchetto «gratis» non basta —
+serve una licenza che permetta di **ridistribuirlo** dentro un prodotto a
+pagamento. Le raccolte CC0 vanno bene; molte «free» no.
+**Alternativa da valutare:** generarci il pacchetto da soli con ElevenLabs, una
+volta, e possederlo. Costa pochi euro e risolve la licenza alla radice.
+
+**E5 — Vettoriale.** La cosa più importante non sono le pastiglie: è che
+**modificare i nodi di un logo oggi è impraticabile**. È quello il lavoro.
+
+**Play Store — si comincia a ragionarci.** Vedi la scaletta.
+
+**Il portafoglio Zack.** Idea: crearlo in due clic, non custodire noi i soldi,
+comprare 5 € di SOL con la carta dentro Zack.
+⚠️ **Il numero che smonta il risparmio:** comprare crypto con carta costa **più**
+di Stripe, non meno — chi vende crypto al dettaglio prende commissioni ben più
+alte di 25 centesimi su 5 €, spesso minimi fissi da 3-4 €. Le commissioni
+scompaiono **dopo**, dentro la catena: quindi il vantaggio esiste solo per chi
+**ha già** crypto.
+**La versione buona dell'idea:** non creare portafogli, ma **accettare crypto
+come modo di ricaricare** per chi ce l'ha già. Noi riceviamo e accreditiamo nel
+nostro listino in millesimi, che esiste ed è collaudato. Niente custodia, niente
+licenze, e il giro dei rimborsi resta quello di adesso.
