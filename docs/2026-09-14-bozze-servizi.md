@@ -338,6 +338,67 @@ decidiamo la sua forma.
 
 ---
 
+## D — La home del desktop: la vetrina che lavora — *nuovo* — **da rifinire**
+
+Idea del committente, 2026-09-15. Oggi la home del desktop è un tasto Zack e la
+mascotte: una vetrina. Dopo, diventa **un banco di lavoro con tre corsie**,
+subito usabili senza entrare da nessuna parte:
+
+- **a sinistra, scontorna — con scritto FREE.**
+- **al centro, la mascotte** (in video).
+- **a destra, immagine e video**, una sotto l'altra.
+
+Ognuna delle tre ha le stesse quattro cose: il **tasto Zack personalizzabile**,
+il **+ per i riferimenti** (che diventano pallini), lo **spazio del prompt**, e
+il tasto Zack che permette di **salvare i prompt** — prompt 1, 2, 3, 4.
+
+I **crediti** stanno in alto a sinistra, sotto «entra nello studio». La frase
+cardine: **«Zack only the best models»** (o simile).
+
+**Perché regge:** la cosa gratuita e la cosa a pagamento stanno **sullo stesso
+schermo**. Chi arriva non deve credere a una promessa: scontorna un file, vede
+che funziona, e le altre due corsie sono lì accanto già pronte. È il prodotto che
+si vende da solo, senza una riga di persuasione.
+
+**Come si tiene insieme col telefono:** sull'app si apre **scontorna**, e sotto
+ci sono immagine e video (poi voce, vettoriale, pacchetti sonori). Sono le stesse
+tre cose, disposte diversamente. Una testa sola, due corpi.
+
+### Le domande della home desktop
+
+**D-a — Dove va a finire quello che la home dice oggi?** La riservatezza, i
+cinque strumenti, i dodici centesimi, il prezzo. Scende sotto il banco di lavoro,
+o sparisce? Quel testo è ciò che spiega **perché** fidarsi.
+
+**D-b — I crediti a chi non è ancora entrato.** Sul telefono abbiamo deciso di
+**non** mostrare «0,00 €» a chi apre per la prima volta, perché deprime prima
+ancora di aver provato (H3). Sul desktop varrebbe lo stesso: a uno sconosciuto
+mostriamo zero? Proposta: al posto del saldo, **il prezzo di ciò che sta per
+fare** — che è la stessa informazione, ma detta al contrario.
+
+**D-c — Cosa succede premendo Zack senza crediti e senza account?** Se uno scrive
+un prompt, preme, e solo lì scopre che serve entrare e pagare, è il momento
+peggiore per dirglielo. Il preventivo esiste già: **il prezzo va accanto al tasto
+prima di premere**, come dentro lo studio.
+
+**D-d — I prompt salvati dove vivono?** Non sono file, e Brain ormai accetta solo
+file. Sono una cosa nuova, piccola ma nuova: stanno dentro il servizio? Diventano
+anche loro icone?
+
+**D-e — I riferimenti sulla home da dove si pescano?** Pocket e Brain esistono
+solo per chi è entrato. Per uno sconosciuto restano il computer e basta.
+
+**D-f — «Only the best models» è una promessa che poi va mantenuta.** Vuol dire
+che quando esce un modello migliore **si cambia**, e il prezzo si muove con lui.
+Per fortuna il listino è costruito proprio così — un servizio, una riga — quindi
+è mantenibile. Ma va mantenuta, e il giorno che non lo facciamo la frase diventa
+una bugia sulla prima schermata.
+
+**D-g — La mascotte in video al centro** è un asset da produrre, non da
+programmare. Va messo in conto a parte.
+
+---
+
 ## C — La cattura del pensiero — *nuovo* — **da decidere**
 
 Idea del committente, 2026-09-15: un pensiero si cattura a voce **senza aprire
@@ -408,16 +469,67 @@ Nessuno ha i pensieri accanto agli asset.
 **C-a — I pensieri vivono sul telefono.** Niente server. Sul desktop si dirà
 apertamente che non si vedono, **finché un server non c'è**.
 
-**C-b — Gratuito, a spese del committente**, finché l'app non viene usata. In
-perdita volentieri, e consapevolmente. ⚠️ Vedi la criticità del quadro generale:
-va bene a dieci clienti, non a mille. **Il tetto va messo il primo giorno**, non
-quando fa male.
+**C-b — Gratuito, a spese del committente**, con un budget dichiarato: **fino a
+~50 € al mese** persi volentieri, nella fascia dei primi 100-1000 clienti.
+Quando la cosa starà dentro un abbonamento da 2,99/3,99 €, si riparla.
+
+Quel budget si traduce in un tetto preciso (listino, da misurare: ~0,0055 € al
+minuto):
+
+| Tetto gratuito | Costo per cliente | 100 clienti | 1.000 clienti |
+|---|---|---|---|
+| 3 minuti al giorno | ~0,50 €/mese | **~50 €** ✅ | ~500 € ❌ |
+| 10 minuti al giorno | ~1,65 €/mese | ~165 € | ~1.650 € |
+
+Quindi: **circa 3 minuti al giorno** è il tetto che sta dentro i 50 €, e regge
+fino a cento clienti. Da lì in poi serve una delle due: la trascrizione gratuita
+del browser, oppure che sia l'abbonamento a pagarla.
+
+⚠️ E un numero da tenere per dopo: **dentro un abbonamento da 2,99 €**, dieci
+minuti al giorno di trascrizione si mangiano **più della metà** dell'incasso;
+tre minuti se ne mangiano un sesto. Il tetto non serve solo ai regali.
 
 **C-c — Si parte da Android** (tasto volume su Samsung; sul lato Apple, tasto
 dietro).
 
 **C-d** — Le idee stanno nel quaderno, l'ordine si decide dopo. **ElevenLabs è
 importante** e va integrato.
+
+### Il tasto: risolto su Samsung — 2026-09-15
+
+**Provato sul telefono del committente.** «Due tocchi» sul tasto laterale si può
+legare a due cose che ci servono:
+
+- **Registratore vocale → Avvia registrazione.** Registra l'app di Samsung.
+  A noi il file arriva **condividendolo** verso Zack installato come app: Android
+  sa mandare un file a un'app installata, e una pagina web installata **può
+  ricevere** (da verificare sul nostro impianto). Più tocchi, zero codice di
+  cattura.
+- **Applicazioni → Zack.** Un tocco solo, e Zack si apre. Perché parta anche la
+  registrazione, l'app deve aprirsi già dentro la schermata di cattura e
+  registrare da sola — **fattibile se il permesso del microfono è già dato**, ed è
+  da provare.
+
+**Da provare, e costa poco:** se il doppio tocco apre Zack **a telefono
+bloccato** o pretende lo sblocco. Cambia tutto il valore della cosa: sbloccare è
+l'attrito che l'idea voleva togliere.
+
+Sull'iPhone non esiste il doppio tocco laterale: là sono il tasto Azione (dai 15
+Pro) o il tocco sul retro, tramite una Scorciatoia.
+
+### «Trascrivi» diventa un tasto, non una regola — **deciso**
+
+Risposta del committente alla contraddizione C-3, ed è migliore della domanda:
+**la trascrizione è un'opzione, su ogni singolo pensiero, e si paga a parte.**
+
+Il vocale resta sul telefono, cieco e tuo. Se vuoi che diventi una nota scritta e
+riassunta, **premi**, e in quel momento il testo esce. Nessuna regola generale da
+spiegare, nessuna promessa da rompere: la scelta è di volta in volta, di chi
+parla.
+
+È lo stesso principio del preventivo («ogni generazione ti dice quanto costa
+prima che tu prema»), applicato alla riservatezza invece che ai soldi. Due volte
+la stessa forma: **niente succede alle tue spalle.**
 
 ### Come entra un pensiero
 
