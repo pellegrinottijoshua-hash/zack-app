@@ -42,16 +42,22 @@ export default {
      * la stessa cosa sarebbero due stringhe da tradurre, e il giorno che ne
      * cambia una sola nessuno se ne accorge.
      */
-    opzioni: [
-      { id: 'neutra', label: 'sound.base.neutra' },
-      { id: 'gigante', label: 'sound.giant.label' },
-      { id: 'vento', label: 'sound.wind.label' },
-      { id: 'motore', label: 'sound.engine.label' },
-      { id: 'metallo', label: 'sound.metal.label' },
-      { id: 'mostro', label: 'sound.monster.label' },
-      { id: 'radio', label: 'sound.radio.label' },
+    gruppi: [
+      {
+        id: 'base',
+        label: 'sound.base.title',
+        predefinita: 'neutra',
+        opzioni: [
+          { id: 'neutra', label: 'sound.base.neutra' },
+          { id: 'gigante', label: 'sound.giant.label' },
+          { id: 'vento', label: 'sound.wind.label' },
+          { id: 'motore', label: 'sound.engine.label' },
+          { id: 'metallo', label: 'sound.metal.label' },
+          { id: 'mostro', label: 'sound.monster.label' },
+          { id: 'radio', label: 'sound.radio.label' },
+        ],
+      },
     ],
-    predefinita: 'neutra',
   },
 
   strumenti: [

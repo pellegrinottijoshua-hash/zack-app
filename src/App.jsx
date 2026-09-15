@@ -134,6 +134,17 @@ const STRATEGIE = {
 // e un trattino dice la verità.
 const secs = (ms) => (Number.isFinite(ms) ? `${(ms / 1000).toFixed(1)}s` : '—');
 
+/**
+ * La predefinita di un gruppo del punto oro, letta dal descrittore.
+ *
+ * Un servizio può avere più di un gruppo (Immagine ne avrà due, il video ne
+ * avrà tre): senza dire QUALE gruppo, `tasto.predefinita` da solo non basta
+ * più a rispondere. I compiti dopo questo riusano questa funzione, invece di
+ * ripetere `getDescrittore(id).tasto.gruppi.find(...)` ad ogni `useState`.
+ */
+const predefinitaDi = (id, gruppo) =>
+  getDescrittore(id).tasto.gruppi.find((g) => g.id === gruppo).predefinita;
+
 export default function App() {
   const [apiState, setApiState] = useState('offline');
   /**
@@ -196,7 +207,7 @@ export default function App() {
    * Sta qui e non dentro `Brain` perché il tasto vive nell'impianto: se lo
    * stato stesse nel componente, il tasto non potrebbe leggerlo.
    */
-  const [regolaRiordino, setRegolaRiordino] = useState(getDescrittore('brain').tasto.predefinita);
+  const [regolaRiordino, setRegolaRiordino] = useState(predefinitaDi('brain', 'riordino'));
   /**
    * Lo strumento di disegno acceso nel vettoriale.
    *
@@ -334,7 +345,7 @@ export default function App() {
    * Sta qui e non dentro `SoundLab` per la stessa ragione della regola di
    * Brain: la scelta si fa nel punto oro, che è dell'impianto.
    */
-  const [baseVoce, setBaseVoce] = useState(getDescrittore('vocale').tasto.predefinita);
+  const [baseVoce, setBaseVoce] = useState(predefinitaDi('vocale', 'base'));
   /**
    * I filtri impostati dal tasto, come scostamento dalla ricetta scelta.
    *
@@ -357,7 +368,7 @@ export default function App() {
    * sempre lo stesso suono, quindi cio' che hai appena trovato si ritrova.
    */
   const [effetto, setEffetto] = useState(() => {
-    const f = famiglia(getDescrittore('effetti').tasto.predefinita);
+    const f = famiglia(predefinitaDi('effetti', 'famiglia'));
     return { famiglia: f.id, param: { ...f.param }, durata: f.durata, seme: 1 };
   });
   /**
@@ -459,7 +470,7 @@ export default function App() {
    *  Effetti. */
   const [promptImmagine, setPromptImmagine] = useState('');
   /** La misura scelta nel punto oro: costano uguale, vedi immagine.js. */
-  const [misuraImmagine, setMisuraImmagine] = useState(getDescrittore('immagine').tasto.predefinita);
+  const [misuraImmagine, setMisuraImmagine] = useState(predefinitaDi('immagine', 'misura'));
   const [brushOpen, setBrushOpen] = useState(false);
   const [batchFiles, setBatchFiles] = useState([]);
   /** Con quale strumento si e' aperto il pennello, per accendere il cerchio. */
@@ -1662,28 +1673,29 @@ export default function App() {
   }
 
   /**
-   * Chi risponde alle pastiglie del punto oro, per servizio.
+   * Chi risponde alle pastiglie del punto oro, per servizio e per gruppo.
    *
-   * Una mappa e non tre `tool === ...` di fila: il punto oro fa la stessa
-   * domanda a tutti — «cosa farà il tasto quando lo premo» — e chi aggiunge
-   * un servizio nuovo deve trovare UN posto dove rispondere, non tre righe
-   * gemelle sparse fra le props.
+   * Due livelli e non uno: un servizio può avere più di una domanda aperta
+   * (Immagine ne ha due, il video ne avrà tre), e una mappa piatta le
+   * confonderebbe fra loro.
    */
-  const OPZIONE = {
-    brain: { valore: regolaRiordino, cambia: setRegolaRiordino },
-    vocale: { valore: baseVoce, cambia: setBaseVoce },
-    vettorializza: { valore: s.tracePreset, cambia: (id) => set({ tracePreset: id }) },
+  const SCELTE = {
+    brain: { riordino: { valore: regolaRiordino, cambia: setRegolaRiordino } },
+    vocale: { base: { valore: baseVoce, cambia: setBaseVoce } },
+    vettorializza: { preset: { valore: s.tracePreset, cambia: (id) => set({ tracePreset: id }) } },
     effetti: {
-      valore: effetto.famiglia,
-      // Cambiare famiglia riporta le manopole a quelle di casa sua: le
-      // manopole di «vento» su «click» sarebbero numeri che non vogliono dire
-      // niente, e il suono uscirebbe sbagliato senza che si capisca perche'.
-      cambia: (id) => {
-        const f = famiglia(id);
-        setEffetto({ famiglia: id, param: { ...f.param }, durata: f.durata, seme: 1 });
+      famiglia: {
+        valore: effetto.famiglia,
+        // Cambiare famiglia riporta le manopole a quelle di casa sua: le
+        // manopole di «vento» su «click» sarebbero numeri che non vogliono dire
+        // niente, e il suono uscirebbe sbagliato senza che si capisca perche'.
+        cambia: (id) => {
+          const f = famiglia(id);
+          setEffetto({ famiglia: id, param: { ...f.param }, durata: f.durata, seme: 1 });
+        },
       },
     },
-    immagine: { valore: misuraImmagine, cambia: setMisuraImmagine },
+    immagine: { misura: { valore: misuraImmagine, cambia: setMisuraImmagine } },
   };
 
   /**
@@ -2574,8 +2586,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 ) : null
               }
               inCorso={statoDelPiano(tool, statoPiano).inCorso}
-              opzione={OPZIONE[tool]?.valore ?? regolaRiordino}
-              onOpzione={OPZIONE[tool]?.cambia ?? setRegolaRiordino}
+              scelte={Object.fromEntries(
+                Object.entries(SCELTE[tool] || {}).map(([g, v]) => [g, v.valore]),
+              )}
+              onScelta={(gruppo, id) => SCELTE[tool]?.[gruppo]?.cambia(id)}
               /* Togliere il file singolo: senza conferma, perche' e' un
                  gesto piccolo e reversibile — il file sta ancora sul disco
                  dell'utente, e il `+` e' li' accanto. */

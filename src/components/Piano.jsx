@@ -61,9 +61,9 @@ export default function Piano({
   /** Il menu del `+`, aperto: un momento, non uno stato del prodotto. */
   menu,
   onMenu,
-  /** L'opzione scelta nel punto oro, per i servizi che ne dichiarano. */
-  opzione,
-  onOpzione,
+  /** Le scelte del punto oro, un valore per gruppo: `{ [gruppo]: idScelto }`. */
+  scelte,
+  onScelta,
   /** Il pannello aperto sopra la tela: gli avanzati, quando c'è qualcosa. */
   pannello,
   /** Sta succedendo qualcosa che l'utente deve poter fermare (una registrazione). */
@@ -402,24 +402,24 @@ export default function Piano({
               </div>
             )}
 
-            {/* Le opzioni del tasto, per chi non ha una catena: su Brain sono
-                le quattro regole di riordino. Rispondono alla stessa domanda
-                del punto oro — «cosa fara' quando lo premo» — quindi stanno
-                dove sta gia' quella risposta. */}
-            {servizio.tasto.opzioni && (
-              <div className="sc-fattori" role="group" aria-label={t('zack.what')}>
-                {servizio.tasto.opzioni.map((o) => (
+            {/* Le scelte del tasto, un gruppo per domanda: su Brain la regola
+                di riordino, su Immagine la misura e il formato. Rispondono
+                tutte alla stessa domanda del punto oro — «cosa farà quando lo
+                premo» — quindi stanno dove sta già quella risposta. */}
+            {(servizio.tasto.gruppi || []).map((g) => (
+              <div className="sc-fattori" role="group" aria-label={t(g.label)} key={g.id}>
+                {g.opzioni.map((o) => (
                   <button
                     key={o.id}
                     className="pastiglia"
-                    aria-pressed={opzione === o.id}
-                    onClick={() => onOpzione(o.id)}
+                    aria-pressed={(scelte?.[g.id] ?? g.predefinita) === o.id}
+                    onClick={() => onScelta(g.id, o.id)}
                   >
                     {t(o.label)}
                   </button>
                 ))}
               </div>
-            )}
+            ))}
           </div>
         )}
       </div>

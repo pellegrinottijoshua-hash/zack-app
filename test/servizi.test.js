@@ -78,7 +78,7 @@ test('ogni etichetta di ogni descrittore esiste in tutt’e due le lingue', () =
    */
   const at = (dict, key) => key.split('.').reduce((o, p) => (o == null ? o : o[p]), dict);
   for (const [id, d] of Object.entries(DESCRITTORI)) {
-    const opzioni = (d.tasto.opzioni || []).map((o) => o.label);
+    const opzioni = (d.tasto.gruppi || []).flatMap((g) => [g.label, ...g.opzioni.map((o) => o.label)]);
     for (const chiave of [d.claim, ...d.strumenti.map((s) => s.label), ...opzioni]) {
       for (const [lang, dict] of [['it', it], ['en', en]]) {
         assert.equal(
@@ -89,6 +89,32 @@ test('ogni etichetta di ogni descrittore esiste in tutt’e due le lingue', () =
       }
     }
   }
+});
+
+test('ogni gruppo del punto oro ha una predefinita che esiste davvero', () => {
+  // Una predefinita fuori dalle opzioni vuol dire nessuna pastiglia accesa
+  // all'apertura, e il tasto che fa una cosa che nessuno ha scelto.
+  for (const d of Object.values(DESCRITTORI)) {
+    for (const g of d.tasto.gruppi || []) {
+      assert.ok(g.id && g.label, `${d.id}: un gruppo senza id o label`);
+      assert.ok(
+        g.opzioni.some((o) => o.id === g.predefinita),
+        `${d.id}/${g.id}: «${g.predefinita}» non è fra le opzioni`,
+      );
+    }
+  }
+});
+
+test('la forma vecchia delle opzioni viene rifiutata, non ignorata', () => {
+  // Un `opzioni` dimenticato in un descrittore non farebbe comparire NIENTE:
+  // lo stesso guasto silenzioso di uno stato fuori da QUANDO.
+  const d = { ...getDescrittore('brain'), tasto: { azione: 'riordina', modelli: [], fattori: false, opzioni: [{ id: 'x', label: 'y' }], predefinita: 'x' } };
+  assert.throws(() => validaDescrittore(d), /gruppi/);
+});
+
+test('un gruppo senza opzioni è un comando che non si può premere', () => {
+  const d = { ...getDescrittore('brain'), tasto: { azione: 'riordina', modelli: [], fattori: false, gruppi: [{ id: 'vuoto', label: 'x', opzioni: [], predefinita: 'x' }] } };
+  assert.throws(() => validaDescrittore(d), /vuoto/);
 });
 
 test('uno stato «quando» inventato viene rifiutato', () => {

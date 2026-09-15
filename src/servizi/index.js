@@ -138,15 +138,31 @@ export function validaDescrittore(d) {
       throw new Error(`Descrittore ${d.id}, strumento ${s.id}: «${s.lato}» non è un lato.`);
     }
   }
-  for (const o of d.tasto?.opzioni || []) {
-    if (!o?.id || !o?.label) {
-      throw new Error(`Descrittore ${d.id}: un'opzione senza «id» o «label».`);
-    }
+  /*
+   * Le scelte del punto oro sono GRUPPI, e ogni gruppo è una domanda: «quanto
+   * grande», «di che forma», «con che regola riordino». Una lista piatta ne
+   * teneva una sola, e Immagine ne ha due — la misura e il formato.
+   *
+   * La label di un gruppo e quelle delle sue opzioni sono chiavi i18n, non
+   * testo: senza, il componente condiviso dovrebbe indovinare il prefisso,
+   * cioè avere dentro la regola di UN servizio. Ci ha già provato una volta.
+   */
+  if (d.tasto?.opzioni || d.tasto?.predefinita) {
+    throw new Error(`Descrittore ${d.id}: «opzioni/predefinita» non esistono più, usa «tasto.gruppi».`);
   }
-  if (d.tasto?.opzioni && !d.tasto.opzioni.some((o) => o.id === d.tasto.predefinita)) {
-    // Una predefinita che non e' fra le opzioni vuol dire nessuna pastiglia
-    // accesa all'apertura, e il tasto che fa una cosa che nessuno ha scelto.
-    throw new Error(`Descrittore ${d.id}: «${d.tasto.predefinita}» non è fra le opzioni.`);
+  for (const g of d.tasto?.gruppi || []) {
+    if (!g?.id || !g?.label) throw new Error(`Descrittore ${d.id}: un gruppo senza «id» o «label».`);
+    if (!Array.isArray(g.opzioni) || g.opzioni.length === 0) {
+      // Un gruppo vuoto disegna un riquadro senza pastiglie: un comando che
+      // non si può premere.
+      throw new Error(`Descrittore ${d.id}, gruppo ${g.id}: nessuna opzione.`);
+    }
+    for (const o of g.opzioni) {
+      if (!o?.id || !o?.label) throw new Error(`Descrittore ${d.id}, gruppo ${g.id}: un'opzione senza «id» o «label».`);
+    }
+    if (!g.opzioni.some((o) => o.id === g.predefinita)) {
+      throw new Error(`Descrittore ${d.id}, gruppo ${g.id}: «${g.predefinita}» non è fra le opzioni.`);
+    }
   }
 
   const quanti = d.accetta?.quanti;

@@ -44,11 +44,17 @@ export default {
      * 2026-09-10). Non è un piano «pro»: è che la grande ci mette tre secondi
      * in più, e chi ha fretta lo dice.
      */
-    opzioni: [
-      { id: 'rapida', label: 'immagine.rapida' },
-      { id: 'grande', label: 'immagine.grande' },
+    gruppi: [
+      {
+        id: 'misura',
+        label: 'immagine.misura',
+        predefinita: 'grande',
+        opzioni: [
+          { id: 'rapida', label: 'immagine.rapida' },
+          { id: 'grande', label: 'immagine.grande' },
+        ],
+      },
     ],
-    predefinita: 'grande',
   },
 
   strumenti: [

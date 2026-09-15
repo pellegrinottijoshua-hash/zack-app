@@ -40,15 +40,21 @@ export default {
      * la stessa cosa sarebbero due stringhe da tradurre, e il giorno che ne
      * cambia una sola nessuno se ne accorge.
      */
-    opzioni: [
-      { id: 'whoosh', label: 'sound.fam.whoosh' },
-      { id: 'impatto', label: 'sound.fam.impatto' },
-      { id: 'click', label: 'sound.fam.click' },
-      { id: 'vento', label: 'sound.fam.vento' },
-      { id: 'passi', label: 'sound.fam.passi' },
-      { id: 'ronzio', label: 'sound.fam.ronzio' },
+    gruppi: [
+      {
+        id: 'famiglia',
+        label: 'sound.family.title',
+        predefinita: 'whoosh',
+        opzioni: [
+          { id: 'whoosh', label: 'sound.fam.whoosh' },
+          { id: 'impatto', label: 'sound.fam.impatto' },
+          { id: 'click', label: 'sound.fam.click' },
+          { id: 'vento', label: 'sound.fam.vento' },
+          { id: 'passi', label: 'sound.fam.passi' },
+          { id: 'ronzio', label: 'sound.fam.ronzio' },
+        ],
+      },
     ],
-    predefinita: 'whoosh',
   },
 
   strumenti: [

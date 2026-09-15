@@ -214,6 +214,9 @@
       "label": "Tipo di tracciato",
       "help": "Come interpretare l'immagine: colori piatti, sfumature o solo bianco e nero."
     },
+    "preset": {
+      "title": "Resa"
+    },
     "clean": {
       "label": "Pulisci il risultato",
       "help": "Alleggerisce il file: meno decimali nei tracciati e meno puntini isolati, a parità di aspetto."
@@ -470,7 +473,11 @@
   },
   "sound": {
     "base": {
+      "title": "Voce di partenza",
       "neutra": "Naturale"
+    },
+    "family": {
+      "title": "Famiglia"
     },
     "claim": "Registra la tua voce o portane una, e trasformala.",
     "saveVoice": "Salva questa voce",
@@ -665,6 +672,7 @@
   "brain": {
     "pacco": "Fai un pacco",
     "riordina": {
+      "title": "Come riordino",
       "gruppi": "Per gruppi",
       "tipo": "Per tipo",
       "compatta": "Compatta",
@@ -769,6 +777,7 @@
   "immagine": {
     "claim": "Scrivi cosa vuoi vedere. Aggiungi i tuoi asset come riferimento.",
     "riferimenti": "Riferimenti",
+    "misura": "Misura",
     "prezzoNota": "questa generazione, prezzo pieno",
     "saldoCorto": "Non hai abbastanza credito.",
     "escono": "I riferimenti che scegli vengono mandati al fornitore: è l’unica cosa che esce dal tuo computer, e senza mandarla non si può generare.",

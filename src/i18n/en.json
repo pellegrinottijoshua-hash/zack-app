@@ -214,6 +214,9 @@
       "label": "Trace style",
       "help": "How to read the image: flat colours, gradients, or black and white only."
     },
+    "preset": {
+      "title": "Look"
+    },
     "clean": {
       "label": "Tidy the result",
       "help": "Makes the file lighter: fewer decimals in the paths and fewer stray specks, with the same look."
@@ -470,7 +473,11 @@
   },
   "sound": {
     "base": {
+      "title": "Starting voice",
       "neutra": "Natural"
+    },
+    "family": {
+      "title": "Family"
     },
     "claim": "Record your voice or bring one in, and transform it.",
     "saveVoice": "Save this voice",
@@ -665,6 +672,7 @@
   "brain": {
     "pacco": "Pack it up",
     "riordina": {
+      "title": "How I tidy up",
       "gruppi": "By group",
       "tipo": "By kind",
       "compatta": "Tighten up",
@@ -769,6 +777,7 @@
   "immagine": {
     "claim": "Write what you want to see. Add your own assets as references.",
     "riferimenti": "References",
+    "misura": "Size",
     "prezzoNota": "this generation, full price",
     "saldoCorto": "You don’t have enough credit.",
     "escono": "The references you pick are sent to the provider: it’s the only thing that leaves your computer, and there’s no generating without sending it.",
