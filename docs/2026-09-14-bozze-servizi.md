@@ -381,9 +381,57 @@ un prompt, preme, e solo lì scopre che serve entrare e pagare, è il momento
 peggiore per dirglielo. Il preventivo esiste già: **il prezzo va accanto al tasto
 prima di premere**, come dentro lo studio.
 
-**D-d — I prompt salvati dove vivono?** Non sono file, e Brain ormai accetta solo
-file. Sono una cosa nuova, piccola ma nuova: stanno dentro il servizio? Diventano
-anche loro icone?
+**D-d — I prompt salvati** — **deciso.** Sono **la personalizzazione del tasto
+Zack** di immagine e video. Si costruiscono nei due servizi direttamente, oppure
+in Brain, da qualche parte, **tramite un'icona**.
+
+Proposta per non rompere la regola «in Brain solo file»: **un prompt è un file di
+testo.** Così è un'icona come tutte le altre, sta nelle cartelle, ha una nota, si
+trascina su un servizio — e non serve inventare un secondo tipo di oggetto.
+
+### D-h — Comprare senza account — *nuovo* — **idea forte, con un vincolo duro**
+
+Idea del committente: premi Zack senza essere nessuno, metti la carta (se vuoi
+la salvi), e generi. E **costa un po' di più** proprio perché non hai un account:
+immagine 18 centesimi invece di 15, video poco di più. Chi si fa l'account paga
+meno.
+
+**La strategia è giusta, e risolve il nostro problema peggiore.** L'ingresso via
+email è il pezzo rotto di B1 ed è l'unica porta verso i soldi: così **la porta
+sparisce**. Uno paga e genera senza ricevere nessuna email. E far pagare di più
+chi non si registra non è un trucco: è **il vero costo** di quel cliente (vedi
+sotto), quindi la differenza di prezzo è onesta e si può anche spiegare.
+
+⚠️ **Ma un pagamento da 18 centesimi non esiste.** Le commissioni della carta
+sono una percentuale **più una parte fissa** (~0,25 € a transazione, carte
+europee). Quindi:
+
+| Importo singolo | Commissione | Ci resta |
+|---|---|---|
+| **0,18 €** | ~0,25 € | **−0,07 € — ci rimettiamo** |
+| 1,00 € | ~0,27 € | 0,73 € (26% se ne va) |
+| 2,00 € | ~0,28 € | 1,72 € (14%) |
+| 5,00 € | ~0,33 € | 4,67 € (6,5%) |
+
+Sotto l'euro, **la commissione costa più della vendita**. Non è un problema di
+Stripe: è come funzionano le carte, ovunque.
+
+**Quindi la forma che regge non è «compra una generazione»: è «compra un
+gettone minimo».** Premi Zack, paghi **un euro** — che vale una generazione
+video o cinque immagini a 18 centesimi — generi subito, e l'avanzo resta lì per
+la prossima. Il preventivo davanti al tasto resta identico; cambia solo che il
+taglio minimo esiste.
+
+**Due cose da risolvere prima di farlo:**
+
+1. **L'avanzo di chi non ha un account dove vive?** In un gettone dentro il
+   browser. Se il cliente svuota i dati del sito, **ha perso i suoi soldi**. Va
+   detto in faccia, e va offerto un modo di salvarli (un'email, quando vuole
+   lui).
+2. **L'IVA su un cliente di cui non sappiamo niente.** Vendere a consumatori
+   europei senza sapere dove sono è esattamente la domanda aperta del
+   commercialista. Stripe sa raccogliere le prove del paese, ma la decisione non
+   è tecnica.
 
 **D-e — I riferimenti sulla home da dove si pescano?** Pocket e Brain esistono
 solo per chi è entrato. Per uno sconosciuto restano il computer e basta.
@@ -395,7 +443,11 @@ Per fortuna il listino è costruito proprio così — un servizio, una riga — 
 una bugia sulla prima schermata.
 
 **D-g — La mascotte in video al centro** è un asset da produrre, non da
-programmare. Va messo in conto a parte.
+programmare. Va messo in conto a parte. **E le va lasciato spazio per muoversi**,
+anche poco, sia nella home sia sotto il banco di lavoro: non è un'immagine
+incastrata fra due colonne, è qualcuno che sta lì.
+
+**D-a — risposta:** le spiegazioni ci sono tutte, **sotto il banco di lavoro**.
 
 ---
 
@@ -510,9 +562,29 @@ legare a due cose che ci servono:
   registrare da sola — **fattibile se il permesso del microfono è già dato**, ed è
   da provare.
 
-**Da provare, e costa poco:** se il doppio tocco apre Zack **a telefono
-bloccato** o pretende lo sblocco. Cambia tutto il valore della cosa: sbloccare è
-l'attrito che l'idea voleva togliere.
+**Provato — e il risultato è una brutta notizia.** Il registratore parte **a
+telefono bloccato**. Zack **pretende lo sblocco**, poi si apre.
+
+⚠️ **Questa differenza non la possiamo colmare, e non dipende da come è fatto
+Zack.** È Android che permette solo alle app di sistema di comparire sopra il
+blocco; un'app di terze parti — tanto più una pagina web installata — non ha il
+modo di chiederlo. Non c'è codice né accordo con Samsung che ci arrivi: quel
+permesso lo dà il sistema a sé stesso.
+
+**Quindi la cattura passa dal registratore di Samsung**, che quel privilegio ce
+l'ha. E la cosa regge, perché il problema si spacca in due:
+
+- **catturare** deve essere senza attrito, e lo è: doppio tocco, parli, fine.
+- **archiviare** non ha fretta: i vocali si mandano a Zack **dopo**, anche
+  cinque insieme, con la condivisione di Android — quando riapri l'app con
+  calma.
+
+L'attrito, insomma, si sposta dove non fa danno: l'idea è già salva.
+
+**Più avanti**, se la cosa dimostra di servire davvero, esiste una terza strada:
+una piccola **app Android vera** che guarda la cartella del registratore e porta
+i vocali dentro Zack da sola. È un progetto a parte — Play Store, permessi sui
+file — e non si comincia da lì.
 
 Sull'iPhone non esiste il doppio tocco laterale: là sono il tasto Azione (dai 15
 Pro) o il tocco sul retro, tramite una Scorciatoia.
