@@ -118,6 +118,30 @@ apposta.
 più grande, **genera immagine** a sinistra, **genera video** a destra. Sopra:
 mascotte a sinistra, tasto **Zack** a destra. Al centro il **+**.
 
+**H1-bis — la fila cambia con l'abbonamento** — *impianto* — **deciso il
+2026-09-15.** In basso sull'app, in alto sulla webapp: è la stessa fila.
+
+- **Senza abbonamento** si vedono **tre** cerchi: immagine · **scontorna** ·
+  video. Sono i tre che non richiedono abbonamento (i primi due livelli di T1),
+  ed è esattamente il disegno di H1.
+- **Con l'abbonamento** diventano sette, in quest'ordine: **1** vettoriale,
+  **2** editor di testo, **3** immagine, **4** **scontorna**, **5** video,
+  **6** vocale, **7** effetti sonori. Scontorna resta **al centro** anche da
+  sette, ed è il motivo per cui l'ordine è questo.
+
+Due cose che ne conseguono, e che non vanno lasciate scivolare:
+
+1. **L'«editor di testo» non esiste ancora** come servizio: oggi si scrivono
+   note e documenti **dentro Brain**. Il posto nella fila è prenotato, ma il
+   cerchio si accende il giorno che il servizio c'è — un cerchio dichiarato che
+   non fa niente è il difetto del righello del 2026-09-04.
+2. **La fila si accorcia con la stessa regola del muro, non con una regola
+   sua.** Finché il muro è spento, i cinque strumenti locali funzionano per
+   tutti: nasconderli sarebbe toglierli a chiunque, compreso chi paga, senza
+   che nessuno possa abbonarsi (il primo ingresso via email è ancora rotto).
+   Quindi la fila corta arriva **quando si accende il muro**, e si accorcia da
+   sola. Una regola, non due che possono divergere.
+
 **H2** — *pelle* — **deciso.** In alto: **Brain all'estrema sinistra**, il
 **pocket all'estrema destra**, speculari. Brain c'è sempre.
 
