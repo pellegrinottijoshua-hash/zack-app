@@ -581,10 +581,51 @@ l'ha. E la cosa regge, perché il problema si spacca in due:
 
 L'attrito, insomma, si sposta dove non fa danno: l'idea è già salva.
 
-**Più avanti**, se la cosa dimostra di servire davvero, esiste una terza strada:
-una piccola **app Android vera** che guarda la cartella del registratore e porta
-i vocali dentro Zack da sola. È un progetto a parte — Play Store, permessi sui
-file — e non si comincia da lì.
+**La terza strada — e va corretto quello che avevo scritto prima.** Il divieto
+di comparire sopra il blocco vale per **la pagina web**. Un'**app Android vera**
+invece può: esiste un permesso apposta (`showWhenLocked`), quello che usano le
+sveglie e le chiamate. Quindi una piccola app nativa **può fare esattamente
+quello che fa il registratore di Samsung**: doppio tocco → Applicazioni → si apre
+sopra il blocco → registra.
+
+Sarebbe **Zack per il cliente**: stesso nome, stessa icona, stesso conto. Ma
+sarebbe **un secondo programma**, non la stessa cosa: altro linguaggio, account
+sul Play Store, revisione di Google, aggiornamenti a parte. Deve fare una cosa
+sola — registra e manda — e per questo è piccola davvero.
+
+**Quello che invece non si può fare in nessun caso:** che Zack **vada a prendersi
+da solo** i vocali dalla cartella del registratore di Samsung. Le app non si
+frugano nelle cartelle a vicenda; il modo previsto da Android perché due app si
+parlino è **la condivisione**, e la deve avviare una persona. Anche un'app nativa
+nostra potrebbe leggere quella cartella solo chiedendo al cliente un permesso
+sui file, e solo dopo che lui l'ha concesso.
+
+### Crypto al posto delle carte? — **valutato, e no (per ora)**
+
+Domanda del committente: un portafoglio Solana integrato, ci metti 5-10 € una
+volta, poi paghi 18 centesimi a immagine senza commissioni.
+
+**È vero che le commissioni sparirebbero** — su Solana un pagamento costa
+frazioni di centesimo, e il problema del taglio minimo non esisterebbe.
+
+**Ma il conto vero non è quello.** Per pagarci in crypto, il cliente deve prima
+*avere* crypto: iscriversi a un exchange, farsi identificare, comprare con una
+carta — pagando lì le commissioni che volevamo evitare — e installare un
+portafoglio. Per il pubblico che vogliamo prendere («voglio un'immagine adesso»)
+è **più attrito, non meno**: scambiamo 25 centesimi di commissione con venti
+minuti di iscrizioni.
+
+E due cose più serie: **tenere i soldi degli altri dentro un portafoglio nostro
+ci rende custodi**, che in Europa è un'attività con licenza, non una funzione da
+programmare; e **l'IVA resta dovuta in euro**, con ogni incasso da valorizzare al
+cambio del momento — cioè esattamente il contrario di semplificare i conti.
+
+**Il problema che risolveva ce lo siamo già risolto**: il taglio minimo da 1 €
+porta le commissioni sotto il 30%, e da 5 € sotto il 7%.
+
+**Quando avrebbe senso:** come binario *in più*, non al posto delle carte, il
+giorno che il pubblico crypto fosse una fetta vera dei clienti. Allora si
+riapre — e senza portafoglio nostro, ma collegando il loro.
 
 Sull'iPhone non esiste il doppio tocco laterale: là sono il tasto Azione (dai 15
 Pro) o il tocco sul retro, tramite una Scorciatoia.
@@ -612,6 +653,139 @@ Tre strade, tutte e tre valide:
 3. **Camminando**, col tasto — e finisce nella pool.
 
 E una cosa che il committente vorrebbe: **che sia l'AI a capire dove metterlo**,
-da quello che si dice nel vocale. Questo però **contraddice C-a**: capire cosa
-hai detto vuol dire mandare fuori il testo, o far girare un modello sul telefono.
-Vedi il quadro generale, § criticità.
+da quello che si dice nel vocale. Risolto dal tasto «trascrivi»: chi preme
+accetta che il testo esca, e allora la classificazione arriva insieme.
+
+---
+
+## E — Lo studio nuovo, e le bozze dei servizi
+
+> ⚠️ **Da qui in avanti sono proposte mie, non decisioni del committente.**
+> Servono da bozza scritta su cui discutere, servizio per servizio. Ogni
+> paragrafo è una cosa che si può buttare.
+
+### E0 — La pianta dello studio — **richiesta del committente**
+
+**I servizi in alto. Brain a sinistra.**
+
+Come l'ho capita: una **fila di servizi in alto** (scontorna, immagine, video,
+voce, effetti, vettoriale) — sempre visibile, si cambia stanza con un colpo
+d'occhio invece che da una barra in basso. E **Brain sulla sinistra**, permanente,
+perché è la libreria e ci si pesca dentro mentre si lavora.
+
+Quello che ne consegue, e che va deciso:
+
+- **Gli strumenti del servizio** (penna, righello, indietro…) oggi stanno a
+  destra. Se i servizi salgono in alto, la destra resta libera per loro: la
+  proposta è **servizi sopra, strumenti a destra, Brain a sinistra, il tasto
+  Zack in basso al centro**. Quattro bordi, quattro mestieri, nessuna
+  sovrapposizione.
+- **Il pocket** in alto a destra, com'era: è il solo che non appartiene a una
+  stanza.
+- **Brain a sinistra è una colonna aperta o un tasto che la apre?** Aperta mangia
+  larghezza alla tela; chiusa costa un clic. Proposta: **una striscia stretta di
+  icone**, che si allarga quando ci trascini sopra qualcosa.
+
+### E1 — Immagine (Nano Banana Pro) — *esiste a metà*
+
+**Cosa fa:** scrivi cosa vuoi, aggiungi riferimenti, esce un'immagine.
+**Chi può:** chiunque abbia crediti. Nessun abbonamento.
+
+**La schermata:** in alto il prompt. Sotto, i riferimenti come pallini, col **+**
+che li aggiunge da pocket, galleria o Brain. Due pastiglie: **rapida** e
+**grande**. In basso il tasto Zack, **col prezzo accanto**.
+
+**Il prezzo:** oggi **0,146 €** senza riferimenti, **0,154 €** con quattordici —
+misurati, non stimati. Si vede prima di premere, sempre.
+
+**L'uscita:** l'immagine sul piano, l'icona output alla sua destra, e la copia
+nella pool di Brain. **In più: lo storico del servizio** — scorrendo dentro
+«immagine» trovi tutte le immagini che hai fatto, in ordine di tempo.
+
+**Cosa non fa:** niente 4K, niente modifica dell'immagine uscita (quella è
+un'altra generazione), niente code di dieci immagini insieme.
+
+**Domande:** il prompt si salva come icona (D-d) — dove si vedono i prompt
+salvati, in una pastiglia accanto al tasto? E se una generazione fallisce, il
+rimborso lo diciamo o lo facciamo in silenzio? (Oggi lo facciamo e lo diciamo.)
+
+### E2 — Video (Seedance) — *da costruire*
+
+**Cosa fa:** da una frase e da un'immagine di partenza, esce un video corto.
+**Chi può:** chiunque abbia crediti.
+
+**La schermata:** come immagine, con due cose in più: **la durata** (4 o 8
+secondi) e **il formato** (verticale o orizzontale). Il primo riferimento ha un
+ruolo speciale: è **il primo fotogramma**, non un'ispirazione.
+
+**Il prezzo:** **da misurare prima di scrivere una riga di codice**, come abbiamo
+fatto per l'immagine. Ordine di grandezza atteso: fra venti e sessanta centesimi
+a video. Finché non è misurato, non si pubblica.
+
+**La cosa nuova e scomoda: il tempo.** Un video non arriva in otto secondi come
+un'immagine: arriva in minuti. Quindi il lavoro deve **restare aperto anche se
+chiudi la pagina**, e ritrovarsi finito quando torni. La tabella dei lavori e lo
+spazzino che li chiude esistono già da B2: è il pezzo che ci ripaga.
+
+⚠️ **Va detto quanto dura, prima di premere.** Senza quel numero la gente preme
+due volte, e la seconda volta si paga di nuovo.
+
+**Cosa non fa:** niente montaggio, niente audio, niente video più lunghi di otto
+secondi.
+
+**Domande:** avvisiamo quando è pronto? Una pagina web può mandare una notifica
+solo se il cliente l'ha installata e ha detto di sì. Vale la pena chiederglielo
+proprio lì, dove il motivo è evidente.
+
+### E3 — Voce (ElevenLabs) — *da costruire*
+
+**Cosa fa due cose diverse**, e vanno tenute separate anche se stanno nella
+stessa stanza:
+
+1. **Leggi questo** — un testo, una voce, esce l'audio.
+2. **La mia voce** — registri un po' di te, e poi quella voce legge.
+
+**Chi può:** crediti.
+**Il prezzo:** a caratteri per la lettura, a parte per la clonazione. Da misurare.
+
+**L'uscita:** un file audio, icona a onda, nella pool. La **voce clonata** invece
+non è un'uscita: è **un asset che resta**, e va in Brain come icona sua, da
+riusare.
+
+⚠️ **Il consenso.** Clonare la propria voce è un conto; clonare quella di un
+altro è un problema legale vero, e ci arriva addosso a noi. Ci vuole una spunta
+esplicita — *questa voce è mia, o ho il permesso di chi parla* — prima della
+registrazione, non dopo.
+
+**Cosa non fa:** doppiaggio di un video, sincronia labiale, cori. Dopo.
+
+### E4 — Effetti sonori — *da costruire, metà materiale metà servizio*
+
+**Due cose sotto lo stesso tasto:**
+
+1. **Il pacchetto** — effetti già pronti, ordinati per famiglia (colpi, passi,
+   vento, interfaccia). **Sta nell'abbonamento**, non costa a consumo, e non
+   dipende da nessun fornitore: sono file nostri.
+2. **Inventane uno** — lo descrivi e viene generato. **A crediti.**
+
+Il pacchetto è ciò che rende l'abbonamento meno magro, e si costruisce una volta
+sola. La generazione arriva dopo, con la stessa chiave della voce.
+
+**Domanda:** quanti effetti fanno «ben fornito»? Sotto i cento sembra una
+demo; oltre i cinquecento diventa un problema di ricerca, non di scelta.
+
+### E5 — Vettoriale, reso semplice — *esiste, ma è ostico*
+
+**Il problema di oggi:** chiede al cliente parametri che nessuno sa tarare.
+
+**La bozza:** **un tasto, tre pastiglie** — poster, foto, bianco e nero — e
+**l'anteprima affiancata**, l'originale a sinistra e il tracciato a destra, che
+si aggiorna cambiando pastiglia. Tutto il resto (soglie, curve, numero di colori)
+sotto **«avanzati»**, chiuso, per chi lo cerca.
+
+**Chi può:** abbonamento. Gira sul computer del cliente, non ci costa niente.
+
+**Cosa non fa:** modifica dei tracciati a mano. C'è già un editor: resta dov'è.
+
+**Perché conta:** insieme al pacchetto di effetti, è metà di quello che
+l'abbonamento vende oggi. Se resta ostico, l'abbonamento vende una cosa sola.
