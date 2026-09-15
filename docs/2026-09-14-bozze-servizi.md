@@ -65,9 +65,17 @@ rende innocuo lo svuotamento notturno.
 
 ### T4 — I due pool su Brain, e il cestino — *nuovo* — **deciso**
 
-Dentro Brain, due pool: uno dei **file aggiunti**, uno degli **output**. Ordine
-cronologico, **20 per pool**. Al ventunesimo: **avviso**, e il più vecchio esce
-dal pool — **non nel cestino: resta in Brain, fra i file non organizzati.**
+**Pool unica** (deciso il 2026-09-15: le due si sono fuse). Dentro Brain, una
+sola posta in arrivo, in ordine di data, importati e generati insieme.
+
+In più, **ogni servizio a pagamento tiene il suo storico**: in immagine, video e
+voce i file generati restano nella sezione del servizio, in ordine di tempo,
+scorrendo. Chi cerca «l'ultima immagine che ho fatto» la trova dov'era quando
+l'ha fatta, senza passare da Brain.
+
+Ordine cronologico, **20 visibili**. Al ventunesimo: **avviso**, e il più vecchio
+esce dalla pool — **non nel cestino: resta in Brain, fra i file non
+organizzati** (vedi P1: la pool è la finestra sull'archivio, non una scatola).
 
 Il pool non è un magazzino, è **la posta in arrivo**: le ultime venti cose, a
 portata. Uscire dal pool vuol dire smettere di essere recente, non sparire.
@@ -220,9 +228,11 @@ sono **ancorate al file** — viaggiano con lui, non con la tela.
 **B3** — *nuovo* — **deciso a metà.** Tre pallini sulla destra:
 
 1. **le tre lineette** — se premuto si aprono tre mini pallini per
-   riorganizzare: **freccia**, **gruppo**, e un terzo (colore?).
-2. **pool dei file importati**.
-3. **pool degli output**.
+   riorganizzare: **freccia**, **gruppo**, **colore o icona**. Il terzo dà a un
+   file un colore *oppure un'icona sua*: ne prepareremo un po' con le facce di
+   Zack e degli altri personaggi, e si potranno creare icone personalizzate.
+   (Vale anche come faccia dei file che non hanno un'immagine — B-g.)
+2. **la pool** — una sola.
 
 In **basso a destra**, l'ultima icona: il **cestino**.
 
@@ -280,6 +290,27 @@ video il primo fotogramma con un segno di riproduzione? Un SVG?
 **B-h — Il terzo mini pallino.** Il colore regge: è l'unico modo di raggruppare
 a colpo d'occhio senza leggere. Ma il buco vero non è quello — vedi **P2**.
 
+### Le risposte di Brain — 2026-09-15
+
+**B-a** → **P1 accettata**: pool unica, finestra sull'archivio.
+**B-b** → **tocco = apri, tenere premuto = prendi in mano.**
+**B-c**, **B-d**, **B-e** → **accettate**: si toglie dal canva senza cancellare,
+il cestino restituisce, l'annulla torna in Brain.
+**B-f** → **le cartelle si annidano.**
+**B-g** → audio: **l'onda**, o un'icona personalizzata. Video: **il primo
+fotogramma**.
+**B-h** → il colore va bene; **cercare** resta da fare, e starà nell'archivio.
+
+**B9 — Brain sul desktop** — *pelle* — **deciso nella forma.** Come la schermata
+di riferimento del committente (*Supercomputer's memory*): fondo scuro, i file
+come nodi collegati da fili, le schede di testo aperte lì dove stanno, una barra
+in basso per aggiungere. **Ma coi nostri pallini**, non con le schede.
+
+⚠️ Una differenza da decidere: in quella schermata **è la macchina che dispone**
+i nodi e traccia i collegamenti. Il nostro Brain è il posto dove **dispone il
+cliente**. Sono due prodotti diversi sotto la stessa faccia. Terza via
+possibile: dispone il cliente, e la macchina *propone*.
+
 ### Le proposte in attesa di risposta
 
 **P1 — Le due pool non sono scatole: sono lenti su un archivio solo.**
@@ -304,3 +335,86 @@ quattrocento, l'unica domanda che conta è *dov'è quella cosa di tre settimane
 fa*, e nessun colore ci arriva. Non dico di disegnarlo adesso: dico che
 l'archivio di P1 è il posto dove dovrà stare, e conviene saperlo mentre
 decidiamo la sua forma.
+
+---
+
+## C — La cattura del pensiero — *nuovo* — **da decidere**
+
+Idea del committente, 2026-09-15: un pensiero si cattura a voce **senza aprire
+niente** — un tasto fisico, si parla, fine — e diventa da solo trascrizione,
+titolo, categoria, riassunto, archivio interrogabile. Non un registratore: un
+ingresso universale per quello che passa per la testa.
+
+### Perché Brain è davvero il posto giusto
+
+Un pensiero catturato è **un file audio con una nota attaccata**. È esattamente
+l'oggetto che Brain ha appena finito di definire (B2, B4): icona circolare,
+faccia a onda, titolo e nota ancorati al file. **Non serve inventare un tipo
+nuovo**: la cattura riempie la struttura che c'è già, e la pool è la sua posta
+in arrivo.
+
+### Il muro tecnico, e come si aggira
+
+Zack è **una pagina web**. Una pagina web **non vede i tasti del volume**, non
+gira a telefono bloccato, non registra a schermo spento. Nessuna quantità di
+codice cambia questo: è il browser che non lo concede.
+
+Ma il tasto non deve essere nostro. **A noi serve la casella, non il pulsante.**
+Chi cattura può essere l'automazione del telefono, che quel permesso ce l'ha già:
+
+- **iPhone**: tasto Azione → Scorciatoia → registra → manda l'audio a un nostro
+  indirizzo. Il tasto Azione fa partire una Scorciatoia **da schermo bloccato**.
+  *Da verificare davvero, non a memoria:* quali passi di registrazione audio
+  esistono oggi nelle Scorciatoie e se funzionano a schermo bloccato.
+- **Android**: un'app che intercetta i tasti volume ha bisogno del **servizio di
+  accessibilità**, e lì il rischio non è tecnico ma di **distribuzione**: Google
+  tratta quel permesso con severità e rifiuta chi lo usa per scopi non di
+  accessibilità. È il motivo per cui l'app che GPT ha trovato (Recko) gira come
+  APK fuori dal Play Store. Da non scoprire dopo aver costruito.
+
+### Cosa rompe, e va deciso prima
+
+1. **La libreria locale.** Se catturo dal telefono e organizzo dal desktop, i
+   pensieri devono passare da un server. Oggi **nulla di tutto ciò esiste**: la
+   libreria vive nel browser. Questa è la conseguenza più pesante dell'idea, e
+   non si aggira.
+2. **La frase sulla home.** «Quando generi è l'unica volta che qualcosa esce.»
+   Con la cattura esce anche il pensiero, e il pensiero è più intimo di un file.
+3. **La regola dei tre livelli (T1).** Gratis = gira sul computer del cliente.
+   La cattura è la prima cosa **gratuita che ci costa**: la trascrizione si paga
+   a minuto.
+
+### Il costo, in ordine di grandezza
+
+La trascrizione costa **frazioni di centesimo al minuto**, e la
+classificazione con un modello piccolo ancora meno: cento minuti al mese stanno
+**sotto l'euro**. Ordine di grandezza da libro, **non una misura**: va misurato
+come abbiamo misurato Nano Banana Pro, prima di prometterlo.
+
+Se regge, questa è la risposta migliore alla domanda «cosa ci mettiamo
+nell'abbonamento»: un costo piccolo, **ricorrente**, che cresce col valore per
+il cliente invece che col nostro conto.
+
+### Il vero punto di forza, secondo me
+
+Il pulsante non è difendibile: esiste già, e brevettarlo è una strada che non
+consiglierei. Quello che nessuno ha è che **il pensiero e la cosa che è
+diventato vivono nello stesso posto**. Un'idea detta camminando, e tre settimane
+dopo, sulla stessa tela, l'immagine che ne è nata. Voicenotes ha i pensieri.
+Nessuno ha i pensieri accanto agli asset.
+
+### Le domande
+
+**C-a — Dove vivono i pensieri: sul telefono o su un nostro server?** Decide
+tutto il resto: il costo, la frase sulla home, la sincronia, e se «chiedi
+all'archivio» è possibile.
+
+**C-b — Sta nell'abbonamento?** Con un tetto onesto (tot minuti al mese), o a
+crediti come le generazioni?
+
+**C-c — Da quale telefono si parte?** Il committente ha un Android; la strada
+più semplice per una pagina web è però l'iPhone col tasto Azione.
+
+**C-d — Quando?** Oggi non esistono ancora: B3 (video e voce), il pacchetto di
+effetti, il vettoriale semplice, il muro acceso, il primo ingresso via email. È
+una scelta di ordine, non di merito.
