@@ -10,8 +10,28 @@ test('le due misure costano uguale — è il motivo per cui la scelta esiste', (
   // stessi 1120 token d'immagine, quattro volte i pixel. Se un giorno non
   // fosse più vero, il listino dovrebbe avere DUE righe, e questa prova è
   // ciò che lo dice invece di lasciare che il margine scenda in silenzio.
+  //
+  // Come si prova che il prezzo NON dipende dalla misura, senza confrontare
+  // un'espressione con sé stessa (rilievo di revisione, Giro 1):
+  // 1. `prezzoDi` non accetta affatto un argomento `misura` — la sua firma è
+  //    `prezzoDi(servizio, { riferimenti })` — quindi non c'è nessuna misura
+  //    da passargli per farla variare;
+  // 2. la voce del listino non ha nessun campo di costo per misura (niente
+  //    `costoPerMisura` e simili): `misure` è solo una tabella di traduzione
+  //    per il fornitore, esattamente come `formati`;
+  // 3. il totale di `immagine-nbp` è quindi quello del listino e basta — 128
+  //    millesimi di costo, 146 di totale, a zero riferimenti — e QUESTO
+  //    diventa rosso se domani qualcuno mette un prezzo diverso su 2K.
   assert.equal(Object.keys(voce.misure).length, 2);
-  assert.equal(prezzoDi('immagine-nbp').total, prezzoDi('immagine-nbp').total);
+  assert.ok(
+    !('costoPerMisura' in voce) && !('costo1K' in voce) && !('costo2K' in voce),
+    'il listino non deve avere un costo legato alla misura: le due misure costano uguale',
+  );
+  assert.equal(
+    prezzoDi('immagine-nbp').total,
+    146,
+    'il totale a zero riferimenti deve essere quello del listino, senza riferimento alla misura',
+  );
 });
 
 test('ogni formato offerto dal tasto oro esiste nel listino', () => {

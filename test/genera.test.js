@@ -1,6 +1,7 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import worker from '../worker/index.js';
+import { prezzoDi } from '../src/engine/listino.js';
 
 /*
  * Il giro dei soldi, provato in Node prima di spendere un centesimo vero.
@@ -389,6 +390,39 @@ test('⚠️ misura: "toString" non deve rompere l’imageConfig mandato a Googl
   );
 });
 
+test('⚠️ formato: "toString" non deve rompere l’imageConfig mandato a Google', async () => {
+  /*
+   * Rilievo di revisione (Giro 1), fratello del test sopra per `misura`:
+   * `voce.formati?.[formato]` leggerebbe anche la catena dei prototipi, e
+   * `formato: 'toString'` troverebbe `Object.prototype.toString` — una
+   * funzione, non un formato. E' truthy, quindi un banale
+   * `voce.formati?.[formato] || voce.formati?.['1:1']` NON la scarterebbe:
+   * quella funzione finirebbe in `aspectRatio`, `JSON.stringify` la
+   * elimina dal corpo (i valori funzione spariscono dalle proprietà degli
+   * oggetti), e Google riceve un `imageConfig` senza `aspectRatio` — 200,
+   * non un rifiuto onesto, DOPO l'addebito. `Object.hasOwn` in
+   * `worker/index.js` è la guardia che lo impedisce; questa prova diventa
+   * rossa se qualcuno la «semplifica» in un `?.[x] || fallback`.
+   */
+  const w = mondo({ saldo: 5000 });
+  const fetchMondo = globalThis.fetch;
+  let corpoGoogle = null;
+  globalThis.fetch = async (u, o = {}) => {
+    const url = String(u?.url || u);
+    if (url.includes('generativelanguage.googleapis.com')) corpoGoogle = JSON.parse(o.body);
+    return fetchMondo(u, o);
+  };
+
+  const res = await worker.fetch(
+    chiedi({ servizio: 'immagine-nbp', prompt: 'un cane', formato: 'toString' }), AMBIENTE);
+  assert.equal(res.status, 200);
+  assert.ok(corpoGoogle, 'non ha nemmeno chiamato Google');
+  assert.equal(
+    typeof corpoGoogle.generationConfig?.imageConfig?.aspectRatio, 'string',
+    'l’imageConfig mandato a Google non ha un aspectRatio valido: "toString" ha rotto la scelta',
+  );
+});
+
 test('senza token non si genera', async () => {
   const w = mondo();
   const res = await worker.fetch(
@@ -398,6 +432,7 @@ test('senza token non si genera', async () => {
 });
 
 test('la misura e il formato scelti ARRIVANO al fornitore, tradotti dal listino', async () => {
+  // Stato di partenza dichiarato: saldo 5000, nessun addebito ancora avvenuto.
   const w = mondo({ saldo: 5000 });
   const res = await worker.fetch(
     chiedi({ servizio: 'immagine-nbp', prompt: 'un gatto', misura: 'rapida', formato: '9:16' }),
@@ -406,22 +441,31 @@ test('la misura e il formato scelti ARRIVANO al fornitore, tradotti dal listino'
   assert.equal(res.status, 200);
   assert.equal(w.aGoogle.generationConfig.imageConfig.imageSize, '1K', 'la misura non è arrivata');
   assert.equal(w.aGoogle.generationConfig.imageConfig.aspectRatio, '9:16', 'il formato non è arrivato');
+  // Rilievo di revisione (Giro 1): il nome del test parla di soldi, quindi la
+  // prova deve guardare il saldo, non solo lo status e il corpo mandato a
+  // Google. Un addebito seguito da un rimborso silenzioso, o nessun addebito
+  // affatto, lascerebbero questi due assert sopra verdi lo stesso.
+  assert.equal(w.saldo, 5000 - prezzoDi('immagine-nbp').total, 'l’addebito non è quello atteso per una generazione riuscita');
 });
 
-test('senza scelte si parte dalle predefinite, non da undefined', () => {
+test('senza scelte si parte dalle predefinite, non da undefined', async () => {
   // Uno stato dichiarato: nessuna preferenza salvata, prima generazione in
   // assoluto. `undefined` in `imageConfig` è un 400 del fornitore dopo aver
-  // addebitato.
+  // addebitato. Saldo di partenza dichiarato: 5000.
   const w = mondo({ saldo: 5000 });
-  return worker.fetch(chiedi({ servizio: 'immagine-nbp', prompt: 'x' }), AMBIENTE).then(() => {
-    assert.equal(w.aGoogle.generationConfig.imageConfig.imageSize, '2K');
-    assert.equal(w.aGoogle.generationConfig.imageConfig.aspectRatio, '1:1');
-  });
+  const res = await worker.fetch(chiedi({ servizio: 'immagine-nbp', prompt: 'x' }), AMBIENTE);
+  assert.equal(res.status, 200);
+  assert.equal(w.aGoogle.generationConfig.imageConfig.imageSize, '2K');
+  assert.equal(w.aGoogle.generationConfig.imageConfig.aspectRatio, '1:1');
+  // Stesso rilievo: la generazione con le predefinite deve addebitare esattamente
+  // il prezzo di listino, né di più né di meno (né zero).
+  assert.equal(w.saldo, 5000 - prezzoDi('immagine-nbp').total, 'l’addebito non è quello atteso con le predefinite');
 });
 
 test('un formato che il listino non conosce non fa perdere l’addebito', async () => {
   // Il cliente ha già pagato quando il formato viene tradotto: meglio un
-  // quadrato che un 400 del fornitore e un giro di rimborso.
+  // quadrato che un 400 del fornitore e un giro di rimborso. Stato di
+  // partenza dichiarato: saldo 5000.
   const w = mondo({ saldo: 5000 });
   const res = await worker.fetch(
     chiedi({ servizio: 'immagine-nbp', prompt: 'x', formato: 'inventato' }),
@@ -429,4 +473,10 @@ test('un formato che il listino non conosce non fa perdere l’addebito', async 
   );
   assert.equal(res.status, 200);
   assert.equal(w.aGoogle.generationConfig.imageConfig.aspectRatio, '1:1');
+  // Rilievo di revisione (Giro 1): il nome del test è «non fa perdere
+  // l’addebito» — l’unico modo di provarlo è guardare il saldo. Qui il
+  // rischio non è un rimborso silenzioso ma l’opposto: un 400 dal fornitore
+  // DOPO l’addebito lascerebbe il saldo scalato senza che il cliente riceva
+  // niente in cambio, e senza rimborso questo assert lo scoprirebbe.
+  assert.equal(w.saldo, 5000 - prezzoDi('immagine-nbp').total, 'l’addebito non è quello atteso quando il formato ricade sul quadrato');
 });
