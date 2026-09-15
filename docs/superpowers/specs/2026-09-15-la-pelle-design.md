@@ -75,10 +75,11 @@ stessa regola — è la condizione perché la penna e lo zoom possano convivere.
 - **Le due pastiglie rapida/grande spariscono.** Misura e formato passano nel
   **bottoncino oro** del tasto Zack: **1K, 2K**, e i formati **9:16, 16:9, 1:1**
   e gli altri.
-- **Da verificare prima di prometterli:** che l'API accetti il formato e che
-  **il prezzo non cambi** fra una misura e l'altra. Se il prezzo cambia, il
-  listino deve cambiare con lui — il preventivo e l'addebito leggono la stessa
-  riga, e devono continuare a farlo.
+- **Verifica chiusa (2026-09-15).** Il committente conferma: **l'API accetta
+  tutti i formati** (9:16, 16:9, 1:1, 4:5, 5:4 e gli altri) e **1K e 2K costano
+  uguale**. Quindi **il listino non si tocca**: preventivo e addebito continuano
+  a leggere la stessa riga, e misura e formato sono solo scelte da passare al
+  fornitore.
 - **Il rimborso si dice**, quando una generazione fallisce. Non si fa in
   silenzio.
 
