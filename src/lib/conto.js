@@ -165,7 +165,7 @@ async function riduci(blob) {
  * Letto PRIMA di chiedere la sessione: `leggiAsset` e' locale, non tocca la
  * rete, e non ha senso chiedere un token per una richiesta che non partira'.
  */
-export async function generaImmagine({ prompt, riferimenti = [], misura = 'grande', leggiAsset }) {
+export async function generaImmagine({ prompt, riferimenti = [], misura = 'grande', formato, leggiAsset }) {
   const conDati = [];
   for (const r of riferimenti) {
     const blob = await leggiAsset(r.assetId);
@@ -185,7 +185,7 @@ export async function generaImmagine({ prompt, riferimenti = [], misura = 'grand
   const res = await fetch(`${BASE}/genera`, {
     method: 'POST',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
-    body: JSON.stringify({ servizio: 'immagine-nbp', prompt, riferimenti: conDati, misura }),
+    body: JSON.stringify({ servizio: 'immagine-nbp', prompt, riferimenti: conDati, misura, formato }),
   });
 
   const corpo = await res.json().catch(() => ({}));

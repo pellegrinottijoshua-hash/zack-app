@@ -36,7 +36,7 @@ afterEach(() => { globalThis.fetch = fetchVero; });
  * davvero se l'insert fallisce.
  */
 function mondo({ saldo = 5000, googleOk = true, rimborsoOk = true, apriLavoroOk = true } = {}) {
-  const stato = { saldo, chiamate: [], lavori: [], rimborsi: [] };
+  const stato = { saldo, chiamate: [], lavori: [], rimborsi: [], aGoogle: null };
   globalThis.fetch = async (u, o = {}) => {
     const url = String(u?.url || u);
     const corpo = o.body ? JSON.parse(o.body) : {};
@@ -64,6 +64,10 @@ function mondo({ saldo = 5000, googleOk = true, rimborsoOk = true, apriLavoroOk 
       return new Response('{}', { status: 201 });
     }
     if (url.includes('generativelanguage.googleapis.com')) {
+      // L'ultimo corpo mandato al fornitore: è l'unico modo di provare che la
+      // scelta del cliente ci sia davvero ARRIVATA, invece di fermarsi a metà
+      // strada in silenzio.
+      stato.aGoogle = corpo;
       // Google risponde JPEG, SEMPRE (misurato) — mai PNG. E' per questo che
       // il listino dichiara `resa: 'jpeg'`: una finzione che rispondesse PNG
       // certificherebbe un errore, non lo proverebbe.
@@ -391,4 +395,38 @@ test('senza token non si genera', async () => {
     new Request('https://zack-app.com/genera', { method: 'POST', body: '{}' }), AMBIENTE);
   assert.equal(res.status, 401);
   assert.equal(w.saldo, 5000);
+});
+
+test('la misura e il formato scelti ARRIVANO al fornitore, tradotti dal listino', async () => {
+  const w = mondo({ saldo: 5000 });
+  const res = await worker.fetch(
+    chiedi({ servizio: 'immagine-nbp', prompt: 'un gatto', misura: 'rapida', formato: '9:16' }),
+    AMBIENTE,
+  );
+  assert.equal(res.status, 200);
+  assert.equal(w.aGoogle.generationConfig.imageConfig.imageSize, '1K', 'la misura non è arrivata');
+  assert.equal(w.aGoogle.generationConfig.imageConfig.aspectRatio, '9:16', 'il formato non è arrivato');
+});
+
+test('senza scelte si parte dalle predefinite, non da undefined', () => {
+  // Uno stato dichiarato: nessuna preferenza salvata, prima generazione in
+  // assoluto. `undefined` in `imageConfig` è un 400 del fornitore dopo aver
+  // addebitato.
+  const w = mondo({ saldo: 5000 });
+  return worker.fetch(chiedi({ servizio: 'immagine-nbp', prompt: 'x' }), AMBIENTE).then(() => {
+    assert.equal(w.aGoogle.generationConfig.imageConfig.imageSize, '2K');
+    assert.equal(w.aGoogle.generationConfig.imageConfig.aspectRatio, '1:1');
+  });
+});
+
+test('un formato che il listino non conosce non fa perdere l’addebito', async () => {
+  // Il cliente ha già pagato quando il formato viene tradotto: meglio un
+  // quadrato che un 400 del fornitore e un giro di rimborso.
+  const w = mondo({ saldo: 5000 });
+  const res = await worker.fetch(
+    chiedi({ servizio: 'immagine-nbp', prompt: 'x', formato: 'inventato' }),
+    AMBIENTE,
+  );
+  assert.equal(res.status, 200);
+  assert.equal(w.aGoogle.generationConfig.imageConfig.aspectRatio, '1:1');
 });

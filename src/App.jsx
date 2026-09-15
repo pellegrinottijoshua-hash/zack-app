@@ -471,6 +471,8 @@ export default function App() {
   const [promptImmagine, setPromptImmagine] = useState('');
   /** La misura scelta nel punto oro: costano uguale, vedi immagine.js. */
   const [misuraImmagine, setMisuraImmagine] = useState(predefinitaDi('immagine', 'misura'));
+  /** La forma scelta nel punto oro. Costa uguale, come la misura. */
+  const [formatoImmagine, setFormatoImmagine] = useState(predefinitaDi('immagine', 'formato'));
   const [brushOpen, setBrushOpen] = useState(false);
   const [batchFiles, setBatchFiles] = useState([]);
   /** Con quale strumento si e' aperto il pennello, per accendere il cerchio. */
@@ -1607,6 +1609,7 @@ export default function App() {
         prompt: promptImmagine,
         riferimenti: references,
         misura: misuraImmagine,
+        formato: formatoImmagine,
         leggiAsset: async (assetId) => {
           try {
             const { file: f } = await library.read(assetId);
@@ -1695,7 +1698,10 @@ export default function App() {
         },
       },
     },
-    immagine: { misura: { valore: misuraImmagine, cambia: setMisuraImmagine } },
+    immagine: {
+      misura: { valore: misuraImmagine, cambia: setMisuraImmagine },
+      formato: { valore: formatoImmagine, cambia: setFormatoImmagine },
+    },
   };
 
   /**

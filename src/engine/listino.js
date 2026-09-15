@@ -39,6 +39,28 @@ export const LISTINO = {
     riferimenti: { personaggio: 5, oggetto: 6, stile: 3, totale: 14 },
     /** Le due misure fra cui sceglie il cliente. Stesso prezzo. */
     misure: { rapida: '1K', grande: '2K' },
+    /*
+     * Le forme, e come le chiama il fornitore.
+     *
+     * Chiave e valore coincidono oggi perché Google usa la stessa notazione:
+     * resta una TABELLA e non un passaggio diretto perché il prossimo
+     * fornitore non la userà, e allora la traduzione ha già un posto dove
+     * stare — la stessa ragione di `misure`.
+     *
+     * Il committente il 2026-09-15: l'API li accetta tutti, e costano uguale.
+     */
+    formati: {
+      '1:1': '1:1',
+      '9:16': '9:16',
+      '16:9': '16:9',
+      '4:5': '4:5',
+      '5:4': '5:4',
+      '3:4': '3:4',
+      '4:3': '4:3',
+      '2:3': '2:3',
+      '3:2': '3:2',
+      '21:9': '21:9',
+    },
   },
 };
 

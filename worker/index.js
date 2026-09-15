@@ -322,7 +322,7 @@ async function genera(req, env) {
   // ⚠️ `'grande'` (2K) e non `'rapida'` (1K): costano uguale — stessi 1120
   // token d'immagine, misurato — e il 2K dà quattro volte i pixel per tre
   // secondi in più. Non c'è ragione di offrire di meno per default.
-  const { servizio, prompt, riferimenti = [], misura = 'grande' } = await req.json().catch(() => ({}));
+  const { servizio, prompt, riferimenti = [], misura = 'grande', formato = '1:1' } = await req.json().catch(() => ({}));
 
   const voce = LISTINO[servizio];
   if (!voce) return json({ errore: 'servizio-sconosciuto' }, 400);
@@ -404,8 +404,16 @@ async function genera(req, env) {
     const misuraGoogle = (voce.misure && Object.hasOwn(voce.misure, misura))
       ? voce.misure[misura]
       : voce.misure?.grande || '1K';
+    // ⚠️ `Object.hasOwn` come per la misura, e per la stessa ragione: `?.[x]`
+    // guarda anche la catena dei prototipi, quindi `formato: 'toString'`
+    // troverebbe una funzione. Un formato sconosciuto NON è un errore da
+    // 400: si ricade sul quadrato, perché il cliente ha già pagato e una
+    // forma diversa da quella scelta è meno peggio di un addebito perso.
+    const formatoGoogle = (voce.formati && Object.hasOwn(voce.formati, formato))
+      ? voce.formati[formato]
+      : voce.formati?.['1:1'];
     const { dati, mime, costoReale } = await generaConGoogle({
-      voce, prompt, riferimenti, misura: misuraGoogle, env,
+      voce, prompt, riferimenti, misura: misuraGoogle, formato: formatoGoogle, env,
     });
 
     /*
