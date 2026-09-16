@@ -242,14 +242,60 @@ test('la pianta piazza davvero Brain, la tela e il pannello (non solo la fila)',
  * appendere UN'ALTRA regola ancora più avanti (`display: none`) restava
  * invisibile alla prova pur vincendo davvero la cascata.
  *
- * `regolaVincente` guarda l'INTERO file, non un blocco solo, e non si
- * accontenta di «una regola che va bene esiste da qualche parte»: raccoglie
- * ogni regola-foglia (bilanciata a graffe, commenti tolti prima di cercare,
- * come `regoleDelSelettore`) per il selettore ESATTO richiesto, scarta
- * quelle la cui `@media` non combacia con la larghezza data (`min-width` /
- * `max-width` in px — le uniche forme usate in questo file per le fasce di
- * larghezza) e restituisce l'ULTIMA per posizione nel file: a specificità
- * pari è quella, e non la prima né una qualunque, a vincere davvero.
+ * ⚠️ IMPORTANT 1 (revisione, giro di correzione 4): `regolaVincente` (il
+ * rimpiazzo scritto al giro 3, ora sostituito) non faceva quello che il suo
+ * nome prometteva. Due difetti distinti, tutti e due riprodotti dal
+ * controllo:
+ *
+ * (a) NON guardava la specificità. Confrontava il selettore carattere per
+ *     carattere e teneva l'ultimo per posizione nel file. Appendere a
+ *     `styles.css` `@media (min-width: 761px) { .shell .toolrail[data-
+ *     collapsed='true'] .tool-name { display: none } .shell .main {
+ *     grid-template-columns: auto 1fr var(--rail) } }` lasciava la suite a
+ *     710/710 mentre il browser a 800×700 misurava la griglia `70px 430px
+ *     300px` (la fascia cieca di nuovo lì, tela 430px) e tutti e sei i nomi
+ *     `display: none`. Una classe in più davanti — e `.shell` c'è davvero,
+ *     è il padre di `.main` — bastava a passare accanto alla guardia.
+ *
+ * (b) Restituiva l'ultima REGOLA, non l'ultima DICHIARAZIONE: una regola
+ *     che nomina il selettore ma NON dichiara la proprietà cercata
+ *     «vinceva» lo stesso e faceva cadere la prova su CSS innocuo.
+ *     `@media (min-width: 761px) { .main { gap: 0 } }` più una `.tool-name
+ *     { opacity: 1 }` facevano fallire tre prove («la regola .main VINCENTE
+ *     … non dichiara grid-template-columns») mentre il browser mostrava
+ *     tela 730px e sei nomi `display: block`. Le DICHIARAZIONI cascano; le
+ *     regole no.
+ *
+ * `regolaVincente` è stata TOLTA (non corretta: il suo nome prometteva una
+ * cosa che la sua firma — «restituisci un corpo di regola» — non può
+ * mantenere). Al suo posto c'è `valoreVincente`, e la domanda che gli si fa
+ * non è più «quale regola» ma «quale VALORE arriva alla proprietà P
+ * sull'elemento descritto da questo selettore, a questa larghezza»:
+ *
+ * - specificità calcolata davvero (id / classi-attributi-pseudoclassi /
+ *   elementi-pseudoelementi, con `:is()/:not()/:has()` al massimo dei loro
+ *   argomenti e `:where()` a zero), poi `!important`, poi l'ordine nel file
+ *   e l'ordine dentro il corpo della regola;
+ * - candidata è ogni DICHIARAZIONE di P (o di una sua SCORCIATOIA: `padding`
+ *   scrive `padding-bottom`, ed è esattamente così che il difetto di MINOR 1
+ *   batteva la riserva da 26px) su un selettore che può applicarsi
+ *   all'elemento descritto. Una regola che nomina il selettore ma NON
+ *   dichiara P non è candidata e non «vince» niente: è il difetto (b).
+ * - «può applicarsi» in due gradi, e la differenza conta: il compound del
+ *   SOGGETTO della candidata dev'essere un SOTTOINSIEME di quello del
+ *   bersaglio (`.toolrail` si applica a `.toolrail[data-collapsed='true']`,
+ *   non viceversa: chiedere `.toolrail` vuol dire chiedere della barra
+ *   APERTA, e una regola che pretende l'attributo lì non arriva); gli
+ *   ANTENATI in più invece non si possono decidere leggendo il solo CSS
+ *   (`.shell .main` si applica davvero, `.qualcosaltro .main` chissà), e
+ *   quelle candidate restano marcate INCERTE. Le prove chiedono il valore
+ *   DUE volte — fra tutte le candidate e fra le sole CERTE — e pretendono
+ *   che sia giusto in entrambi i casi: un antenato in più non può né
+ *   nascondere un difetto (la lettura «certe») né fabbricarne uno
+ *   silenzioso (la lettura «tutte» lo nomina).
+ * - una scorciatoia che il risolutore non sa espandere (`grid-template`,
+ *   `grid`, `all`) non viene ignorata in silenzio: solleva un errore che
+ *   dice di insegnargliela. Meglio una prova che si ferma di una che tace.
  */
 function senzaCommentiConOffset(css) {
   // Sostituisce ogni commento con spazi della STESSA lunghezza: gli offset
@@ -263,6 +309,11 @@ function condizioneCombacia(condizione, larghezza) {
   const max = /max-width:\s*(\d+)px/.exec(condizione);
   if (min && larghezza < Number(min[1])) return false;
   if (max && larghezza > Number(max[1])) return false;
+  // Una condizione che non parla di larghezza (`prefers-reduced-motion`,
+  // `hover`, `print`) resta DENTRO: qui si sbaglia per eccesso apposta —
+  // includere una regola che forse non si applica fa al massimo cadere la
+  // prova con il selettore in chiaro nel messaggio, escluderla la farebbe
+  // tacere. La direzione del rumore è quella giusta per questa fase.
   return true;
 }
 
@@ -291,18 +342,349 @@ function ogniRegolaFoglia(cssPulito) {
   return risultati;
 }
 
-function regolaVincente(css, selettoreEsatto, larghezza) {
+// ── il risolutore di cascata ───────────────────────────────────────────────
+
+function trovaChiusura(s, i) {
+  const chiude = s[i] === '(' ? ')' : ']';
+  let profondita = 0;
+  for (let j = i; j < s.length; j++) {
+    const c = s[j];
+    if (c === '"' || c === "'") {
+      const q = c;
+      j++;
+      while (j < s.length && s[j] !== q) j += s[j] === '\\' ? 2 : 1;
+      continue;
+    }
+    if (c === s[i]) profondita++;
+    else if (c === chiude && --profondita === 0) return j;
+  }
+  return s.length - 1;
+}
+
+function dividiTopLevel(s, separatore) {
+  const pezzi = [];
+  let corrente = '';
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === '"' || c === "'") {
+      let j = i + 1;
+      while (j < s.length && s[j] !== c) j += s[j] === '\\' ? 2 : 1;
+      corrente += s.slice(i, j + 1);
+      i = j;
+      continue;
+    }
+    if (c === '(' || c === '[') {
+      const f = trovaChiusura(s, i);
+      corrente += s.slice(i, f + 1);
+      i = f;
+      continue;
+    }
+    if (c === separatore) {
+      pezzi.push(corrente);
+      corrente = '';
+      continue;
+    }
+    corrente += c;
+  }
+  pezzi.push(corrente);
+  return pezzi;
+}
+
+const PSEUDO_ELEMENTI_A_UN_DUE_PUNTI = new Set(['before', 'after', 'first-line', 'first-letter']);
+const PSEUDO_FUNZIONALI_TRASPARENTI = new Set(['is', 'not', 'has', 'matches', 'any']);
+const PSEUDO_NTH = new Set(['nth-child', 'nth-last-child', 'nth-of-type', 'nth-last-of-type']);
+
+function piuAlta(a, b) {
+  for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] > b[i] ? a : b;
+  return a;
+}
+
+// (id, classi+attributi+pseudoclassi, elementi+pseudoelementi) — `:where()` a
+// zero, `:is()/:not()/:has()` al massimo dei propri argomenti, come da spec.
+function specificita(selettore) {
+  const s = selettore;
+  let spec = [0, 0, 0];
+  let i = 0;
+  while (i < s.length) {
+    const c = s[i];
+    if (c === '#') {
+      spec[0]++;
+      i++;
+      while (i < s.length && /[\w-]/.test(s[i])) i++;
+    } else if (c === '.') {
+      spec[1]++;
+      i++;
+      while (i < s.length && /[\w-]/.test(s[i])) i++;
+    } else if (c === '[') {
+      spec[1]++;
+      i = trovaChiusura(s, i) + 1;
+    } else if (c === ':') {
+      const doppio = s[i + 1] === ':';
+      let j = i + (doppio ? 2 : 1);
+      let nome = '';
+      while (j < s.length && /[\w-]/.test(s[j])) nome += s[j++];
+      nome = nome.toLowerCase();
+      let argomento = null;
+      if (s[j] === '(') {
+        const f = trovaChiusura(s, j);
+        argomento = s.slice(j + 1, f);
+        j = f + 1;
+      }
+      i = j;
+      if (doppio || PSEUDO_ELEMENTI_A_UN_DUE_PUNTI.has(nome)) {
+        spec[2]++;
+      } else if (nome === 'where') {
+        // zero, sempre
+      } else if (PSEUDO_FUNZIONALI_TRASPARENTI.has(nome) && argomento !== null) {
+        let massimo = [0, 0, 0];
+        for (const p of dividiTopLevel(argomento, ',')) {
+          if (p.trim()) massimo = piuAlta(massimo, specificita(p.trim()));
+        }
+        spec = [spec[0] + massimo[0], spec[1] + massimo[1], spec[2] + massimo[2]];
+      } else if (PSEUDO_NTH.has(nome) && argomento !== null) {
+        spec[1]++;
+        const of = /\bof\b([\s\S]+)/i.exec(argomento);
+        if (of) {
+          let massimo = [0, 0, 0];
+          for (const p of dividiTopLevel(of[1], ',')) {
+            if (p.trim()) massimo = piuAlta(massimo, specificita(p.trim()));
+          }
+          spec = [spec[0] + massimo[0], spec[1] + massimo[1], spec[2] + massimo[2]];
+        }
+      } else {
+        spec[1]++;
+      }
+    } else if (/[\w-]/.test(c)) {
+      spec[2]++;
+      while (i < s.length && /[\w-]/.test(s[i])) i++;
+    } else {
+      i++; // `*`, combinatori, spazi: zero
+    }
+  }
+  return spec;
+}
+
+// Spezza un selettore nei suoi COMPOUND, ciascuno con il combinatore che lo
+// precede (`null` per il primo, ' ' per il discendente).
+function pezziDelSelettore(selettore) {
+  const s = selettore.replace(/\s+/g, ' ').trim();
+  const pezzi = [];
+  let corrente = '';
+  let comb = null;
+  const spingi = () => {
+    if (!corrente) return false;
+    pezzi.push({ combinatore: comb, compound: corrente });
+    corrente = '';
+    return true;
+  };
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === '(' || c === '[') {
+      const f = trovaChiusura(s, i);
+      corrente += s.slice(i, f + 1);
+      i = f;
+    } else if (c === '>' || c === '+' || c === '~') {
+      spingi();
+      comb = c;
+    } else if (c === ' ') {
+      if (spingi()) comb = ' ';
+    } else {
+      corrente += c;
+    }
+  }
+  spingi();
+  return pezzi;
+}
+
+// I pezzi SEMPLICI di un compound, normalizzati: `[a='b']` e `[a=b]` sono lo
+// stesso vincolo e devono confrontarsi uguali.
+function semplici(compound) {
+  const out = [];
+  let i = 0;
+  while (i < compound.length) {
+    const c = compound[i];
+    if (c === '[') {
+      const f = trovaChiusura(compound, i);
+      out.push(compound.slice(i, f + 1).replace(/["']/g, ''));
+      i = f + 1;
+    } else if (c === '.' || c === '#') {
+      let j = i + 1;
+      while (j < compound.length && /[\w-]/.test(compound[j])) j++;
+      out.push(compound.slice(i, j));
+      i = j;
+    } else if (c === ':') {
+      let j = i + 1;
+      if (compound[j] === ':') j++;
+      while (j < compound.length && /[\w-]/.test(compound[j])) j++;
+      if (compound[j] === '(') j = trovaChiusura(compound, j) + 1;
+      out.push(compound.slice(i, j).replace(/["']/g, ''));
+      i = j;
+    } else if (/[\w-]/.test(c)) {
+      let j = i;
+      while (j < compound.length && /[\w-]/.test(compound[j])) j++;
+      out.push(compound.slice(i, j).toLowerCase());
+      i = j;
+    } else {
+      i++; // `*` e resto: nessun vincolo
+    }
+  }
+  return out;
+}
+
+const discendente = (comb) => comb === null || comb === ' ';
+
+function sottoinsieme(a, b) {
+  return a.every((x) => b.includes(x));
+}
+
+/*
+ * 'certa'   — la candidata si applica di sicuro all'elemento descritto dal
+ *             bersaglio, leggendo il solo CSS;
+ * 'incerta' — si applica se e solo se l'elemento ha, nel DOM, antenati che il
+ *             bersaglio non nomina (`.shell .main` per il bersaglio `.main`);
+ * null      — non si applica: il SOGGETTO chiede più di quanto il bersaglio
+ *             offra (`.toolrail[data-collapsed='true']` non arriva alla barra
+ *             APERTA, che è quello che si chiede scrivendo `.toolrail`).
+ */
+function applicabilita(selCandidato, selBersaglio) {
+  const c = pezziDelSelettore(selCandidato);
+  const b = pezziDelSelettore(selBersaglio);
+  if (c.length === 0 || b.length === 0) return null;
+  const soggettoC = c[c.length - 1];
+  const soggettoB = b[b.length - 1];
+  if (!sottoinsieme(semplici(soggettoC.compound), semplici(soggettoB.compound))) return null;
+  const antenatiC = c.slice(0, -1);
+  if (antenatiC.length === 0) return 'certa';
+  if (!discendente(soggettoC.combinatore)) return 'incerta';
+  const antenatiB = b.slice(0, -1);
+  let k = 0;
+  for (const a of antenatiC) {
+    if (!discendente(a.combinatore)) return 'incerta';
+    let trovato = false;
+    while (k < antenatiB.length) {
+      const t = antenatiB[k++];
+      if (discendente(t.combinatore) && sottoinsieme(semplici(a.compound), semplici(t.compound))) {
+        trovato = true;
+        break;
+      }
+    }
+    if (!trovato) return 'incerta';
+  }
+  return 'certa';
+}
+
+function dichiarazioniDi(corpo) {
+  const out = [];
+  dividiTopLevel(corpo, ';').forEach((pezzo, ordine) => {
+    const i = pezzo.indexOf(':');
+    if (i === -1) return;
+    const prop = pezzo.slice(0, i).trim().toLowerCase();
+    if (!prop || /[^\w-]/.test(prop) || prop.startsWith('--')) return;
+    let valore = pezzo.slice(i + 1).trim();
+    const bang = /!\s*important\s*$/i.exec(valore);
+    const important = Boolean(bang);
+    if (bang) valore = valore.slice(0, bang.index).trim();
+    if (!valore) return;
+    out.push({ prop, valore, important, ordine });
+  });
+  return out;
+}
+
+// Per ogni proprietà interrogata: quali scorciatoie la scrivono e il
+// risolutore sa espandere (`sa`), e quali la scrivono ma NON sa espandere
+// (`nonSa`). Le seconde fermano la prova con un errore invece di passare in
+// silenzio: una guardia che tace su un caso che non capisce è esattamente il
+// difetto che questa fase ha già pagato dodici volte.
+const SCORCIATOIE = {
+  'padding-bottom': { sa: ['padding'], nonSa: ['all'] },
+  'grid-template-columns': { sa: [], nonSa: ['grid', 'grid-template', 'all'] },
+  display: { sa: [], nonSa: ['all'] },
+};
+
+function valoreScritto(dich, proprieta) {
+  if (dich.prop === proprieta) return dich.valore;
+  const regola = SCORCIATOIE[proprieta];
+  if (!regola) {
+    throw new Error(`il risolutore non sa quali scorciatoie scrivono \`${proprieta}\`: aggiungila a SCORCIATOIE`);
+  }
+  if (regola.nonSa.includes(dich.prop)) {
+    throw new Error(
+      `\`${dich.prop}\` può scrivere \`${proprieta}\` e il risolutore non la sa espandere: insegnagliela in SCORCIATOIE invece di lasciarla passare in silenzio`,
+    );
+  }
+  if (!regola.sa.includes(dich.prop)) return undefined;
+  if (dich.prop === 'padding' || dich.prop === 'margin') {
+    const lati = dividiTopLevel(dich.valore, ' ').map((v) => v.trim()).filter(Boolean);
+    const quattro = [lati[0], lati[1] ?? lati[0], lati[2] ?? lati[0], lati[3] ?? lati[1] ?? lati[0]];
+    return quattro[{ top: 0, right: 1, bottom: 2, left: 3 }[proprieta.split('-')[1]]];
+  }
+  return undefined;
+}
+
+function candidateCascata(css, bersaglio, proprieta, larghezza) {
   const pulito = senzaCommentiConOffset(css);
   const blocchi = blocchiMediaDiPrimoLivello(pulito);
   const condizioneA = (offset) => {
     const b = blocchi.find((b) => offset >= b.inizio && offset < b.fine);
     return b ? b.condizione : null;
   };
-  const candidate = ogniRegolaFoglia(pulito)
-    .filter((r) => r.selettori.includes(selettoreEsatto))
-    .filter((r) => condizioneCombacia(condizioneA(r.offset), larghezza));
+  const candidate = [];
+  for (const regola of ogniRegolaFoglia(pulito)) {
+    if (!condizioneCombacia(condizioneA(regola.offset), larghezza)) continue;
+    const dich = dichiarazioniDi(regola.corpo);
+    if (dich.length === 0) continue;
+    for (const sel of regola.selettori) {
+      const grado = applicabilita(sel, bersaglio);
+      if (!grado) continue;
+      for (const d of dich) {
+        const valore = valoreScritto(d, proprieta);
+        if (valore === undefined) continue;
+        candidate.push({
+          valore,
+          selettore: sel,
+          offset: regola.offset,
+          ordine: d.ordine,
+          spec: specificita(sel),
+          important: d.important,
+          incerta: grado === 'incerta',
+        });
+      }
+    }
+  }
+  return candidate;
+}
+
+function confrontaCascata(a, b) {
+  if (a.important !== b.important) return a.important ? 1 : -1;
+  for (let i = 0; i < 3; i++) if (a.spec[i] !== b.spec[i]) return a.spec[i] - b.spec[i];
+  if (a.offset !== b.offset) return a.offset - b.offset;
+  return a.ordine - b.ordine;
+}
+
+function valoreVincente(css, bersaglio, proprieta, larghezza, { soloCerte = false } = {}) {
+  const candidate = candidateCascata(css, bersaglio, proprieta, larghezza).filter(
+    (c) => !(soloCerte && c.incerta),
+  );
   if (candidate.length === 0) return undefined;
-  return candidate[candidate.length - 1].corpo; // l'ultima per offset = l'ultima nel file
+  return candidate.reduce((migliore, c) => (confrontaCascata(c, migliore) >= 0 ? c : migliore));
+}
+
+/*
+ * Ogni prova di cascata chiede il valore DUE volte e pretende che sia giusto
+ * in entrambe le letture. Non è una ridondanza: la lettura «certe» non può
+ * essere resa verde da una regola con un antenato in più (che nasconderebbe
+ * un difetto vero), e la lettura «tutte» nomina quella regola invece di
+ * ignorarla (che è il difetto (a), quello che `.shell` in testa faceva
+ * passare).
+ */
+function perOgniLettura(css, bersaglio, proprieta, larghezza, controlla) {
+  for (const soloCerte of [false, true]) {
+    const vinta = valoreVincente(css, bersaglio, proprieta, larghezza, { soloCerte });
+    const dove = soloCerte
+      ? 'fra le sole candidate CERTE'
+      : 'fra TUTTE le candidate (compresi i selettori con antenati in più)';
+    controlla(vinta, `a ${larghezza}px, ${dove}`);
+  }
 }
 
 // Le stesse larghezze misurate a mano nei giri precedenti: 761 e 940 sono i
@@ -331,17 +713,69 @@ const LARGHEZZE_DESKTOP = [761, 800, 940, 1280];
 test('la terza traccia della pianta è `auto`, non una larghezza riservata sempre (Critical 1)', () => {
   const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
   for (const larghezza of LARGHEZZE_DESKTOP) {
-    const corpo = regolaVincente(CSS, '.main', larghezza);
-    assert.notEqual(corpo, undefined, `nessuna regola \`.main\` vince la cascata a ${larghezza}px`);
-    const m = /grid-template-columns:\s*([^;]+);/.exec(corpo);
-    assert.notEqual(m, null, `la regola \`.main\` VINCENTE a ${larghezza}px non dichiara \`grid-template-columns\``);
-    const tracce = m[1].trim().split(/\s+/);
-    assert.equal(tracce.length, 3, `.main (regola vincente a ${larghezza}px) ha ${tracce.length} tracce invece di 3: "${m[1].trim()}"`);
-    assert.equal(
-      tracce[2],
-      'auto',
-      `a ${larghezza}px la terza traccia VINCENTE è "${tracce[2]}", non "auto": un'altra regola \`.main { grid-template-columns }\` più avanti nel file — nello stesso blocco, in un secondo \`@media (min-width: 761px)\` (§8), o in una fascia che si sovrappone come \`@media (max-width: 940px)\` piazzata dopo la pianta — sta vincendo la cascata al posto suo, e 300px tornano ciechi alla tela in quella fascia`,
-    );
+    perOgniLettura(CSS, '.main', 'grid-template-columns', larghezza, (vinta, dove) => {
+      assert.notEqual(vinta, undefined, `nessuna dichiarazione \`grid-template-columns\` per \`.main\` ${dove}`);
+      const tracce = vinta.valore.split(/\s+/);
+      assert.equal(
+        tracce.length,
+        3,
+        `.main ${dove} ha ${tracce.length} tracce invece di 3: "${vinta.valore}" (da \`${vinta.selettore}\`)`,
+      );
+      assert.equal(
+        tracce[2],
+        'auto',
+        `${dove} la terza traccia VINCENTE è "${tracce[2]}", non "auto" — la dichiara \`${vinta.selettore}\` (specificità ${vinta.spec.join(',')}): un'altra regola \`grid-template-columns\` che si applica a \`.main\` — più avanti nel file, in un secondo \`@media (min-width: 761px)\` (§8), in una fascia che si sovrappone come \`@media (max-width: 940px)\` piazzata dopo la pianta, o con una classe in più davanti (\`.shell .main\`, che vince per SPECIFICITÀ a prescindere dall'ordine) — sta vincendo la cascata al posto suo, e 300px tornano ciechi alla tela in quella fascia`,
+      );
+    });
+  }
+});
+
+/*
+ * ⚠️ MINOR 1 (giro di correzione 3, guardato al giro 4): la riserva da 26px
+ * sotto la fila (`padding-bottom`, per il nome che esce dal cerchio più
+ * basso — Scontorna, 72px) è stata scritta al giro 1 e RESA EFFICACE al giro
+ * 3, ma non l'ha mai guardata nessuna prova: cancellare la regola lasciava la
+ * suite a 710/710. Il difetto che il giro 3 ha corretto non era l'assenza
+ * della riserva ma la sua SCONFITTA: `.toolrail[data-collapsed='true']
+ * { padding: 12px 8px }` (riga ~1416, 0,2,0) batte
+ * `@media (min-width: 761px) .toolrail { padding-bottom: 26px }` (0,1,0) a
+ * prescindere dall'ordine nel file — e la barra CHIUSA è lo stato di
+ * PARTENZA di ogni utente desktop (`localStorage` pulito). Misurato allora:
+ * barra 98px invece di 112, `scrollHeight` 97 contro `clientHeight` 96,
+ * «Scontorna» tagliata di 0.80px dall'`overflow-y: hidden`.
+ *
+ * Perciò questa prova NON cerca la riga: chiede quanto `padding-bottom`
+ * arriva davvero alla barra nei DUE stati — aperta (`.toolrail`) e chiusa
+ * (`.toolrail[data-collapsed='true']`) — passando per le scorciatoie, che è
+ * proprio il modo in cui la riserva veniva battuta. Rotta apposta: cancellare
+ * `.toolrail[data-collapsed='true'] { padding-bottom: 26px }` dalla pianta
+ * fa cadere lo stato chiuso (torna a 12px); cancellare
+ * `.toolrail { padding-bottom: 26px }` fa cadere quello aperto.
+ */
+const RISERVA_NOME = 26; // px, misurati: 72 di cerchio + 4 di margine + ~11 di riga a 9px = 87 contro 72+12
+
+test('la riserva sotto la fila arriva alla barra in TUTTI e due gli stati, non solo in quello aperto (MINOR 1)', () => {
+  const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+  const stati = [
+    ['.toolrail', 'APERTA'],
+    [".toolrail[data-collapsed='true']", 'CHIUSA (lo stato di PARTENZA: `localStorage` pulito)'],
+  ];
+  for (const larghezza of LARGHEZZE_DESKTOP) {
+    for (const [bersaglio, nomeStato] of stati) {
+      perOgniLettura(CSS, bersaglio, 'padding-bottom', larghezza, (vinta, dove) => {
+        assert.notEqual(vinta, undefined, `nessun \`padding-bottom\` arriva alla barra ${nomeStato} ${dove}`);
+        const px = /^(\d+(?:\.\d+)?)px$/.exec(vinta.valore);
+        assert.notEqual(
+          px,
+          null,
+          `il \`padding-bottom\` VINCENTE della barra ${nomeStato} ${dove} è "${vinta.valore}" (da \`${vinta.selettore}\`): non è una riserva in px misurabile`,
+        );
+        assert.ok(
+          Number(px[1]) >= RISERVA_NOME,
+          `la barra ${nomeStato} ${dove} riserva ${px[1]}px sotto i cerchi invece dei ${RISERVA_NOME} misurati — la dichiara \`${vinta.selettore}\` (specificità ${vinta.spec.join(',')}). Il nome esce dal cerchio (\`position: absolute; top: 100%\`) e l'\`overflow-y: hidden\` della barra lo taglia: con 12px «Scontorna» perdeva 0.80px e la barra scendeva da 112px a 98`,
+        );
+      });
+    }
   }
 });
 
@@ -424,13 +858,14 @@ test('sul desktop la barra CHIUSA (stato di partenza) non nasconde più i nomi (
   const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
   const selettore = ".toolrail[data-collapsed='true'] .tool-name";
   for (const larghezza of LARGHEZZE_DESKTOP) {
-    const corpo = regolaVincente(CSS, selettore, larghezza);
-    assert.notEqual(corpo, undefined, `nessuna regola per "${selettore}" vince la cascata a ${larghezza}px`);
-    assert.match(
-      corpo,
-      /display:\s*(?!none\b)\S/,
-      `a ${larghezza}px la regola VINCENTE per "${selettore}" nasconde ancora il nome (display: none): un utente desktop con \`localStorage\` pulito (stato di partenza, sempre "chiuso") vede sei cerchi senza nome`,
-    );
+    perOgniLettura(CSS, selettore, 'display', larghezza, (vinta, dove) => {
+      assert.notEqual(vinta, undefined, `nessuna dichiarazione \`display\` per "${selettore}" ${dove}`);
+      assert.notEqual(
+        vinta.valore,
+        'none',
+        `${dove} il \`display\` VINCENTE per "${selettore}" è "none" — lo dichiara \`${vinta.selettore}\` (specificità ${vinta.spec.join(',')}): un utente desktop con \`localStorage\` pulito (stato di partenza, sempre "chiuso") vede sei cerchi senza nome`,
+      );
+    });
   }
 });
 
@@ -453,12 +888,13 @@ test('sul desktop la barra CHIUSA non nasconde più il «presto» di Video (RULI
   const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
   const selettore = ".toolrail[data-collapsed='true'] .tool-soon";
   for (const larghezza of LARGHEZZE_DESKTOP) {
-    const corpo = regolaVincente(CSS, selettore, larghezza);
-    assert.notEqual(corpo, undefined, `nessuna regola per "${selettore}" vince la cascata a ${larghezza}px`);
-    assert.match(
-      corpo,
-      /display:\s*(?!none\b)\S/,
-      `a ${larghezza}px la regola VINCENTE per "${selettore}" nasconde ancora il «presto» di Video (display: none)`,
-    );
+    perOgniLettura(CSS, selettore, 'display', larghezza, (vinta, dove) => {
+      assert.notEqual(vinta, undefined, `nessuna dichiarazione \`display\` per "${selettore}" ${dove}`);
+      assert.notEqual(
+        vinta.valore,
+        'none',
+        `${dove} il \`display\` VINCENTE per "${selettore}" è "none" — lo dichiara \`${vinta.selettore}\` (specificità ${vinta.spec.join(',')}): il «presto» di Video resta nascosto nello stato di partenza`,
+      );
+    });
   }
 });
