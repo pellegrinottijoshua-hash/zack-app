@@ -36,7 +36,8 @@ import { useSound } from './hooks/useSound.js';
 import { useBatch } from './hooks/useBatch.js';
 import { canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { TARGET_SIDE } from './engine/ready.js';
-import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA, soloOfferti } from './engine/ricette.js';
+import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/ricette.js';
+import { impilaRisultato, vaIndietro, vaAvanti } from './engine/storia.js';
 import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/ritaglio.js';
 import { DESCRITTORI, getDescrittore, strumentiVisibili, servizioAperto } from './servizi/index.js';
 import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
@@ -61,7 +62,19 @@ import { famiglia, genera, suRitmo, SR } from './engine/synth.js';
 import { caricaFileDiProva, deveMostrareProva, segnaProvaVista } from './engine/prova.js';
 import { SERVICES, getService, firstReady, NOMI_VECCHI } from './services.js';
 
-/** La catena salvata per un servizio, o quella di fabbrica se non c'è. */
+/**
+ * La catena salvata per un servizio, o quella di fabbrica se non c'è.
+ *
+ * ⚠️ Qui NON si riduce a `soloOfferti` (Critico 2 della revisione del Task 6,
+ * 2026-09-16): farlo cancellava «buchi» — richiudi le controforme — anche
+ * dalle catene salvate e dalla ricetta di fabbrica, rendendo `closeHoles`
+ * ineseguibile da ogni punto del prodotto. La riduzione alle pastiglie
+ * offerte spetta a chi disegna il punto oro (`Piano.jsx`, con
+ * `servizio.tasto.passi`), non a chi legge il dato: è la stessa regola già
+ * scritta per la ricetta condivisa dalla home in `landing/Landing.jsx`
+ * («vanno ignorati, non cancellati»). Il dato resta intero, la pastiglia sola
+ * si nasconde.
+ */
 function leggiRicetta(servizio) {
   const fabbrica = RICETTE_DI_FABBRICA[servizio] || [];
   let letta;
@@ -71,7 +84,7 @@ function leggiRicetta(servizio) {
   } catch {
     letta = fabbrica;
   }
-  return soloOfferti(normalizza(letta), getDescrittore(servizio)?.tasto?.passi);
+  return normalizza(letta);
 }
 import { bundleAll, bundleBlobs } from './store/bundle.js';
 import { useEngine } from './hooks/useEngine.js';
@@ -508,28 +521,49 @@ export default function App() {
   const resultRef = useRef(null);
   resultRef.current = result;
 
-  /** Sostituisce il risultato tenendo da parte quello di prima. */
+  /*
+   * Sostituisce il risultato tenendo da parte quello di prima, e va indietro
+   * o avanti fra le due pile. La regola delle pile è tutta in
+   * `engine/storia.js` (Critico 1 della revisione del Task 6, 2026-09-16):
+   * qui restano solo gli `useState` e la lettura/scrittura dello stato di
+   * React. Le funzioni sono nidificate perché `history` e `futuro` sono due
+   * stati distinti — leggere l'uno dentro l'updater dell'altro è l'unico modo
+   * di avere ENTRAMBI freschi nello stesso istante, anche quando `pushResult`
+   * viene chiamato da una catena asincrona (uno scontorno, un ingrandimento)
+   * partita in un render precedente.
+   */
   const pushResult = (next) => {
-    setHistory((h) => [...h, resultRef.current].slice(-8));
-    setFuturo([]);
+    setHistory((h) => {
+      const mossa = impilaRisultato(h, resultRef.current);
+      setFuturo(mossa.futuro);
+      return mossa.storia;
+    });
     setResult(next);
   };
 
   function undoResult() {
     setHistory((h) => {
-      if (!h.length) return h;
-      setFuturo((f) => [...f, resultRef.current].slice(-8));
-      setResult(h[h.length - 1]);
-      return h.slice(0, -1);
+      let mossa = null;
+      setFuturo((f) => {
+        mossa = vaIndietro(h, f, resultRef.current);
+        return mossa ? mossa.futuro : f;
+      });
+      if (!mossa) return h;
+      setResult(mossa.risultato);
+      return mossa.storia;
     });
   }
 
   function redoResult() {
     setFuturo((f) => {
-      if (!f.length) return f;
-      setHistory((h) => [...h, resultRef.current].slice(-8));
-      setResult(f[f.length - 1]);
-      return f.slice(0, -1);
+      let mossa = null;
+      setHistory((h) => {
+        mossa = vaAvanti(h, f, resultRef.current);
+        return mossa ? mossa.storia : h;
+      });
+      if (!mossa) return f;
+      setResult(mossa.risultato);
+      return mossa.futuro;
     });
   }
   // Cambia a ogni azione sull'editor per far rileggere al pannello la

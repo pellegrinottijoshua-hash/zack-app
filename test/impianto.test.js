@@ -11,6 +11,7 @@ import { DESCRITTORI } from '../src/servizi/index.js';
  * niente — si vede aprendo il servizio, ed e' gia' costato una volta.
  */
 const APP = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
+const PIANO = readFileSync(new URL('../src/components/Piano.jsx', import.meta.url), 'utf8');
 
 test('App.jsx costruisce gli strumenti dal descrittore', () => {
   assert.match(APP, /strumentiVisibili\(/, 'gli strumenti sono ancora scritti a mano dentro App.jsx');
@@ -44,23 +45,32 @@ test('ogni strumento dichiarato ha un gesto che lo esegue', () => {
   }
 });
 
-test('leggiRicetta riduce la catena salvata a quello che il tasto offre oggi', () => {
+test('leggiRicetta NON amputa la ricetta salvata: soloOfferti non ci abita più', () => {
   /*
-   * Il difetto che questo test impedisce (Task 6, 2026-09-15): una ricetta
-   * salvata da un servizio che offriva PIU' passi (lo scontorno ne offriva
-   * cinque, ora ne offre due) resterebbe con un passo acceso senza nessuna
-   * pastiglia per spegnerlo — un comportamento invisibile e irrevocabile.
-   *
-   * `soloOfferti` e' provato a fondo in `test/ricette.test.js`, ma quella
-   * prova non dice se `App.jsx` la CHIAMA davvero: senza questa riga la
-   * copertura sarebbe finta, perche' nessun'altra prova legge `leggiRicetta`.
+   * Il difetto che questa prova impedisce ora (Critico 2 della revisione del
+   * Task 6, 2026-09-16 — rovescia il test precedente, che chiedeva l'esatto
+   * contrario): `leggiRicetta` che passa da `soloOfferti` cancellava «buchi»
+   * — richiudi le controforme — anche dalle catene salvate e dalla ricetta
+   * di fabbrica, rendendo `closeHoles` ineseguibile da qualunque punto del
+   * prodotto, fabbrica compresa. La regola vera è l'opposto, ed è già scritta
+   * in `landing/Landing.jsx` per la ricetta condivisa dalla home: i passi che
+   * il tasto non offre più vanno IGNORATI dalla pastiglia, non CANCELLATI dal
+   * dato — chi ha costruito una catena non deve perderla passando da un
+   * punto che offre meno pastiglie.
    */
   const inizio = APP.indexOf('function leggiRicetta');
   assert.notEqual(inizio, -1, 'leggiRicetta non esiste piu’ in App.jsx');
   const fine = APP.indexOf('\nimport', inizio);
   assert.notEqual(fine, -1, 'leggiRicetta non finisce piu’ dove il test la cerca');
   const corpo = APP.slice(inizio, fine);
-  assert.match(corpo, /soloOfferti\(/, 'leggiRicetta non riduce piu’ la catena a quello che il tasto offre');
+  assert.doesNotMatch(corpo, /soloOfferti\(/, 'leggiRicetta torna ad amputare la ricetta salvata');
+});
+
+test('è il punto oro (Piano.jsx), non leggiRicetta, a filtrare le pastiglie offerte', () => {
+  // Il gemello della prova sopra: se nessuno filtrasse più le pastiglie da
+  // nessuna parte, un passo che il tasto non offre tornerebbe a comparire
+  // come pastiglia accesa — la stessa botola del Task 6, dall'altro verso.
+  assert.match(PIANO, /tasto\.passi/, 'Piano.jsx non filtra piu’ le pastiglie con tasto.passi');
 });
 
 test('«filmato» non compare piu’ nelle liste di esclusione', () => {
