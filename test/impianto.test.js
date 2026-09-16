@@ -310,23 +310,56 @@ test('«c’e’ un risultato» non vuol dire PNG per tutti', () => {
 // ora controllano OGNI occorrenza della regola, in entrambi i blocchi.
 // Anche la guardia era a metà: `/top:\s*\d/` non vede `top: calc(...)`, e
 // `/top:\s*calc/` non vede `top: 100px`. Le due forme sono guardate insieme.
+/*
+ * ⚠️ Minor (revisione, giro di correzione 2): il bilanciamento delle graffe
+ * contava anche quelle dentro i commenti (innocuo oggi — zero graffe nei
+ * commenti di questo blocco — ma non una garanzia per sempre), e la regola
+ * per selettore cercava `\.selettore\s*\{([^}]*)\}`: un COMMENTO con una `}`
+ * dentro la regola guardata tronca quella finestra prima della proprietà
+ * cercata, e un selettore RAGGRUPPATO (`.sc-tasto,\n  .altro {`) non è mai
+ * seguito subito da `{`, quindi sfuggirebbe. Le due funzioni sotto tolgono i
+ * commenti prima di contare/cercare e confrontano i selettori spezzati per
+ * virgola invece di pretendere che il selettore preceda subito la graffa.
+ */
+function trovaFineBlocco(css, inizio) {
+  let profondita = 1;
+  let i = inizio;
+  while (profondita > 0 && i < css.length) {
+    if (css.startsWith('/*', i)) {
+      const fine = css.indexOf('*/', i + 2);
+      i = fine === -1 ? css.length : fine + 2;
+      continue;
+    }
+    if (css[i] === '{') profondita++;
+    else if (css[i] === '}') profondita--;
+    i++;
+  }
+  return i - 1;
+}
+
+function regoleDelSelettore(blocco, selettoreEsatto) {
+  const senzaCommenti = blocco.replace(/\/\*[\s\S]*?\*\//g, '');
+  const risultati = [];
+  const re = /([^{}]+)\{([^{}]*)\}/g;
+  let m;
+  while ((m = re.exec(senzaCommenti))) {
+    const selettori = m[1].split(',').map((s) => s.replace(/\s+/g, ' ').trim());
+    if (selettori.includes(selettoreEsatto)) risultati.push(m[2]);
+  }
+  return risultati;
+}
+
 function ogniRegolaDesktop(css, selettore) {
   const blocchi = [];
   const apertura = /@media \(min-width: 761px\)\s*\{/g;
   let m;
   while ((m = apertura.exec(css))) {
-    let i = m.index + m[0].length;
-    let profondita = 1;
-    let j = i;
-    while (profondita > 0 && j < css.length) {
-      if (css[j] === '{') profondita++;
-      else if (css[j] === '}') profondita--;
-      j++;
-    }
-    blocchi.push(css.slice(i, j - 1));
+    const i = m.index + m[0].length;
+    const fine = trovaFineBlocco(css, i);
+    blocchi.push(css.slice(i, fine));
+    apertura.lastIndex = fine;
   }
-  const re = new RegExp(`\\.${selettore}\\s*\\{([^}]*)\\}`, 'g');
-  return blocchi.flatMap((b) => [...b.matchAll(re)].map((mm) => mm[1]));
+  return blocchi.flatMap((b) => regoleDelSelettore(b, `.${selettore}`));
 }
 
 test('sul desktop il tasto Zack sta in BASSO al centro, non piu’ in alto a destra', () => {

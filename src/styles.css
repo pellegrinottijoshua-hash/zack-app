@@ -1638,7 +1638,23 @@ body {
      lo spazio non basta). Gli altri quattro sopravvivevano compressi a 10px
      invece dei 16,5 naturali. Tolto dal flusso della colonna (che ora
      contiene solo icona e prezzo/«presto», due elementi, non tre) il nome
-     smette di competere per lo spazio e torna alla sua altezza naturale. */
+     smette di competere per lo spazio e torna alla sua altezza naturale.
+
+     ⚠️ Difetto trovato in browser (giro di correzione 2, non segnalato dal
+     controller): senza `color` qui, `.tool-name` eredita `var(--panna)` —
+     il crema scritto per un'etichetta DENTRO il cerchio nero (`.tool-item`
+     è nero con testo panna, regola condivisa più in basso nel file). Fuori
+     dal cerchio, sopra il fondo panna della pagina, panna-su-panna è
+     INVISIBILE (misurato: `getComputedStyle` dava lo stesso
+     `rgb(245, 240, 232)` per il testo e per `body`), su TUTTI e sei i
+     cerchi tranne quello attivo (che vince col suo `color: var(--oro)`,
+     visibile per contrasto col fondo). Il Ruling B del giro 1 aveva
+     misurato solo l'ALTEZZA (11px, uniforme) — mai il colore — quindi la
+     suite restava verde con un nome tecnicamente presente e otticamente
+     invisibile. La stessa situazione (nome fuori dal cerchio, sopra il
+     fondo panna) esiste già più sotto in questo file per il telefono e per
+     `.brain-nome`: entrambi dichiarano `color: var(--inchiostro)` per lo
+     stesso motivo — qui mancava. */
   .toolrail .tool-name {
     position: absolute;
     top: 100%;
@@ -1651,6 +1667,7 @@ body {
     font-size: 9px;
     letter-spacing: 0.04em;
     line-height: 1.2;
+    color: var(--inchiostro);
   }
   .brain-tasto {
     grid-area: brain;
@@ -4392,6 +4409,35 @@ body {
  */
 .toolrail[data-collapsed='true'] .tool-soon {
   display: none;
+}
+
+/* ══ Critical 2 (giro di correzione 2, 2026-09-16): la barra CHIUSA e' lo
+   stato di PARTENZA di ogni utente desktop — `ToolRail.jsx` legge
+   `localStorage.getItem('jayl.rail') === 'aperta'`, falso finche' nessuno
+   ha mai premuto `.rail-apri` — e quel bottone e' nascosto sopra i 760px
+   (vedi `.rail-apri { display: none }` nella pianta dello studio, piu' in
+   alto in questo file). Nessun gesto porta un utente desktop mai arrivato
+   a scrivere "aperta" in quella chiave.
+
+   La regola qui sopra (`display: none`, specificita' 0,3,0) batte per
+   specificita' la `.toolrail .tool-name` della pianta dello studio (0,2,0):
+   risultato, sei cerchi senza nome per chiunque non abbia gia' trovato e
+   usato una freccetta che qui sopra non esiste piu'.
+
+   La colonna «aperta/chiusa» non significa piu' niente in una FILA
+   orizzontale — non c'e' larghezza da risparmiare nascondendo un'etichetta
+   di 9px sotto un cerchio che occupa comunque il suo posto nella fila — e
+   la stessa regola vale anche quando la barra e' collassata a forza
+   dall'editor (`forzata`, in `ToolRail.jsx`): in riga non c'e' nessuna tela
+   da allargare togliendo un nome. Qui, sopra i 760px, lo stato collassato
+   smette di sopprimere il nome — stessa specificita' (0,3,0) della regola
+   generale qui sopra, ma DOPO di lei nel file: a specificita' pari vince
+   chi viene dopo, come gia' fa il blocco telefono qui sotto con la stessa
+   tecnica. */
+@media (min-width: 761px) {
+  .toolrail[data-collapsed='true'] .tool-name {
+    display: block;
+  }
 }
 @media (max-width: 760px) {
   .toolrail[data-collapsed='true'] .tool-name,

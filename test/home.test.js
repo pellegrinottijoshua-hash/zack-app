@@ -116,19 +116,59 @@ test('se il servizio aperto sparisce dalla fila, App.jsx ripiega su scontorna', 
  * cerca la media query seguita da `{` (il commento la fa seguire da un
  * apice, mai da una graffa) e poi bilancia le parentesi graffe, cosi' non
  * dipende da una finestra a lunghezza fissa.
+ *
+ * ⚠️ Minor (revisione, giro 2): il bilanciamento contava le graffe senza
+ * saltare i commenti — innocuo finché nessun commento dentro il blocco ne
+ * contiene una spaiata, ma un blocco che cresce ad ogni correzione non può
+ * contare su quella fortuna per sempre. `trovaFineBlocco` salta il testo
+ * dentro `/* ... *\/` prima di contare.
  */
+function trovaFineBlocco(css, inizio) {
+  let profondita = 1;
+  let i = inizio;
+  while (profondita > 0 && i < css.length) {
+    if (css.startsWith('/*', i)) {
+      const fine = css.indexOf('*/', i + 2);
+      i = fine === -1 ? css.length : fine + 2;
+      continue;
+    }
+    if (css[i] === '{') profondita++;
+    else if (css[i] === '}') profondita--;
+    i++;
+  }
+  return i - 1;
+}
+
 function estraiBloccoBilanciato(css, aperturaRegex) {
   const m = aperturaRegex.exec(css);
   if (!m) return null;
-  let i = m.index + m[0].length;
-  let profondita = 1;
-  let j = i;
-  while (profondita > 0 && j < css.length) {
-    if (css[j] === '{') profondita++;
-    else if (css[j] === '}') profondita--;
-    j++;
+  const i = m.index + m[0].length;
+  return css.slice(i, trovaFineBlocco(css, i));
+}
+
+/*
+ * ⚠️ Minor (revisione, giro 2): le prove qui sotto cercavano il corpo di una
+ * regola con `\.selettore\s*\{[^}]*prop`. Due modi in cui questo si rompe
+ * senza che la pianta sia cambiata per davvero:
+ * - un COMMENTO dentro quella regola con una `}` (anche solo decorativa)
+ *   tronca la finestra `[^}]*` prima della proprietà cercata;
+ * - un selettore RAGGRUPPATO (`.foo,\n  .bar {`) non è mai seguito
+ *   immediatamente da `{`, quindi `\.foo\s*\{` non lo vede — una regressione
+ *   scritta così sfuggirebbe.
+ * `regoleDelSelettore` toglie i commenti prima di cercare e spezza la lista
+ * dei selettori per virgola, confrontando ogni pezzo per uguaglianza esatta
+ * invece di pretendere che il selettore preceda subito la graffa.
+ */
+function regoleDelSelettore(blocco, selettoreEsatto) {
+  const senzaCommenti = blocco.replace(/\/\*[\s\S]*?\*\//g, '');
+  const risultati = [];
+  const re = /([^{}]+)\{([^{}]*)\}/g;
+  let m;
+  while ((m = re.exec(senzaCommenti))) {
+    const selettori = m[1].split(',').map((s) => s.replace(/\s+/g, ' ').trim());
+    if (selettori.includes(selettoreEsatto)) risultati.push(m[2]);
   }
-  return css.slice(i, j - 1);
+  return risultati;
 }
 
 // Prova DI SORGENTE (Task 9): niente browser qui — legge la pianta dello
@@ -152,39 +192,52 @@ test('la pianta piazza davvero Brain, la tela e il pannello (non solo la fila)',
   const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
   const blocco = estraiBloccoBilanciato(CSS, /@media \(min-width: 761px\)\s*\{/);
   assert.notEqual(blocco, null, 'manca il blocco della pianta dello studio');
-  assert.match(
-    blocco,
-    /\.brain-tasto\s*\{[^}]*grid-area:\s*brain/s,
+  assert.ok(
+    regoleDelSelettore(blocco, '.brain-tasto').some((c) => /grid-area:\s*brain/.test(c)),
     'Brain non è più piazzato dalla pianta: torna a "position: absolute; top: 8px; left: 8px", dentro la fila dei servizi',
   );
-  assert.match(
-    blocco,
-    /\.stage\s*\{[^}]*grid-area:\s*tela/s,
+  assert.ok(
+    regoleDelSelettore(blocco, '.stage').some((c) => /grid-area:\s*tela/.test(c)),
     'la tela non è più piazzata dalla pianta',
   );
-  assert.match(
-    blocco,
-    /\.rail\s*\{[^}]*grid-area:\s*pannello/s,
+  assert.ok(
+    regoleDelSelettore(blocco, '.rail').some((c) => /grid-area:\s*pannello/.test(c)),
     'il pannello non è più piazzato dalla pianta',
   );
 });
 
-// Prova DI SORGENTE (C1, giro di correzione 1): c'era un secondo
-// `@media (max-width: 940px)` che riscriveva `.main { grid-template-columns
-// }` per la STESSA fascia (761-940px) governata dalla pianta qui sopra —
-// stessa specificità, e a vincere era chi stava più in basso nel file (la
-// pianta), che ci rimetteva la traccia da 300px per il pannello: misurato,
-// il canvas a 800px tornava a 430px invece dei 610/744px che dava quella
-// regola da sola. La fascia doppia è stata chiusa restringendo quel blocco
-// al solo telefono (`max-width: 760px`, dove era già ridondante con la
-// riscrittura completa di `.main` più sotto): niente più due regole per la
-// stessa larghezza.
-test('non c’è più un secondo `.main` che si contende la fascia 761-940px (C1)', () => {
+/*
+ * ⚠️ Critical 1 (revisione, giro di correzione 2): il vecchio guardiano qui
+ * sotto (rimosso) vietava la STRINGA `@media (max-width: 940px)`, non la
+ * REGOLA che l'aveva resa un problema — bandisce per sempre una fascia di
+ * larghezza di per sé innocente (ce n'è già una legittima a 1100px, riga
+ * ~1126) e non vede `939px`, `(width <= 940px)`,
+ * `screen and (max-width: 940px)`, né un secondo `.main {
+ * grid-template-columns }` scritto a una fascia diversa. Il difetto vero
+ * che il controller ha riprodotto stava (e sta) in UNA riga: `.main {
+ * grid-template-columns: auto 1fr var(--rail) }` — 300px SEMPRE riservati a
+ * un pannello che a 761-940px è `display: none` in ogni stato raggiungibile
+ * — al posto di `auto`, che costa zero mentre il pannello è vuoto e si apre
+ * da solo il giorno che smette di esserlo (Ruling A, giro 1). Questa prova
+ * guarda la RIGA, non una stringa accanto ad essa: legge `.main {
+ * grid-template-columns }` dentro la pianta ed esige che la terza traccia
+ * sia esattamente `auto`, non `var(--rail)` né una qualunque larghezza
+ * fissa (`300px` compreso — la stessa cifra riservata da `var(--rail)`).
+ */
+test('la terza traccia della pianta è `auto`, non una larghezza riservata sempre (Critical 1)', () => {
   const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
-  assert.doesNotMatch(
-    CSS,
-    /@media \(max-width: 940px\)/,
-    'è tornato un `@media (max-width: 940px)`: la fascia 761-940px ha di nuovo due regole per `.main`, e a vincere decide l’ordine nel file, non una scelta',
+  const blocco = estraiBloccoBilanciato(CSS, /@media \(min-width: 761px\)\s*\{/);
+  assert.notEqual(blocco, null, 'manca il blocco della pianta dello studio');
+  const [corpo] = regoleDelSelettore(blocco, '.main');
+  assert.notEqual(corpo, undefined, 'la pianta non piazza più `.main`');
+  const m = /grid-template-columns:\s*([^;]+);/.exec(corpo);
+  assert.notEqual(m, null, '`.main` non dichiara più `grid-template-columns` nella pianta');
+  const tracce = m[1].trim().split(/\s+/);
+  assert.equal(tracce.length, 3, `.main ha ${tracce.length} tracce invece di 3: "${m[1].trim()}"`);
+  assert.equal(
+    tracce[2],
+    'auto',
+    `la terza traccia è "${tracce[2]}", non "auto": un pannello sempre \`display: none\` tornerebbe a rubare quella larghezza alla tela — 300px ciechi a 800px, la stessa banda cieca che il controller ha misurato con \`var(--rail)\` (Critical 1/C1/C2, ciclo 1)`,
   );
 });
 
@@ -204,9 +257,82 @@ test('il nome della fila esce dal cerchio, non ci compete più dentro (Ruling B)
   const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
   const blocco = estraiBloccoBilanciato(CSS, /@media \(min-width: 761px\)\s*\{/);
   assert.notEqual(blocco, null, 'manca il blocco della pianta dello studio');
-  assert.match(
-    blocco,
-    /\.toolrail \.tool-name\s*\{[^}]*position:\s*absolute/s,
+  assert.ok(
+    regoleDelSelettore(blocco, '.toolrail .tool-name').some((c) => /position:\s*absolute/.test(c)),
     'il nome sotto i cerchi è tornato dentro il flusso della colonna: torna a competere per lo spazio con icona e prezzo/«presto», e su Immagine/Video sparisce di nuovo (altezza 0)',
+  );
+});
+
+/*
+ * ⚠️ Trovato nel browser (giro di correzione 2, non segnalato dal
+ * controller — misurato mentre si provava Critical 2 a `localStorage`
+ * pulito): `.toolrail .tool-name`, spostato FUORI dal cerchio da Ruling B,
+ * eredita `color: var(--panna)` da `.tool-item` (nero con testo panna —
+ * regola condivisa con `.btn`/`.opt`, pensata per un'etichetta DENTRO un
+ * cerchio nero). Fuori dal cerchio il nome sta sul fondo panna della
+ * PAGINA: panna su panna, invisibile — misurato,
+ * `getComputedStyle(nome).color === getComputedStyle(document.body)
+ * .backgroundColor` su cinque cerchi su sei (il sesto, quello attivo, si
+ * salva per un altro motivo: `color: var(--oro)`). Il Ruling B del giro 1
+ * aveva misurato solo l'ALTEZZA del nome (11px, uniforme), mai il colore:
+ * la suite restava verde con un nome tecnicamente `display: block` e
+ * otticamente invisibile. Stessa situazione già risolta altrove in questo
+ * file (`.brain-nome`, il nome del telefono in fondo schermo): entrambi
+ * dichiarano `color: var(--inchiostro)` per lo stesso motivo.
+ */
+test('il nome della fila, fuori dal cerchio, ha un colore leggibile sul fondo panna', () => {
+  const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+  const blocco = estraiBloccoBilanciato(CSS, /@media \(min-width: 761px\)\s*\{/);
+  assert.notEqual(blocco, null, 'manca il blocco della pianta dello studio');
+  const regole = regoleDelSelettore(blocco, '.toolrail .tool-name');
+  assert.ok(regole.length > 0, 'la pianta non dichiara più `.toolrail .tool-name`');
+  assert.ok(
+    regole.some((c) => /color:\s*var\(--inchiostro\)/.test(c)),
+    'il nome fuori dal cerchio non ha più un `color` esplicito leggibile: eredita il panna del bottone nero e sparisce sul fondo panna della pagina (misurato: stesso rgb del testo e dello sfondo)',
+  );
+});
+
+/*
+ * ⚠️ Critical 2 (giro di correzione 2): la barra CHIUSA è lo stato di
+ * PARTENZA di ogni utente desktop — `ToolRail.jsx` legge
+ * `localStorage.getItem('jayl.rail') === 'aperta'`, falso finché nessuno ha
+ * mai premuto `.rail-apri`, e quel bottone è nascosto sopra i 760px dalla
+ * pianta stessa (`.rail-apri { display: none }`). La regola generale
+ * `.toolrail[data-collapsed='true'] .tool-name { display: none }`, scritta
+ * fuori da qualunque media query (quindi valida anche sopra i 760px), batte
+ * per specificità (0,3,0) la `.toolrail .tool-name` della pianta (0,2,0):
+ * un utente mai arrivato ad "aperta" vede sei cerchi senza nome.
+ *
+ * La prova non guarda una stringa a caso: cerca, DOPO la posizione della
+ * regola generale, un'altra regola per lo STESSO selettore — stessa
+ * specificità, quindi a decidere è chi viene dopo nel file — dentro un
+ * `@media (min-width: 761px)`, che imposti `display` a qualcosa di diverso
+ * da `none`.
+ */
+test('sul desktop la barra CHIUSA (stato di partenza) non nasconde più i nomi (Critical 2)', () => {
+  const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+  const selettore = ".toolrail[data-collapsed='true'] .tool-name";
+  const generale = CSS.indexOf(selettore);
+  assert.notEqual(
+    generale,
+    -1,
+    'la regola generale sulla barra chiusa non c’è più: verificare a mano che i nomi restino visibili nello stato collassato',
+  );
+  const dopo = CSS.slice(generale);
+  const apertura = /@media \(min-width: 761px\)\s*\{/g;
+  let m;
+  let trovato = false;
+  while ((m = apertura.exec(dopo))) {
+    const inizio = m.index + m[0].length;
+    const fine = trovaFineBlocco(dopo, inizio);
+    const blocco = dopo.slice(inizio, fine);
+    apertura.lastIndex = fine;
+    if (regoleDelSelettore(blocco, selettore).some((c) => /display:\s*(?!none\b)\S/.test(c))) {
+      trovato = true;
+    }
+  }
+  assert.ok(
+    trovato,
+    'un utente desktop con `localStorage` pulito (stato di partenza, sempre "chiuso") vede sei cerchi senza nome: nessuna regola dopo quella generale restituisce il nome alla barra chiusa sopra i 760px',
   );
 });
