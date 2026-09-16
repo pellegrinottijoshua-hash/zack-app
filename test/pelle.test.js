@@ -39,6 +39,23 @@ test('i crediti si vedono dove si spendono', () => {
   assert.equal(mostraCrediti('immagine'), true);
 });
 
+test('mostraCrediti segue il descrittore di ogni servizio: se serve è «saldo», mostraCrediti deve tornare true', () => {
+  // SPENDONO è una copia a mano dell'informazione «serve: 'saldo'» che vive nel
+  // descrittore di ogni servizio. Se domani nasce un servizio con serve:'saldo'
+  // e chi lo aggiunge si dimentica di metterlo in SPENDONO, mostraCrediti(id)
+  // tornerà false — e il tasto dei crediti (la sola porta verso la Ricarica)
+  // sparirà per quel servizio. Un cliente a saldo zero resterebbe chiuso.
+  //
+  // Questa prova è il filo che tiene legata SPENDONO al descrittore: per ogni
+  // id, controlla che mostraCrediti(id) coincida con DESCRITTORI[id].serve === 'saldo'.
+  // Se i due non coincidono, fallisce e nomina il servizio che ha sbagliato.
+  for (const id of Object.keys(DESCRITTORI)) {
+    const deveShow = DESCRITTORI[id].serve === 'saldo';
+    const mostra = mostraCrediti(id);
+    assert.equal(mostra, deveShow, `${id}: mostraCrediti torna ${mostra} ma serve è «${DESCRITTORI[id].serve}»`);
+  }
+});
+
 test('ogni servizio dell\'impianto ha una risposta, non un undefined', () => {
   // Un servizio nuovo che nessuno elenca qui non deve «cadere» in un
   // comportamento a caso: è così che il filmato restò fuori da tre liste.
