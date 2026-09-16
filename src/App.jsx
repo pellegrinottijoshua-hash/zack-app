@@ -12,6 +12,7 @@ import LanguageSwitch from './components/LanguageSwitch.jsx';
 // import HelpToggle from './components/HelpToggle.jsx';
 import Onboarding, { hasSeenOnboarding } from './components/Onboarding.jsx';
 import VectorTools from './components/VectorTools.jsx';
+import Icon from './components/Icon.jsx';
 import { resolveShortcut } from './engine/shortcuts.js';
 import { useLibrary } from './hooks/useLibrary.js';
 import ToolRail from './components/ToolRail.jsx';
@@ -40,11 +41,11 @@ import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/
 import { impilaRisultato, vaIndietro, vaAvanti } from './engine/storia.js';
 import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/ritaglio.js';
 import { DESCRITTORI, getDescrittore, strumentiVisibili, servizioAperto } from './servizi/index.js';
-import { mostraCrediti } from './servizi/pelle.js';
+import { mostraCrediti, mostraInFila } from './servizi/pelle.js';
 import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
 import { statoLicenza, giorniAllaProva, puoiLavorare } from './engine/licenza.js';
 import { prezzoDi } from './engine/listino.js';
-import { formatEuro, toEuro } from './engine/ledger.js';
+import { formatEuro } from './engine/ledger.js';
 import { leggiLicenza, salvaLicenza } from './store/licenza.js';
 import {
   chiediLicenza,
@@ -313,6 +314,14 @@ export default function App() {
    * dell'abbonamento resta per chi l'abbonamento non ce l'ha.
    */
   const chiusoPerSaldo = chiuso && DESCRITTORI[tool]?.serve === 'saldo' && puoiLavorare(statoConto);
+
+  /**
+   * La STESSA lettura che decide il muro, non una seconda (H1-bis,
+   * 2026-09-15): `mostraInFila` la consulta per decidere chi resta nella
+   * fila, e non è mai `abbonato: statoConto === 'qualcosa'` scritto a mano
+   * in un secondo posto, che divergerebbe dal muro al primo stato nuovo.
+   */
+  const abbonato = puoiLavorare(statoConto);
 
   /**
    * Chiede al server chi siamo, e se ne ricorda.
@@ -1994,6 +2003,43 @@ export default function App() {
   );
   useEffect(() => () => anteprime.forEach((a) => URL.revokeObjectURL(a.url)), [anteprime]);
 
+  /**
+   * Il gesto con cui si apre un servizio: azzera l'avviso, imposta lo
+   * strumento, rilegge la sua ricetta del tasto Zack.
+   *
+   * ⚠️ È LO STESSO gesto per due cerchi diversi — quello della fila
+   * (`onPick` di `ToolRail`) e quello di Brain, ora fuori dalla fila (H2,
+   * 2026-09-15): prima di questa funzione erano due copie della stessa cosa,
+   * e due copie divergono alla prima modifica fatta a una sola.
+   */
+  const apriServizio = (id) => {
+    setNotice(null);
+    setTool(id);
+    setRicetta(leggiRicetta(id));
+  };
+
+  /**
+   * Se il servizio aperto sparisce dalla fila, non si resta su una
+   * schermata irraggiungibile.
+   *
+   * Succede quando il muro si accende (o l'abbonamento scade) mentre si è
+   * su un servizio da abbonamento: `mostraInFila` lo toglie dalla barra, e
+   * nessun cerchio resterebbe acceso. Si ripiega su `scontorna`, che è dove
+   * l'app comincia ed è SEMPRE in fila (H1-bis). Brain non rientra in questo
+   * controllo: non è mai nella fila, ma `mostraInFila` lo lascia comunque
+   * passare (`serve: 'niente'`), quindi non scatta mai per lui.
+   *
+   * Sta QUI, sopra il `return` anticipato del motore, per la stessa ragione
+   * scritta sopra `anteprime`: un hook dopo un `return` condizionale gira in
+   * alcuni render e non in altri.
+   */
+  useEffect(() => {
+    if (!mostraInFila(DESCRITTORI[tool], { muroAcceso, abbonato })) {
+      apriServizio('scontorna');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tool, muroAcceso, abbonato]);
+
   // L'attesa dipende dal MOTORE, non dal server. Il backend serve solo alla
   // libreria su disco: legare tutta l'interfaccia alla sua risposta rendeva
   // l'app inutilizzabile senza backend, cioè l'esatto contrario della promessa.
@@ -2426,17 +2472,33 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
         <ToolRail
           current={tool}
           collapsed={isEditor}
-          balance={toEuro(crediti)}
+          muroAcceso={muroAcceso}
+          abbonato={abbonato}
           onPick={(svc) => {
             if (!svc.ready) {
               setNotice(`${t('soon.title')} — ${t('soon.body')}`);
               return;
             }
-            setNotice(null);
-            setTool(svc.id);
-            setRicetta(leggiRicetta(svc.id));
+            apriServizio(svc.id);
           }}
         />
+
+        {/*
+         * Brain, in alto a sinistra e sempre presente (H2).
+         *
+         * È un cerchio e non una colonna: aperta mangerebbe larghezza alla
+         * tela in ogni schermata, e la tela è il lavoro. Premuto, apre il suo
+         * canva — la stessa cosa che faceva il suo cerchio nella barra.
+         */}
+        <button
+          className="brain-tasto"
+          aria-pressed={tool === 'brain'}
+          aria-label={t('tool.brain.label')}
+          title={t('tool.brain.help')}
+          onClick={() => apriServizio('brain')}
+        >
+          <Icon name="brain" draw />
+        </button>
 
         <section className="stage">
           {/* Lo scaricamento si vede SEMPRE: `bannerOpen` serve a chiudere
@@ -3006,51 +3068,45 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
         </aside>
       </div>
 
-      {/* La libreria non compare nello scontorno: il piano e' vuoto, e
-          «scarica tutto» e' diventato l'icona in alto a destra. Resta in
-          tutti gli altri servizi, dove il lavoro si accumula. */}
       {/*
-        ⚠️ **La libreria si vede anche col muro alzato** (spec § 3.5): chi non
-        ha pagato deve poter guardare e scaricare i propri file. Un prodotto
-        che li tiene in ostaggio non e' un prodotto.
-
-        E fin qui era `!DESCRITTORI[tool]`, cioe' «solo nei servizi fuori
-        dall'impianto» — che dal 2026-09-09 non sono piu' nessuno: entrati
-        tutti e cinque, la libreria era diventata IRRAGGIUNGIBILE da qualunque
-        schermata. Trovato mettendo il muro, non riferito da nessuno.
-      */}
-      {(chiuso || !DESCRITTORI[tool]) && (
-        <Library
-          store={library}
-          open={libOpen}
-          onToggle={() =>
-            setLibOpen((v) => {
-              const next = !v;
-              try {
-                localStorage.setItem('jayl.libOpen', next ? '1' : '0');
-              } catch {
-                /* la sessione corrente funziona lo stesso */
-              }
-              return next;
-            })
-          }
-          big={libBig}
-          onToggleBig={() =>
-            setLibBig((v) => {
-              const next = !v;
-              try {
-                localStorage.setItem('jayl.libBig', next ? '1' : '0');
-              } catch {
-                /* la sessione corrente funziona lo stesso */
-              }
-              return next;
-            })
-          }
-          onOpenInEditor={openWorkInEditor}
-          onDownloadAll={downloadAll}
-          onAssetAction={assetAction}
-        />
-      )}
+       * ⚠️ La libreria si vede SEMPRE — non «anche col muro alzato» (spec
+       * § 3.5), che era la vecchia condizione scritta a guardia: col muro
+       * spento diventava vera solo dentro l'editor SVG, e da lì soltanto,
+       * rendendo l'archivio del cliente irraggiungibile da ogni altra
+       * schermata. I file di chi li ha fatti non stanno dietro nessuna
+       * porta — né commerciale né accidentale, e stavolta senza eccezioni:
+       * niente da nominare, niente da dimenticare di aggiornare.
+       */}
+      <Library
+        store={library}
+        open={libOpen}
+        onToggle={() =>
+          setLibOpen((v) => {
+            const next = !v;
+            try {
+              localStorage.setItem('jayl.libOpen', next ? '1' : '0');
+            } catch {
+              /* la sessione corrente funziona lo stesso */
+            }
+            return next;
+          })
+        }
+        big={libBig}
+        onToggleBig={() =>
+          setLibBig((v) => {
+            const next = !v;
+            try {
+              localStorage.setItem('jayl.libBig', next ? '1' : '0');
+            } catch {
+              /* la sessione corrente funziona lo stesso */
+            }
+            return next;
+          })
+        }
+        onOpenInEditor={openWorkInEditor}
+        onDownloadAll={downloadAll}
+        onAssetAction={assetAction}
+      />
 
       {!DESCRITTORI[tool] && <footer className="statusbar">
         <span>

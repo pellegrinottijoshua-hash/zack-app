@@ -55,3 +55,30 @@ export function mostraMascotte(tool, { quanti = 0 } = {}) {
 export function mostraCrediti(tool) {
   return SPENDONO.has(tool);
 }
+
+/**
+ * Questo servizio si vede nella fila?
+ *
+ * La fila corta (immagine · scontorna · video) e quella lunga (più vettoriale,
+ * vocale, effetti) sono la stessa fila vista da due clienti diversi — e la
+ * differenza la fa `serve: 'abbonamento'`, cioè il livello che il servizio
+ * dichiara già nell'impianto. Non c'è un secondo elenco: un secondo elenco
+ * divergerebbe dal primo al prossimo servizio.
+ *
+ * ⚠️ **Legata al muro, non all'abbonamento da sola.** Col muro spento — cioè
+ * oggi — i cinque strumenti locali funzionano per tutti: nasconderli
+ * adesso vorrebbe dire toglierli a chiunque, compreso chi paga, mentre
+ * nessuno può nemmeno abbonarsi (il primo ingresso via email è rotto da B1).
+ * La fila si accorcia il giorno che il muro si alza, e si accorcia da sola.
+ *
+ * ⚠️ `immagine` non sparisce mai: è dove si spendono i crediti già comprati,
+ * e nasconderla sarebbe un vicolo cieco davanti a soldi del cliente — la
+ * stessa forma del difetto peggiore di B2. Un servizio senza descrittore
+ * (video, che nell'impianto non è ancora entrato) si vede: è la stessa
+ * scelta che fa già `servizioAperto`.
+ */
+export function mostraInFila(descrittore, { muroAcceso = false, abbonato = false } = {}) {
+  if (!muroAcceso) return true;
+  if (descrittore?.serve !== 'abbonamento') return true;
+  return abbonato;
+}

@@ -203,6 +203,10 @@ body {
      una variabile CSS la traccia resta congelata al vecchio valore e il
      cambio di layout non avviene affatto. Verificato il 2026-08-25: la barra
      restava a 190px pur avendo la variabile a 56px. */
+  /* Brain (`.brain-tasto`) e' figlio diretto di `.main`, posizionato in
+     assoluto: senza questo si ancorava al primo antenato posizionato che
+     trovava — nessuno, prima di questa riga — cioe' alla pagina intera. */
+  position: relative;
 }
 
 /* Mentre si lavora contano i pixel della tela, non i nomi. */
@@ -1400,23 +1404,6 @@ body {
   padding: 12px 8px;
 }
 
-.toolrail .group-label {
-  margin: 10px 0 4px;
-  padding: 0 6px;
-  font-size: 8px;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--inchiostro-3);
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.toolrail[data-collapsed='true'] .group-label {
-  text-align: center;
-  padding: 0;
-}
-
 .tool-item {
   display: flex;
   align-items: center;
@@ -1528,31 +1515,26 @@ body {
   color: var(--oro);
 }
 
-.rail-foot {
-  margin-top: auto;
-  padding: 10px 6px 2px;
-  border-top: 1px solid var(--linea);
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--inchiostro-3);
-}
-
-.rail-foot b {
-  margin-left: auto;
-  font-size: 11px;
-  letter-spacing: 0;
-  text-transform: none;
+/* Brain: in alto a sinistra, speculare al pocket che arriverà (H2). */
+.brain-tasto {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid var(--linea-viva);
+  border-radius: 50%;
+  background: var(--fondo);
   color: var(--inchiostro);
-  font-weight: 500;
+  cursor: pointer;
 }
-
-.toolrail[data-collapsed='true'] .rail-foot {
-  justify-content: center;
-  font-size: 12px;
+.brain-tasto[aria-pressed='true'] {
+  background: var(--inchiostro);
+  color: var(--fondo);
 }
 
 /* ─── azioni sull'asset ─────────────────────────────────────────────────── */
@@ -1820,10 +1802,8 @@ body {
    *
    * Nasconderlo lasciava otto cerchi neri con dentro un segno astratto, e su
    * un touch non c'è il passaggio del mouse: `title` non compare mai, quindi
-   * non c'era NESSUN modo di sapere quale fosse Brain e quale Suono. Le
-   * etichette di gruppo e i prezzi sì che se ne vanno — sono contorno, il nome
-   * è la navigazione. */
-  .toolrail .group-label,
+   * non c'era NESSUN modo di sapere quale fosse Brain e quale Suono. I prezzi
+   * sì che se ne vanno — sono contorno, il nome è la navigazione. */
   .toolrail .tool-price,
   .toolrail .tool-soon,
   .toolrail .tool-name,
@@ -1863,14 +1843,6 @@ body {
        `visible` azzera la dimensione minima automatica. In colonna l'etichetta
        si restringeva a zero — misurata alta 0 px, col testo dentro e
        invisibile (2026-08-27). */
-    flex: none;
-  }
-
-  .rail-foot {
-    margin: 0 0 0 auto;
-    padding: 0 8px;
-    border-top: 0;
-    border-left: 1px solid var(--linea);
     flex: none;
   }
 
@@ -4235,6 +4207,18 @@ body {
 .toolrail[data-collapsed='true'] .tool-name {
   display: none;
 }
+/*
+ * Lo stesso vale per il «presto» (Task 8, H1-bis): tolto `!collapsed` dal
+ * JSX (`ToolRail.jsx`) perché sul telefono deve vedersi sempre, sul
+ * desktop CHIUSO — cerchi soli, colonna stretta — restava comunque `block`
+ * e sporgeva fuori dal cerchio di 46 px (misurato: dentro un pulsante
+ * `justify-content: center` un secondo figlio con `margin-left: auto` si
+ * spinge fuori dal bordo). Si nasconde qui come il nome, e torna visibile
+ * SOLO sul telefono qui sotto.
+ */
+.toolrail[data-collapsed='true'] .tool-soon {
+  display: none;
+}
 @media (max-width: 760px) {
   .toolrail[data-collapsed='true'] .tool-name,
   .toolrail .tool-name {
@@ -4794,7 +4778,19 @@ body {
    e piu' grande — e' il centro del prodotto, ed e' il punto che il pollice
    raggiunge senza spostare la mano. */
 @media (max-width: 760px) {
-  .toolrail {
+  /*
+   * ⚠️ `[data-collapsed='true']` va ripetuto qui: `.toolrail[data-collapsed=
+   * 'true'] { padding: 12px 8px }` (riga 1403, fuori da un media query) ha
+   * specificità più alta di `.toolrail` da solo, e vince SEMPRE su questa
+   * regola — indipendentemente dall'ordine nel file — ogni volta che la
+   * barra è chiusa, cioè per difetto (`aperta` parte `false`). Senza
+   * ripeterlo qui, questo padding-bottom non si applica mai sul telefono:
+   * trovato misurando che il «presto» di Video restava tagliato dal fondo
+   * dello schermo nonostante il valore qui sotto. La stessa doppia lista è
+   * già usata due righe più sotto per `.tool-item`, per lo stesso motivo.
+   */
+  .toolrail,
+  .toolrail[data-collapsed='true'] {
     justify-content: center;
     /* 6 e non 10: con la divisione di «suono» i servizi sono diventati SEI, e
        a 390 px la fila sbordava — «Brain», il primo, entrava tagliato di 7 px.
@@ -4806,8 +4802,13 @@ body {
        «Scontorna» finiva sotto il bordo dello schermo. */
     /* Il cerchio dello scontorno e' 16 px piu' alto degli altri, e il suo
        nome finisce 16 px piu' in basso: misurato, arrivava a 810 px su 812.
-       Lo spazio in fondo lo tiene in conto. */
-    padding: 8px 8px calc(30px + env(safe-area-inset-bottom, 0px));
+       Lo spazio in fondo lo tiene in conto.
+       ⚠️ Da 30 a 42 px con Task 8 (H1-bis, 2026-09-15): il «presto» di
+       Video adesso sta anche sul telefono (decisione del committente — un
+       cerchio muto è un guasto, non un'attesa), su una seconda riga sotto
+       il nome. Misurato nel browser a 390×844: senza i 12 px in più quella
+       riga finiva tagliata dal bordo dello schermo. */
+    padding: 8px 8px calc(42px + env(safe-area-inset-bottom, 0px));
     overflow: visible;
   }
   .toolrail .tool-item,
@@ -4830,6 +4831,30 @@ body {
     max-width: 72px;
     color: var(--inchiostro);
   }
+  /*
+   * Il «presto» di Video: seconda riga, sotto il nome — non dietro
+   * `!collapsed` (vedi `ToolRail.jsx`), perché in fondo allo schermo non
+   * c'è il passaggio del mouse e un cerchio muto è un guasto, non
+   * un'attesa (H1-bis, 2026-09-15).
+   *
+   * ⚠️ `[data-collapsed='true']` ripetuto anche qui, come per `.tool-name`
+   * qualche riga sopra: la regola che lo nasconde sul desktop chiuso ha
+   * quella stessa specificità, e la batte a prescindere dall'ordine se non
+   * viene eguagliata.
+   */
+  .toolrail .tool-soon,
+  .toolrail[data-collapsed='true'] .tool-soon {
+    display: block;
+    position: absolute;
+    top: calc(100% + 14px);
+    left: 50%;
+    transform: translateX(-50%);
+    margin-left: 0;
+    padding: 0;
+    border: 0;
+    font-size: 8px;
+    white-space: nowrap;
+  }
   /* Lo scontorno: piu' grande degli altri, sempre — non solo quando e'
      aperto. La sua misura dice che e' il centro, non che e' selezionato. */
   .toolrail .tool-item[data-servizio='scontorna'] {
@@ -4844,10 +4869,6 @@ body {
   }
   .toolrail .tool-item[aria-pressed='true'] {
     transform: none;
-  }
-  /* Il saldo in euro non ha niente a che fare con la scelta del servizio. */
-  .toolrail .rail-foot {
-    display: none;
   }
 }
 

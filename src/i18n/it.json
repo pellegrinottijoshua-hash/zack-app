@@ -390,9 +390,6 @@
   },
   "rail": {
     "title": "Servizi",
-    "local": "Sul tuo computer",
-    "paid": "A consumo",
-    "balance": "Saldo",
     "soon": "presto",
     "open": "Mostra i nomi",
     "close": "Solo icone",

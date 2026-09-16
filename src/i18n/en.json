@@ -390,9 +390,6 @@
   },
   "rail": {
     "title": "Services",
-    "local": "On your computer",
-    "paid": "Pay per use",
-    "balance": "Balance",
     "soon": "soon",
     "open": "Show the names",
     "close": "Icons only",

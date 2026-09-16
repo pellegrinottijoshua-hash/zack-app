@@ -19,18 +19,6 @@
 export const GROUP_LOCAL = 'local';
 export const GROUP_PAID = 'paid';
 
-/**
- * L'ordine della fila in basso, deciso dal committente il 2026-08-31:
- * Brain · Vettoriale · SCONTORNO · Suono · Filmato. Lo scontorno sta in mezzo
- * perche' e' il centro del prodotto, ed e' il posto che si raggiunge col
- * pollice senza spostare la mano. I due a consumo restano ultimi e fuori
- * dalla barra finche' non ci sara' cosa premere.
- *
- * Dal 2026-09-08 sono SEI: «suono» si e' diviso in Vocale ed Effetti. Lo
- * scontorno resta terzo, cioe' non piu' esattamente in mezzo — la regola del
- * pollice regge con sei, ma se un giorno diventassero sette va ridiscussa
- * invece che lasciata scivolare.
- */
 export const SERVICES = [
   {
     // Primo della lista, e non per gerarchia: è l'unico servizio che ha senso
@@ -127,9 +115,6 @@ export const SERVICES = [
   },
 ];
 
-export const localServices = () => SERVICES.filter((s) => s.group === GROUP_LOCAL);
-export const paidServices = () => SERVICES.filter((s) => s.group === GROUP_PAID);
-
 /**
  * Il servizio a cui appartiene uno strumento.
  *
@@ -164,6 +149,33 @@ export function getService(id) {
   if (!s) throw new Error(`Servizio sconosciuto: ${id}`);
   return s;
 }
+
+/**
+ * L'ordine della fila dei servizi, **senza Brain**.
+ *
+ * Deciso dal committente il 2026-09-15 (quaderno, H1-bis). In basso sull'app,
+ * in alto sulla webapp: è la stessa fila.
+ *
+ *   vettoriale · [editor di testo] · immagine · SCONTORNA · video · vocale · effetti
+ *
+ * **Scontorna sta in mezzo**, ed è il motivo dell'ordine: immagine alla sua
+ * sinistra, video alla sua destra, come nel disegno. Chi non è abbonato vede
+ * quei tre e basta — se ne occupa `mostraInFila`, che lo decide con la stessa
+ * regola del muro invece che con una sua.
+ *
+ * ⚠️ **L'«editor di testo» non è in questa lista**, pur avendo il suo posto
+ * nell'ordine (il secondo): il servizio non esiste ancora — oggi si scrive
+ * dentro Brain — e un cerchio che si accende senza fare niente è il difetto
+ * del righello del 2026-09-04. Quando il servizio ci sarà, entra qui in
+ * seconda posizione e scontorna diventa il quarto di sette, cioè il centro
+ * esatto.
+ *
+ * Brain non è in fila: è un cerchio a sé, in alto a sinistra, sempre presente
+ * (H2), perché è la libreria e ci si pesca dentro mentre si lavora.
+ */
+const FILA = ['vettorializza', 'immagine', 'scontorna', 'video', 'vocale', 'effetti'];
+
+export const ordineDellaFila = () => FILA.map(getService);
 
 /** Il primo servizio utilizzabile: non si apre mai l'app su una funzione spenta. */
 export function firstReady() {

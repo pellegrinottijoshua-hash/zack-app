@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { postoDelPiu, mostraMascotte, mostraCrediti } from '../src/servizi/pelle.js';
+import { postoDelPiu, mostraMascotte, mostraCrediti, mostraInFila } from '../src/servizi/pelle.js';
 import { pianoVuoto, quantiSulPiano } from '../src/servizi/piano.js';
 import { DESCRITTORI } from '../src/servizi/index.js';
 
@@ -232,4 +232,46 @@ test('`BatchGrid` è montato con lo zip del blocco, non con `null`', () => {
   const finestra = APP.slice(i, i + 1100);
   assert.match(finestra, /onDownloadAll=\{scaricaIlPiano\}/, 'torna il Critico 3: lo zip del blocco non è più cablato');
   assert.doesNotMatch(finestra, /onDownloadAll=\{null\}/, 'torna il Critico 3: onDownloadAll è di nuovo null');
+});
+
+// Le prove che seguono legano la fila (`ToolRail.jsx`, e `ordineDellaFila` in
+// `services.js`) alla stessa regola del muro — deciso dal committente il
+// 2026-09-15 (H1-bis): un secondo elenco, scritto a mano per «chi è
+// abbonato», divergerebbe dal primo al primo servizio nuovo.
+
+test('col muro SPENTO si vede tutto: nascondere ora sarebbe togliere', () => {
+  /*
+   * Lo stato di oggi, dichiarato: muro spento, nessun abbonamento in corso.
+   * Nascondere i servizi da abbonamento adesso li toglierebbe a TUTTI —
+   * compreso chi paga — mentre nessuno può nemmeno abbonarsi, perché il primo
+   * ingresso via email è ancora rotto da B1.
+   */
+  for (const id of ['vettorializza', 'vocale', 'effetti', 'immagine', 'scontorna']) {
+    assert.equal(mostraInFila(DESCRITTORI[id], { muroAcceso: false, abbonato: false }), true, id);
+  }
+});
+
+test('col muro ACCESO restano i tre che l’abbonamento non lo chiede', () => {
+  const visti = ['vettorializza', 'immagine', 'scontorna', 'video', 'vocale', 'effetti']
+    .filter((id) => mostraInFila(DESCRITTORI[id], { muroAcceso: true, abbonato: false }));
+  assert.deepEqual(visti, ['immagine', 'scontorna', 'video']);
+});
+
+test('chi è abbonato li vede tutti, muro o no', () => {
+  for (const id of Object.keys(DESCRITTORI)) {
+    assert.equal(mostraInFila(DESCRITTORI[id], { muroAcceso: true, abbonato: true }), true, id);
+  }
+});
+
+test('⚠️ immagine non sparisce MAI dalla fila', () => {
+  // È il servizio che si paga a consumo: chi ha crediti li ha già dati. Un
+  // cerchio nascosto lì è un vicolo cieco davanti a soldi suoi — la stessa
+  // forma del Critical di B2.
+  assert.equal(mostraInFila(DESCRITTORI.immagine, { muroAcceso: true, abbonato: false }), true);
+});
+
+test('un servizio senza descrittore resta in fila, non sparisce in silenzio', () => {
+  // `video` non ha un descrittore (non è ancora nell'impianto): la stessa
+  // scelta già presa da `servizioAperto` per il descrittore assente.
+  assert.equal(mostraInFila(undefined, { muroAcceso: true, abbonato: false }), true);
 });

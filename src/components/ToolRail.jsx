@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { getLang, t } from '../i18n/index.js';
-import { localServices, paidServices, servizioDelloStrumento } from '../services.js';
+import { ordineDellaFila, servizioDelloStrumento } from '../services.js';
 import { DESCRITTORI } from '../servizi/index.js';
+import { mostraInFila } from '../servizi/pelle.js';
 import { prezzoDi } from '../engine/listino.js';
 import { formatEuro } from '../engine/ledger.js';
 import Icon from './Icon.jsx';
@@ -82,20 +83,26 @@ function Item({ service, active, collapsed, lampo, onPick }) {
       <span className="tool-name">{label}</span>
       {/* Prezzo OPPURE 'presto', mai entrambi: a 190px si contendono lo
           spazio e vince la troncatura del nome, che è l'unica cosa
-          davvero necessaria. */}
-      {!collapsed &&
-        (service.ready ? (
+          davvero necessaria.
+
+          ⚠️ Il «presto» NON sta dietro `!collapsed`: un cerchio identico
+          agli altri che non fa niente, sul telefono (dov'è sempre
+          `collapsed`), è un guasto e non un'attesa (decisione del
+          committente, 2026-09-15). Il prezzo invece resta riservato alla
+          barra aperta — è contorno, il cerchio da solo basta a lavorare. */}
+      {service.ready
+        ? !collapsed &&
           prezzoAcceso != null && (
             <span className="tool-price">{t('rail.da', { prezzo: prezzoAcceso })}</span>
           )
-        ) : (
+        : (
           // Qui SI' resta `service.price`: e' l'unico numero che esiste per
           // un servizio senza fornitore, ed e' una stima ammessa perche' il
           // tasto sotto non si puo' premere («~», non un prezzo netto).
           <span className="tool-soon" title={`~${service.price?.toFixed(2).replace('.', ',')} €`}>
             {t('rail.soon')}
           </span>
-        ))}
+        )}
     </button>
   );
 }
@@ -103,14 +110,19 @@ function Item({ service, active, collapsed, lampo, onPick }) {
 /**
  * La barra dei servizi.
  *
- * Il divisorio fra i due gruppi comunica la differenza fra gratis e a consumo
- * senza una parola di spiegazione, e il saldo resta in vista così la domanda
- * "quanto mi resta?" non si ripresenta a ogni generazione.
+ * Una fila sola (H1-bis, 2026-09-15): le due etichette di gruppo sono
+ * sparite, perché nell'ordine nuovo i gruppi si intrecciano e la differenza
+ * fra gratis e a consumo la dice già il prezzo sotto i servizi a consumo, che
+ * è più concreto di un titolo. Il saldo è uscito dalla barra (H3): non è più
+ * qui che si legge, e non è più qui che si tocca.
+ *
+ * Chi si vede dipende dal muro e dall'abbonamento — `mostraInFila` decide,
+ * con la STESSA regola che decide il muro altrove: non una barra con una sua.
  *
  * Si riduce a sole icone mentre si lavora: nell'editor 130 px di tela contano
  * più dei nomi, che restano raggiungibili col passaggio del mouse.
  */
-export default function ToolRail({ current: strumento, collapsed: forzata, balance, onPick }) {
+export default function ToolRail({ current: strumento, collapsed: forzata, muroAcceso, abbonato, onPick }) {
   // Dentro «Vettoriale» si ritocca con l'editor: e' lo stesso cerchio, e deve
   // restare acceso anche mentre si modificano i tracciati.
   const current = servizioDelloStrumento(strumento);
@@ -210,30 +222,18 @@ export default function ToolRail({ current: strumento, collapsed: forzata, balan
           {aperta ? '‹' : '›'}
         </button>
       )}
-      <p className="group-label">{collapsed ? '·' : t('rail.local')}</p>
-      {localServices().map((s) => (
-        <Item key={s.id} service={s} active={current === s.id} collapsed={collapsed} lampo={lampo?.id === s.id ? lampo.src : null} onPick={scegli} />
-      ))}
-
-      {/* I due a consumo erano usciti dalla barra il 2026-08-31: due cerchi
-          spenti che dicevano «presto» in mezzo a cinque che funzionano.
-          Tornano con Task 8: «Immagine» e' ready (c'e' un modo di comprare
-          crediti), «Video» resta «presto» finche' non e' costruito. */}
-      <p className="group-label">{collapsed ? '·' : t('rail.paid')}</p>
-      {paidServices().map((s) => (
-        <Item key={s.id} service={s} active={current === s.id} collapsed={collapsed} lampo={lampo?.id === s.id ? lampo.src : null} onPick={scegli} />
-      ))}
-
-      <div className="rail-foot">
-        {collapsed ? (
-          <span title={t('rail.balance')}>€</span>
-        ) : (
-          <>
-            <span>{t('rail.balance')}</span>
-            <b>{balance != null ? `${balance.toFixed(2).replace('.', ',')} €` : '—'}</b>
-          </>
-        )}
-      </div>
+      {ordineDellaFila()
+        .filter((s) => mostraInFila(DESCRITTORI[s.id], { muroAcceso, abbonato }))
+        .map((s) => (
+          <Item
+            key={s.id}
+            service={s}
+            active={current === s.id}
+            collapsed={collapsed}
+            lampo={lampo?.id === s.id ? lampo.src : null}
+            onPick={scegli}
+          />
+        ))}
     </nav>
   );
 }

@@ -13,24 +13,38 @@ const APP = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
  * comoda da scrivere, e chiude anche la libreria.
  */
 
-test('la libreria si vede ANCHE col muro alzato', () => {
+test('la libreria non sta dietro NESSUNA condizione', () => {
   /*
    * La prima stesura di questo test cercava che la libreria non fosse dietro
    * un `puoiLavorare(...) &&`, e passava — ma passava a VUOTO: la libreria era
    * dietro `!DESCRITTORI[tool]`, e dal 2026-09-09 tutti e cinque i servizi
-   * hanno un descrittore. Non era dietro il muro perche' non c'era proprio.
+   * avevano un descrittore. Non era dietro il muro perche' non c'era proprio.
    *
-   * Un test che puo' passare senza che la cosa esista non prova niente. Questo
-   * chiede il contrario: che la condizione NOMINI il muro, e nel verso giusto.
+   * La seconda stesura (Task 8, giro precedente) chiedeva che la condizione
+   * nominasse il muro nel verso giusto (`chiuso ||`). Passava anche quella,
+   * e intanto la libreria era raggiungibile SOLO dall'editor: entrati tutti
+   * i servizi nell'impianto, `!DESCRITTORI[tool]` (l'altra metà della
+   * condizione) era vero soltanto lì. Una prova che guarda la FORMA della
+   * guardia non vede la guardia sbagliata.
+   *
+   * La cura (Task 8, H2): la libreria si monta SEMPRE, senza condizione. Chi
+   * ha fatto dei file non li tiene in ostaggio dietro nessun `&&`, né
+   * commerciale né accidentale.
    */
   const i = APP.indexOf('<Library');
-  assert.notEqual(i, -1, 'la libreria non e’ montata in App.jsx');
-  const condizione = APP.slice(Math.max(0, i - 300), i);
-  assert.match(
-    condizione,
-    /chiuso \|\|/,
-    'la libreria non si vede col muro alzato: § 3.5 dice che non si chiude mai',
-  );
+  assert.notEqual(i, -1, 'la libreria non è montata in App.jsx');
+  const prima = APP.slice(Math.max(0, i - 200), i);
+  /*
+   * ⚠️ La regola generica sulla FORMA di una guardia (`{...&&\s*$`) passa a
+   * VUOTO su questo stesso file: la vecchia condizione era
+   * `{(chiuso || !DESCRITTORI[tool]) && (`, che finisce con un `(` prima
+   * dell'a-capo — non con `&&` seguito da solo spazio — e quindi non la
+   * intercetta. Si cerca invece la cosa precisa: né `chiuso` né
+   * `DESCRITTORI` devono comparire nella finestra prima di `<Library`,
+   * perché sono loro i nomi con cui questa condizione è già tornata due
+   * volte (col muro, e con l'impianto pieno).
+   */
+  assert.doesNotMatch(prima, /chiuso|DESCRITTORI/, 'la libreria è di nuovo dietro una condizione');
 });
 
 test('il muro e’ SPENTO finche’ non c’e’ da che parte entrare', () => {
