@@ -1544,6 +1544,86 @@ body {
   display: none;
 }
 
+/* ══ La pianta dello studio (committente, 2026-09-15) ═══════════════════
+   Quattro bordi, quattro mestieri, nessuna sovrapposizione:
+   i SERVIZI in alto, BRAIN a sinistra, gli STRUMENTI a destra (dove sono
+   già: `.sc-strumenti` è ancorata al fianco della tela), il TASTO ZACK in
+   basso al centro. Il pocket, quando arriverà, va in alto a destra.
+
+   Era una colonna a sinistra: una barra verticale mangia larghezza alla tela
+   in permanenza, e su una schermata larga la larghezza è proprio ciò che si
+   sta comprando.
+
+   ⚠️ Questo deve restare il PRIMO `@media (min-width: 761px)` del file:
+   `test/home.test.js` cerca la pianta a partire dalla prima occorrenza della
+   media query, e il blocco più vecchio più in basso (§8, 2026-09-04) non
+   parla più di `.toolrail`/`.main` — parla solo di `.sc-tasto`. */
+@media (min-width: 761px) {
+  .main {
+    grid-template-columns: auto 1fr var(--rail);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'servizi servizi servizi'
+      'brain   tela    pannello';
+  }
+  .toolrail {
+    grid-area: servizi;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-right: 0;
+    border-bottom: 2px solid var(--nero);
+  }
+  .toolrail .tool-item,
+  .toolrail[data-collapsed='true'] .tool-item {
+    flex-direction: column;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+  }
+  .toolrail .tool-item[data-servizio='scontorna'] {
+    width: 72px;
+    height: 72px;
+  }
+  .brain-tasto {
+    grid-area: brain;
+    position: static;
+    align-self: start;
+    margin: 12px;
+  }
+  .stage { grid-area: tela; }
+  .rail { grid-area: pannello; }
+
+  /* Il tasto Zack scende al centro: sotto di lui non c'è più la fila dei
+     servizi, che è salita in cima. */
+  .sc-tasto {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .sc-tuo {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* `.rail-apri` (la freccetta che allarga la colonna dei servizi) non ha
+     più un lato da allargare: qui sopra i 760px la fila e' orizzontale, non
+     più una colonna con nomi da aprire o chiudere. Nascosta e non tolta —
+     il markup e la regola restano intatti per `.toolrail[data-collapsed]`,
+     che sotto i 761px (telefono) e' ancora la barra fissa in basso.
+     `--toolrail` (la variabile che dava la larghezza alla vecchia colonna)
+     resta anch'essa non toccata per lo stesso motivo: nessuna regola qui
+     dentro la legge più, ma `.shell[data-working='true']` continua a
+     scriverla, e non e' compito di questo commit smontare quel filo. */
+  .rail-apri {
+    display: none;
+  }
+}
+
 /* ─── azioni sull'asset ─────────────────────────────────────────────────── */
 
 .work {
@@ -5102,64 +5182,52 @@ body {
   color: var(--fondo);
 }
 
-/* ══ Il desktop (contratto § 8) ══════════════════════════════════════════
-   Stesso impianto, e la mappa di § 5.1 vale identica. Due differenze sole:
+/* ══ Il desktop (contratto § 8, 2026-09-04 — SUPERATO da Task 9,
+   2026-09-15) ═════════════════════════════════════════════════════════
+   Questo blocco spostava il tasto Zack «nella tela in alto a destra». La
+   pianta dello studio del 2026-09-15 (vedi il blocco `@media (min-width:
+   761px)` più in alto in questo file) l'ha rimandato in basso al centro —
+   sotto di lui non c'è più la fila dei servizi, che è salita in cima — e
+   quella frase non vale più. Restano qui SOLO le regole che quella
+   decisione non tocca: la misura «medio-grande» del tasto e la colonna
+   sinistra degli strumenti, che non dipendevano dalla sua posizione.
 
-   - i servizi passano dalla fila in basso alla colonna a sinistra — e quello
-     lo fa gia' il `.toolrail`, che sopra i 760 px e' una colonna;
-   - **il tasto Zack sta nella tela in alto a destra, medio-grande**, sotto la
-     striscia, che resta di libreria, faccia e scarica.
-
-   Gli strumenti restano ATTACCATI al tasto, in colonna sotto di lui: e' la
-   stessa forma che hanno su mobile, ruotata dal basso al lato. Il bordo destro
-   diventa una cosa sola — chi fa il lavoro, e con cosa lo si corregge.
-
-   La mascotte resta in basso a sinistra della tela, accanto alla colonna dei
-   servizi: e' l'unica cosa che NON si sposta, ed e' voluto — e' il punto fermo
-   che dice che e' la stessa schermata. */
+   La mascotte resta in basso a sinistra della tela: e' l'unica cosa che non
+   si e' mai spostata in nessuna delle due piante. */
 @media (min-width: 761px) {
   .sc-tasto {
-    /* 58px e non 0: era lo spazio sotto `.sc-scarica` (46px a filo in alto),
-       tolto dallo schermo nel Task 7. Il numero resta — spostare il tasto
-       Zack sul desktop non è cosa di questo compito — ma la ragione scritta
-       qui sopra non vale più: e' un residuo di misura, non di layout. */
-    top: 58px;
-    right: 0;
-    bottom: auto;
     /* «Medio grande» (committente, 2026-09-04): piu' piccolo dei 340 px che
-       aveva in basso, dove riempiva l'angolo, e piu' grande di un pulsante. */
+       aveva in basso, dove riempiva l'angolo, e piu' grande di un pulsante.
+       Restava vero anche spostato: la misura non dipendeva da dove sta. */
     width: clamp(200px, 20vw, 260px);
   }
 
-  /* Il pannello del punto oro si apre in GIU', non in su: da un tasto in alto
-     si aprirebbe fuori dalla tela, e la meta' di sopra finirebbe sotto la
-     striscia nera. */
-  .sc-tuo {
-    top: calc(100% + 10px);
-    bottom: auto;
-  }
+  /* `top`/`right`/`bottom` non si toccano più qui: senza quella riga il
+     tasto ricade sulla regola base (`bottom: 8px`) più la nuova pianta
+     (`left: 50%; transform: translateX(-50%)`, dichiarata nel blocco più in
+     alto) — cioè in basso al centro, com'è dal 2026-09-15. */
 
-  /* La colonna degli strumenti scende da sotto il tasto invece di partire
-     dall'alto: attaccata a lui, non parcheggiata al bordo.
+  /* `.sc-tuo` non si tocca più qui: senza l'override che lo apriva in giù,
+     ricade sulla regola base (`bottom: calc(100% + 10px)`), che lo apre
+     SOPRA il tasto — corretto ora che il tasto è tornato in basso. */
 
-     Il valore e' calcolato, non indovinato: 58 (dove comincia il tasto) + la
-     sua altezza — larghezza per 670/1200, che e' la proporzione
-     dell'immagine — + 14 di respiro. */
-  .sc-strumenti[data-lato='destra'] {
-    top: calc(58px + clamp(200px, 20vw, 260px) * 0.558 + 14px);
-  }
+  /* La colonna degli strumenti a destra non è più «attaccata» al tasto: era
+     un calcolo che partiva da dove cominciava il tasto quand'era in alto
+     (58px + la sua altezza + 14 di respiro). Il tasto non è più lì, e quel
+     calcolo puntava a un punto vuoto della tela. Senza l'override qui
+     ricade sulla regola base (`top: 60px`), la stessa che aveva prima del
+     contratto § 8 — vicino alla striscia, lontana dal tasto in basso. */
 
   /* A sinistra non c'e' nessun tasto sopra: la colonna resta dove sta su
-     mobile, sotto il `+` e la croce dell'angolo. */
-  .sc-strumenti[data-lato='sinistra'] {
-    top: 112px;
-  }
+     mobile, sotto il `+` e la croce dell'angolo. (La regola base già dice
+     `top: 112px` — questa ripetizione a 761px era ridondante e non serve
+     più: la lascio fuori invece di copiarla due volte.) */
 
-  /* Lo spazio in fondo serviva al tasto, che ora non e' piu' li'. Resta
-     quello della mascotte, che in basso a sinistra ci sta ancora. */
-  .sc {
-    padding-bottom: clamp(60px, 9vh, 96px);
-  }
+  /* Lo spazio in fondo torna a servire ANCHE al tasto, che è tornato in
+     basso: senza l'override qui ricade sulla regola generale (§ 5-6,
+     `clamp(96px, 15dvh, 150px)`), che è la stessa misura usata per la
+     mascotte — i due tornano ad avere lo stesso spazio riservato che
+     avevano prima del contratto § 8. */
 }
 
 /* ── Mentre il microfono è acceso ────────────────────────────────────────

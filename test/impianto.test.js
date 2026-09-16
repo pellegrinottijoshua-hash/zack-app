@@ -287,32 +287,37 @@ test('«c’e’ un risultato» non vuol dire PNG per tutti', () => {
   );
 });
 
-test('sul desktop il tasto Zack sta in ALTO, non in basso', () => {
+// ⚠️ Task 9 (committente, 2026-09-15) ha SUPERATO il contratto § 8
+// (2026-09-04): la pianta dello studio rimanda il tasto Zack in basso al
+// centro — «sotto di lui non c'e' piu' la fila dei servizi, che e' salita in
+// cima» — e il pannello del punto oro torna ad aprirsi SOPRA di lui, non
+// sotto. Le due prove qui sotto controllavano la decisione vecchia (tasto in
+// alto, pannello in giu'); sono state riscritte sulla decisione nuova, non
+// cancellate — lo stesso principio che il file applica a se stesso.
+test('sul desktop il tasto Zack sta in BASSO al centro, non piu’ in alto a destra', () => {
   /*
-   * Contratto § 8, e richiesta esplicita del committente del 2026-09-04: «il
-   * desktop voglio il tasto zack medio grande a destra in alto», «zack va nel
-   * canva in alto a destra, sotto» libreria e scarica.
-   *
-   * E' una regola CSS dentro una media query, quindi nessun test di
-   * comportamento la vede: si legge il foglio. Misurato nel browser a 1280 px
-   * — tasto a (701, 153), scarica a (911, 95), strumenti a (913, 310), cioe'
-   * 14 px sotto il tasto.
+   * Misurato nel browser a 1280 px dopo Task 9: il tasto e' centrato in
+   * orizzontale (`left: 50%; transform: translateX(-50%)`) e NON porta piu'
+   * nessun `top:` che lo ancori in alto — ricade sulla regola base
+   * (`bottom: 8px`), la stessa lettura di sorgente usata da questo file
+   * prima del contratto § 8.
    */
   const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
   const desktop = CSS.slice(CSS.indexOf('@media (min-width: 761px)'));
   assert.ok(desktop.length > 0, 'la media query del desktop non esiste piu’');
   const blocco = desktop.match(/\.sc-tasto\s*\{([^}]*)\}/);
   assert.ok(blocco, 'il desktop non dice piu’ dove sta il tasto');
-  assert.match(blocco[1], /top:/, 'il tasto non e’ ancorato in alto');
-  assert.match(blocco[1], /bottom:\s*auto/, 'il tasto e’ ancora ancorato anche in basso');
+  assert.match(blocco[1], /left:\s*50%/, 'il tasto non e’ piu’ centrato in orizzontale');
+  assert.doesNotMatch(blocco[1], /top:\s*\d/, 'il tasto e’ tornato ad ancorarsi in alto');
 });
 
-test('sul desktop il pannello del punto oro si apre in giu’', () => {
-  // Da un tasto in alto, aprirsi verso l'alto vuol dire finire fuori dalla
-  // tela e meta' sotto la striscia nera.
+test('sul desktop il pannello del punto oro si apre in SU, sopra il tasto', () => {
+  // Il tasto e' tornato in basso: aprirsi verso il basso vuol dire finire
+  // sotto la fila dei servizi, che ora sta in cima ma non lascia spazio li'.
   const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
   const desktop = CSS.slice(CSS.indexOf('@media (min-width: 761px)'));
   const blocco = desktop.match(/\.sc-tuo\s*\{([^}]*)\}/);
   assert.ok(blocco, 'il pannello non e’ stato girato per il desktop');
-  assert.match(blocco[1], /bottom:\s*auto/, 'il pannello si apre ancora verso l’alto');
+  assert.match(blocco[1], /left:\s*50%/, 'il pannello non e’ piu’ centrato sotto il tasto');
+  assert.doesNotMatch(blocco[1], /top:\s*calc/, 'il pannello e’ tornato ad aprirsi verso il basso');
 });

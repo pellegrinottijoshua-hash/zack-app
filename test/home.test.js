@@ -104,3 +104,15 @@ test('se il servizio aperto sparisce dalla fila, App.jsx ripiega su scontorna', 
     'quando il servizio sparisce dalla fila, App.jsx non ripiega più su scontorna',
   );
 });
+
+// Prova DI SORGENTE (Task 9): niente browser qui — legge la pianta dello
+// studio direttamente da styles.css e pretende che sia una FILA in cima,
+// non più una colonna a sinistra.
+test('sul desktop i servizi stanno in alto, non in colonna a sinistra', () => {
+  const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+  const i = CSS.indexOf('@media (min-width: 761px)');
+  assert.notEqual(i, -1, 'manca il blocco della pianta dello studio');
+  const blocco = CSS.slice(i, i + 2000);
+  assert.match(blocco, /\.toolrail\s*\{[^}]*flex-direction:\s*row/s, 'la barra non è una fila in alto');
+  assert.match(blocco, /\.main\s*\{[^}]*grid-template-areas/s, 'lo studio non ha una pianta');
+});
