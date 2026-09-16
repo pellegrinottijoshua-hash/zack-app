@@ -2498,6 +2498,13 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
           onClick={() => apriServizio('brain')}
         >
           <Icon name="brain" draw />
+          {/* Il nome, visibile SEMPRE sul telefono: stessa regola dei cerchi
+              della barra (styles.css, § 8) — su un touch `title` non compare
+              mai, ed e' la mancanza che il committente aveva segnalato
+              proprio su Brain («nessun modo di sapere quale fosse Brain e
+              quale Suono»). Tolto dalla fila (Task 8), il suo cerchio l'ha
+              persa; la riprende qui. */}
+          <span className="brain-nome">{t('tool.brain.label')}</span>
         </button>
 
         <section className="stage">

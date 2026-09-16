@@ -1536,6 +1536,13 @@ body {
   background: var(--inchiostro);
   color: var(--fondo);
 }
+/* Nascosto per difetto: su desktop c'e' il passaggio del mouse (`title`), e
+   un nome permanente sotto un cerchio in alto a sinistra sconfinerebbe sulla
+   tela. Torna visibile SOLO sul telefono, dentro il media query § 8 di
+   styles.css — stessa regola di `.tool-name`. */
+.brain-nome {
+  display: none;
+}
 
 /* ─── azioni sull'asset ─────────────────────────────────────────────────── */
 
@@ -4874,6 +4881,24 @@ body {
   .toolrail .tool-item[data-servizio='scontorna'] {
     width: 72px;
     height: 72px;
+  }
+  /* Brain, come i cerchi della barra: sul telefono il nome torna visibile,
+     sotto il cerchio. Important 4 del giro di correzione 1 — Brain e' uscito
+     da FILA (Task 8) e ha perso il nome che gli altri cerchi tengono sempre
+     qui sotto per lo stesso motivo (`title` non compare mai su un touch). */
+  .brain-nome {
+    display: block;
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 68px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 10px;
+    text-align: center;
+    color: var(--inchiostro);
   }
   /* Con i cerchi al centro non serve piu' spingerli con mezzo schermo di
      margine: ci stanno tutti e cinque. */
