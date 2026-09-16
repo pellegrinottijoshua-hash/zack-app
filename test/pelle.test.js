@@ -14,6 +14,7 @@ import { DESCRITTORI } from '../src/servizi/index.js';
  */
 const PIANO = readFileSync(new URL('../src/components/Piano.jsx', import.meta.url), 'utf8');
 const APP = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
+const TOOLRAIL = readFileSync(new URL('../src/components/ToolRail.jsx', import.meta.url), 'utf8');
 
 test('col piano vuoto il + sta in mezzo: è il gesto con cui si comincia', () => {
   assert.equal(postoDelPiu('scontorna', { quanti: 0, tetto: 3 }), 'centro');
@@ -274,4 +275,27 @@ test('un servizio senza descrittore resta in fila, non sparisce in silenzio', ()
   // `video` non ha un descrittore (non è ancora nell'impianto): la stessa
   // scelta già presa da `servizioAperto` per il descrittore assente.
   assert.equal(mostraInFila(undefined, { muroAcceso: true, abbonato: false }), true);
+});
+
+// Prova DI SORGENTE (Important 2, giro di correzione 1): i test qui sopra
+// provano che `mostraInFila` è corretta IN ISOLAMENTO — non provano che
+// `ToolRail.jsx` la chiami affatto, né con quali argomenti. Due difetti
+// reali restano invisibili a quelle prove da sole:
+//   - si toglie il `.filter(...)`: col muro alzato un non abbonato vede
+//     tutti e sei i cerchi — i servizi a pagamento regalati;
+//   - si passa `abbonato: false` scritto a mano invece della prop vera: un
+//     abbonato PAGANTE perde vettoriale/vocale/effetti — quattro porte
+//     chiuse a chi ha pagato.
+// Questa prova pretende che `ordineDellaFila()` sia seguito da un `.filter`
+// che chiama `mostraInFila` con ENTRAMBE le variabili vere prese dalle prop,
+// non con un letterale al loro posto.
+test('la fila filtra DAVVERO con mostraInFila, con le variabili vere', () => {
+  const i = TOOLRAIL.indexOf('ordineDellaFila()');
+  assert.notEqual(i, -1, 'ToolRail.jsx non chiama più ordineDellaFila()');
+  const finestra = TOOLRAIL.slice(i, i + 200);
+  assert.match(
+    finestra,
+    /\.filter\(\(s\) => mostraInFila\(DESCRITTORI\[s\.id\],\s*\{\s*muroAcceso,\s*abbonato\s*\}\)\)/,
+    'la fila non filtra più con mostraInFila(DESCRITTORI[s.id], { muroAcceso, abbonato }): il .filter è sparito, o gli argomenti non sono più le prop vere',
+  );
 });
