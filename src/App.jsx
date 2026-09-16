@@ -40,6 +40,7 @@ import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/
 import { impilaRisultato, vaIndietro, vaAvanti } from './engine/storia.js';
 import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/ritaglio.js';
 import { DESCRITTORI, getDescrittore, strumentiVisibili, servizioAperto } from './servizi/index.js';
+import { mostraCrediti } from './servizi/pelle.js';
 import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
 import { statoLicenza, giorniAllaProva, puoiLavorare } from './engine/licenza.js';
 import { prezzoDi } from './engine/listino.js';
@@ -2319,7 +2320,15 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               busy={busy}
               busyNote={busyNote}
               quanto={quanto}
-              labels={['originale', tool === 'scontorna' ? 'scontornato' : 'vettoriale']}
+              /* S3: via la scritta «scontornato» dal risultato. Per lo
+                 scontorno `labels` è null e non `['', '']`: `Compare` ricade
+                 su `result.before`/`result.after` (già in it.json/en.json —
+                 «originale»/«ritagliato» — non «scontornato»), quindi il
+                 confronto resta leggibile invece di restare muto. Se un
+                 domani quelle chiavi dovessero somigliare troppo alla parola
+                 tolta, la scelta da rifare è passare `['', '']` e nascondere
+                 `.tag` col CSS. */
+              labels={tool === 'scontorna' ? null : ['originale', 'vettoriale']}
             />
           ) : (
             <Dropzone
@@ -2383,26 +2392,22 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
           })()}
 
         {/*
-         * Critical del giro di correzioni: questo tasto era racchiuso in una
-         * guardia che lo toglieva quando il saldo era a zero, ed è l'UNICO
-         * ingresso al pannello della ricarica in tutta l'app (i due montaggi
-         * di `<Ricarica>` dipendono entrambi da `sopraLaTela === 'ricarica'`,
-         * che solo lui imposta). Con un saldo appena aperto — lo stato di
-         * OGNI cliente nuovo, il primo momento d'acquisto per cui Task 8
-         * esiste — il tasto non c'era e non c'era un'alternativa: vicolo
-         * chiuso.
+         * H3: i crediti non si vedono in home né in scontorna — chi apre
+         * un'app gratis vuole scontornare, non leggere «0,00 €».
          *
-         * Il motivo per cui non se n'era accorto nessuno conta più del bug:
-         * ogni verifica a schermo del Task 8 è partita da una licenza con
-         * cinquemila millesimi già in `localStorage` (una sessione
-         * precedente, mai svuotata). Il cammino a saldo vuoto — l'unico che
-         * ogni cliente percorre davvero — non era mai stato provato.
-         * «0,00 €» è onesto, ed è la porta: il tasto si mostra sempre, senza
-         * più nessuna guardia intorno.
+         * ⚠️ Il tasto NON sparisce dall'app: è l'unica porta verso la
+         * ricarica, e in B2 una guardia intorno a questo stesso tasto è
+         * costata il difetto peggiore di tutto il giro (vicolo cieco a saldo
+         * zero, con un cliente nuovo — saldo appena aperto — davanti a un
+         * ingresso che non c'era). Qui la guardia è sul SERVIZIO, non sul
+         * saldo: dentro Immagine c'è sempre, con qualunque cifra, «0,00 €»
+         * compreso.
          */}
-        <button className="saldo" onClick={() => setSopraLaTela('ricarica')}>
-          {formatEuro(crediti, getLang())}
-        </button>
+        {mostraCrediti(tool) && (
+          <button className="saldo" onClick={() => setSopraLaTela('ricarica')}>
+            {formatEuro(crediti, getLang())}
+          </button>
+        )}
       </div>
 
       {showOnboarding && <Onboarding onClose={() => setShowOnboarding(false)} />}

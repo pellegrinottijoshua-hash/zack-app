@@ -1,7 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { postoDelPiu, mostraMascotte, mostraCrediti } from '../src/servizi/pelle.js';
 import { DESCRITTORI } from '../src/servizi/index.js';
+
+/*
+ * Le prove che seguono, in fondo al file, sono prove DI SORGENTE: qui non
+ * c'è un DOM, quindi invece di disegnare il componente si legge il file e si
+ * cerca cosa c'è scritto — lo stesso stile di `test/impianto.test.js`. Sono
+ * più deboli di una prova che monta davvero il componente, e per questo ognuna
+ * cerca una cosa precisa e stretta, non una parola sparsa in tutto il file.
+ */
+const PIANO = readFileSync(new URL('../src/components/Piano.jsx', import.meta.url), 'utf8');
+const APP = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
 
 test('col piano vuoto il + sta in mezzo: è il gesto con cui si comincia', () => {
   assert.equal(postoDelPiu('scontorna', { quanti: 0, tetto: 3 }), 'centro');
@@ -63,4 +74,28 @@ test('ogni servizio dell\'impianto ha una risposta, non un undefined', () => {
     assert.equal(typeof mostraCrediti(id), 'boolean', id);
     assert.equal(typeof mostraMascotte(id, { quanti: 0 }), 'boolean', id);
   }
+});
+
+test('il + chiede a `pelle.js` dove stare, non lo decide dentro il JSX', () => {
+  assert.match(PIANO, /postoDelPiu\(/, 'Piano non consulta la regola del +');
+});
+
+test('la mascotte chiede a `pelle.js` se esserci', () => {
+  assert.match(PIANO, /mostraMascotte\(/);
+});
+
+test('il saldo in cima chiede a `pelle.js` se mostrarsi', () => {
+  // H3: fuori dalla home e da scontorna. Ma NON tolto dall'app: è l'unica
+  // porta verso la ricarica, e in B2 toglierla è costato un Critical.
+  const i = APP.indexOf('className="saldo"');
+  assert.notEqual(i, -1, 'il tasto del saldo non esiste più: era l’unica porta verso la ricarica');
+  assert.match(APP.slice(Math.max(0, i - 400), i), /mostraCrediti\(/);
+});
+
+test('il confronto non scrive più «scontornato» sul risultato', () => {
+  // Si guarda la RIGA delle etichette, non tutto il file: `-scontornato` è
+  // anche il suffisso del nome del file salvato, e quello deve restare.
+  const i = APP.indexOf('labels={');
+  assert.notEqual(i, -1, 'il confronto non passa più nessuna etichetta: guarda cos’è successo');
+  assert.doesNotMatch(APP.slice(i, i + 200), /scontornato/, 'S3: la scritta «scontornato» se n’è andata');
 });

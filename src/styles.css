@@ -4311,30 +4311,10 @@ body {
   color: var(--fondo);
 }
 
-.sc-scarica {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 4;
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  padding: 0;
-  border: 1px solid var(--linea-viva);
-  border-radius: 50%;
-  background: var(--fondo);
-  color: var(--inchiostro);
-  cursor: pointer;
-}
-.sc-scarica:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-.sc-scarica:hover:not(:disabled) {
-  background: var(--inchiostro);
-  color: var(--fondo);
-}
+/* `.sc-scarica` (il cerchio d'angolo in alto a destra) è finito qui — Task 7,
+   S3: lo stesso gesto rinasce come cerchio della colonna (`.sc-strumenti`),
+   dichiarato in `src/servizi/scontorna.js` con `id: 'scarica'`, invece di
+   vivere due volte in due punti diversi dello schermo. */
 
 /* Gli strumenti: cerchi in colonna, a destra, sul fianco della tela. Il nome
    sta nel `title` — la parola ruba larghezza alla tela in ogni schermata. */
@@ -5019,10 +4999,9 @@ body {
   padding: 0;
 }
 
-/* Il `+` e la croce quando il piano è già occupato: piccoli, in alto a
-   sinistra, dove non c'è nient'altro — l'angolo a destra è dello «scarica».
-   Contratto UX §5: il `+` si vede con 1 o 2 file e sparisce al terzo, e ogni
-   file ha la sua iconcina per andarsene. */
+/* Il `+` e la croce quando il piano è già occupato: piccoli, dove non c'è
+   nient'altro. Contratto UX §5: il `+` si vede con 1 o 2 file e sparisce al
+   terzo, e ogni file ha la sua iconcina per andarsene. */
 .sc-angolo {
   position: absolute;
   top: 0;
@@ -5030,6 +5009,19 @@ body {
   z-index: 4;
   display: flex;
   gap: 8px;
+}
+/* Il `+` col piano occupato: a SINISTRA del file, perché il piano si legge
+   «entra da sinistra, esce a destra» — l'uscita (T2) sta a destra, e i due
+   non si contendono lo stesso bordo. */
+.sc-angolo[data-posto='sinistra'] {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 4;
 }
 .sc-piu-piccolo {
   display: grid;
@@ -5067,7 +5059,10 @@ body {
    che dice che e' la stessa schermata. */
 @media (min-width: 761px) {
   .sc-tasto {
-    /* Sotto `.sc-scarica`, che sta a filo in alto ed e' 46 px. */
+    /* 58px e non 0: era lo spazio sotto `.sc-scarica` (46px a filo in alto),
+       tolto dallo schermo nel Task 7. Il numero resta — spostare il tasto
+       Zack sul desktop non è cosa di questo compito — ma la ragione scritta
+       qui sopra non vale più: e' un residuo di misura, non di layout. */
     top: 58px;
     right: 0;
     bottom: auto;
