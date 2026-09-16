@@ -33,18 +33,46 @@ test('la libreria non sta dietro NESSUNA condizione', () => {
    */
   const i = APP.indexOf('<Library');
   assert.notEqual(i, -1, 'la libreria non è montata in App.jsx');
-  const prima = APP.slice(Math.max(0, i - 200), i);
+  // Finestra larga apposta: il commento JSX che precede `<Library` in
+  // produzione e' lungo diverse righe, e deve starci tutto (apertura
+  // compresa) perche' lo spogliatoio qui sotto lo riconosca.
+  const prima = APP.slice(Math.max(0, i - 1200), i);
   /*
-   * ⚠️ La regola generica sulla FORMA di una guardia (`{...&&\s*$`) passa a
-   * VUOTO su questo stesso file: la vecchia condizione era
-   * `{(chiuso || !DESCRITTORI[tool]) && (`, che finisce con un `(` prima
-   * dell'a-capo — non con `&&` seguito da solo spazio — e quindi non la
-   * intercetta. Si cerca invece la cosa precisa: né `chiuso` né
-   * `DESCRITTORI` devono comparire nella finestra prima di `<Library`,
-   * perché sono loro i nomi con cui questa condizione è già tornata due
-   * volte (col muro, e con l'impianto pieno).
+   * ⚠️ Giro di correzione 1, Important 3: la prova precedente cercava
+   * l'ASSENZA di due nomi precisi (`chiuso`, `DESCRITTORI`) — una lista nera
+   * di due voci, buona solo contro i due modi in cui questa porta si è già
+   * chiusa. Il controller ha rimontato la libreria come
+   * `{puoiLavorare(statoConto) && (<Library … />)}` — un TERZO nome, che non
+   * sta nella lista — e la prova restava verde mentre i file del cliente
+   * finivano di nuovo dietro il muro dell'abbonamento.
+   *
+   * La cura: non si cerca più l'assenza di nomi, si prova l'EFFETTO. Una
+   * `<Library` senza nessuna condizione e' un fratello semplice nell'albero
+   * JSX — l'ultimo carattere di codice prima di lei (tolti i commenti JSX
+   * `{/* ... *\/}`, che non sono codice) e' la `>` di chiusura dell'elemento
+   * precedente. Qualunque condizione — `{x && (`, `{x ? (`, `{x && <Library`
+   * — finisce invece con `(` o con l'apertura `{` stessa: MAI con `>`.
+   *
+   * Si spoglia all'indietro un commento JSX alla volta (invece di un solo
+   * `.replace` globale) perché un `.replace` con finestra tagliata a meta'
+   * commento non trova l'apertura `{/*` e non toglie niente: qui invece si
+   * cerca l'ULTIMA apertura prima della chiusura finale, quale che sia la
+   * lunghezza del commento o quanti ce ne sono in fila.
    */
-  assert.doesNotMatch(prima, /chiuso|DESCRITTORI/, 'la libreria è di nuovo dietro una condizione');
+  let senzaCommentiJsx = prima;
+  for (;;) {
+    senzaCommentiJsx = senzaCommentiJsx.replace(/\s+$/, '');
+    if (!senzaCommentiJsx.endsWith('*/}')) break;
+    const apertura = senzaCommentiJsx.lastIndexOf('{/*');
+    if (apertura === -1) break;
+    senzaCommentiJsx = senzaCommentiJsx.slice(0, apertura);
+  }
+  const ultimoCarattere = senzaCommentiJsx.slice(-1);
+  assert.equal(
+    ultimoCarattere,
+    '>',
+    `la libreria e' preceduta da "…${senzaCommentiJsx.slice(-40)}": non e' più un fratello semplice nell'albero JSX — è di nuovo dietro una condizione`,
+  );
 });
 
 test('il muro e’ SPENTO finche’ non c’e’ da che parte entrare', () => {
