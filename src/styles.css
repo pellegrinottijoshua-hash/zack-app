@@ -1696,8 +1696,22 @@ body {
   }
 
   .shell {
-    /* Spazio per la barra strumenti fissa in fondo. */
-    padding-bottom: 60px;
+    /*
+     * Spazio per la barra strumenti fissa in fondo.
+     *
+     * ⚠️ Task 8 (H1-bis, 2026-09-15): la barra e' cresciuta a 122px (misurato
+     * a 390×844 — 8px di padding-top, il cerchio da 72px di Scontorna, e i
+     * 42px di padding-bottom aggiunti qui sotto per il «presto» su due
+     * righe), contro i 60px riservati qui: bastavano quando il
+     * padding-bottom della barra era 30px (prima di Task 8).
+     *
+     * Trovato perche' la libreria ora si monta SEMPRE (Step 6): rimasta a
+     * 60px, finiva nel flusso normale SOTTO la barra fissa — `.toolrail` e'
+     * `position: fixed` con z-index piu' alto, e cattura il tocco anche
+     * negli spazi vuoti fra i cerchi. La libreria era quindi invisibile a
+     * schermo E non cliccabile, non solo «montata» come dice il test.
+     */
+    padding-bottom: calc(128px + env(safe-area-inset-bottom, 0px));
   }
 
   .topbar {
