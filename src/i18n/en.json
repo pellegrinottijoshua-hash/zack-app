@@ -804,6 +804,8 @@
     "attendi": "Zack is generating. It takes about twenty seconds.",
     "vuoto": "Write what you want to see first.",
     "errore": "I couldn't generate it. Try again in a moment.",
+    "rimborsato": "It didn't come out. The credit is back on your balance: you paid nothing.",
+    "rimborsoInCorso": "It didn't come out. Your credit comes back within half an hour — we check it ourselves, you don't have to do anything.",
     "assetMancante": "One of the assets you picked as a reference is no longer in the library. Remove it and try again.",
     "chiudi": "Done",
     "ruolo": { "personaggio": "Character", "oggetto": "Object", "stile": "Style" }

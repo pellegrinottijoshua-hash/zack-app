@@ -147,6 +147,26 @@ test('⚠️ se il rimborso fallisce, il lavoro resta in-corso e il saldo non me
   );
 });
 
+test('⚠️ la risposta DICE se il rimborso è andato, invece di lasciarlo indovinare', async () => {
+  /*
+   * Due 502 identiche per due fatti opposti — soldi tornati, soldi NON
+   * tornati — obbligano la schermata a inventare, e la schermata inventerà
+   * sempre la versione ottimista. Poi il cliente non ritrova i suoi quindici
+   * centesimi, e la seconda volta non riprova affatto.
+   */
+  const a = mondo({ saldo: 5000, googleOk: false });
+  const res1 = await worker.fetch(chiedi({ servizio: 'immagine-nbp', prompt: 'x' }), AMBIENTE);
+  const c1 = await res1.json();
+  assert.equal(c1.rimborsato, true, 'ha rimborsato e non l’ha detto');
+  assert.equal(a.saldo, 5000);
+
+  const b = mondo({ saldo: 5000, googleOk: false, rimborsoOk: false });
+  const res2 = await worker.fetch(chiedi({ servizio: 'immagine-nbp', prompt: 'x' }), AMBIENTE);
+  const c2 = await res2.json();
+  assert.equal(c2.rimborsato, false, 'il rimborso non ha preso, e la risposta dice di sì');
+  assert.equal(b.saldo, 5000 - 146, 'il saldo dice una cosa e la risposta un’altra');
+});
+
 test('⚠️ se apriLavoro non riesce, il cliente e’ rimborsato e il saldo torna quello di partenza', async () => {
   /*
    * apriLavoro fa una POST verso /rest/v1/lavori DENTRO il try: se Supabase

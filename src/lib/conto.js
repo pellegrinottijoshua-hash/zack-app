@@ -196,6 +196,7 @@ export async function generaImmagine({ prompt, riferimenti = [], misura = 'grand
       code: corpo.errore || 'genera',
       saldo: corpo.saldo,
       prezzo: corpo.prezzo,
+      rimborsato: corpo.rimborsato,
     });
   }
   return corpo; // { dati, mime, prezzo, saldo, lavoro }

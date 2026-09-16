@@ -1636,7 +1636,14 @@ export default function App() {
           ? t('immagine.saldoCorto')
           : e.code === 'asset-mancante'
             ? t('immagine.assetMancante')
-            : t('immagine.errore'),
+            : e.code === 'fornitore'
+              /*
+               * Il rimborso SI DICE (spec § 6). Chi ha appena speso quindici
+               * centesimi e vede solo «riprova» non sa se ha perso i soldi, e
+               * la seconda volta non riprova affatto.
+               */
+              ? t(e.rimborsato === false ? 'immagine.rimborsoInCorso' : 'immagine.rimborsato')
+              : t('immagine.errore'),
       );
     } finally {
       setBusy(null);

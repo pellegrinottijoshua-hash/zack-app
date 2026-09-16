@@ -466,7 +466,7 @@ async function genera(req, env) {
       // fa gia' per `/me`) che inventare un numero da un `rimasto` che non
       // e' mai esistito.
       return json({
-        errore: 'fornitore', dettaglio: e.code || 'ignoto',
+        errore: 'fornitore', dettaglio: e.code || 'ignoto', rimborsato: true,
         saldo: rimasto === null ? null : rimasto + prezzo,
       }, 502);
     }
@@ -481,7 +481,7 @@ async function genera(req, env) {
      * transazione dell'addebito, prima ancora che si arrivasse qui. La
      * riconciliazione lo vede lì, non in `lavori`.
      */
-    return json({ errore: 'fornitore', dettaglio: e.code || 'ignoto', saldo: rimasto }, 502);
+    return json({ errore: 'fornitore', dettaglio: e.code || 'ignoto', rimborsato: false, saldo: rimasto }, 502);
   }
 }
 
