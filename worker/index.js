@@ -447,10 +447,12 @@ async function genera(req, env) {
      * 'rimborsato', e lo spazzino del Task 5 — che raccoglie SOLO i lavori
      * 'in-corso' — non lo ritroverebbe mai più. Nessuno se ne accorgerebbe.
      *
-     * Si lascia invece il lavoro 'in-corso': lo spazzino ci riprova fra
-     * trenta minuti, che è il mestiere per cui esiste. E si risponde col
-     * saldo che risulta DAVVERO (`rimasto`, il saldo dopo l'addebito), non
-     * con quello sperato (`rimasto + prezzo`).
+     * Si lascia invece il lavoro 'in-corso': lo spazzino lo raccoglie al
+     * prossimo giro — passa ogni ora (`wrangler.jsonc`, `crons: ['0 * * * *']`),
+     * non ogni trenta minuti: `APPESO_MINUTI` qui sotto è l'età minima perché
+     * un lavoro venga raccolto, non la cadenza delle passate. E si risponde
+     * col saldo che risulta DAVVERO (`rimasto`, il saldo dopo l'addebito),
+     * non con quello sperato (`rimasto + prezzo`).
      *
      * L'id del lavoro si passa solo se la riga esiste davvero — altrimenti
      * `null`, che `accredita` accetta (`p_lavoro` ha default `null`): con la
@@ -472,7 +474,9 @@ async function genera(req, env) {
     }
     /*
      * Il rimborso non ha preso: la riga (se esiste) NON si tocca, resta
-     * 'in-corso' com'è nata — lo spazzino ci riprova fra trenta minuti.
+     * 'in-corso' com'è nata — lo spazzino la raccoglie al prossimo giro
+     * orario, non entro trenta minuti (vedi il commento sopra e
+     * `APPESO_MINUTI`).
      *
      * ⚠️ Caso peggiore: riga mai creata E rimborso fallito. Lì lo spazzino
      * non può aiutare — guarda solo `lavori`, e qui non c'è nessuna riga da

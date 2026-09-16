@@ -120,6 +120,56 @@ test('un riferimento che non si legge piu’: NON si genera, e niente parte vers
   assert.equal(chiamato, false, 'generaImmagine ha chiamato /genera con un riferimento mancante');
 });
 
+test('⚠️ Giro di correzioni 1 — generaImmagine porta fuori RIMBORSATO come l’ha detto il worker, in tutt’e due i valori', async () => {
+  /*
+   * Il rilievo: le prove di `test/genera.test.js` si fermano al corpo della
+   * risposta del Worker, e nessuna prova tocca il `throw` di `generaImmagine`
+   * — che e' proprio dove App.jsx legge `e.rimborsato` per scegliere il
+   * messaggio. Un refuso qui (`corpo.rimborso` invece di `corpo.rimborsato`,
+   * o il campo dimenticato nel `throw`) lascerebbe passare `undefined` senza
+   * che nessuna prova se ne accorgesse.
+   *
+   * `otteniSessione` finto scavalca `sessione()` (sempre `null` in
+   * `node --test`, vedi sopra), esattamente come `leggiAsset` scavalca la
+   * libreria: la tratta verso /genera si raggiunge senza una sessione vera.
+   */
+  for (const rimborsato of [true, false]) {
+    globalThis.fetch = async () =>
+      risposta({ errore: 'fornitore', dettaglio: 'ignoto', rimborsato, saldo: 4000 }, false);
+
+    await assert.rejects(
+      () =>
+        generaImmagine({
+          prompt: 'una prova',
+          riferimenti: [],
+          leggiAsset: async () => null,
+          otteniSessione: async () => 'token-finto',
+        }),
+      (e) => e.rimborsato === rimborsato,
+      `generaImmagine non ha portato fuori rimborsato: ${rimborsato}`,
+    );
+  }
+});
+
+test('⚠️ Giro di correzioni 1 — il messaggio del rimborso parte dal ramo PRUDENTE, non da quello ottimista', () => {
+  /*
+   * Il rilievo: `e.rimborsato === false ? rimborsoInCorso : rimborsato`
+   * cade sul ramo OTTIMISTA («non hai pagato niente») ogni volta che
+   * `e.rimborsato` e' `undefined` — cioe' ogni volta che qualcosa a monte
+   * (un refuso in `conto.js`, un campo dimenticato) rompe la catena. Si
+   * legge il sorgente perche' questo file, come gli altri qui sopra, non
+   * puo' montare `App.jsx` (niente jsdom).
+   */
+  const i = APP.indexOf("t(e.rimborsato ===");
+  assert.notEqual(i, -1, 'il ternario del messaggio di rimborso non c’e’ più in App.jsx');
+  const riga = APP.slice(i, APP.indexOf('\n', i));
+  assert.match(
+    riga,
+    /e\.rimborsato\s*===\s*true\s*\?\s*'immagine\.rimborsato'\s*:\s*'immagine\.rimborsoInCorso'/,
+    'il ternario riparte dal ramo ottimista: un `rimborsato` mancante mentirebbe di nuovo',
+  );
+});
+
 /* ---------------------------------------------------------------- *
  * `vaiAllaRicarica` — Task 8.
  *

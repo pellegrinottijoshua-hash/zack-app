@@ -164,8 +164,22 @@ async function riduci(blob) {
  *
  * Letto PRIMA di chiedere la sessione: `leggiAsset` e' locale, non tocca la
  * rete, e non ha senso chiedere un token per una richiesta che non partira'.
+ *
+ * ⚠️ `otteniSessione` esiste per lo stesso motivo di `leggiAsset`: di default
+ * e' la vera `sessione()` di questo file, ma un test in `node --test` non ha
+ * mai una sessione Supabase vera (niente `localStorage`, niente OAuth:
+ * `sessione()` torna sempre `null`), e senza un modo per sostituirla la
+ * tratta che parla col Worker — compreso l'errore che porta fuori
+ * `rimborsato` — non si potrebbe mai raggiungere da un test.
  */
-export async function generaImmagine({ prompt, riferimenti = [], misura = 'grande', formato, leggiAsset }) {
+export async function generaImmagine({
+  prompt,
+  riferimenti = [],
+  misura = 'grande',
+  formato,
+  leggiAsset,
+  otteniSessione = sessione,
+}) {
   const conDati = [];
   for (const r of riferimenti) {
     const blob = await leggiAsset(r.assetId);
@@ -179,7 +193,7 @@ export async function generaImmagine({ prompt, riferimenti = [], misura = 'grand
     conDati.push({ ruolo: r.ruolo, immagine: await riduci(blob) });
   }
 
-  const token = await sessione();
+  const token = await otteniSessione();
   if (!token) throw Object.assign(new Error('non-collegato'), { code: 'non-collegato' });
 
   const res = await fetch(`${BASE}/genera`, {

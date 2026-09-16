@@ -1641,8 +1641,16 @@ export default function App() {
                * Il rimborso SI DICE (spec § 6). Chi ha appena speso quindici
                * centesimi e vede solo «riprova» non sa se ha perso i soldi, e
                * la seconda volta non riprova affatto.
+               *
+               * ⚠️ Giro di correzioni 1: il ternario parte dal ramo PRUDENTE,
+               * non da quello ottimista. «Il credito ti torna» è vero anche a
+               * rimborso già avvenuto; «non hai pagato niente» è una bugia se
+               * il rimborso non è passato. Un `e.rimborsato` sbagliato (nome
+               * del campo cambiato, o dimenticato in `conto.js`) arriva qui
+               * `undefined` — e `undefined === true` è falso, quindi cade sul
+               * messaggio prudente, mai su quello ottimista.
                */
-              ? t(e.rimborsato === false ? 'immagine.rimborsoInCorso' : 'immagine.rimborsato')
+              ? t(e.rimborsato === true ? 'immagine.rimborsato' : 'immagine.rimborsoInCorso')
               : t('immagine.errore'),
       );
     } finally {
