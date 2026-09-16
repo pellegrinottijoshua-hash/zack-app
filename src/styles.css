@@ -1613,6 +1613,23 @@ body {
     border-right: 0;
     border-bottom: 2px solid var(--nero);
   }
+  /* ⚠️ MINOR 1 (giro di correzione 3): `.toolrail[data-collapsed='true']`
+     (riga ~1416, fuori da un media query) dichiara `padding: 12px 8px` —
+     specificità 0,2,0, che batte la `padding-bottom: 26px` qui sopra
+     (0,1,0) A PRESCINDERE dall'ordine nel file. La barra CHIUSA e' lo
+     stato di PARTENZA di ogni utente desktop (stesso fatto di Critical 2,
+     qualche schermo più in basso): con `localStorage` pulito la riserva
+     scritta apposta per il nome più basso (Scontorna, 72px) resta sempre
+     spesa a 12px, non 26. Misurato: altezza di `.toolrail` 98px invece di
+     112px, "Scontorna" scontornata di +0.80px dalla `overflow-y: hidden`
+     due righe sopra — nessun'altra etichetta ha discendenti nella riga di
+     base, quindi oggi il taglio cade in uno spazio bianco, ma la riserva
+     scritta per proteggerlo è comunque disattiva esattamente nello stato
+     che conta di più. A specificità pari (0,2,0 anche questa) vince chi
+     viene dopo nel file: questa regola, non quella di riga ~1416. */
+  .toolrail[data-collapsed='true'] {
+    padding-bottom: 26px;
+  }
   .toolrail .tool-item,
   .toolrail[data-collapsed='true'] .tool-item {
     /* `position: relative`: e' il riferimento di `.toolrail .tool-name` qui
@@ -4436,6 +4453,26 @@ body {
    tecnica. */
 @media (min-width: 761px) {
   .toolrail[data-collapsed='true'] .tool-name {
+    display: block;
+  }
+}
+
+/* ══ RULING (giro di correzione 3, 2026-09-16): la stessa domanda, per
+   `.tool-soon` — il marcatore «presto» di Video. `.toolrail[data-
+   collapsed='true'] .tool-soon { display: none; }`, qualche riga più in
+   alto in questo file, ha la STESSA specificità (0,3,0) e la STESSA
+   ragione di quella di `.tool-name` appena sopra (un cerchio muto sul
+   telefono e' un guasto, non un'attesa — Task 8, H1-bis) — e vale anche
+   sopra i 760px, dove Critical 2 ha appena tolto la stessa soppressione dal
+   nome. In una fila orizzontale non c'e' larghezza da risparmiare
+   nascondendo un'etichetta di 8px sotto un cerchio che occupa comunque il
+   suo posto: non nascondere il nome ma nascondere ancora «presto» sarebbe
+   il codice a dire due cose diverse sulla stessa domanda. Non e' una porta
+   CHIUSA — Video apre comunque la schermata «non c'e' ancora» al clic — ma
+   il criterio di Critical 2 vale verbatim anche qui. Stessa tecnica:
+   specificita' pari, vince chi viene dopo nel file. */
+@media (min-width: 761px) {
+  .toolrail[data-collapsed='true'] .tool-soon {
     display: block;
   }
 }

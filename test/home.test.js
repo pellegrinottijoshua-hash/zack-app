@@ -174,12 +174,31 @@ function regoleDelSelettore(blocco, selettoreEsatto) {
 // Prova DI SORGENTE (Task 9): niente browser qui — legge la pianta dello
 // studio direttamente da styles.css e pretende che sia una FILA in cima,
 // non più una colonna a sinistra.
+/*
+ * ⚠️ MINOR 2 (giro di correzione 3): le due `assert.match` qui sotto (le
+ * uniche due rimaste con una finestra `[^}]*` a mano) non passavano per
+ * `regoleDelSelettore` come il resto del file — due modi in cui questo si
+ * rompe senza che la pianta sia cambiata per davvero: un commento
+ * decorativo con una `}` dentro come prima riga del corpo di `.main`
+ * tronca `[^}]*` prima di `grid-template-areas` (fallisce con «lo studio
+ * non ha una pianta», un messaggio che non descrive il difetto vero); un
+ * selettore raggruppato (`.toolrail,\n  .altro {`) non è mai seguito
+ * subito da `{`, quindi `\.toolrail\s*\{` non lo vede. Sostituite con
+ * `regoleDelSelettore`, che toglie i commenti prima di cercare e confronta
+ * ogni selettore per uguaglianza esatta.
+ */
 test('sul desktop i servizi stanno in alto, non in colonna a sinistra', () => {
   const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
   const blocco = estraiBloccoBilanciato(CSS, /@media \(min-width: 761px\)\s*\{/);
   assert.notEqual(blocco, null, 'manca il blocco della pianta dello studio');
-  assert.match(blocco, /\.toolrail\s*\{[^}]*flex-direction:\s*row/s, 'la barra non è una fila in alto');
-  assert.match(blocco, /\.main\s*\{[^}]*grid-template-areas/s, 'lo studio non ha una pianta');
+  assert.ok(
+    regoleDelSelettore(blocco, '.toolrail').some((c) => /flex-direction:\s*row/.test(c)),
+    'la barra non è una fila in alto',
+  );
+  assert.ok(
+    regoleDelSelettore(blocco, '.main').some((c) => /grid-template-areas/.test(c)),
+    'lo studio non ha una pianta',
+  );
 });
 
 // Prova DI SORGENTE (Important 2, giro di correzione 1): il controller ha
@@ -207,6 +226,91 @@ test('la pianta piazza davvero Brain, la tela e il pannello (non solo la fila)',
 });
 
 /*
+ * ⚠️ IMPORTANT 1 e IMPORTANT 2 (revisione, giro di correzione 3): Critical 1
+ * (sotto) leggeva `.main` dentro il solo PRIMO blocco `@media (min-width:
+ * 761px)` (`estraiBloccoBilanciato` + `[corpo]`, il primo trovato) — mai si
+ * chiedeva chi vincesse davvero la cascata. Tre iniezioni, tutte a suite
+ * verde (misurato dal controllo): un secondo `.main { grid-template-columns:
+ * auto 1fr var(--rail) }` aggiunto DOPO, nello STESSO blocco; lo stesso
+ * dentro il blocco §8 (`@media (min-width: 761px)` più in basso nel file);
+ * lo stesso dentro un `@media (max-width: 940px)` piazzato dopo la pianta —
+ * a 800px quella fascia combacia comunque (761-940), e la regola più avanti
+ * nel file vince a specificità pari, a prescindere da QUALE `@media` la
+ * contiene. Critical 2 (più sotto) aveva lo stesso vizio al contrario:
+ * bastava che ESISTESSE una regola successiva con `display` diverso da
+ * `none` per il selettore — non che fosse quella vincente — quindi
+ * appendere UN'ALTRA regola ancora più avanti (`display: none`) restava
+ * invisibile alla prova pur vincendo davvero la cascata.
+ *
+ * `regolaVincente` guarda l'INTERO file, non un blocco solo, e non si
+ * accontenta di «una regola che va bene esiste da qualche parte»: raccoglie
+ * ogni regola-foglia (bilanciata a graffe, commenti tolti prima di cercare,
+ * come `regoleDelSelettore`) per il selettore ESATTO richiesto, scarta
+ * quelle la cui `@media` non combacia con la larghezza data (`min-width` /
+ * `max-width` in px — le uniche forme usate in questo file per le fasce di
+ * larghezza) e restituisce l'ULTIMA per posizione nel file: a specificità
+ * pari è quella, e non la prima né una qualunque, a vincere davvero.
+ */
+function senzaCommentiConOffset(css) {
+  // Sostituisce ogni commento con spazi della STESSA lunghezza: gli offset
+  // assoluti restano validi — servono per stabilire chi viene dopo nel file.
+  return css.replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length));
+}
+
+function condizioneCombacia(condizione, larghezza) {
+  if (!condizione) return true; // nessuna @media: si applica a ogni larghezza
+  const min = /min-width:\s*(\d+)px/.exec(condizione);
+  const max = /max-width:\s*(\d+)px/.exec(condizione);
+  if (min && larghezza < Number(min[1])) return false;
+  if (max && larghezza > Number(max[1])) return false;
+  return true;
+}
+
+function blocchiMediaDiPrimoLivello(cssPulito) {
+  const blocchi = [];
+  const apertura = /@media\s*([^{]+)\{/g;
+  let m;
+  while ((m = apertura.exec(cssPulito))) {
+    const condizione = m[1].trim();
+    const inizio = m.index + m[0].length;
+    const fine = trovaFineBlocco(cssPulito, inizio);
+    blocchi.push({ condizione, inizio, fine });
+    apertura.lastIndex = fine; // le @media annidate restano dentro: non servono qui
+  }
+  return blocchi;
+}
+
+function ogniRegolaFoglia(cssPulito) {
+  const risultati = [];
+  const re = /([^{}]+)\{([^{}]*)\}/g;
+  let m;
+  while ((m = re.exec(cssPulito))) {
+    const selettori = m[1].split(',').map((s) => s.replace(/\s+/g, ' ').trim());
+    risultati.push({ offset: m.index, selettori, corpo: m[2] });
+  }
+  return risultati;
+}
+
+function regolaVincente(css, selettoreEsatto, larghezza) {
+  const pulito = senzaCommentiConOffset(css);
+  const blocchi = blocchiMediaDiPrimoLivello(pulito);
+  const condizioneA = (offset) => {
+    const b = blocchi.find((b) => offset >= b.inizio && offset < b.fine);
+    return b ? b.condizione : null;
+  };
+  const candidate = ogniRegolaFoglia(pulito)
+    .filter((r) => r.selettori.includes(selettoreEsatto))
+    .filter((r) => condizioneCombacia(condizioneA(r.offset), larghezza));
+  if (candidate.length === 0) return undefined;
+  return candidate[candidate.length - 1].corpo; // l'ultima per offset = l'ultima nel file
+}
+
+// Le stesse larghezze misurate a mano nei giri precedenti: 761 e 940 sono i
+// due bordi della fascia contesa da C1/Critical 1, 800 e 1280 i due schermi
+// provati nel browser a ogni giro.
+const LARGHEZZE_DESKTOP = [761, 800, 940, 1280];
+
+/*
  * ⚠️ Critical 1 (revisione, giro di correzione 2): il vecchio guardiano qui
  * sotto (rimosso) vietava la STRINGA `@media (max-width: 940px)`, non la
  * REGOLA che l'aveva resa un problema — bandisce per sempre una fascia di
@@ -226,19 +330,19 @@ test('la pianta piazza davvero Brain, la tela e il pannello (non solo la fila)',
  */
 test('la terza traccia della pianta è `auto`, non una larghezza riservata sempre (Critical 1)', () => {
   const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
-  const blocco = estraiBloccoBilanciato(CSS, /@media \(min-width: 761px\)\s*\{/);
-  assert.notEqual(blocco, null, 'manca il blocco della pianta dello studio');
-  const [corpo] = regoleDelSelettore(blocco, '.main');
-  assert.notEqual(corpo, undefined, 'la pianta non piazza più `.main`');
-  const m = /grid-template-columns:\s*([^;]+);/.exec(corpo);
-  assert.notEqual(m, null, '`.main` non dichiara più `grid-template-columns` nella pianta');
-  const tracce = m[1].trim().split(/\s+/);
-  assert.equal(tracce.length, 3, `.main ha ${tracce.length} tracce invece di 3: "${m[1].trim()}"`);
-  assert.equal(
-    tracce[2],
-    'auto',
-    `la terza traccia è "${tracce[2]}", non "auto": un pannello sempre \`display: none\` tornerebbe a rubare quella larghezza alla tela — 300px ciechi a 800px, la stessa banda cieca che il controller ha misurato con \`var(--rail)\` (Critical 1/C1/C2, ciclo 1)`,
-  );
+  for (const larghezza of LARGHEZZE_DESKTOP) {
+    const corpo = regolaVincente(CSS, '.main', larghezza);
+    assert.notEqual(corpo, undefined, `nessuna regola \`.main\` vince la cascata a ${larghezza}px`);
+    const m = /grid-template-columns:\s*([^;]+);/.exec(corpo);
+    assert.notEqual(m, null, `la regola \`.main\` VINCENTE a ${larghezza}px non dichiara \`grid-template-columns\``);
+    const tracce = m[1].trim().split(/\s+/);
+    assert.equal(tracce.length, 3, `.main (regola vincente a ${larghezza}px) ha ${tracce.length} tracce invece di 3: "${m[1].trim()}"`);
+    assert.equal(
+      tracce[2],
+      'auto',
+      `a ${larghezza}px la terza traccia VINCENTE è "${tracce[2]}", non "auto": un'altra regola \`.main { grid-template-columns }\` più avanti nel file — nello stesso blocco, in un secondo \`@media (min-width: 761px)\` (§8), o in una fascia che si sovrappone come \`@media (max-width: 940px)\` piazzata dopo la pianta — sta vincendo la cascata al posto suo, e 300px tornano ciechi alla tela in quella fascia`,
+    );
+  }
 });
 
 // Prova DI SORGENTE (Ruling B, giro di correzione 1): misurato nel browser
@@ -303,36 +407,58 @@ test('il nome della fila, fuori dal cerchio, ha un colore leggibile sul fondo pa
  * per specificità (0,3,0) la `.toolrail .tool-name` della pianta (0,2,0):
  * un utente mai arrivato ad "aperta" vede sei cerchi senza nome.
  *
- * La prova non guarda una stringa a caso: cerca, DOPO la posizione della
- * regola generale, un'altra regola per lo STESSO selettore — stessa
- * specificità, quindi a decidere è chi viene dopo nel file — dentro un
- * `@media (min-width: 761px)`, che imposti `display` a qualcosa di diverso
- * da `none`.
+ * ⚠️ IMPORTANT 2 (revisione, giro di correzione 3): la prova cercava «UNA
+ * regola successiva con `display` diverso da `none`», fermandosi alla prima
+ * trovata — non la regola VINCENTE. Appendere in fondo al file un'ALTRA
+ * regola ancora, per lo stesso selettore, dentro un altro `@media
+ * (min-width: 761px)` con `display: none`, lasciava la prova verde: quella
+ * regola aggiunta vince davvero la cascata (stessa specificità, ultima nel
+ * file) e i sei cerchi restano senza nome, ma il ciclo aveva già trovato la
+ * regola BUONA prima di arrivare a quella cattiva e non tornava più
+ * indietro. `regolaVincente` non si ferma alla prima: guarda tutto il file e
+ * restituisce l'ultima regola che vince per quel selettore a quella
+ * larghezza — quella, e solo quella, deve avere `display` diverso da
+ * `none`.
  */
 test('sul desktop la barra CHIUSA (stato di partenza) non nasconde più i nomi (Critical 2)', () => {
   const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
   const selettore = ".toolrail[data-collapsed='true'] .tool-name";
-  const generale = CSS.indexOf(selettore);
-  assert.notEqual(
-    generale,
-    -1,
-    'la regola generale sulla barra chiusa non c’è più: verificare a mano che i nomi restino visibili nello stato collassato',
-  );
-  const dopo = CSS.slice(generale);
-  const apertura = /@media \(min-width: 761px\)\s*\{/g;
-  let m;
-  let trovato = false;
-  while ((m = apertura.exec(dopo))) {
-    const inizio = m.index + m[0].length;
-    const fine = trovaFineBlocco(dopo, inizio);
-    const blocco = dopo.slice(inizio, fine);
-    apertura.lastIndex = fine;
-    if (regoleDelSelettore(blocco, selettore).some((c) => /display:\s*(?!none\b)\S/.test(c))) {
-      trovato = true;
-    }
+  for (const larghezza of LARGHEZZE_DESKTOP) {
+    const corpo = regolaVincente(CSS, selettore, larghezza);
+    assert.notEqual(corpo, undefined, `nessuna regola per "${selettore}" vince la cascata a ${larghezza}px`);
+    assert.match(
+      corpo,
+      /display:\s*(?!none\b)\S/,
+      `a ${larghezza}px la regola VINCENTE per "${selettore}" nasconde ancora il nome (display: none): un utente desktop con \`localStorage\` pulito (stato di partenza, sempre "chiuso") vede sei cerchi senza nome`,
+    );
   }
-  assert.ok(
-    trovato,
-    'un utente desktop con `localStorage` pulito (stato di partenza, sempre "chiuso") vede sei cerchi senza nome: nessuna regola dopo quella generale restituisce il nome alla barra chiusa sopra i 760px',
-  );
+});
+
+/*
+ * ⚠️ RULING (giro di correzione 3, 2026-09-16): la stessa domanda, per
+ * `.tool-soon` — il marcatore «presto» di Video. `.toolrail[data-
+ * collapsed='true'] .tool-soon { display: none; }`, scritta fuori da
+ * qualunque media query con la STESSA specificità (0,3,0) e la STESSA
+ * ragione di quella di `.tool-name` qui sopra (un cerchio muto sul telefono
+ * è un guasto, non un'attesa — Task 8, H1-bis), vale anche sopra i 760px:
+ * in una fila orizzontale non c'è larghezza da risparmiare nascondendo
+ * un'etichetta di 8px sotto un cerchio che occupa comunque il suo posto —
+ * lo stesso ragionamento che ha restituito il nome alla barra chiusa vale
+ * verbatim per «presto». Non è una porta CHIUSA (Video apre comunque la
+ * schermata «non c'è ancora» al clic), ma il codice non può dire due cose
+ * diverse sulla stessa domanda. Stessa tecnica di guardia di Critical 2: la
+ * regola VINCENTE, non la prima né una qualunque.
+ */
+test('sul desktop la barra CHIUSA non nasconde più il «presto» di Video (RULING)', () => {
+  const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+  const selettore = ".toolrail[data-collapsed='true'] .tool-soon";
+  for (const larghezza of LARGHEZZE_DESKTOP) {
+    const corpo = regolaVincente(CSS, selettore, larghezza);
+    assert.notEqual(corpo, undefined, `nessuna regola per "${selettore}" vince la cascata a ${larghezza}px`);
+    assert.match(
+      corpo,
+      /display:\s*(?!none\b)\S/,
+      `a ${larghezza}px la regola VINCENTE per "${selettore}" nasconde ancora il «presto» di Video (display: none)`,
+    );
+  }
 });
