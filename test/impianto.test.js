@@ -44,6 +44,25 @@ test('ogni strumento dichiarato ha un gesto che lo esegue', () => {
   }
 });
 
+test('leggiRicetta riduce la catena salvata a quello che il tasto offre oggi', () => {
+  /*
+   * Il difetto che questo test impedisce (Task 6, 2026-09-15): una ricetta
+   * salvata da un servizio che offriva PIU' passi (lo scontorno ne offriva
+   * cinque, ora ne offre due) resterebbe con un passo acceso senza nessuna
+   * pastiglia per spegnerlo — un comportamento invisibile e irrevocabile.
+   *
+   * `soloOfferti` e' provato a fondo in `test/ricette.test.js`, ma quella
+   * prova non dice se `App.jsx` la CHIAMA davvero: senza questa riga la
+   * copertura sarebbe finta, perche' nessun'altra prova legge `leggiRicetta`.
+   */
+  const inizio = APP.indexOf('function leggiRicetta');
+  assert.notEqual(inizio, -1, 'leggiRicetta non esiste piu’ in App.jsx');
+  const fine = APP.indexOf('\nimport', inizio);
+  assert.notEqual(fine, -1, 'leggiRicetta non finisce piu’ dove il test la cerca');
+  const corpo = APP.slice(inizio, fine);
+  assert.match(corpo, /soloOfferti\(/, 'leggiRicetta non riduce piu’ la catena a quello che il tasto offre');
+});
+
 test('«filmato» non compare piu’ nelle liste di esclusione', () => {
   /*
    * Erano tre liste identiche piu' un Set, e tenerle in sincronia a mano e'

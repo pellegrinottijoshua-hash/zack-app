@@ -36,7 +36,7 @@ import { useSound } from './hooks/useSound.js';
 import { useBatch } from './hooks/useBatch.js';
 import { canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { TARGET_SIDE } from './engine/ready.js';
-import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/ricette.js';
+import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA, soloOfferti } from './engine/ricette.js';
 import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/ritaglio.js';
 import { DESCRITTORI, getDescrittore, strumentiVisibili, servizioAperto } from './servizi/index.js';
 import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
@@ -64,12 +64,14 @@ import { SERVICES, getService, firstReady, NOMI_VECCHI } from './services.js';
 /** La catena salvata per un servizio, o quella di fabbrica se non c'è. */
 function leggiRicetta(servizio) {
   const fabbrica = RICETTE_DI_FABBRICA[servizio] || [];
+  let letta;
   try {
     const salvata = localStorage.getItem(`jayl.zack.${servizio}`);
-    return salvata ? normalizza(JSON.parse(salvata)) : fabbrica;
+    letta = salvata ? JSON.parse(salvata) : fabbrica;
   } catch {
-    return fabbrica;
+    letta = fabbrica;
   }
+  return soloOfferti(normalizza(letta), getDescrittore(servizio)?.tasto?.passi);
 }
 import { bundleAll, bundleBlobs } from './store/bundle.js';
 import { useEngine } from './hooks/useEngine.js';
@@ -494,20 +496,40 @@ export default function App() {
   // Un passo indietro, come in qualunque programma di disegno. Otto passi
   // bastano: piu' in la' non si torna, si ricomincia.
   const [history, setHistory] = useState([]);
+  /*
+   * La pila del «avanti».
+   *
+   * L'annulla c'era e il rifai no: si tornava indietro e non si poteva più
+   * tornare avanti, cioè il passo indietro era irreversibile quanto quello
+   * che annullava. Si svuota a ogni risultato NUOVO — dopo aver dipinto,
+   * «avanti» porterebbe a una storia che non esiste più.
+   */
+  const [futuro, setFuturo] = useState([]);
   const resultRef = useRef(null);
   resultRef.current = result;
 
   /** Sostituisce il risultato tenendo da parte quello di prima. */
   const pushResult = (next) => {
     setHistory((h) => [...h, resultRef.current].slice(-8));
+    setFuturo([]);
     setResult(next);
   };
 
   function undoResult() {
     setHistory((h) => {
       if (!h.length) return h;
+      setFuturo((f) => [...f, resultRef.current].slice(-8));
       setResult(h[h.length - 1]);
       return h.slice(0, -1);
+    });
+  }
+
+  function redoResult() {
+    setFuturo((f) => {
+      if (!f.length) return f;
+      setHistory((h) => [...h, resultRef.current].slice(-8));
+      setResult(f[f.length - 1]);
+      return f.slice(0, -1);
     });
   }
   // Cambia a ogni azione sull'editor per far rileggere al pannello la
@@ -659,6 +681,7 @@ export default function App() {
     setError(null);
     setNotice(null);
     setHistory([]);
+    setFuturo([]);
     setResult(null);
     setFile(f);
     setBeforeUrl(own(f));
@@ -714,6 +737,7 @@ export default function App() {
 
   function reset() {
     setHistory([]);
+    setFuturo([]);
     setFile(null);
     setBeforeUrl(null);
     setResult(null);
@@ -859,6 +883,7 @@ export default function App() {
     setBeforeUrl(own(original));
     setSourceAssetId(assetId ?? null);
     setHistory([]);
+    setFuturo([]);
     setResult({ url: own(blob), blob, kind: 'png', meta: { strategy: 'browser', batch: true } });
     setDaBlocco({ file: original, assetId: assetId ?? null });
     setBrushOpen(true);
@@ -1847,6 +1872,7 @@ export default function App() {
       }
 
       setHistory([]);
+      setFuturo([]);
       setResult(null);
       setFile(asFile);
       setBeforeUrl(own(asFile));
@@ -2726,6 +2752,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   erase: () => apriPennello('erase'),
                   undo: undoResult,
                   swap: swapFile,
+                  scarica: scaricaIlPiano,
+                  penna: () => apriPennello('restore'),
+                  indietro: undoResult,
+                  avanti: redoResult,
                   freccia: () => setCollegaBrain((v) => (v ? null : { da: null })),
                   riascolta: voce.riascolta,
                   unAltro: () => setEffetto((e) => ({ ...e, seme: e.seme + 1 })),
@@ -2762,6 +2792,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   righello: brushOpen && modoPennello === 'righello',
                   restore: brushOpen && modoPennello === 'restore',
                   erase: brushOpen && modoPennello === 'erase',
+                  penna: brushOpen && modoPennello !== 'righello',
                   freccia: Boolean(collegaBrain),
                   ritmo: effettiAudio.recording,
                   tutorial: sopraLaTela === 'tutorial',
@@ -2825,6 +2856,9 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   disabled:
                     Boolean(busy) ||
                     (str.id === 'undo' && history.length === 0) ||
+                    (str.id === 'indietro' && history.length === 0) ||
+                    (str.id === 'avanti' && futuro.length === 0) ||
+                    (str.id === 'scarica' && !(batch.results.length > 0 || canExport)) ||
                     (str.id === 'annulla' && !(tool === 'vocale' ? filtriDiPrima : telaDiPrima)) ||
                     // I nodi non hanno cosa modificare finche' non e' scelto un
                     // tracciato: acceso, sarebbe un comando che non risponde.

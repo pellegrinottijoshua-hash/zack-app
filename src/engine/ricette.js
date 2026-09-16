@@ -159,6 +159,24 @@ export function commutaPasso(ricetta, passo) {
 }
 
 /**
+ * La catena, ridotta a ciò che il tasto offre davvero.
+ *
+ * Il tasto oro di un servizio può offrire **meno** passi di quanti il motore
+ * ne conosca (lo scontorno ne offre due su cinque, decisione del committente
+ * del 2026-09-15). Senza questa riduzione, un passo acceso in passato
+ * resterebbe acceso per sempre — attivo a ogni pressione, e senza nessuna
+ * pastiglia per spegnerlo. Un comportamento invisibile e irrevocabile è
+ * peggio di un comando in più.
+ *
+ * ⚠️ I **fattori** (`ridimensiona:x4`) non sono passi offerti: hanno le loro
+ * pastiglie, dichiarate da `tasto.fattori`, e vanno lasciati stare.
+ */
+export function soloOfferti(ricetta, passi) {
+  if (!Array.isArray(passi)) return ricetta;
+  return ricetta.filter((p) => fattoreDi(p) !== null || passi.includes(p));
+}
+
+/**
  * Accende o spegne un fattore di ridimensionamento.
  *
  * Il gemello di `commutaPasso` per l'altra metà della catena. Serve perché

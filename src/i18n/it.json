@@ -617,6 +617,7 @@
   },
   "bar": {
     "undo": "Annulla",
+    "redo": "Rifai",
     "eraser": "Gomma",
     "crop": "Ritaglia",
     "swap": "Cambia file",

@@ -385,7 +385,7 @@ export default function Piano({
                 pastiglie che non toccano niente: il tasto li' riordina. */}
             {servizio.tasto.azione === 'catena' && (
               <div className="sc-catena">
-                {PASSI.map((passo) => {
+                {(servizio.tasto.passi || PASSI).map((passo) => {
                   const acceso = ricetta.includes(passo);
                   return (
                     <button

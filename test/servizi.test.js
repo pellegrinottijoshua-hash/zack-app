@@ -11,6 +11,7 @@ import {
 } from '../src/servizi/index.js';
 import it from '../src/i18n/it.json' with { type: 'json' };
 import en from '../src/i18n/en.json' with { type: 'json' };
+import { PASSI } from '../src/engine/ricette.js';
 
 /*
  * Il descrittore di un servizio: cosa accetta il `+`, cosa fa il tasto Zack,
@@ -27,16 +28,31 @@ import en from '../src/i18n/en.json' with { type: 'json' };
  * Qui il comportamento e' DATI, quindi si guarda invece di cercarlo.
  */
 
-test('lo scontorno con un risultato mostra i quattro strumenti di correzione', () => {
-  const s = strumentiVisibili(getDescrittore('scontorna'), { file: true, risultato: true });
-  assert.deepEqual(s.map((x) => x.id), ['righello', 'restore', 'erase', 'undo']);
+test('prima di Zack la colonna destra non esiste', () => {
+  // S2: «download e indietro non esistono prima di Zack». Un file sul piano
+  // non è un lavoro da correggere: non c'è ancora niente su cui premere.
+  const s = strumentiVisibili(getDescrittore('scontorna'), { file: true, risultato: false });
+  assert.deepEqual(s, []);
 });
 
-test('lo scontorno col solo file mostra annulla e cambia file', () => {
-  // Prima del risultato non c'e' niente da correggere: il righello e i due
-  // pennelli non hanno su cosa lavorare.
-  const s = strumentiVisibili(getDescrittore('scontorna'), { file: true, risultato: false });
-  assert.deepEqual(s.map((x) => x.id), ['undo', 'swap']);
+test('dopo Zack compaiono i cinque, in quest’ordine', () => {
+  const s = strumentiVisibili(getDescrittore('scontorna'), { file: true, risultato: true });
+  assert.deepEqual(s.map((x) => x.id), ['scarica', 'righello', 'penna', 'indietro', 'avanti']);
+});
+
+test('il tasto oro dello scontorno offre solo togli-sfondo e scarica', () => {
+  // S5: niente «richiudi i buchi», niente «misura di stampa», niente «salva
+  // in libreria» — quelli restano sotto Avanzati, dove stanno i gesti di
+  // rifinitura.
+  assert.deepEqual(getDescrittore('scontorna').tasto.passi, ['scontorna', 'scarica']);
+});
+
+test('i passi offerti sono passi VERI del motore', () => {
+  // Un passo inventato qui sarebbe una pastiglia che si accende e non fa
+  // niente: lo stesso guasto del righello del 2026-09-04.
+  for (const d of Object.values(DESCRITTORI)) {
+    for (const p of d.tasto.passi || []) assert.ok(PASSI.includes(p), `${d.id}: «${p}» non è un passo`);
+  }
 });
 
 test('il piano vuoto non mostra nessuno strumento', () => {

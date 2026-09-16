@@ -169,6 +169,9 @@ export const ICONS = {
   // L'annulla vecchio finiva a y=24: la curva usciva dal riquadro e veniva
   // tagliata a metà senza che nessuno se ne accorgesse.
   undo: ['M9 6.5L4 11.5l5 5', 'M4 11.5h8.5a5 5 0 1 1 0 10H10'],
+  redo: ['M15 6.5l5 5-5 5', 'M20 11.5h-8.5a5 5 0 1 0 0 10H14'],
+  // Il download: una freccia che scende sul vassoio, come nel resto dello studio.
+  scarica: ['M12 3v11', 'M8 10l4 4 4-4', 'M4 19h16'],
   // Il righello: una riga con le sue tacche. Non dipinge — guida chi dipinge,
   // ed e' il solo strumento della home che qui non aveva un disegno suo.
   righello: [

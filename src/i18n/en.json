@@ -617,6 +617,7 @@
   },
   "bar": {
     "undo": "Undo",
+    "redo": "Redo",
     "eraser": "Eraser",
     "crop": "Crop",
     "swap": "Swap file",
