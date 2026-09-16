@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
 import { guidaDritta, maniglia, puntoDellaGuida, spostaManiglia, tracciaGuidata } from '../engine/righello.js';
+import { nuovoGesto, giu, muove, su, dueDita, applica } from '../engine/gesti.js';
 import {
   stroke,
   maskFromRgba,
@@ -105,7 +106,20 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
   const [mode, setMode] = useState(modoIniziale || 'erase');
   const [size, setSize] = useState(25);
   const [dirty, setDirty] = useState(false);
-  const [zoom, setZoom] = useState(1);
+  /**
+   * La vista della tela: spostamento e ingrandimento in UN solo posto.
+   *
+   * È lo stato che il gesto a due dita e i pulsanti `+`/`−` condividono — la
+   * porta che non si chiude (chi lavora col mouse non ha un secondo dito):
+   * i pulsanti restano, ma scrivono qui, non in una variabile a parte che
+   * il gesto ignorerebbe o azzererebbe.
+   */
+  const [vista, setVista] = useState({ x: 0, y: 0, z: 1 });
+  const zoom = vista.z;
+  // Lo stato dei puntatori per il gesto a due dita: un dito lavora, due
+  // spostano e ingrandiscono. Vive per tutta la vita del componente, non si
+  // ricrea a ogni render.
+  const gesto = useRef(nuovoGesto());
   /**
    * La guida del righello, e cosa si sta trascinando.
    *
@@ -242,6 +256,17 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
     if (!s) return;
     ev.preventDefault();
 
+    giu(gesto.current, { id: ev.pointerId, x: ev.clientX, y: ev.clientY });
+    if (dueDita(gesto.current)) {
+      // Il secondo dito e' appoggiato: da qui si ingrandisce e si sposta,
+      // non si lavora. Si annulla il tratto o la presa del righello in
+      // corso, altrimenti il secondo dito lascerebbe una riga o
+      // trascinerebbe una maniglia per sbaglio.
+      s.last = null;
+      presa.current = null;
+      return;
+    }
+
     if (mode === 'righello') {
       const p = toImage(ev);
       // 22 px dello schermo di raggio, cioe' un bersaglio da 44: e' la
@@ -269,6 +294,16 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
 
   const move = (ev) => {
     const s = stateRef.current;
+
+    const m = muove(gesto.current, { id: ev.pointerId, x: ev.clientX, y: ev.clientY });
+    if (m) {
+      // Due dita: si sposta e si ingrandisce la vista, non si dipinge.
+      // `applica` e' lo stesso posto in cui scrivono i pulsanti +/-: nessuno
+      // dei due sovrascrive o ignora l'altro.
+      ev.preventDefault();
+      setVista((v) => applica(v, m, { min: 1, max: ZOOM_MAX }));
+      return;
+    }
 
     if (mode === 'righello') {
       const g = presa.current;
@@ -304,7 +339,11 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
     setDirty(true);
   };
 
-  const end = () => {
+  const end = (ev) => {
+    // Il dito si alza: esce dallo stato del gesto, cosi' se ne resta uno
+    // solo si torna a lavorare invece di continuare a leggere un centro fra
+    // due dita di cui una non c'e' piu' (il salto classico).
+    su(gesto.current, ev?.pointerId);
     presa.current = null;
     const s = stateRef.current;
     if (!s) return;
@@ -369,17 +408,29 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
 
         <span className="brush-zoom">
           <button
-            onClick={() => setZoom((z) => Math.max(1, Math.round(z / 1.5)))}
+            onClick={() =>
+              setVista((v) => {
+                // Stesso stato del gesto: si legge e si scrive `vista`, mai
+                // una copia separata che il pizzico ignorerebbe.
+                const z = Math.max(1, Math.round(v.z / 1.5));
+                // Tornati al minimo, anche lo spostamento si azzera: a 1×
+                // l'immagine intera e' visibile, un resto di spostamento
+                // la lascerebbe fuori quadro senza motivo.
+                return z <= 1 ? { x: 0, y: 0, z } : { ...v, z };
+              })
+            }
             disabled={zoom <= 1}
             aria-label={t('brush.zoomOut')}
           >
             −
           </button>
           {/* Il numero, non un'icona: chi corregge un bordo vuole sapere DOVE
-              sta, e «3x» lo dice mentre una lente non lo dice. */}
-          <b>{zoom}×</b>
+              sta, e «3x» lo dice mentre una lente non lo dice. Arrotondato:
+              il pizzico a due dita, a differenza dei pulsanti, non ferma la
+              vista su un intero. */}
+          <b>{Math.round(zoom * 10) / 10}×</b>
           <button
-            onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z < 2 ? 2 : z + 2))}
+            onClick={() => setVista((v) => ({ ...v, z: Math.min(ZOOM_MAX, v.z < 2 ? 2 : v.z + 2) }))}
             disabled={zoom >= ZOOM_MAX}
             aria-label={t('brush.zoomIn')}
           >
@@ -407,21 +458,26 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
 
       {/* Ingrandire la tela e' l'altra meta' del pennello piccolo: il raggio e'
           in pixel dello schermo, quindi a 8x lo stesso tasto copre otto volte
-          meno pixel veri. Lo spostamento e' lo SCORRIMENTO nativo del
-          contenitore — niente trascinamenti da reinventare, e funziona gia'
-          con trackpad, dita e barre. */}
+          meno pixel veri. Con un dito solo, lo spostamento resta lo
+          SCORRIMENTO nativo del contenitore (barra, trackpad) — chi lavora
+          col mouse non ha un secondo dito, e questa via non si tocca. Con
+          due dita, `vista.x/y` sposta la tela sopra quello: e' l'unica via
+          per chi tocca, perche' `touch-action: none` (sotto) toglie apposta
+          lo scorrimento nativo del browser sulla tela. */}
       <div className="brush-stage" data-zoom={zoom > 1 || undefined}>
         <canvas
           ref={canvasRef}
           onPointerDown={begin}
           onPointerMove={(e) => e.buttons && move(e)}
           onPointerUp={end}
+          onPointerCancel={end}
           onPointerLeave={end}
           style={{
             cursor: 'crosshair',
             touchAction: 'none',
             width: zoom > 1 ? `${zoom * 100}%` : undefined,
             maxWidth: zoom > 1 ? 'none' : undefined,
+            transform: vista.x || vista.y ? `translate(${vista.x}px, ${vista.y}px)` : undefined,
           }}
         />
       </div>
