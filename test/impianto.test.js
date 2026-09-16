@@ -294,6 +294,41 @@ test('«c’e’ un risultato» non vuol dire PNG per tutti', () => {
 // sotto. Le due prove qui sotto controllavano la decisione vecchia (tasto in
 // alto, pannello in giu'); sono state riscritte sulla decisione nuova, non
 // cancellate — lo stesso principio che il file applica a se stesso.
+//
+// ⚠️ C3 + M1 (revisione, giro di correzione 1): il file ha DUE blocchi
+// `@media (min-width: 761px)` — questo (Task 9, riga ~1574) e il §8
+// (2026-09-04, più in basso), che vince la cascata sulle stesse proprietà
+// perché sta dopo nel file. Le due prove qui sotto facevano
+// `CSS.slice(CSS.indexOf(...))` e poi `.match()` SENZA `/g`: il primo
+// `.sc-tasto {...}` (o `.sc-tuo {...}`) che il motore incontra dopo quel
+// punto è quello scritto da QUESTO blocco — cioè quello giusto per
+// costruzione, non quello che vince davvero nel browser. Il controller ha
+// rimesso `top: 58px` e `top: calc(100% + 10px)` nel blocco §8 (quello che
+// vince) e la suite è restata verde. `ogniRegolaDesktop` estrae OGNI blocco
+// `@media (min-width: 761px)` del file (bilanciando le graffe, non una
+// finestra a lunghezza fissa — altrimenti si ricade in I4) e le due prove
+// ora controllano OGNI occorrenza della regola, in entrambi i blocchi.
+// Anche la guardia era a metà: `/top:\s*\d/` non vede `top: calc(...)`, e
+// `/top:\s*calc/` non vede `top: 100px`. Le due forme sono guardate insieme.
+function ogniRegolaDesktop(css, selettore) {
+  const blocchi = [];
+  const apertura = /@media \(min-width: 761px\)\s*\{/g;
+  let m;
+  while ((m = apertura.exec(css))) {
+    let i = m.index + m[0].length;
+    let profondita = 1;
+    let j = i;
+    while (profondita > 0 && j < css.length) {
+      if (css[j] === '{') profondita++;
+      else if (css[j] === '}') profondita--;
+      j++;
+    }
+    blocchi.push(css.slice(i, j - 1));
+  }
+  const re = new RegExp(`\\.${selettore}\\s*\\{([^}]*)\\}`, 'g');
+  return blocchi.flatMap((b) => [...b.matchAll(re)].map((mm) => mm[1]));
+}
+
 test('sul desktop il tasto Zack sta in BASSO al centro, non piu’ in alto a destra', () => {
   /*
    * Misurato nel browser a 1280 px dopo Task 9: il tasto e' centrato in
@@ -303,21 +338,36 @@ test('sul desktop il tasto Zack sta in BASSO al centro, non piu’ in alto a des
    * prima del contratto § 8.
    */
   const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
-  const desktop = CSS.slice(CSS.indexOf('@media (min-width: 761px)'));
-  assert.ok(desktop.length > 0, 'la media query del desktop non esiste piu’');
-  const blocco = desktop.match(/\.sc-tasto\s*\{([^}]*)\}/);
-  assert.ok(blocco, 'il desktop non dice piu’ dove sta il tasto');
-  assert.match(blocco[1], /left:\s*50%/, 'il tasto non e’ piu’ centrato in orizzontale');
-  assert.doesNotMatch(blocco[1], /top:\s*\d/, 'il tasto e’ tornato ad ancorarsi in alto');
+  const regole = ogniRegolaDesktop(CSS, 'sc-tasto');
+  assert.ok(regole.length > 0, 'il desktop non dice piu’ dove sta il tasto');
+  for (const regola of regole) {
+    assert.doesNotMatch(
+      regola,
+      /top:\s*(?:calc|\d)/,
+      'il tasto e’ tornato ad ancorarsi in alto in uno dei blocchi ≥761px',
+    );
+  }
+  assert.ok(
+    regole.some((r) => /left:\s*50%/.test(r)),
+    'il tasto non e’ piu’ centrato in orizzontale in nessun blocco ≥761px',
+  );
 });
 
 test('sul desktop il pannello del punto oro si apre in SU, sopra il tasto', () => {
   // Il tasto e' tornato in basso: aprirsi verso il basso vuol dire finire
   // sotto la fila dei servizi, che ora sta in cima ma non lascia spazio li'.
   const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
-  const desktop = CSS.slice(CSS.indexOf('@media (min-width: 761px)'));
-  const blocco = desktop.match(/\.sc-tuo\s*\{([^}]*)\}/);
-  assert.ok(blocco, 'il pannello non e’ stato girato per il desktop');
-  assert.match(blocco[1], /left:\s*50%/, 'il pannello non e’ piu’ centrato sotto il tasto');
-  assert.doesNotMatch(blocco[1], /top:\s*calc/, 'il pannello e’ tornato ad aprirsi verso il basso');
+  const regole = ogniRegolaDesktop(CSS, 'sc-tuo');
+  assert.ok(regole.length > 0, 'il pannello non e’ stato girato per il desktop');
+  for (const regola of regole) {
+    assert.doesNotMatch(
+      regola,
+      /top:\s*(?:calc|\d)/,
+      'il pannello e’ tornato ad aprirsi verso il basso in uno dei blocchi ≥761px',
+    );
+  }
+  assert.ok(
+    regole.some((r) => /left:\s*50%/.test(r)),
+    'il pannello non e’ piu’ centrato sotto il tasto in nessun blocco ≥761px',
+  );
 });

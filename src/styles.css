@@ -214,7 +214,20 @@ body {
   --toolrail: 56px;
 }
 
-@media (max-width: 940px) {
+/* ⚠️ Correzione 1 (revisione, C1): era `max-width: 940px`. Sopra i 760px la
+   pianta dello studio (Task 9, `@media (min-width: 761px)` più in basso)
+   governa già `.main` — stessa proprietà, stessa specificità, e la vittoria
+   fra le due andava a chi sta più in basso nel file, cioè alla pianta.
+   Prima di questo commit questo era voluto (a 761-940px non c'era ancora una
+   pianta), ma con la pianta la doppia dichiarazione per la stessa fascia
+   diventa un difetto latente affidato all'ordine del file, non una scelta:
+   misurato, a 800px il canvas era tornato a 430px invece dei 610/744px che
+   dava questa regola da sola. Restringerla al telefono (che aveva già,
+   invariata, la propria riscrittura di `.main` e di questo stesso bordo
+   dentro `@media (max-width: 760px)`, poco più sotto: questa riga era già
+   ridondante lì) chiude la fascia doppia in modo esplicito — un solo blocco
+   governa `.main` per ogni larghezza, non più la cascata a deciderlo. */
+@media (max-width: 760px) {
   .main {
     grid-template-columns: var(--toolrail) 1fr;
   }
@@ -1560,7 +1573,20 @@ body {
    parla più di `.toolrail`/`.main` — parla solo di `.sc-tasto`. */
 @media (min-width: 761px) {
   .main {
-    grid-template-columns: auto 1fr var(--rail);
+    /* ⚠️ Correzione 1 (revisione, Ruling A): la terza traccia era
+       `var(--rail)`, cioè 300px riservati SEMPRE — ma `.rail` è
+       `display: none` in ogni stato raggiungibile oggi (App.jsx monta
+       `<Rail>` solo quando `DESCRITTORI[tool]` esiste, e ogni servizio
+       apribile ne ha uno: `data-vuota` è sempre vero). Il §4 dello spec dice
+       l'opposto del piano: «Gli strumenti del servizio a destra, DOVE SONO
+       ADESSO» — non si sposta `.sc-strumenti` in una colonna nuova, resta
+       ancorata al fianco della tela come sempre. `auto` costa zero mentre la
+       traccia è vuota (misurato: recupera la larghezza che a 761-940px
+       stava sparendo dentro `var(--rail)`, 300px fissi) e si apre da solo
+       il giorno che un servizio senza descrittore renderà `.rail` vivo
+       (fase 3) — la `grid-area: pannello` di `.rail`, due righe sotto,
+       resta per quel giorno. */
+    grid-template-columns: auto 1fr auto;
     grid-template-rows: auto 1fr;
     grid-template-areas:
       'servizi servizi servizi'
@@ -1569,9 +1595,19 @@ body {
   .toolrail {
     grid-area: servizi;
     flex-direction: row;
-    align-items: center;
+    /* `flex-start` e non `center`: il nome sotto ogni cerchio (vedi
+       `.toolrail .tool-name` qui sotto) ha bisogno di spazio SOTTO il
+       cerchio, non sopra — centrare la riga avrebbe diviso quello spazio a
+       metà e tolto proprio quello che serve. */
+    align-items: flex-start;
     justify-content: center;
     gap: 8px;
+    /* Riserva per il nome che esce dal cerchio più basso (Scontorna, 72px):
+       72 + 4 di margine + ~11 di riga a 9px = 87, contro i 72 + 12 di prima
+       — 26px di riserva bastano e avanzano (misurato nel browser). Senza
+       questa riga il nome, ora fuori dal flusso della colonna, sarebbe
+       tagliato da `overflow-y: hidden` due righe sotto. */
+    padding-bottom: 26px;
     overflow-x: auto;
     overflow-y: hidden;
     border-right: 0;
@@ -1579,6 +1615,9 @@ body {
   }
   .toolrail .tool-item,
   .toolrail[data-collapsed='true'] .tool-item {
+    /* `position: relative`: e' il riferimento di `.toolrail .tool-name` qui
+       sotto, che esce dal cerchio con `position: absolute`. */
+    position: relative;
     flex-direction: column;
     width: 56px;
     height: 56px;
@@ -1587,6 +1626,31 @@ body {
   .toolrail .tool-item[data-servizio='scontorna'] {
     width: 72px;
     height: 72px;
+  }
+  /* Correzione 2 (revisione, Ruling B): il nome ESCE dal cerchio, sotto —
+     come lo fa già il telefono (`.toolrail .tool-name` dentro
+     `@media (max-width: 760px)`), non dentro. Misurato PRIMA di questa
+     riga: dentro un cerchio da 56px, con l'icona (17px) e — per Immagine e
+     Video, che portano anche un prezzo/«presto» — una terza riga, il nome
+     arrivava ad altezza 0 (`.tool-name` ha `overflow: hidden` per i puntini
+     di sospensione, e per un elemento flessibile con overflow diverso da
+     `visible` il minimo automatico è ZERO: è lui il primo a sparire quando
+     lo spazio non basta). Gli altri quattro sopravvivevano compressi a 10px
+     invece dei 16,5 naturali. Tolto dal flusso della colonna (che ora
+     contiene solo icona e prezzo/«presto», due elementi, non tre) il nome
+     smette di competere per lo spazio e torna alla sua altezza naturale. */
+  .toolrail .tool-name {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 4px;
+    width: max-content;
+    max-width: 72px;
+    text-align: center;
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
   }
   .brain-tasto {
     grid-area: brain;
@@ -1603,6 +1667,15 @@ body {
     right: auto;
     left: 50%;
     transform: translateX(-50%);
+    /* M2 (revisione): `transform` crea un contesto di sovrapposizione per
+       `.sc-tasto`, che senza uno z-index esplicito vale «auto» nell'ordine
+       del genitore — sotto ai 3 di `.sc-strumenti`, che è un fratello. Senza
+       questa riga `.sc-tuo` (z-index: 6, ma dichiarato DENTRO il contesto di
+       `.sc-tasto`) resterebbe intrappolato sotto la colonna degli
+       strumenti se mai si sovrapponessero: il suo 6 vale solo dentro
+       `.sc-tasto`, non fuori. Nessuna collisione oggi (misurato), ma il
+       rischio era latente. */
+    z-index: 6;
   }
   .sc-tuo {
     right: auto;
