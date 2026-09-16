@@ -59,8 +59,6 @@ export default function Piano({
   onZack,
   onRicetta,
   onModello,
-  onScarica,
-  puoiScaricare,
   /** Il menu del `+`, aperto: un momento, non uno stato del prodotto. */
   menu,
   onMenu,
@@ -145,13 +143,28 @@ export default function Piano({
         dalla colonna da due in su: con un file solo non c'era modo ne' di
         aggiungerne un altro ne' di toglierlo, se non ricominciando.
 
-        `posto` (Task 7, `pelle.js`) decide QUANDO: qui si decide solo com'è.
+        `posto` (Task 7, `pelle.js`) decide DOVE sta il +, non se l'angolo
+        c'è: sono due domande diverse, e confonderle è stato un Critico della
+        revisione (Giro di correzioni 1). Con `quanti === tetto` (es. UN file
+        su un servizio che ne accetta uno solo) `posto` torna `null` — il `+`
+        non serve più, è al tetto — ma la × per togliere quel file resta
+        viva: era lei sola a mancare, con `onTogli` cablato e nessun'altra
+        strada nel codice per svuotare il piano. L'angolo quindi si monta
+        quando c'è ALMENO UNA delle due cose da mostrarci; le due guardie
+        interne restano indipendenti e decidono ciascuna il suo pezzo.
       */}
-      {posto === 'sinistra' && (
+      {(posto === 'sinistra' || (quanti === 1 && onTogli)) && (
         <div className="sc-angolo" data-posto="sinistra">
-          <button className="sc-piu-piccolo" onClick={onPick} title={t('drop.title')} aria-label={t('drop.title')}>
-            +
-          </button>
+          {posto === 'sinistra' && (
+            <button
+              className="sc-piu-piccolo"
+              onClick={onPick}
+              title={t('drop.title')}
+              aria-label={t('drop.title')}
+            >
+              +
+            </button>
+          )}
           {quanti === 1 && onTogli && (
             <button
               className="sc-piu-piccolo"
@@ -182,11 +195,20 @@ export default function Piano({
       {/* La tela. Vuota c'è il `+` e basta: è il gesto con cui si comincia, ed
           è grande perché intorno non c'è nient'altro.
 
-          `posto === 'centro'` e non `vuoto`: è la stessa domanda di
-          `pelle.js` — dove sta il `+` — fatta una volta sola, invece che
-          ridecisa qui col suo nome vecchio. */}
+          `vuoto` e non `posto === 'centro'`: sono due domande diverse, e
+          scambiarle è stato un Critico della revisione (Giro di correzioni 1,
+          `src/servizi/piano.js:56-62`). `postoDelPiu` conta i FILE — su
+          Immagine i riferimenti, sul Vettoriale i file portati dentro — e con
+          zero di quelli torna `'centro'` anche se la tela NON è vuota: per
+          Immagine è il prompt (col Preventivo e i riferimenti scelti), per il
+          Vettoriale è il foglio da disegno con gli otto strumenti già accesi
+          sopra. Montare lì il `+` grande al posto di `children` smontava
+          quella schermata per intero — lo stesso guasto del righello.
+          `vuoto` (`pianoVuoto`, `piano.js`) è la prop che c'è da sempre e
+          risponde alla domanda giusta: «c'è qualcosa sopra il piano, o sta
+          succedendo qualcosa?». */}
       <div className="sc-tela">
-        {posto === 'centro' ? (
+        {vuoto ? (
           <div className="sc-vuoto">
             <button className="sc-piu" onClick={onPick} aria-label={t('drop.title')}>
               +

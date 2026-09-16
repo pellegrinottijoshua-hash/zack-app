@@ -2186,7 +2186,17 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               onFix={fixFromBatch}
               onRename={rinominaRisultato}
               onDownload={scaricaRisultato}
-              onDownloadAll={null}
+              /* Lo zip dei RISULTATI DEL BLOCCO, non della libreria: sono due
+                 zip diversi, e confonderli e' gia' costato una correzione una
+                 volta (vedi il commento su `scaricaIlPiano`, qui sopra).
+                 `scaricaIlPiano` con `batch.results.length > 0` prende gia'
+                 il ramo del blocco — qui dentro non e' mai zero, perche'
+                 `BatchGrid` si monta solo quando i risultati ci sono (vedi la
+                 guardia poco sopra). Prima era `null`: il tasto in alto a
+                 destra e' sparito con Task 7 (e' rinato come cerchio per il
+                 file singolo), ma per il blocco di tre non c'era piu'
+                 nessuna strada — Critico 3 della revisione. */
+              onDownloadAll={scaricaIlPiano}
               onClose={() => {
                 batch.clear();
                 setBatchFiles([]);
@@ -2770,11 +2780,6 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 runZack();
               }}
               onRicetta={salvaRicetta}
-              /* Il tasto in alto a destra scarica CIO' CHE C'E': i tre file
-                 della colonna se il blocco e' finito, il file singolo se il
-                 piano ne ha uno solo. Sono lo stesso gesto. */
-              onScarica={scaricaIlPiano}
-              puoiScaricare={batch.results.length > 0 || canExport}
               strumenti={(() => {
                 /*
                  * Il descrittore dice QUALI cerchi e QUANDO; qui si dice cosa

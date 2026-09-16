@@ -71,8 +71,10 @@ export default function BatchGrid({ results, onFix, onRename, onDownload, onDown
       <div className="bg-testa">
         <h2>{t('batch.gridTitle', { n: results.length })}</h2>
         <span className="bg-spazio" />
-        {/* «Scarica tutti» solo dove non c'e' gia' altrove: nello scontorno
-            e' l'icona in alto a destra, la stessa per un file e per tre. */}
+        {/* «Scarica tutti» zippa i risultati del BLOCCO (Task 7, Critico 3):
+            per un file solo la stessa azione e' gia' il cerchio «scarica»
+            della colonna (Task 6) — qui serve perche' quel cerchio scarica
+            un file alla volta, e il blocco ne ha fino a tre. */}
         {onDownloadAll && <button onClick={onDownloadAll}>{t('batch.downloadAll')}</button>}
         <button onClick={onClose}>{t('batch.close')}</button>
       </div>

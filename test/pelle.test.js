@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { postoDelPiu, mostraMascotte, mostraCrediti } from '../src/servizi/pelle.js';
+import { pianoVuoto, quantiSulPiano } from '../src/servizi/piano.js';
 import { DESCRITTORI } from '../src/servizi/index.js';
 
 /*
@@ -76,6 +77,60 @@ test('ogni servizio dell\'impianto ha una risposta, non un undefined', () => {
   }
 });
 
+test('«il piano è vuoto» e «il + sta in centro» sono due domande diverse — per Immagine e il Vettoriale rispondono sempre diverso', () => {
+  // ⚠️ Prova nata da un guasto vero, non da un timore teorico (Giro di
+  // correzioni 1, Critico 1 della revisione del Task 7). Qualcuno ha già
+  // scambiato le due domande — per somiglianza di nome, sostituendo `vuoto`
+  // con `posto === 'centro'` dentro `Piano.jsx` — e il costo è stato reale:
+  // con zero riferimenti Immagine perdeva prompt, Preventivo e riferimenti
+  // scelti; con zero file il Vettoriale perdeva la tela panna, restando con
+  // otto strumenti di disegno accesi sopra il vuoto. La suite era verde
+  // (683/683) mentre queste due schermate erano coperte: nessuna prova
+  // guardava DUE stati diversi (quanti file E cosa c'è davvero sul piano)
+  // nello stesso confronto.
+  //
+  // `pianoVuoto` (piano.js) chiede: «c'è qualcosa sopra il piano, o sta
+  // succedendo qualcosa?». `postoDelPiu` (pelle.js) chiede: «quanti file (o
+  // riferimenti) ci sono, rispetto al tetto?» — e decide SOLO dove va il `+`.
+  // Per la maggior parte dei servizi, a zero file le due risposte
+  // coincidono per caso (niente sul piano → il + sta in centro). Per
+  // Immagine e il Vettoriale NON coincidono mai: il loro piano è la tela
+  // stessa (il prompt, il foglio da disegno), quindi non è mai «vuoto»,
+  // anche quando il + sta comunque in centro perché zero file/riferimenti
+  // sono stati portati dentro.
+  for (const id of Object.keys(DESCRITTORI)) {
+    // Uno stato dichiarato, vuoto: nessun file, nessuna clip, niente in
+    // corso — il valore di default che ogni campo di `COSA_CE`/`QUANTI`
+    // legge con `??` quando lo stato reale non dice nulla.
+    const statoVuoto = {};
+    const vuoto = pianoVuoto(id, statoVuoto);
+    const quanti = quantiSulPiano(id, statoVuoto);
+    const tetto = DESCRITTORI[id].accetta.quanti;
+    const posto = postoDelPiu(id, { quanti, tetto });
+
+    if (id === 'immagine' || id === 'vettorializza') {
+      // La tela c'è sempre: il piano non è mai vuoto...
+      assert.equal(vuoto, false, `${id}: il suo piano è la tela — non deve mai risultare vuoto`);
+      // ...eppure, a zero file/riferimenti, il + sta comunque in centro.
+      // Sono la prova che le due domande NON sono la stessa domanda.
+      assert.equal(posto, 'centro', `${id}: a zero file/riferimenti il + sta in centro comunque`);
+    } else {
+      // Per gli altri servizi, con niente sul piano, le due risposte
+      // coincidono — ma per coincidenza dei valori, non perché siano la
+      // stessa domanda: è quello che il ramo sopra dimostra rompendosi.
+      assert.equal(vuoto, true, `${id}: uno stato dichiarato vuoto deve risultare vuoto`);
+      assert.equal(posto, 'centro', `${id}: col piano vuoto il + sta in centro`);
+    }
+  }
+});
+
+// Le due prove che seguono (e quella su «scontornato», più sotto) sono di
+// SORGENTE: guardano che un nome COMPAIA nel file, non che sia usato bene.
+// Non sono teoria: la suite è stata verde a 683/683 con `postoDelPiu(` e
+// `mostraMascotte(` presenti in Piano.jsx e USATI MALE — la stessa funzione
+// chiamata sulla domanda sbagliata (Critico 1, sopra). Restano come rete,
+// perché non costano niente, ma NON CONTANO COME COPERTURA: la prova che
+// avrebbe visto il difetto è quella comportamentale qui sopra.
 test('il + chiede a `pelle.js` dove stare, non lo decide dentro il JSX', () => {
   assert.match(PIANO, /postoDelPiu\(/, 'Piano non consulta la regola del +');
 });
