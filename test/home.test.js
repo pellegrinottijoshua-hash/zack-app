@@ -25,8 +25,52 @@ test('Brain non sta nella fila: sta in alto a sinistra, sempre', () => {
 
 test('nessun servizio sparisce dal prodotto', () => {
   // ⚠️ La regola che B2 ha insegnato: ripulire non deve chiudere porte.
-  const nella = new Set([...ordineDellaFila().map((s) => s.id), 'brain']);
+  //
+  // Giro di correzione 1, Critical 1: questo test aggiungeva 'brain' A MANO
+  // all'insieme che poi controlla — non poteva cadere per Brain in nessun
+  // caso, nemmeno cancellando il suo bottone (il controller l'ha fatto, e la
+  // suite è restata verde). La sua presenza qui ora dipende dalla STESSA
+  // prova di sorgente del test qui sotto: se il bottone sparisce o si
+  // scollega da `apriServizio('brain')`, 'brain' non entra più in `nella`, e
+  // questo loop cade per lui come per chiunque altro.
+  const brainHaBottone = /brain-tasto[\s\S]{0,450}?onClick=\{\(\) => apriServizio\('brain'\)\}/.test(APP);
+  const nella = new Set(ordineDellaFila().map((s) => s.id));
+  if (brainHaBottone) nella.add('brain');
   for (const s of SERVICES) assert.ok(nella.has(s.id), `${s.id} non è raggiungibile da nessuna parte`);
+});
+
+// Prova DI SORGENTE (Critical 1, giro di correzione 1): dal Task 8 Brain non
+// sta più in FILA — la sua unica porta è questo bottone, in `.main`, senza
+// nessuna guardia attorno. Il controller l'ha cancellato e la suite e'
+// restata verde: questa prova legge il sorgente e pretende che ci sia,
+// agganciato al gesto giusto.
+test('il tasto di Brain esiste ed è agganciato ad apriServizio(\'brain\')', () => {
+  const i = APP.indexOf('brain-tasto');
+  assert.notEqual(i, -1, 'il tasto di Brain non c’è più in App.jsx: Brain è diventato irraggiungibile');
+  const finestra = APP.slice(i, i + 500);
+  assert.match(
+    finestra,
+    /onClick=\{\(\) => apriServizio\('brain'\)\}/,
+    'il tasto di Brain non chiama più apriServizio(\'brain\'): il gesto è scollegato dal servizio',
+  );
+});
+
+// Prova DI SORGENTE (Important 4, giro di correzione 1): styles.css (§ 8)
+// dice che ogni cerchio della barra tiene un nome visibile SEMPRE sul
+// telefono, perché su un touch `title` non compare mai — e nomina proprio
+// Brain come il caso che l'aveva insegnato. Tolto dalla fila, il suo cerchio
+// portava solo `title`/`aria-label`: nessun modo di leggerlo col dito.
+test('Brain ha un nome visibile anche sul telefono, non solo aria-label/title', () => {
+  const i = APP.indexOf('brain-tasto');
+  assert.notEqual(i, -1, 'il tasto di Brain non c’è più in App.jsx');
+  const fine = APP.indexOf('</button>', i);
+  assert.notEqual(fine, -1, 'il bottone di Brain non si chiude più con </button>');
+  const finestra = APP.slice(i, fine);
+  assert.match(
+    finestra,
+    /<span className="brain-nome">\{t\('tool\.brain\.label'\)\}<\/span>/,
+    'il tasto di Brain non ha più un nome visibile in JSX: su un touch resta senza etichetta',
+  );
 });
 
 test('non si dichiara un cerchio per un servizio che non esiste', () => {
