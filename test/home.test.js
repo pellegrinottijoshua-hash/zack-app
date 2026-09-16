@@ -849,10 +849,13 @@ test('il nome della fila, fuori dal cerchio, ha un colore leggibile sul fondo pa
  * regola aggiunta vince davvero la cascata (stessa specificità, ultima nel
  * file) e i sei cerchi restano senza nome, ma il ciclo aveva già trovato la
  * regola BUONA prima di arrivare a quella cattiva e non tornava più
- * indietro. `regolaVincente` non si ferma alla prima: guarda tutto il file e
- * restituisce l'ultima regola che vince per quel selettore a quella
- * larghezza — quella, e solo quella, deve avere `display` diverso da
- * `none`.
+ * indietro. ~~`regolaVincente` non si ferma alla prima: guarda tutto il file
+ * e restituisce l'ultima regola che vince per quel selettore a quella
+ * larghezza~~ — vero per il giro 3, ma quella funzione NON esiste più: il
+ * giro 4 l'ha tolta perché «l'ultima regola» non è «quella che vince» (né
+ * per specificità, né per dichiarazione). La prova qui sotto usa
+ * `perOgniLettura` + `valoreVincente`, e pretende che il `display` che
+ * arriva DAVVERO al nome sia diverso da `none` in tutte e due le letture.
  */
 test('sul desktop la barra CHIUSA (stato di partenza) non nasconde più i nomi (Critical 2)', () => {
   const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
