@@ -98,6 +98,17 @@ test('«il piano è vuoto» e «il + sta in centro» sono due domande diverse �
   // stessa (il prompt, il foglio da disegno), quindi non è mai «vuoto»,
   // anche quando il + sta comunque in centro perché zero file/riferimenti
   // sono stati portati dentro.
+  //
+  // ⚠️ Da sola, però, questa prova NON BASTA (rilievo del Giro di
+  // correzioni 2): esercita `pianoVuoto` e `postoDelPiu`, le funzioni pure
+  // in `piano.js`/`pelle.js` — ma non tocca mai `Piano.jsx`, che è dove il
+  // Critico 1 viveva davvero (il ramo `.sc-tela` che leggeva
+  // `posto === 'centro'` invece di `vuoto`). Una rottura fatta togliendo
+  // una voce da `COSA_CE` (come sotto) la fa cadere; una rottura fatta
+  // dentro il JSX di `Piano.jsx` — la causa vera — la lascia verde, perché
+  // qui non c'è DOM e questa prova non legge quel file. Per quello servono
+  // le tre prove DI SORGENTE in fondo al file (Giro di correzioni 2): solo
+  // loro guardano cosa c'è scritto dentro `Piano.jsx` e `App.jsx`.
   for (const id of Object.keys(DESCRITTORI)) {
     // Uno stato dichiarato, vuoto: nessun file, nessuna clip, niente in
     // corso — il valore di default che ogni campo di `COSA_CE`/`QUANTI`
@@ -153,4 +164,72 @@ test('il confronto non scrive più «scontornato» sul risultato', () => {
   const i = APP.indexOf('labels={');
   assert.notEqual(i, -1, 'il confronto non passa più nessuna etichetta: guarda cos’è successo');
   assert.doesNotMatch(APP.slice(i, i + 200), /scontornato/, 'S3: la scritta «scontornato» se n’è andata');
+});
+
+// Le tre prove che seguono sono DI SORGENTE, aggiunte nel Giro di correzioni
+// 2. Coprono i tre difetti Critici del Giro 1 — tutti e tre dentro il JSX
+// di componenti che questo progetto non monta in prova (niente DOM, niente
+// jsdom: scelta del progetto, non di questo compito) — e sono qui perché la
+// prova comportamentale qui sopra, pur essendo vera e utile, NON basta da
+// sola: esercita le funzioni pure, non Piano.jsx/App.jsx dove i difetti
+// vivevano davvero. Ognuna affetta una finestra STRETTA di sorgente intorno
+// al punto esatto, non l'intero file: in questo file c'è già una trappola
+// nota (`-scontornato` come suffisso di un nome di file salvato, vedi la
+// prova sopra su «scontornato») che ha insegnato a non cercare largo.
+
+test('la tela sceglie fra vuoto e children guardando `vuoto`, non `posto`', () => {
+  // ⚠️ Difetto già successo (Giro 1, Critico 1): il ramo `.sc-tela` leggeva
+  // `posto === 'centro'` invece di `vuoto`. `postoDelPiu` conta i FILE, e a
+  // zero file/riferimenti torna sempre `'centro'` — anche per Immagine
+  // (dove il piano è il prompt, col Preventivo e i riferimenti scelti) e il
+  // Vettoriale (dove il piano è il foglio da disegno con gli otto strumenti
+  // già accesi). Con `posto === 'centro'` al posto di `vuoto`, quella
+  // schermata veniva smontata per intero e sostituita dal solo `+` grande.
+  // La suite era verde lo stesso: nessun test toccava questo file.
+  const i = PIANO.indexOf('className="sc-tela"');
+  assert.notEqual(i, -1, 'la tela `.sc-tela` non esiste più nel file');
+  const finestra = PIANO.slice(i, i + 150);
+  assert.match(finestra, /\{vuoto \?/, 'torna il Critico 1: la tela non guarda più `vuoto`');
+  assert.doesNotMatch(
+    finestra,
+    /posto === 'centro'/,
+    "torna il Critico 1: la tela guarda `posto === 'centro'` e smonta Immagine/Vettoriale a zero file"
+  );
+});
+
+test("la guardia di `.sc-angolo` non è ristretta a `posto === 'sinistra'`: include anche la × al tetto", () => {
+  // ⚠️ Difetto già successo (Giro 1, Critico 2): il contenitore
+  // `.sc-angolo` si montava SOLO con `posto === 'sinistra'`. A
+  // `quanti === 1` e `tetto === 1` (un file su un servizio che ne accetta
+  // uno solo — Vocale, Effetti, Vettoriale) `postoDelPiu` torna `null`: il
+  // `+` non serve più, giusto — ma il contenitore non si montava affatto, e
+  // si portava via anche la ×, che ha una guardia propria (`quanti === 1 &&
+  // onTogli`) e non c'entra col `+`. Toglieva l'unica strada per svuotare
+  // il piano su tre `onTogli` cablati: `voce.reset` (Vocale), il reset
+  // dell'effetto (Effetti), `reset` del file portato dentro (Vettoriale).
+  // La suite era verde lo stesso: nessun test toccava questo file.
+  const i = PIANO.indexOf('className="sc-angolo"');
+  assert.notEqual(i, -1, 'il contenitore `.sc-angolo` non esiste più nel file');
+  const finestra = PIANO.slice(Math.max(0, i - 150), i);
+  assert.match(
+    finestra,
+    /\(posto === 'sinistra' \|\| \(quanti === 1 && onTogli\)\)/,
+    "torna il Critico 2: la guardia è ristretta a `posto === 'sinistra'` e perde la × al tetto"
+  );
+});
+
+test('`BatchGrid` è montato con lo zip del blocco, non con `null`', () => {
+  // ⚠️ Difetto già successo (Giro 1, Critico 3): `<BatchGrid
+  // onDownloadAll={null}>` — il bottone «SCARICA TUTTI» del blocco si
+  // montava lo stesso (aspettando una funzione che non arrivava mai), e lo
+  // zip dei risultati del blocco lavorato non aveva nessuna strada per
+  // essere scaricato. `scaricaIlPiano` è la stessa funzione già cablata su
+  // `GESTI.scarica` per il file singolo; con `batch.results.length > 0`
+  // prende il ramo del blocco. La suite era verde lo stesso: nessun test
+  // toccava questo file.
+  const i = APP.indexOf('<BatchGrid');
+  assert.notEqual(i, -1, '`BatchGrid` non è più montato in App.jsx');
+  const finestra = APP.slice(i, i + 1100);
+  assert.match(finestra, /onDownloadAll=\{scaricaIlPiano\}/, 'torna il Critico 3: lo zip del blocco non è più cablato');
+  assert.doesNotMatch(finestra, /onDownloadAll=\{null\}/, 'torna il Critico 3: onDownloadAll è di nuovo null');
 });
