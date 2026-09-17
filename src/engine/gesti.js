@@ -63,8 +63,40 @@ export function muove(g, { id, x, y }) {
   return { dx: dopo.cx - prima.cx, dy: dopo.cy - prima.cy, fattore: dopo.d / prima.d };
 }
 
+/**
+ * Accumula uno spostamento SENZA pinzare.
+ *
+ * Serve a chi chiama quando un gesto dura più eventi (il pizzico a due dita
+ * è così: un `pointermove` per dito, non uno per gesto): il valore grezzo
+ * si accumula per tutta la durata del gesto e si pinza *una sola volta*,
+ * con `applica` qui sotto, quando si scrive lo stato mostrato.
+ *
+ * Pinzare a ogni evento e poi ripartire dal risultato già pinzato è il
+ * difetto del giro di correzione 1 (Critico 2): un pavimento toccato per un
+ * istante intermedio (il dito che per caso arriva per primo) diventa la
+ * nuova base, e un pan puro — che non cambia la distanza fra le dita — non
+ * torna più esattamente dove era partito.
+ */
+export function accumula(grezza, { dx = 0, dy = 0, fattore = 1 } = {}) {
+  return { x: grezza.x + dx, y: grezza.y + dy, z: grezza.z * fattore };
+}
+
+/**
+ * La vista dentro i limiti.
+ *
+ * Un ingrandimento fuori scala è un guasto: si pinza. E quando lo zoom
+ * tocca il pavimento (`z <= min`) anche lo spostamento torna a zero — a
+ * quel livello l'immagine intera è visibile per definizione, non c'è niente
+ * da spostare, e uno spostamento residuo lascerebbe la tela fuori quadro
+ * senza una via per riportarla indietro (il pulsante `-`, l'unica via prima
+ * d'ora, è disabilitato esattamente lì — giro di correzione 1, Critico 1).
+ */
+function limita({ x, y, z }, { min = 1, max = 8 } = {}) {
+  const zl = Math.min(max, Math.max(min, z));
+  return zl <= min ? { x: 0, y: 0, z: zl } : { x, y, z: zl };
+}
+
 /** La vista nuova, dentro i limiti. Un ingrandimento fuori scala è un guasto. */
-export function applica(vista, { dx = 0, dy = 0, fattore = 1 } = {}, { min = 1, max = 8 } = {}) {
-  const z = Math.min(max, Math.max(min, vista.z * fattore));
-  return { x: vista.x + dx, y: vista.y + dy, z };
+export function applica(vista, mossa = {}, limiti) {
+  return limita(accumula(vista, mossa), limiti);
 }

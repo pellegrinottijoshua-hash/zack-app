@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
 import { guidaDritta, maniglia, puntoDellaGuida, spostaManiglia, tracciaGuidata } from '../engine/righello.js';
-import { nuovoGesto, giu, muove, su, dueDita, applica } from '../engine/gesti.js';
+import { nuovoGesto, giu, muove, su, dueDita, applica, accumula } from '../engine/gesti.js';
 import {
   stroke,
   maskFromRgba,
@@ -120,6 +120,19 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
   // spostano e ingrandiscono. Vive per tutta la vita del componente, non si
   // ricrea a ogni render.
   const gesto = useRef(nuovoGesto());
+  /**
+   * Il valore VERO del gesto a due dita, senza pinza.
+   *
+   * Giro di correzione 1, Critico 2: pinzare `vista` a ogni `pointermove` e
+   * poi ripartire dal risultato già pinzato per il passo successivo fa
+   * sbagliare lo zoom quando un passo intermedio del gesto tocca un limite
+   * (il pizzico a due dita è un evento per DITO, non uno per gesto — un
+   * dito arriva prima dell'altro quasi sempre). Qui si accumula grezzo per
+   * tutta la durata del gesto (`accumula`, mai pinzato) e si pinza *una
+   * volta sola* (`applica`) quando si scrive `vista`. `null` fuori da un
+   * gesto a due dita: il prossimo gesto riparte dal valore mostrato.
+   */
+  const vistaGrezza = useRef(null);
   /**
    * La guida del righello, e cosa si sta trascinando.
    *
@@ -264,6 +277,9 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
       // trascinerebbe una maniglia per sbaglio.
       s.last = null;
       presa.current = null;
+      // Il gesto a due dita comincia ORA: si riparte dal valore mostrato,
+      // ancora non pinzato di nuovo (vedi il commento su `vistaGrezza`).
+      if (!vistaGrezza.current) vistaGrezza.current = { ...vista };
       return;
     }
 
@@ -298,10 +314,14 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
     const m = muove(gesto.current, { id: ev.pointerId, x: ev.clientX, y: ev.clientY });
     if (m) {
       // Due dita: si sposta e si ingrandisce la vista, non si dipinge.
-      // `applica` e' lo stesso posto in cui scrivono i pulsanti +/-: nessuno
-      // dei due sovrascrive o ignora l'altro.
+      // Il clamp si applica una volta per gesto, non a ogni evento: si
+      // accumula sul valore grezzo (mai pinzato, vedi `vistaGrezza`) e si
+      // pinza solo qui, scrivendo `vista` — lo stesso posto in cui
+      // scrivono i pulsanti +/-: nessuno dei due sovrascrive o ignora
+      // l'altro.
       ev.preventDefault();
-      setVista((v) => applica(v, m, { min: 1, max: ZOOM_MAX }));
+      vistaGrezza.current = accumula(vistaGrezza.current || vista, m);
+      setVista(applica(vistaGrezza.current, {}, { min: 1, max: ZOOM_MAX }));
       return;
     }
 
@@ -344,6 +364,9 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
     // solo si torna a lavorare invece di continuare a leggere un centro fra
     // due dita di cui una non c'e' piu' (il salto classico).
     su(gesto.current, ev?.pointerId);
+    // Il gesto a due dita e' finito (o non lo era mai): il prossimo riparte
+    // dal valore mostrato, non da un residuo grezzo di uno vecchio.
+    if (!dueDita(gesto.current)) vistaGrezza.current = null;
     presa.current = null;
     const s = stateRef.current;
     if (!s) return;
@@ -408,7 +431,11 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
 
         <span className="brush-zoom">
           <button
-            onClick={() =>
+            onClick={() => {
+              // Un click e' un gesto a un dito solo, non a due: qualunque
+              // grezzo lasciato da un pizzico interrotto non deve influire
+              // sul prossimo (vedi il commento su `vistaGrezza`).
+              vistaGrezza.current = null;
               setVista((v) => {
                 // Stesso stato del gesto: si legge e si scrive `vista`, mai
                 // una copia separata che il pizzico ignorerebbe.
@@ -417,8 +444,8 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
                 // l'immagine intera e' visibile, un resto di spostamento
                 // la lascerebbe fuori quadro senza motivo.
                 return z <= 1 ? { x: 0, y: 0, z } : { ...v, z };
-              })
-            }
+              });
+            }}
             disabled={zoom <= 1}
             aria-label={t('brush.zoomOut')}
           >
@@ -430,7 +457,10 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
               vista su un intero. */}
           <b>{Math.round(zoom * 10) / 10}×</b>
           <button
-            onClick={() => setVista((v) => ({ ...v, z: Math.min(ZOOM_MAX, v.z < 2 ? 2 : v.z + 2) }))}
+            onClick={() => {
+              vistaGrezza.current = null;
+              setVista((v) => ({ ...v, z: Math.min(ZOOM_MAX, v.z < 2 ? 2 : v.z + 2) }));
+            }}
             disabled={zoom >= ZOOM_MAX}
             aria-label={t('brush.zoomIn')}
           >
