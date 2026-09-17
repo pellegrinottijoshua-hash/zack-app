@@ -99,6 +99,10 @@ function traccia(cx, guida) {
 
 export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDone }) {
   const canvasRef = useRef(null);
+  // Le misure VISIBILI del palco (non della tela, che puo' sconfinare):
+  // servono a `limiti()` qui sotto per pinzare lo spostamento sulla
+  // geometria vera, invece che su un pavimento fisso (Giro di correzione 2).
+  const stageRef = useRef(null);
   const stateRef = useRef(null);
   // Lo strumento con cui si entra: dai cerchi a destra si sceglie GIA' cosa
   // fare — righello, ripristina, cancella — e riaprirsi sempre sulla gomma
@@ -133,6 +137,46 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
    * gesto a due dita: il prossimo gesto riparte dal valore mostrato.
    */
   const vistaGrezza = useRef(null);
+  /**
+   * Il palco misurato all'INIZIO del gesto a due dita, non ogni volta.
+   *
+   * Trappola misurata in scrittura: `.brush-stage[data-zoom]` (styles.css)
+   * fa dipendere l'ALTEZZA del palco stesso da `zoom > 1` — sul telefono,
+   * 182px sotto 1x, 550px sopra. Un pizzico che attraversa lo zero (z che
+   * sale sopra 1 e poi torna a toccarlo) fa scattare quell'attributo A META'
+   * GESTO: leggere il palco dal vivo a ogni `pointermove` significa pinzare
+   * lo spostamento su un palco che cambia misura sotto il gesto stesso — un
+   * secondo palco 550 al posto di 182 rende il margine verticale negativo
+   * (la tela a 1x, 251px, e' piu' bassa di 550) e AZZERA uno spostamento
+   * legittimo. Il palco si misura una volta, quando il secondo dito atterra
+   * (`begin`), e resta quello per tutta la durata del gesto — esattamente
+   * come `vistaGrezza` non si ripinza a ogni evento.
+   */
+  const palcoCatturato = useRef(null);
+  /**
+   * La geometria vera per pinzare lo spostamento (`gesti.js`, `limita`).
+   *
+   * Il modulo e' puro e non tocca il DOM: qui si legge — palco e tela, non
+   * di piu' — e si passa. `palco` sono le misure VISIBILI di `.brush-stage`
+   * (`clientWidth`/`clientHeight`, mai quelle della tela che puo' sconfinare
+   * oltre) — quelle CATTURATE all'inizio del gesto se ce n'e' uno in corso
+   * (`palcoCatturato`), altrimenti quelle attuali (i pulsanti, che non sono
+   * un gesto disteso su piu' eventi, misurano dal vivo). `tela` sono le
+   * misure NATURALI dell'immagine (`s.w`/`s.h`, gli stessi pixel della
+   * maschera — la tela resa e' sempre larga `palco.w * z`, qualunque sia lo
+   * zoom, e alta in proporzione a questo rapporto).
+   *
+   * `undefined` prima che l'immagine sia pronta: `limita` degrada da sola al
+   * solo pinzare `z`, senza un palco su cui misurare uno spostamento.
+   */
+  const limiti = () => {
+    const st = stageRef.current;
+    const s = stateRef.current;
+    if (!s) return { min: 1, max: ZOOM_MAX };
+    const palco = palcoCatturato.current || (st ? { w: st.clientWidth, h: st.clientHeight } : null);
+    if (!palco) return { min: 1, max: ZOOM_MAX };
+    return { min: 1, max: ZOOM_MAX, palco, tela: { w: s.w, h: s.h } };
+  };
   /**
    * La guida del righello, e cosa si sta trascinando.
    *
@@ -278,8 +322,16 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
       s.last = null;
       presa.current = null;
       // Il gesto a due dita comincia ORA: si riparte dal valore mostrato,
-      // ancora non pinzato di nuovo (vedi il commento su `vistaGrezza`).
-      if (!vistaGrezza.current) vistaGrezza.current = { ...vista };
+      // ancora non pinzato di nuovo (vedi il commento su `vistaGrezza`), e
+      // si cattura il palco UNA VOLTA (vedi il commento su
+      // `palcoCatturato`) — non a ogni evento, o il palco stesso cambia
+      // misura a meta' gesto quando lo zoom attraversa 1x.
+      if (!vistaGrezza.current) {
+        vistaGrezza.current = { ...vista };
+        palcoCatturato.current = stageRef.current
+          ? { w: stageRef.current.clientWidth, h: stageRef.current.clientHeight }
+          : null;
+      }
       return;
     }
 
@@ -320,8 +372,8 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
       // scrivono i pulsanti +/-: nessuno dei due sovrascrive o ignora
       // l'altro.
       ev.preventDefault();
-      vistaGrezza.current = accumula(vistaGrezza.current || vista, m);
-      setVista(applica(vistaGrezza.current, {}, { min: 1, max: ZOOM_MAX }));
+      vistaGrezza.current = accumula(vistaGrezza.current || vista, m, limiti());
+      setVista(applica(vistaGrezza.current, {}, limiti()));
       return;
     }
 
@@ -365,8 +417,13 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
     // due dita di cui una non c'e' piu' (il salto classico).
     su(gesto.current, ev?.pointerId);
     // Il gesto a due dita e' finito (o non lo era mai): il prossimo riparte
-    // dal valore mostrato, non da un residuo grezzo di uno vecchio.
-    if (!dueDita(gesto.current)) vistaGrezza.current = null;
+    // dal valore mostrato, non da un residuo grezzo di uno vecchio — e
+    // ricattura il palco daccapo, invece di tenere quello di un gesto ormai
+    // chiuso.
+    if (!dueDita(gesto.current)) {
+      vistaGrezza.current = null;
+      palcoCatturato.current = null;
+    }
     presa.current = null;
     const s = stateRef.current;
     if (!s) return;
@@ -436,14 +493,17 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
               // grezzo lasciato da un pizzico interrotto non deve influire
               // sul prossimo (vedi il commento su `vistaGrezza`).
               vistaGrezza.current = null;
+              palcoCatturato.current = null;
               setVista((v) => {
                 // Stesso stato del gesto: si legge e si scrive `vista`, mai
-                // una copia separata che il pizzico ignorerebbe.
+                // una copia separata che il pizzico ignorerebbe. La stessa
+                // `applica` del gesto pinza lo spostamento sulla geometria
+                // vera (Giro di correzione 2): non c'e' piu' un azzeramento
+                // manuale al minimo, che a un palco piu' basso della tela
+                // toglierebbe l'unico modo di raggiungere il fondo dell'
+                // immagine.
                 const z = Math.max(1, Math.round(v.z / 1.5));
-                // Tornati al minimo, anche lo spostamento si azzera: a 1×
-                // l'immagine intera e' visibile, un resto di spostamento
-                // la lascerebbe fuori quadro senza motivo.
-                return z <= 1 ? { x: 0, y: 0, z } : { ...v, z };
+                return applica({ ...v, z }, {}, limiti());
               });
             }}
             disabled={zoom <= 1}
@@ -459,7 +519,8 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
           <button
             onClick={() => {
               vistaGrezza.current = null;
-              setVista((v) => ({ ...v, z: Math.min(ZOOM_MAX, v.z < 2 ? 2 : v.z + 2) }));
+              palcoCatturato.current = null;
+              setVista((v) => applica({ ...v, z: Math.min(ZOOM_MAX, v.z < 2 ? 2 : v.z + 2) }, {}, limiti()));
             }}
             disabled={zoom >= ZOOM_MAX}
             aria-label={t('brush.zoomIn')}
@@ -494,7 +555,7 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
           due dita, `vista.x/y` sposta la tela sopra quello: e' l'unica via
           per chi tocca, perche' `touch-action: none` (sotto) toglie apposta
           lo scorrimento nativo del browser sulla tela. */}
-      <div className="brush-stage" data-zoom={zoom > 1 || undefined}>
+      <div className="brush-stage" data-zoom={zoom > 1 || undefined} ref={stageRef}>
         <canvas
           ref={canvasRef}
           onPointerDown={begin}

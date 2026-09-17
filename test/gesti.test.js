@@ -57,15 +57,6 @@ test('l’ingrandimento non esce dai limiti', () => {
 
 // --- Giro di correzione 1 --------------------------------------------------
 
-test('Critico 1: al pavimento lo spostamento si azzera, non solo lo zoom', () => {
-  // Il difetto reale (MaskBrush.jsx): l'unico posto che azzerava x/y al
-  // minimo era il pulsante `-`, e quel pulsante e' disabilitato esattamente
-  // quando z tocca il minimo. Un pizzico che porta z al pavimento con uno
-  // spostamento residuo lasciava la tela fuori quadro senza via d'uscita.
-  const r = applica({ x: 300, y: -150, z: 1.3 }, { dx: -40, dy: 10, fattore: 0.5 }, { min: 1, max: 8 });
-  assert.deepEqual(r, { x: 0, y: 0, z: 1 }, 'il pavimento azzera anche lo spostamento residuo');
-});
-
 test('Critico 1: sopra il pavimento lo spostamento resta intatto', () => {
   // Il clamp su x/y non deve scattare quando non si e' al minimo: solo LI'
   // non c'e' niente da spostare, altrove lo spostamento e' legittimo.
@@ -149,4 +140,80 @@ test('Minore: un dito mai appoggiato non si aggiunge come fantasma', () => {
   const m = muove(g, { id: 99, x: 10, y: 10 });
   assert.equal(m, null, 'un dito sconosciuto non deve muovere nulla');
   assert.equal(dueDita(g), false, 'non deve entrare come fantasma nella mappa');
+});
+
+// --- Giro di correzione 2 --------------------------------------------------
+//
+// Correzione del committente: la ruling (b) del giro 1 («a 1x non c'e' niente
+// da spostare») era falsa — misurata dal ricontrollore a 1x, canvas 1064x1064
+// dentro un `.brush-stage` con `clientHeight 388`: un dito ha bisogno di
+// spostare l'immagine anche a 1x per raggiungerne il fondo, e il pavimento
+// che azzerava x/y glielo impediva. La ruling (a), non implementata al giro
+// 1, chiude il buco da sola: si pinza `x`/`y` sulla geometria VERA (palco e
+// tela), e il pavimento sparisce come caso speciale.
+
+test('Ruling: a 1x, con la tela piu\' alta del palco, lo spostamento resta vivo e raggiunge il fondo', () => {
+  // Le misure del ricontrollore: palco 1064x388 (la tela COPRE la larghezza
+  // del palco, niente margine orizzontale), tela quadrata (rapporto 1:1,
+  // qualunque sia la sua risoluzione vera in pixel).
+  const limiti = { min: 1, max: 8, palco: { w: 1064, h: 388 }, tela: { w: 4000, h: 4000 } };
+  const r = applica({ x: 0, y: 0, z: 1 }, { dx: -900, dy: -900, fattore: 1 }, limiti);
+  // Orizzontale: nessun margine (la tela combacia col palco) — si azzera DI
+  // CONSEGUENZA, non per un caso speciale sul pavimento.
+  assert.equal(r.x, 0, 'nessun margine orizzontale a 1x: la tela e\' larga quanto il palco');
+  // Verticale: 338px di margine ((1064 - 388) / 2) — un dito DEVE poterci
+  // arrivare, altrimenti il fondo dell\'immagine resta irraggiungibile.
+  assert.equal(r.y, -338, 'il pavimento non deve piu\' impedire di raggiungere il fondo dell\'immagine a 1x');
+});
+
+test('la tela non esce mai dalla cornice, a qualunque zoom', () => {
+  const limiti = { min: 1, max: 8, palco: { w: 1064, h: 388 }, tela: { w: 4000, h: 4000 } };
+  const r = applica({ x: 0, y: 0, z: 3 }, { dx: -5000, dy: -5000, fattore: 1 }, limiti);
+  // A z=3 la tela resa e' 3192x3192 (palco.w * z, quadrata): margine
+  // orizzontale (3192-1064)/2 = 1064, verticale (3192-388)/2 = 1402.
+  assert.deepEqual(r, { x: -1064, y: -1402, z: 3 }, 'lo spostamento deve fermarsi al margine vero, non oltre');
+});
+
+test('Nuovo Problema 2: una stretta profonda non lascia una zona morta, un solo raddoppio rientra in vista', () => {
+  // Il difetto reale misurato nel browser: z grezzo corre libero (0.2, poi
+  // 0.4, poi 0.8 — DUE raddoppi senza alcun effetto visibile, il terzo porta
+  // finalmente a 1.6). Con la banda, lo stesso pizzico risponde súbito.
+  const limiti = { min: 1, max: 8 };
+  let grezza = { x: 0, y: 0, z: 2 };
+  grezza = accumula(grezza, { fattore: 0.1 }, limiti); // 2 × 0.1 = 0.2 grezzo
+  assert.equal(grezza.z, 0.5, 'la banda deve fermare lo zoom grezzo a min/2, non lasciarlo correre a 0.2');
+
+  grezza = accumula(grezza, { fattore: 2 }, limiti); // un SOLO raddoppio
+  assert.equal(grezza.z, 1, 'un solo raddoppio deve bastare a rientrare esattamente al pavimento');
+
+  grezza = accumula(grezza, { fattore: 1.2 }, limiti); // un movimento piccolo, non un raddoppio
+  assert.ok(grezza.z > 1, 'subito dopo il pavimento un piccolo movimento e\' gia\' visibile: niente altra zona morta');
+});
+
+test('Nuovo Problema 2: la banda non tocca un pan che sfiora appena il pavimento (Critico 2 resta esatto)', () => {
+  // Gli stessi numeri del Critico 2 (giro 1): un dip a 0.75 e uno a 0.9 sono
+  // ben dentro la banda (min/2 = 0.5) e non devono MAI essere corretti qui,
+  // o il pan non torna esattamente al punto di partenza.
+  const limiti = { min: 1, max: 8 };
+  let grezza = { x: 0, y: 0, z: 2.5 };
+  grezza = accumula(grezza, { fattore: 0.3 }, limiti); // 2.5 × 0.3 = 0.75, sopra la banda: intatto
+  assert.equal(grezza.z, 0.75, 'un dip modesto non deve essere toccato dalla banda');
+  grezza = accumula(grezza, { fattore: 1 / 0.3 }, limiti);
+  assert.ok(Math.abs(grezza.z - 2.5) < 1e-9, 'il pan torna esattamente a 2.5, la banda non ha corrotto il valore vero');
+});
+
+test('Nuovo Problema 3: il pavimento non fa piu\' scattare uno strappo nello spostamento', () => {
+  // Prima (giro 1): un fotogramma che tocca il pavimento a meta\' gesto
+  // vedeva x/y azzerati di scatto, per poi tornare al valore vero al
+  // fotogramma successivo — lo sfarfallio 250% → 100% → 250%. Rimossa la
+  // pinza speciale, `limita` e\' continua in z: un valore appena sopra o
+  // esattamente al pavimento danno lo stesso margine, non un salto a zero.
+  const limiti = { min: 1, max: 8, palco: { w: 1064, h: 388 }, tela: { w: 4000, h: 4000 } };
+  const appenaSopra = applica({ x: 0, y: -300, z: 1.01 }, {}, limiti);
+  const alPavimento = applica({ x: 0, y: -300, z: 1 }, {}, limiti);
+  assert.ok(
+    Math.abs(appenaSopra.y - alPavimento.y) < 1,
+    'un salto qui e\' esattamente il vecchio sfarfallio a meta\' gesto',
+  );
+  assert.notEqual(alPavimento.y, 0, 'il pavimento non deve piu\' azzerare da solo lo spostamento');
 });
