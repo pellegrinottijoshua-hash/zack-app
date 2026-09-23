@@ -1,5 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { MAX_FILE, aPng, applicaAlfa, mb, pixelDaFile, ritaglioIstantaneo, scaricaModello } from '../engine/ritaglio.js';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  MAX_FILE,
+  aPng,
+  applicaAlfa,
+  mb,
+  pixelDaFile,
+  rettangoloDisegnato,
+  ritaglioIstantaneo,
+  scaricaModello,
+} from '../engine/ritaglio.js';
+import { nuovoGesto, giu as ditoGiu, muove as ditoMuove, su as ditoSu, dueDita } from '../engine/gesti.js';
+import { ancora } from '../engine/gesti.js';
 import {
   guidaDritta,
   maniglia,
@@ -66,9 +77,15 @@ const MODELLI = [
 /** I tre strumenti del contratto. Il righello non dipinge: guida chi dipinge. */
 const STRUMENTI = ['righello', 'ripristina', 'cancella'];
 
-/** Da punto sullo schermo a pixel dell'immagine, qualunque sia lo zoom. */
+/**
+ * Da punto sullo schermo a pixel dell'immagine, qualunque sia lo zoom.
+ *
+ * Sul rettangolo DISEGNATO, non sulla scatola: con `object-fit: contain` e
+ * la tela pinzata in altezza le due non coincidono (vedi
+ * `rettangoloDisegnato`).
+ */
 function suImmagine(e, canvas) {
-  const r = canvas.getBoundingClientRect();
+  const r = rettangoloDisegnato(canvas.getBoundingClientRect(), { w: canvas.width, h: canvas.height });
   return {
     x: ((e.clientX - r.left) / r.width) * canvas.width,
     y: ((e.clientY - r.top) / r.height) * canvas.height,
@@ -119,6 +136,31 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
    */
   const storia = useRef({});
   const [puoiAnnullare, setPuoiAnnullare] = useState(false);
+  /**
+   * Due dita ingrandiscono il file e lo spostano, un dito corregge (Task 11).
+   *
+   * Lo zoom resta `zoom[l.id]` — lo stesso stato dei pulsanti `+`/`−` — e lo
+   * spostamento resta lo SCORRIMENTO nativo di `.rit-vista`, come dice gia'
+   * `landing.css`: e' quello che mouse, rotella e barre muovono, e il
+   * browser lo tiene dentro la cornice da solo. Il pizzico calcola dove
+   * deve stare l'immagine (`ancora`, attorno alle dita) e `scorri` lo
+   * applica DOPO il render, quando la tela ha gia' la misura nuova.
+   *
+   * - `gesti`: per file, le dita appoggiate;
+   * - `pizzico`: il file, la posizione dell'immagine nel contenitore e lo
+   *   zoom quando il pizzico e' cominciato, e l'angolo del contenitore;
+   * - `base`: per file, la misura DISEGNATA a 1× — lo zoom la moltiplica.
+   *   Prima si moltiplicava la larghezza della colonna, e con la tela pinzata
+   *   in altezza il disegno non cresceva affatto (misurato sul telefono: a
+   *   2× e 3× la scatola passava da 337 a 674 e 1011 px, l'immagine restava
+   *   150×150);
+   * - `viste`: per file, il contenitore che scorre.
+   */
+  const gesti = useRef({});
+  const pizzico = useRef(null);
+  const scorri = useRef(null);
+  const base = useRef({});
+  const viste = useRef({});
 
   /**
    * Si misura la WebGPU quando si apre il pannello, non prima.
@@ -405,6 +447,70 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
     trascino.current = { ...t, ultimo: p };
   }
 
+  /** Dove sta l'immagine, rispetto al suo contenitore. */
+  function posizione(id) {
+    const cv = tele.current[id];
+    const vr = viste.current[id].getBoundingClientRect();
+    const d = rettangoloDisegnato(cv.getBoundingClientRect(), { w: cv.width, h: cv.height });
+    return { x: d.left - vr.left, y: d.top - vr.top, left: vr.left, top: vr.top };
+  }
+
+  function ditoSulFile(e, l) {
+    // Il primo dito di un tocco nuovo azzera: un dito perso (alzato fuori
+    // dalla tela) non resta come fantasma.
+    if (e.isPrimary || !gesti.current[l.id]) gesti.current[l.id] = nuovoGesto();
+    const g = gesti.current[l.id];
+    ditoGiu(g, { id: e.pointerId, x: e.clientX, y: e.clientY });
+    if (!dueDita(g)) {
+      giu(e, l);
+      return;
+    }
+    // Il secondo dito: il tratto (o la maniglia) in corso si ferma, e
+    // comincia il pizzico.
+    trascino.current = null;
+    if (!l.alpha || !viste.current[l.id]) return;
+    const p = posizione(l.id);
+    pizzico.current = { id: l.id, inizio: { x: p.x, y: p.y, z: z(l.id) }, left: p.left, top: p.top };
+  }
+
+  function ditoSulFileMosso(e, l) {
+    const g = gesti.current[l.id];
+    const m = g ? ditoMuove(g, { id: e.pointerId, x: e.clientX, y: e.clientY }) : null;
+    if (!m) {
+      muovi(e, l);
+      return;
+    }
+    const p = pizzico.current;
+    if (!p || p.id !== l.id) return;
+    const v = ancora(
+      p.inizio,
+      { fattore: m.fattore, cx: m.cx - p.left, cy: m.cy - p.top, cx0: m.cx0 - p.left, cy0: m.cy0 - p.top },
+      { min: 1, max: ZOOM_MAX },
+    );
+    scorri.current = { id: l.id, x: v.x, y: v.y };
+    setZoom((s) => ({ ...s, [l.id]: v.z }));
+  }
+
+  function ditoSulFileAlzato(e, l) {
+    const g = gesti.current[l.id];
+    if (g) ditoSu(g, e.pointerId);
+    if (!g || !dueDita(g)) pizzico.current = null;
+    trascino.current = null;
+  }
+
+  // Dopo il render che ha dato alla tela la misura nuova: si scorre il
+  // contenitore finche' l'immagine sta dove il pizzico la vuole. Il browser
+  // pinza lo scorrimento da solo: la tela non esce dalla cornice.
+  useLayoutEffect(() => {
+    const s = scorri.current;
+    scorri.current = null;
+    if (!s || !viste.current[s.id] || !tele.current[s.id]) return;
+    const ora = posizione(s.id);
+    const vista = viste.current[s.id];
+    vista.scrollLeft += ora.x - s.x;
+    vista.scrollTop += ora.y - s.y;
+  }, [zoom]);
+
   /**
    * Una pennellata, eventualmente fermata dalla guida.
    *
@@ -415,7 +521,7 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
   function pennellata(p, l, lato, da) {
     if (!l.alpha) return;
     const cv = tele.current[l.id];
-    const scala = l.src.w / cv.getBoundingClientRect().width;
+    const scala = l.src.w / rettangoloDisegnato(cv.getBoundingClientRect(), { w: cv.width, h: cv.height }).width;
     // Un TRATTO fra il punto precedente e questo, non un timbro: muovendo
     // veloce, timbrare solo dove arrivano gli eventi lascia buchi.
     tracciaGuidata(
@@ -495,6 +601,9 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
   function togli(id) {
     delete storia.current[id];
     delete tele.current[id];
+    delete gesti.current[id];
+    delete base.current[id];
+    delete viste.current[id];
     setLavori((v) => v.filter((l) => l.id !== id));
     setGuide((g) => {
       const { [id]: _via, ...resto } = g;
@@ -521,6 +630,25 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
   const z = (id) => zoom[id] || 1;
   const cambiaZoom = (id, d) =>
     setZoom((s) => ({ ...s, [id]: Math.min(ZOOM_MAX, Math.max(1, (s[id] || 1) + d)) }));
+  /**
+   * La tela ingrandita: `z` volte la misura DISEGNATA a 1×, in pixel, con i
+   * tetti d'altezza tolti (`max-height` della colonna e `object-fit` la
+   * rimpicciolivano di nuovo). Centrata in orizzontale finche' e' piu'
+   * stretta del contenitore. Senza base (non ancora misurata) si torna alla
+   * larghezza relativa di prima.
+   */
+  const stileZoom = (id) => {
+    const zz = z(id);
+    if (zz <= 1) return {};
+    const b = base.current[id];
+    return {
+      width: b ? `${b.w * zz}px` : `${zz * 100}%`,
+      height: b ? `${b.h * zz}px` : undefined,
+      maxWidth: 'none',
+      maxHeight: 'none',
+      margin: '0 auto',
+    };
+  };
 
   return (
     <div
@@ -740,7 +868,13 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
               <button className="rit-togli" aria-label={c.tool.remove} onClick={() => togli(l.id)}>
                 ×
               </button>
-              <div className="rit-vista" data-zoom={z(l.id) > 1 || undefined}>
+              <div
+                className="rit-vista"
+                data-zoom={z(l.id) > 1 || undefined}
+                ref={(el) => {
+                  if (el) viste.current[l.id] = el;
+                }}
+              >
                 <canvas
                   ref={(el) => {
                     if (!el) return;
@@ -748,18 +882,21 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
                     el.width = l.src.w;
                     el.height = l.src.h;
                     ridipingi(l);
+                    // La misura disegnata a 1× e' la base dello zoom.
+                    if (z(l.id) === 1) {
+                      const d = rettangoloDisegnato(el.getBoundingClientRect(), { w: el.width, h: el.height });
+                      if (d.width > 0) base.current[l.id] = { w: d.width, h: d.height };
+                    }
                   }}
                   style={{
                     cursor: strumento ? 'crosshair' : 'default',
                     touchAction: 'none',
-                    width: z(l.id) > 1 ? `${z(l.id) * 100}%` : undefined,
-                    maxWidth: z(l.id) > 1 ? 'none' : undefined,
+                    ...stileZoom(l.id),
                   }}
-                  onPointerDown={(e) => giu(e, l)}
-                  onPointerMove={(e) => muovi(e, l)}
-                  onPointerUp={() => {
-                    trascino.current = null;
-                  }}
+                  onPointerDown={(e) => ditoSulFile(e, l)}
+                  onPointerMove={(e) => ditoSulFileMosso(e, l)}
+                  onPointerUp={(e) => ditoSulFileAlzato(e, l)}
+                  onPointerCancel={(e) => ditoSulFileAlzato(e, l)}
                 />
               </div>
 
@@ -771,7 +908,7 @@ export default function Ritaglio({ c, ricetta, onRicetta }) {
                   <button onClick={() => cambiaZoom(l.id, 1)} disabled={z(l.id) >= ZOOM_MAX} aria-label={c.tool.zoomIn}>
                     +
                   </button>
-                  <b>{z(l.id)}×</b>
+                  <b>{Math.round(z(l.id) * 10) / 10}×</b>
                   <button onClick={() => cambiaZoom(l.id, -1)} disabled={z(l.id) <= 1} aria-label={c.tool.zoomOut}>
                     −
                   </button>

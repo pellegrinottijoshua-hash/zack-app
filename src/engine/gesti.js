@@ -80,6 +80,9 @@ const STESSA_SEPARAZIONE = 1e-6;
  * - `fattore`: il rapporto fra la separazione ATTUALE delle dita e quella
  *   misurata all'INIZIO del pizzico — assoluto, mai rispetto all'evento
  *   precedente;
+ * - `cx`,`cy` (il centro attuale) e `cx0`,`cy0` (il centro all'inizio del
+ *   pizzico), nelle stesse coordinate ricevute: per chi ingrandisce ATTORNO
+ *   alle dita (`ancora`, sotto);
  * - `assestato`: vero sull'evento che chiude una «ronda» (vedi sotto).
  *
  * **Giro di correzione 3, Critico 1 — `fattore` e' assoluto dall'inizio del
@@ -121,7 +124,7 @@ export function muove(g, { id, x, y }) {
   const [idA, idB] = coppiaId(g);
   const [a1, b1] = coppia(g);
   const prima = { cx: (a1.x + b1.x) / 2, cy: (a1.y + b1.y) / 2, d: distanza(a1, b1) };
-  if (!g.iniziale) g.iniziale = { d: prima.d, ronda: new Set() };
+  if (!g.iniziale) g.iniziale = { d: prima.d, cx: prima.cx, cy: prima.cy, ronda: new Set() };
   g.dita.set(id, { x, y });
   const [a2, b2] = coppia(g);
   const dopo = { cx: (a2.x + b2.x) / 2, cy: (a2.y + b2.y) / 2, d: distanza(a2, b2) };
@@ -130,7 +133,16 @@ export function muove(g, { id, x, y }) {
   if (id === idA || id === idB) ini.ronda.add(id);
   const assestato = ini.ronda.has(idA) && ini.ronda.has(idB);
   if (assestato) ini.ronda = new Set();
-  return { dx: dopo.cx - prima.cx, dy: dopo.cy - prima.cy, fattore, assestato };
+  return {
+    dx: dopo.cx - prima.cx,
+    dy: dopo.cy - prima.cy,
+    fattore,
+    assestato,
+    cx: dopo.cx,
+    cy: dopo.cy,
+    cx0: ini.cx,
+    cy0: ini.cy,
+  };
 }
 
 /**
@@ -232,4 +244,78 @@ function limita({ x, y, z, zMargine }, { min = 1, max = 8, palco, tela } = {}) {
 /** La vista nuova, dentro i limiti. Un ingrandimento fuori scala è un guasto. */
 export function applica(vista, mossa = {}, limiti) {
   return limita(accumula(vista, mossa), limiti);
+}
+
+/**
+ * Il pizzico su una tela con l'origine in ALTO A SINISTRA, ingrandita
+ * attorno alle dita (Task 11: Brain e la home libera).
+ *
+ * `MaskBrush` ha una geometria sua — la tela e' centrata nel palco e
+ * `vista.x/y` e' uno scarto dal centro — e usa `accumula`/`applica`. Brain
+ * disegna `translate(x,y) scale(z)` con `transform-origin: 0 0`, e la home
+ * sposta l'immagine scorrendo il contenitore: li' lo zoom deve restare
+ * ATTORNO al centro delle dita, o l'oggetto che si stava guardando scappa
+ * verso l'angolo in alto a sinistra. Lo zoom e' lo STESSO di `accumula`:
+ * `inizio.z × fattore`, con `fattore` assoluto dall'inizio del pizzico
+ * (`muove`), quindi un pan puro lascia `z` esatto per costruzione — la
+ * lezione del Giro 3, Critico 1, non ricopiata ma riusata.
+ *
+ * Tutto e' ASSOLUTO dall'inizio del pizzico, anche lo spostamento: il punto
+ * della tela che stava sotto il centro delle dita all'inizio (`cx0`,`cy0`)
+ * resta sotto il centro attuale (`cx`,`cy`). Niente somme evento per evento,
+ * quindi niente pinza «una volta per gesto» da ricordare: ogni evento
+ * ricalcola da `inizio`, e un passo intermedio che tocca un limite non
+ * lascia traccia sul successivo.
+ *
+ * - `inizio`: `{x, y, z}`, la vista quando il pizzico e' cominciato.
+ * - `cx`,`cy`,`cx0`,`cy0`: da `muove`, gia' portati nelle coordinate del
+ *   palco (chi chiama sottrae l'angolo del palco sullo schermo).
+ * - `limiti`: `min`/`max` dello zoom; con `palco: {w,h}` e `contenuto:
+ *   {x,y,w,h}` (in coordinate della tela, a zoom 1) lo spostamento si pinza
+ *   perche' almeno `resta` pixel del contenuto restino dentro il palco su
+ *   ciascun asse (o tutto il contenuto, se e' piu' piccolo).
+ *
+ * **Perche' qui il margine si misura sullo `z` mostrato, e non su uno zoom
+ * di inizio gesto come in `limita`.** Il difetto di `limita` (Giro 3, Nuovo
+ * Problema 3) era una DISCONTINUITA': a 1x il margine e' zero per
+ * costruzione, e un tuffo di `z` collassava lo spostamento al centro. Qui il
+ * vincolo tiene visibile una striscia fissa di contenuto: e' continuo in
+ * `z`, non ha un valore in cui vale zero, e lo spostamento ancorato trema
+ * INSIEME a `z` a meta' ronda — misurarlo su uno zoom diverso da quello
+ * disegnato lascerebbe invece uscire il contenuto dal palco.
+ *
+ * **La lezione dell'1x.** Il vincolo non centra e non blocca: ogni bordo
+ * del contenuto si puo' portare dentro il palco a qualunque zoom (il bordo
+ * lontano puo' arrivare fino a filo, `resta` dal bordo opposto), quindi un
+ * contenuto piu' grande del palco resta tutto raggiungibile con due dita.
+ */
+export function ancora(inizio, { fattore = 1, cx, cy, cx0, cy0 }, { min = 1, max = 8, palco, contenuto, resta = 48 } = {}) {
+  // Lo zoom passa da `accumula`, non da una sua copia: e' la stessa riga
+  // che il Giro 3 ha corretto, e una seconda versione divergerebbe alla
+  // prossima correzione.
+  const z = Math.min(max, Math.max(min, accumula({ x: 0, y: 0, z: inizio.z }, { fattore }).z));
+  // `k` esattamente 1 quando lo zoom non e' cambiato: un pan puro sposta
+  // di (cx − cx0) e basta, senza passare per una divisione e una
+  // moltiplicazione che in virgola mobile non si annullano sempre.
+  const k = z / inizio.z;
+  let x = cx - (cx0 - inizio.x) * k;
+  let y = cy - (cy0 - inizio.y) * k;
+  if (palco && contenuto) {
+    x = trattieni(x, contenuto.x, contenuto.w, palco.w, z, resta);
+    y = trattieni(y, contenuto.y, contenuto.h, palco.h, z, resta);
+  }
+  return { x, y, z };
+}
+
+/**
+ * Lo spostamento su un asse, perche' almeno `resta` pixel del contenuto
+ * (`inizio`..`inizio+lungo` in coordinate della tela) restino fra 0 e
+ * `palco`. `re <= lungo*z` garantisce `lo <= hi`: l'intervallo non e' mai
+ * vuoto.
+ */
+function trattieni(v, inizio, lungo, palco, z, resta) {
+  const re = Math.min(resta, lungo * z);
+  const lo = re - (inizio + lungo) * z;
+  const hi = palco - re - inizio * z;
+  return Math.min(hi, Math.max(lo, v)) || 0;
 }

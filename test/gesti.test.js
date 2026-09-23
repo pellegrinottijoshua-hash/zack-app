@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { nuovoGesto, giu, muove, su, dueDita, applica, accumula } from '../src/engine/gesti.js';
+import { readFileSync } from 'node:fs';
+import { nuovoGesto, giu, muove, su, dueDita, applica, accumula, ancora } from '../src/engine/gesti.js';
 
 test('un dito solo lavora: non muove e non ingrandisce', () => {
   const g = nuovoGesto();
@@ -428,4 +429,88 @@ test('un pizzico che ingrandisce e poi continua a spostare, nello STESSO tocco, 
     Math.abs(vista.y - -104.5) < 1e-9,
     `atteso -104.5 (il pan si muove liberamente dopo lo spread), ottenuto ${vista.y} (bloccato al vecchio margine se sbagliato)`,
   );
+});
+
+// --- Task 11: Brain e la home libera ---------------------------------------
+
+test('Brain e la home libera usano LO STESSO gesto, non due copie', () => {
+  // Due implementazioni dello stesso gesto divergono alla prima correzione,
+  // ed è il motivo per cui la matematica sta in un modulo solo.
+  for (const f of ['../src/components/Brain.jsx', '../src/components/MaskBrush.jsx', '../src/landing/Ritaglio.jsx']) {
+    const src = readFileSync(new URL(f, import.meta.url), 'utf8');
+    assert.match(src, /from '.*engine\/gesti\.js'/, `${f} non usa engine/gesti.js`);
+  }
+});
+
+/** Un pizzico vero: due dita giu', un evento a testa, `ancora` a ogni evento. */
+function pizzica(inizio, a, b, a2, b2, limiti) {
+  const g = nuovoGesto();
+  giu(g, { id: 1, ...a });
+  giu(g, { id: 2, ...b });
+  const v1 = ancora(inizio, muove(g, { id: 2, ...b2 }), limiti);
+  const v2 = ancora(inizio, muove(g, { id: 1, ...a2 }), limiti);
+  return { meta: v1, fine: v2 };
+}
+
+test('ancora: un pan puro (dita vere, terzi di pixel) lascia lo zoom ESATTO e sposta quanto le dita', () => {
+  // La lezione del Giro 3, Critico 1, sulle due superfici nuove: lo zoom
+  // passa da `accumula`, e `fattore` e' assoluto dall'inizio del pizzico.
+  const r = lcg(1111);
+  for (const z0 of [1, 0.25, 2.5]) {
+    for (let i = 0; i < 300; i++) {
+      const a = { x: terzi(r() * 390), y: terzi(r() * 844) };
+      const b = { x: terzi(r() * 390), y: terzi(r() * 844) };
+      const p = { x: terzi((r() - 0.5) * 240), y: terzi((r() - 0.5) * 240) };
+      const inizio = { x: terzi(r() * 200 - 100), y: terzi(r() * 200 - 100), z: z0 };
+      const { fine } = pizzica(inizio, a, b, { x: a.x + p.x, y: a.y + p.y }, { x: b.x + p.x, y: b.y + p.y }, { min: 0.25, max: 2.5 });
+      assert.equal(fine.z, z0, `pan ${i} da ${z0}: z ${fine.z}`);
+      assert.ok(Math.abs(fine.x - (inizio.x + p.x)) < 1e-9 && Math.abs(fine.y - (inizio.y + p.y)) < 1e-9, `pan ${i}: spostamento sbagliato`);
+    }
+  }
+});
+
+test('ancora: ingrandendo, il punto della tela sotto le dita RESTA sotto le dita', () => {
+  // Brain disegna `translate(x,y) scale(z)` con l'origine in alto a
+  // sinistra: senza l'ancora, lo zoom trascinerebbe tutto verso l'angolo.
+  const inizio = { x: 40, y: 40, z: 1 };
+  const a = { x: 100, y: 300 };
+  const b = { x: 140, y: 300 };
+  const sotto = (v, cx, cy) => [(cx - v.x) / v.z, (cy - v.y) / v.z];
+  const prima = sotto(inizio, 120, 300);
+  // Spread 40 → 80 attorno allo stesso centro, poi le dita scendono di 30.
+  const { fine } = pizzica(inizio, a, b, { x: 80, y: 330 }, { x: 160, y: 330 }, { min: 0.25, max: 2.5 });
+  assert.equal(fine.z, 2);
+  const dopo = sotto(fine, 120, 330);
+  assert.ok(Math.abs(dopo[0] - prima[0]) < 1e-9 && Math.abs(dopo[1] - prima[1]) < 1e-9, `prima ${prima}, dopo ${dopo}`);
+});
+
+test('ancora: lo zoom resta nei limiti dichiarati (Brain: 0.25 .. 2.5)', () => {
+  const { fine: su } = pizzica({ x: 0, y: 0, z: 1 }, { x: 0, y: 0 }, { x: 10, y: 0 }, { x: 0, y: 0 }, { x: 900, y: 0 }, { min: 0.25, max: 2.5 });
+  assert.equal(su.z, 2.5);
+  const { fine: giuZ } = pizzica({ x: 0, y: 0, z: 1 }, { x: 0, y: 0 }, { x: 900, y: 0 }, { x: 0, y: 0 }, { x: 10, y: 0 }, { min: 0.25, max: 2.5 });
+  assert.equal(giuZ.z, 0.25);
+});
+
+test('ancora: la mappa non esce dalla cornice — restano sempre `resta` pixel di contenuto nel palco', () => {
+  const limiti = { min: 0.25, max: 2.5, palco: { w: 209, h: 411 }, contenuto: { x: 0, y: 0, w: 620, h: 120 }, resta: 48 };
+  const { fine: via } = pizzica({ x: 40, y: 40, z: 1 }, { x: 70, y: 400 }, { x: 130, y: 400 }, { x: -2930, y: -2600 }, { x: -2870, y: -2600 }, limiti);
+  assert.deepEqual([via.x, via.y], [48 - 620, 48 - 120], 'trascinata via in alto a sinistra: restano 48 px in basso a destra');
+  const { fine: la } = pizzica({ x: 40, y: 40, z: 1 }, { x: 70, y: 400 }, { x: 130, y: 400 }, { x: 3070, y: 3400 }, { x: 3130, y: 3400 }, limiti);
+  assert.deepEqual([la.x, la.y], [209 - 48, 411 - 48], 'trascinata via in basso a destra: restano 48 px in alto a sinistra');
+});
+
+test('ancora: a 1× il contenuto fuori dal palco resta RAGGIUNGIBILE con due dita (la lezione dell\'1×)', () => {
+  // Tre note larghe 620 in un piano largo 209: la terza (420..620) e' fuori.
+  // Il vincolo deve lasciar portare il suo bordo destro a filo del piano.
+  const limiti = { min: 0.25, max: 2.5, palco: { w: 209, h: 411 }, contenuto: { x: 0, y: 0, w: 620, h: 120 }, resta: 48 };
+  const { fine } = pizzica({ x: 40, y: 40, z: 1 }, { x: 70, y: 400 }, { x: 130, y: 400 }, { x: 70 - 451, y: 400 }, { x: 130 - 451, y: 400 }, limiti);
+  assert.equal(fine.z, 1);
+  assert.equal(fine.x + 620, 209, 'il bordo destro della terza nota arriva a filo del piano');
+});
+
+test('ancora: un contenuto piu\' piccolo di `resta` resta tutto visibile, non viene centrato ne\' bloccato', () => {
+  const limiti = { min: 0.25, max: 2.5, palco: { w: 300, h: 300 }, contenuto: { x: 0, y: 0, w: 20, h: 20 }, resta: 48 };
+  const { fine } = pizzica({ x: 100, y: 100, z: 1 }, { x: 150, y: 150 }, { x: 190, y: 150 }, { x: 5150, y: 150 }, { x: 5190, y: 150 }, limiti);
+  assert.equal(fine.x, 300 - 20, 'tutto il contenuto (20 px) resta dentro, a filo del bordo destro');
+  assert.equal(fine.y, 100, 'l\'asse che non si e\' mosso non cambia');
 });
