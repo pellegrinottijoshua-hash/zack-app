@@ -108,10 +108,21 @@ test('limiti() preferisce il palco catturato a quello letto dal vivo', () => {
   assert.notEqual(inizio, -1, 'limiti non c’è più in MaskBrush.jsx sotto questo nome');
   const fine = SORGENTE.indexOf('/**', inizio + 10);
   const corpo = SORGENTE.slice(inizio, fine === -1 ? inizio + 600 : fine);
-  assert.match(
-    corpo,
-    /palcoCatturato\.current\s*\|\|/,
-    'limiti() non antepone più palcoCatturato.current alla misura dal vivo: torna il palco che cambia a metà gesto',
+  // Minore 4 (Giro 3): la forma diretta (`palcoCatturato.current ||`) non è
+  // l'unica onesta. Un refactor comportamentalmente identico — la lettura
+  // in una variabile locale (`const catturato = palcoCatturato.current;
+  // const palco = catturato || …`), o `??` al posto di `||` (il ref vale
+  // `null` o un oggetto: per lui sono lo stesso operatore) — resta la
+  // stessa precedenza e non deve andare rosso. Resta rosso ciò che la prova
+  // esiste per prendere: il vivo come PRIMO operando (`vivo || catturato`,
+  // diretto o col nome locale), o nessuna lettura di palcoCatturato.
+  const precede = (nome) => new RegExp(`${nome}\\s*(?:\\|\\||\\?\\?)`);
+  const diretto = precede('palcoCatturato\\.current').test(corpo);
+  const locale = /(?:const|let)\s+(\w+)\s*=\s*palcoCatturato\.current\s*;?([\s\S]*)$/.exec(corpo);
+  const hoistPrecede = Boolean(locale) && precede(`\\b${locale[1]}`).test(locale[2]);
+  assert.ok(
+    diretto || hoistPrecede,
+    'palcoCatturato.current non viene anteposto al palco letto dal vivo, né direttamente né via una const locale: torna il palco che cambia a metà gesto',
   );
 });
 
@@ -121,5 +132,39 @@ test('il palco catturato si azzera quando il gesto a due dita finisce', () => {
     corpo,
     /palcoCatturato\.current\s*=\s*null/,
     'end non azzera più palcoCatturato: il prossimo gesto ripartirebbe da un palco vecchio invece di ricatturarlo',
+  );
+});
+
+// --- Importante 2 (Giro 3) --------------------------------------------------
+//
+// Il palco catturato all'inizio del gesto puo' non descrivere piu' il palco
+// vero quando le dita si alzano: `.brush-stage[data-zoom]` cresce l'altezza
+// dello stage non appena z supera 1x, A META' GESTO — il palco catturato
+// resta quello piccolo di prima (di proposito, e' quello che da' stabilita'
+// DURANTE il gesto), ma nessuno lo ricontrollava al rilascio. Misurato nel
+// browser: un pizzico a 2x lasciava una parte della tela fuori dal palco
+// finche' non arrivava un tocco nuovo a ricatturare tutto daccapo. Nessuna
+// combinazione di `gesti.js` in Node lo vede: la CSS non esiste li'.
+
+test('Importante 2 (pulsanti): quando data-zoom cambia, fuori da un gesto, vista si ripinza sul palco nuovo', () => {
+  // I pulsanti `+`/`−` pinzano sul palco di PRIMA del render che accende o
+  // spegne `data-zoom`. L'effetto deve (1) dipendere ESATTAMENTE dalla
+  // stessa condizione che accende l'attributo — stesso nome, `ingrandita` —
+  // o si sfasano; (2) non toccare niente a meta' gesto; (3) ripinzare con
+  // `limiti()` letto dopo il commit.
+  assert.match(SORGENTE, /const ingrandita = zoom > 1;/, 'ingrandita non e\' piu\' la condizione di data-zoom');
+  assert.match(SORGENTE, /data-zoom=\{ingrandita \|\| undefined\}/, 'data-zoom non dipende piu\' da ingrandita: l\'effetto si sfasa dall\'attributo');
+  const effetto = /useLayoutEffect\(\(\) => \{([\s\S]*?)\}, \[ingrandita\]\);/.exec(SORGENTE);
+  assert.ok(effetto, 'manca il useLayoutEffect su [ingrandita]: dopo un + o un − la tela puo\' restare fuori dal palco cresciuto');
+  assert.match(effetto[1], /if \(palcoCatturato\.current\) return;/, 'l\'effetto ripinza anche a meta\' gesto, sopra il palco catturato');
+  assert.match(effetto[1], /applica\(\s*v\s*,\s*\{\}\s*,\s*limiti\(\)\s*\)/, 'l\'effetto non ripinza vista con la geometria live');
+});
+
+test('Importante 2: al rilascio del gesto a due dita, vista si ripinza UNA VOLTA sulla geometria live', () => {
+  const corpo = corpoDiEnd(SORGENTE);
+  assert.match(
+    corpo,
+    /setVista\(\s*\(v\)\s*=>\s*applica\(\s*v\s*,\s*\{\}\s*,\s*limiti\(\)\s*\)\s*\)/,
+    'end non ripinza più vista dopo il rilascio: il margine calcolato sul palco catturato (ormai stantio) resta applicato finché non arriva un tocco nuovo',
   );
 });

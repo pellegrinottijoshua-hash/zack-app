@@ -15,7 +15,7 @@
  */
 
 export function nuovoGesto() {
-  return { dita: new Map() };
+  return { dita: new Map(), iniziale: null };
 }
 
 export function dueDita(g) {
@@ -24,10 +24,21 @@ export function dueDita(g) {
 
 export function giu(g, { id, x, y }) {
   g.dita.set(id, { x, y });
+  // Sotto le due dita non c'e' un pizzico in corso: qualunque riferimento
+  // vecchio (`iniziale`, la distanza di partenza) non significa piu' niente
+  // e va dimenticato, o il PROSSIMO pizzico erediterebbe la base sbagliata.
+  if (g.dita.size < 2) g.iniziale = null;
 }
 
 export function su(g, id) {
   g.dita.delete(id);
+  if (g.dita.size < 2) g.iniziale = null;
+}
+
+/** Gli ID dei due punti attivi, in ordine stabile. */
+function coppiaId(g) {
+  const k = [...g.dita.keys()];
+  return [k[0], k[1]];
 }
 
 /** I due punti attivi, in ordine stabile. */
@@ -42,12 +53,64 @@ function distanza(a, b) {
 }
 
 /**
+ * Sotto questa differenza (in pixel dello schermo) due separazioni delle dita
+ * sono la STESSA separazione.
+ *
+ * Giro di correzione 3, trovato verificando il Critico 1: le coordinate di un
+ * dito vero sono frazionarie (`clientX` 187.3333… su uno schermo a 3x), e
+ * `hypot` di due differenze che sono uguali in aritmetica esatta non lo e'
+ * sempre in virgola mobile — misurato in Node su 20 000 pan puri a
+ * coordinate frazionarie, il 18% finiva a `1.0000000000000002` invece che a
+ * `1`. Non e' un'estetica: `MaskBrush.jsx` accende `data-zoom` su `zoom > 1`,
+ * e quell'ulp fa CRESCERE il palco (233 → 550 sul telefono) sotto un pan che
+ * non ha ingrandito niente. Un milionesimo di pixel e' molto sotto qualunque
+ * sensore: nessun pizzico vero lo produce.
+ */
+const STESSA_SEPARAZIONE = 1e-6;
+
+/**
  * Un dito si muove.
  *
  * Torna `null` con un dito solo — **è il segnale che il gesto è lavoro**, e
- * chi chiama deve dipingere invece di spostare la vista. Con due dita torna
- * lo spostamento del loro centro e il fattore di ingrandimento **di questa
- * mossa** (non assoluto: chi chiama lo moltiplica sulla vista che ha).
+ * chi chiama deve dipingere invece di spostare la vista. Con due dita torna:
+ *
+ * - `dx`,`dy`: lo spostamento del centro delle dita, RELATIVO al passo
+ *   precedente (additivo: una somma non compone, non ha il problema di
+ *   `fattore`);
+ * - `fattore`: il rapporto fra la separazione ATTUALE delle dita e quella
+ *   misurata all'INIZIO del pizzico — assoluto, mai rispetto all'evento
+ *   precedente;
+ * - `assestato`: vero sull'evento che chiude una «ronda» (vedi sotto).
+ *
+ * **Giro di correzione 3, Critico 1 — `fattore` e' assoluto dall'inizio del
+ * gesto.** Era `dopo.d / prima.d`, il rapporto rispetto all'evento
+ * PRECEDENTE, che chi chiama moltiplicava nel proprio `z` evento dopo evento.
+ * Un pizzico e' un `pointermove` per DITO, non uno per gesto: un pan puro
+ * arriva come due eventi con un fattore intermedio lontano da 1 (nel caso
+ * del controllore 23/83 = 0,277), che la banda di allora riscriveva,
+ * corrompendo la base su cui il secondo evento moltiplicava — 1× finiva a
+ * 1,8×, e a 8× col passo uguale alla separazione. Ora `iniziale.d` si
+ * cattura UNA volta, al primo evento del pizzico, e non si tocca piu' finche'
+ * il pizzico dura: `z = zIniziale × separazione / separazioneIniziale`
+ * (vedi `accumula`) e il ritorno esatto di un pan puro — o di qualunque
+ * pizzico che riporti le dita alla separazione di partenza — e' vero PER
+ * COSTRUZIONE, non per una somma di errori che si compensano.
+ *
+ * **La «ronda» NON tocca `fattore`.** Una ronda si chiude quando ENTRAMBE le
+ * dita della coppia si sono mosse almeno una volta dall'ultima chiusura:
+ * dentro una ronda (un dito solo spostato) la separazione vera e' davvero,
+ * per un evento, diversa. Serve solo a chi pinza lo spostamento (`limita`,
+ * via `accumula`): e' il momento in cui lo zoom mostrato e' di nuovo
+ * affidabile come misura del margine. Una prima versione di questo giro
+ * ri-basava ANCHE `iniziale.d` a ogni ronda: il prodotto telescopico e'
+ * uguale in aritmetica esatta ma non in virgola mobile — misurato, uno
+ * spread e ritorno alla separazione di partenza nello stesso tocco finiva a
+ * `1.5000000000000002` invece di `1.5` nel 57% dei casi. Qui non si ri-basa.
+ *
+ * Limite noto, non coperto da prova: se durante un pizzico a due dita ne
+ * atterra una terza e poi si alza una delle due originarie, la coppia attiva
+ * cambia ma `iniziale` resta quello della coppia di partenza. Un caso a tre
+ * dita, mai richiesto da nessun finding. Fuori scope.
  */
 export function muove(g, { id, x, y }) {
   if (!g.dita.has(id)) return null;
@@ -55,56 +118,64 @@ export function muove(g, { id, x, y }) {
     g.dita.set(id, { x, y });
     return null;
   }
+  const [idA, idB] = coppiaId(g);
   const [a1, b1] = coppia(g);
   const prima = { cx: (a1.x + b1.x) / 2, cy: (a1.y + b1.y) / 2, d: distanza(a1, b1) };
+  if (!g.iniziale) g.iniziale = { d: prima.d, ronda: new Set() };
   g.dita.set(id, { x, y });
   const [a2, b2] = coppia(g);
   const dopo = { cx: (a2.x + b2.x) / 2, cy: (a2.y + b2.y) / 2, d: distanza(a2, b2) };
-  return { dx: dopo.cx - prima.cx, dy: dopo.cy - prima.cy, fattore: dopo.d / prima.d };
+  const ini = g.iniziale;
+  const fattore = Math.abs(dopo.d - ini.d) < STESSA_SEPARAZIONE ? 1 : dopo.d / ini.d;
+  if (id === idA || id === idB) ini.ronda.add(id);
+  const assestato = ini.ronda.has(idA) && ini.ronda.has(idB);
+  if (assestato) ini.ronda = new Set();
+  return { dx: dopo.cx - prima.cx, dy: dopo.cy - prima.cy, fattore, assestato };
 }
 
 /**
- * Quanto puo' allontanarsi lo zoom grezzo dai limiti veri prima di essere
- * comunque fermato.
+ * Accumula un evento del gesto SENZA pinzare ai limiti dichiarati.
  *
- * Non e' il pavimento vero (quello lo mette `limita`, sulla vista mostrata):
- * e' una banda piu' larga, il cui unico scopo e' impedire che una stretta
- * violenta mandi `z` lontanissimo da `min` (o da `max`), lasciando poi lo
- * schermo muto per piu' raddoppi delle dita mentre `z` grezzo torna dentro
- * la vista (Giro di correzione 2, Nuovo Problema 2).
+ * Il valore grezzo vive per tutta la durata del gesto e si pinza *una sola
+ * volta*, con `applica`, quando si scrive lo stato mostrato (Giro di
+ * correzione 1, Critico 2: pinzare a ogni evento e ripartire dal pinzato fa
+ * sbagliare il gesto appena un passo intermedio tocca un limite).
  *
- * Meta' via (`min/2`, `max*2`): abbastanza stretta da rispondere quasi
- * subito quando il pizzico si inverte, abbastanza larga da non toccare MAI
- * un pan vero che sfiora il pavimento a meta' gesto — i due numeri del Giro
- * di correzione 1 (0.9 e 0.75, con `min=1`) restano ben dentro la banda, e
- * il pan torna esatto dov'era partito.
+ * - `x`,`y`: additivi, un delta per evento.
+ * - `z`: NON si accumula. Si RICALCOLA da `zIniziale` — lo zoom di quando il
+ *   pizzico e' cominciato, catturato la prima volta che si passa di qui e poi
+ *   portato avanti invariato — per `fattore`, assoluto dall'inizio del
+ *   pizzico (vedi `muove`). `fattore` assente (i pulsanti `+`/`−`, un
+ *   `applica` di sola pinza) lascia `z` com'e'.
+ * - `zMargine`: lo zoom su cui `limita` misura il margine dello spostamento.
+ *   Parte da `zIniziale` e si aggiorna allo `z` appena calcolato SOLO sugli
+ *   eventi che chiudono una ronda (`assestato`), mai a meta'.
+ *
+ * **Perche' due zoom e non uno (Giro 3, Nuovo Problema 3).** A meta' ronda
+ * lo zoom mostrato trema davvero (un dito spostato, l'altro no: le dita SONO
+ * piu' vicine per un evento). Se il margine si misura su quello, un tuffo
+ * verso 1× lo azzera — a 1× il margine orizzontale e' identicamente zero —
+ * e lo spostamento collassa a scatto (misurato: da 2×, `translate(-60px,0)`
+ * passava per `""`). Misurato invece sullo zoom di inizio gesto e basta, uno
+ * spread seguito da un pan nello STESSO tocco resterebbe pinzato sul margine
+ * di prima dello spread finche' le dita non si alzano. La ronda da' a
+ * ciascuno il suo: il margine segue lo zoom, ma solo quando lo zoom e' una
+ * misura vera.
+ *
+ * **Storia — `bandaGrezza` non c'e' piu'.** Fino al Giro 2, `z` era
+ * `grezza.z × fattore` per evento, pinzato a una banda larga (`min/2`..
+ * `max×2`) contro la fuga di una stretta violenta. Bandare il valore
+ * intermedio RISCRIVEVA l'unica memoria che il gesto aveva del suo inizio
+ * (23/83 bandato a 0,5, poi ×83/23 = 1,8× invece di 1×). Con `z` ricalcolato
+ * sempre dallo stesso `zIniziale` non c'e' niente che possa fuggire: una
+ * stretta violenta da' uno `z` grezzo basso e vero, e la riapertura lo
+ * ricalcola subito dalla stessa base.
  */
-function bandaGrezza(z, { min = 1, max = 8 } = {}) {
-  return Math.min(max * 2, Math.max(min / 2, z));
-}
-
-/**
- * Accumula uno spostamento SENZA pinzare ai limiti dichiarati.
- *
- * Serve a chi chiama quando un gesto dura più eventi (il pizzico a due dita
- * è così: un `pointermove` per dito, non uno per gesto): il valore grezzo
- * si accumula per tutta la durata del gesto e si pinza *una sola volta*,
- * con `applica` qui sotto, quando si scrive lo stato mostrato.
- *
- * Pinzare a ogni evento e poi ripartire dal risultato già pinzato è il
- * difetto del giro di correzione 1 (Critico 2): un pavimento toccato per un
- * istante intermedio (il dito che per caso arriva per primo) diventa la
- * nuova base, e un pan puro — che non cambia la distanza fra le dita — non
- * torna più esattamente dove era partito.
- *
- * Non pinza ai limiti veri, ma pinza a una banda molto più larga
- * (`bandaGrezza`, Giro di correzione 2): senza, una stretta che chiude le
- * dita quasi a zero manda `z` grezzo a un valore lontanissimo dal pavimento,
- * e serve poi più di un raddoppio delle dita solo per rientrare in vista —
- * un vuoto morto che chi tocca legge come "il pizzico non risponde più".
- */
-export function accumula(grezza, { dx = 0, dy = 0, fattore = 1 } = {}, limiti) {
-  return { x: grezza.x + dx, y: grezza.y + dy, z: bandaGrezza(grezza.z * fattore, limiti) };
+export function accumula(grezza, { dx = 0, dy = 0, fattore, assestato = false } = {}) {
+  const zIniziale = grezza.zIniziale ?? grezza.z;
+  const z = fattore == null ? grezza.z : zIniziale * fattore;
+  const zMargine = assestato ? z : (grezza.zMargine ?? zIniziale);
+  return { x: grezza.x + dx, y: grezza.y + dy, z, zIniziale, zMargine };
 }
 
 /**
@@ -121,31 +192,36 @@ export function accumula(grezza, { dx = 0, dy = 0, fattore = 1 } = {}, limiti) {
  * senza mai scoprire un vuoto oltre — ne' MAI lasciare che la tela esca
  * dalla cornice.
  *
- * **Giro di correzione 2 — corretto un errore del giro precedente:** qui NON
- * si azzera più `x`/`y` quando `z` tocca il pavimento. La ragione data
- * allora — «a 1x l'immagine intera e' visibile, non c'e' niente da
- * spostare» — è falsa in generale: dipende dalla geometria vera (un palco
- * più basso della tela lascia margine anche a 1x), ed era proprio quel
- * azzeramento a togliere l'unico modo che un dito aveva di raggiungere il
- * fondo dell'immagine a 1x, con `touch-action: none` a spegnere lo
- * scorrimento nativo. Il margine geometrico basta da solo: quando la tela
- * combacia col palco (`tela*z <= palco` su un asse) il margine E' zero, e
- * lo spostamento torna a zero DI CONSEGUENZA — non per un caso speciale, e
- * senza salti a metà gesto (Nuovo Problema 3).
+ * **Giro di correzione 2:** qui NON si azzera `x`/`y` quando `z` tocca il
+ * pavimento. Un palco piu' basso della tela lascia margine anche a 1x, ed
+ * era quell'azzeramento a togliere l'unico modo che un dito aveva di
+ * raggiungere il fondo dell'immagine, con `touch-action: none` a spegnere lo
+ * scorrimento nativo. Quando la tela combacia col palco su un asse il
+ * margine E' zero, e lo spostamento torna a zero DI CONSEGUENZA.
  *
- * Senza geometria (`palco`/`tela` mancanti) si pinza solo `z`: e' il caso
- * dei test che non hanno un palco da misurare.
+ * **Giro di correzione 3:** il margine si misura su `zMargine` (vedi
+ * `accumula`), non sullo `z` istantaneo; senza `zMargine` (i pulsanti, un
+ * passo isolato) si usa `z`. La LARGHEZZA resa resta lo `z` istantaneo: quel
+ * tremolio a meta' ronda e' inerente a eventi che arrivano un dito alla
+ * volta, e su un telefono vero (un evento per dito per fotogramma, pochi
+ * pixel ciascuno) e' sotto il pixel.
+ *
+ * Senza geometria (`palco`/`tela` mancanti) si pinza solo `z`.
  */
-function limita({ x, y, z }, { min = 1, max = 8, palco, tela } = {}) {
+function limita({ x, y, z, zMargine }, { min = 1, max = 8, palco, tela } = {}) {
   const zl = Math.min(max, Math.max(min, z));
   if (!palco || !tela) return { x, y, z: zl };
-  const larghezzaTela = palco.w * zl;
+  const zm = Math.min(max, Math.max(min, zMargine ?? z));
+  const larghezzaTela = palco.w * zm;
   const altezzaTela = larghezzaTela * (tela.h / tela.w);
+  // Giro 3, Minore 3: `Math.max(0, …)` non e' decorativo. Con una tela piu'
+  // bassa (o piu' stretta) del palco lo sconfinamento e' NEGATIVO, e
+  // `Math.min(-m, Math.max(m, v))` pinzerebbe `v` esattamente a `-m`,
+  // cioe' spingerebbe la tela FUORI dal palco invece di lasciarla centrata.
   const margineX = Math.max(0, (larghezzaTela - palco.w) / 2);
   const margineY = Math.max(0, (altezzaTela - palco.h) / 2);
-  // `|| 0` non `?? 0`: qui serve proprio a normalizzare un -0 (Math.min/max
-  // possono tornarlo quando il margine è 0) a 0, non a sostituire un valore
-  // assente — un -0 confonderebbe solo chi confronta con `Object.is`.
+  // `|| 0` non `?? 0`: normalizza un -0 (Math.min/max possono tornarlo
+  // quando il margine è 0) a 0 — un -0 confonderebbe chi usa `Object.is`.
   return {
     x: Math.min(margineX, Math.max(-margineX, x)) || 0,
     y: Math.min(margineY, Math.max(-margineY, y)) || 0,
@@ -155,5 +231,5 @@ function limita({ x, y, z }, { min = 1, max = 8, palco, tela } = {}) {
 
 /** La vista nuova, dentro i limiti. Un ingrandimento fuori scala è un guasto. */
 export function applica(vista, mossa = {}, limiti) {
-  return limita(accumula(vista, mossa, limiti), limiti);
+  return limita(accumula(vista, mossa), limiti);
 }

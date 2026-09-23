@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
 import { guidaDritta, maniglia, puntoDellaGuida, spostaManiglia, tracciaGuidata } from '../engine/righello.js';
 import { nuovoGesto, giu, muove, su, dueDita, applica, accumula } from '../engine/gesti.js';
@@ -177,6 +177,31 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
     if (!palco) return { min: 1, max: ZOOM_MAX };
     return { min: 1, max: ZOOM_MAX, palco, tela: { w: s.w, h: s.h } };
   };
+  /**
+   * Il palco cambia misura quando `data-zoom` si accende o si spegne: si
+   * ripinza `vista` sulla misura NUOVA, dopo che il DOM l'ha presa.
+   *
+   * Giro di correzione 3, Importante 2, la meta' dei pulsanti: `+` e `−`
+   * pinzano sul palco di PRIMA del render che accende o spegne `data-zoom`
+   * (182/233 contro 550 sul telefono). Da 1× a 2× il margine calcolato sul
+   * palco basso e' piu' largo di quello vero: con palco 251×233/550, una
+   * tela alta a 1× fra 233 e 317 px (un 4:5 verticale ne fa 314) portata al
+   * margine resta fuori di qualche pixel dopo il `+` — `(2T−550)/2 <
+   * (T−233)/2` per `T < 317`. Qui si rilegge dal vivo UNA volta,
+   * a DOM aggiornato. Durante un gesto a due dita non si tocca niente: li'
+   * comanda il palco catturato (stabilita' a meta' gesto), e il rilascio
+   * ripinza da se' (vedi `end`).
+   */
+  const ingrandita = zoom > 1;
+  useLayoutEffect(() => {
+    if (palcoCatturato.current) return;
+    setVista((v) => {
+      const n = applica(v, {}, limiti());
+      return n.x === v.x && n.y === v.y && n.z === v.z ? v : n;
+    });
+    // Solo quando `data-zoom` cambia: `limiti` si ricrea a ogni render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ingrandita]);
   /**
    * La guida del righello, e cosa si sta trascinando.
    *
@@ -372,7 +397,7 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
       // scrivono i pulsanti +/-: nessuno dei due sovrascrive o ignora
       // l'altro.
       ev.preventDefault();
-      vistaGrezza.current = accumula(vistaGrezza.current || vista, m, limiti());
+      vistaGrezza.current = accumula(vistaGrezza.current || vista, m);
       setVista(applica(vistaGrezza.current, {}, limiti()));
       return;
     }
@@ -421,8 +446,26 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
     // ricattura il palco daccapo, invece di tenere quello di un gesto ormai
     // chiuso.
     if (!dueDita(gesto.current)) {
+      const gestoFinito = palcoCatturato.current !== null;
       vistaGrezza.current = null;
       palcoCatturato.current = null;
+      if (gestoFinito) {
+        // IMPORTANTE 2 (Giro 3): il palco catturato all'inizio del gesto
+        // puo' non descrivere piu' il palco vero quando le dita si alzano —
+        // `.brush-stage[data-zoom]` (styles.css) fa crescere lo stage non
+        // appena `z` supera 1x, A META' GESTO, e il palco catturato resta
+        // quello piccolo di prima per tutta la durata (di proposito, e' cio'
+        // che da' stabilita' DURANTE il gesto). Misurato nel browser: un
+        // pizzico che porta a 2x lascia il margine calcolato sul vecchio
+        // palco (233) invece di quello vero, ormai cresciuto (550) — la
+        // tela resta con una parte fuori dal palco finche' non arriva un
+        // tocco nuovo che ricattura tutto daccapo. Qui si ripinza `vista`
+        // UNA VOLTA, subito dopo il rilascio, sulla geometria LIVE
+        // (`limiti()` legge dal vivo perche' `palcoCatturato.current` e'
+        // gia' `null` sopra): non tocca la stabilita' durante il gesto,
+        // solo il fotogramma del rilascio.
+        setVista((v) => applica(v, {}, limiti()));
+      }
     }
     presa.current = null;
     const s = stateRef.current;
@@ -555,7 +598,7 @@ export default function MaskBrush({ source, cutout, modoIniziale, onChange, onDo
           due dita, `vista.x/y` sposta la tela sopra quello: e' l'unica via
           per chi tocca, perche' `touch-action: none` (sotto) toglie apposta
           lo scorrimento nativo del browser sulla tela. */}
-      <div className="brush-stage" data-zoom={zoom > 1 || undefined} ref={stageRef}>
+      <div className="brush-stage" data-zoom={ingrandita || undefined} ref={stageRef}>
         <canvas
           ref={canvasRef}
           onPointerDown={begin}

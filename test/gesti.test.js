@@ -24,15 +24,20 @@ test('due dita che scorrono insieme spostano e non ingrandiscono', () => {
   giu(g, { id: 2, x: 100, y: 0 });
   const m1 = muove(g, { id: 1, x: 20, y: 0 });
   const m2 = muove(g, { id: 2, x: 120, y: 0 });
-  // Difetto nella prova originale del brief: `muove` processa UN dito alla
-  // volta, quindi un pan a due dita arriva come DUE eventi separati. Da
-  // f1=(0,0) f2=(100,0): dopo il primo evento la distanza scende 100→80
-  // (fattore 0.8, le dita sono davvero più vicine A META' GESTO), dopo il
-  // secondo risale 80→100 (fattore 1.25). Pretendere che m2.fattore da solo
-  // sia ~1 è falso per costruzione: chiede al modulo di mentire su uno stato
-  // intermedio reale. La proprietà vera è che un pan COMPLETO non cambia la
-  // scala: il PRODOTTO dei due fattori torna a 1 (0.8 × 1.25 = 1 esatto).
-  assert.ok(Math.abs(m1.fattore * m2.fattore - 1) < 0.01, 'un pan completo non deve cambiare la scala');
+  // `muove` processa UN dito alla volta, quindi un pan a due dita arriva
+  // come DUE eventi separati. Da f1=(0,0) f2=(100,0): dopo il primo evento
+  // la distanza scende 100→80 (le dita sono davvero più vicine A META'
+  // GESTO), dopo il secondo risale 80→100.
+  //
+  // Giro di correzione 3, Critico 1: `fattore` non è più il rapporto
+  // rispetto all'evento PRECEDENTE — è il rapporto ASSOLUTO rispetto
+  // all'inizio del pizzico (qui, la distanza 100 misurata al primo evento).
+  // Un pan completo che riporta le dita alla distanza di partenza dà quindi
+  // `fattore ≈ 1` GIÀ da solo sull'ultimo evento, senza bisogno di
+  // moltiplicare per quello intermedio: non c'è più niente da comporre, ed
+  // è esattamente il punto della correzione (vedi `gesti.js`).
+  assert.ok(Math.abs(m1.fattore - 0.8) < 0.01, 'a meta\' gesto la distanza vera e\' scesa a 80/100');
+  assert.ok(Math.abs(m2.fattore - 1) < 0.01, 'un pan completo torna alla distanza di partenza: fattore assoluto 1, non un prodotto');
   assert.ok(m1.dx + m2.dx > 0, 'lo spostamento va nella direzione delle dita');
 });
 
@@ -64,42 +69,145 @@ test('Critico 1: sopra il pavimento lo spostamento resta intatto', () => {
   assert.deepEqual(r, { x: 260, y: -140, z: 2 });
 });
 
-test('Critico 2: un pan puro che parte dal pavimento ci torna, anche se un passo intermedio lo sfonda', () => {
-  // La proprieta' che il controllore chiede: un gesto completo che non
-  // cambia la distanza fra le dita non deve cambiare lo zoom — nemmeno se,
-  // a meta' gesto (un dito che si muove prima dell'altro, il caso comune
-  // per come `muove` processa un dito alla volta), il fattore intermedio
-  // scende sotto il pavimento. Qui si accumula grezzo (mai pinzato) e si
-  // pinza una sola volta, come deve fare chi chiama (MaskBrush.jsx).
-  let grezza = { x: 0, y: 0, z: 1.5 };
-  grezza = accumula(grezza, { dx: 30, dy: 0, fattore: 0.6 }); // 1.5 × 0.6 = 0.9: sotto il pavimento a meta' gesto
-  grezza = accumula(grezza, { dx: 30, dy: 0, fattore: 1.25 / 0.9 }); // risale esattamente a 1.25: il gesto e' un pan puro
-  const vista = applica(grezza, {}, { min: 1, max: 8 });
-  assert.ok(Math.abs(vista.z - 1.25) < 1e-9, `atteso 1.25, ottenuto ${vista.z}`);
-  assert.equal(vista.x, 60, 'lo spostamento del pan resta: qui non si tocca il pavimento, solo lo si sfiora a meta\' gesto');
+// --- Giro di correzione 3 --------------------------------------------------
+//
+// Critico 1: `bandaGrezza` corrompeva un pan puro AL PAVIMENTO. Le due prove
+// di Giro 1 sopra (rimosse: costruivano `fattore` a mano come rapporto
+// PER-EVENTO, la semantica vecchia che la correzione elimina — vedi
+// `gesti.js`, `muove`) sono sostituite da queste, che passano per il vero
+// gesto (`giu`/`muove`), coi numeri ESATTI misurati dal controllore nel
+// browser: due dita a 83px, un passo di 60px a testa, partenza 1×.
+
+test('Critico 1 (Giro 3): un pan puro a 1×, dita a 83px e passo di 60px, finisce ESATTAMENTE a 1×', () => {
+  const g = nuovoGesto();
+  giu(g, { id: 1, x: 0, y: 0 });
+  giu(g, { id: 2, x: 83, y: 0 });
+  // Evento 1/2: il dito destro si muove di -60. La separazione vera scende
+  // a 23px — 23/83 = 0,277, ben sotto il vecchio pavimento (min/2 = 0,5):
+  // e' esattamente il passo che la banda riscriveva.
+  const m1 = muove(g, { id: 2, x: 23, y: 0 });
+  let grezza = accumula({ x: 0, y: 0, z: 1 }, m1);
+  assert.ok(Math.abs(grezza.z - 23 / 83) < 1e-9, `intermedio: atteso ${23 / 83}, ottenuto ${grezza.z}`);
+  // Evento 2/2: il dito sinistro si muove di -60. La separazione torna a
+  // 83px: il gesto e' un pan puro.
+  const m2 = muove(g, { id: 1, x: -60, y: 0 });
+  grezza = accumula(grezza, m2);
+  // ESATTO, non «entro 1e-9»: a 1× anche un ulp accende `data-zoom`
+  // (`zoom > 1`) e fa crescere il palco — vedi la prova a coordinate
+  // frazionarie piu' sotto.
+  assert.equal(grezza.z, 1, `atteso 1 esatto, ottenuto ${grezza.z} (il difetto reale dava 1.8)`);
+  assert.equal(applica(grezza, {}, { min: 1, max: 8 }).z, 1);
 });
 
-test('Critico 2: da z=2.5, un pan puro con un passo intermedio sotto il pavimento torna a 2.5, non 3.6', () => {
-  // I numeri del report (§5): «da z = 2.5, un pan puro di 60px con le dita
-  // a 83px l'una dall'altra → z = 3.6». Qui gli stessi fattori, accumulati
-  // grezzi e pinzati una sola volta: lo zoom deve tornare esattamente 2.5.
-  let grezza = { x: 0, y: 0, z: 2.5 };
-  grezza = accumula(grezza, { dx: 30, dy: 0, fattore: 0.3 }); // 2.5×0.3=0.75: sotto il pavimento a meta' gesto
-  grezza = accumula(grezza, { dx: 30, dy: 0, fattore: 1 / 0.3 }); // e torna esattamente a 2.5
-  const vista = applica(grezza, {}, { min: 1, max: 8 });
-  assert.ok(Math.abs(vista.z - 2.5) < 1e-9, `atteso 2.5, ottenuto ${vista.z}`);
+test('Critico 1 (Giro 3): passo == separazione, stesso pan puro, finisce ESATTAMENTE a 1×', () => {
+  // Il caso estremo del report («step == separation → 8×»): le dita si
+  // sfiorano a meta' gesto (`distanza` le pinza a 1px, mai a zero).
+  const g = nuovoGesto();
+  giu(g, { id: 1, x: 0, y: 0 });
+  giu(g, { id: 2, x: 83, y: 0 });
+  const m1 = muove(g, { id: 2, x: 0, y: 0 }); // -83: le dita si toccano
+  let grezza = accumula({ x: 0, y: 0, z: 1 }, m1);
+  const m2 = muove(g, { id: 1, x: -83, y: 0 }); // -83: torna alla separazione di partenza
+  grezza = accumula(grezza, m2);
+  assert.equal(grezza.z, 1, `atteso 1 esatto, ottenuto ${grezza.z} (il difetto reale dava 8)`);
 });
 
-test('Critico 2: un fotogramma perso durante un pan da z=1 non manda lo zoom a 6', () => {
-  // Il secondo numero del report: «da z = 1, un fotogramma perso durante un
-  // pan di 100px → z = 6». Un fotogramma perso e' semplicemente un passo di
-  // `accumula` in meno da parte di chi chiama: il pinzare-una-volta-sola
-  // non introduce comunque zoom dal nulla quando il fattore complessivo
-  // resta 1.
-  let grezza = { x: 0, y: 0, z: 1 };
-  grezza = accumula(grezza, { dx: 100, dy: 0, fattore: 1 }); // un solo passo: nessun cambio di scala
-  const vista = applica(grezza, {}, { min: 1, max: 8 });
-  assert.equal(vista.z, 1);
+test('Critico 1 (Giro 3): la stessa proprieta\' vale da un pavimento diverso da 1 (z=1.5 e z=2.5)', () => {
+  // Generalizza le due prove sopra: qualunque sia lo zoom di partenza del
+  // gesto, un pan puro (separazione di ritorno) lo lascia intatto — perche'
+  // `accumula` ricalcola sempre da `zIniziale`, mai da un valore intermedio.
+  for (const zPartenza of [1.5, 2.5]) {
+    const g = nuovoGesto();
+    giu(g, { id: 1, x: 0, y: 0 });
+    giu(g, { id: 2, x: 83, y: 0 });
+    const m1 = muove(g, { id: 2, x: 23, y: 0 });
+    let grezza = accumula({ x: 0, y: 0, z: zPartenza }, m1);
+    const m2 = muove(g, { id: 1, x: -60, y: 0 });
+    grezza = accumula(grezza, m2);
+    assert.equal(grezza.z, zPartenza, `da z=${zPartenza}, atteso ${zPartenza} esatto, ottenuto ${grezza.z}`);
+  }
+});
+
+/** Numeri pseudo-casuali RIPETIBILI: una prova che cambia a ogni giro non prova niente. */
+function lcg(seme) {
+  let s = seme >>> 0;
+  return () => {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    return s / 2 ** 32;
+  };
+}
+
+/**
+ * Una coordinata come la da' un dito vero su uno schermo a 3x: un terzo di
+ * pixel CSS. Non un dettaglio — i numeri di `lcg` da soli hanno 32 bit di
+ * mantissa, e le loro somme e differenze sono ESATTE in virgola mobile: la
+ * prova qui sotto passava verde anche senza la tolleranza che deve
+ * difendere (misurato: 0 casi su 800). A terzi di pixel, 278 su 800.
+ */
+const terzi = (v) => Math.round(v * 3) / 3;
+
+test('Critico 1 (Giro 3): un pan puro a coordinate FRAZIONARIE (dita vere) lascia lo zoom esatto, 1× e 2.5×', () => {
+  // Trovato verificando: `clientX` di un dito vero e' frazionario, e
+  // `hypot` di differenze uguali in aritmetica esatta non lo e' sempre in
+  // virgola mobile — senza la tolleranza in `muove`, 278 di questi 800 pan
+  // finivano a 1.0000000000000002 (o piu'), che a 1× accende `data-zoom` e fa crescere
+  // il palco sotto un gesto che non ha ingrandito niente.
+  const r = lcg(20260923);
+  for (const zPartenza of [1, 2.5]) {
+    for (let i = 0; i < 400; i++) {
+      const a = { x: terzi(r() * 390), y: terzi(r() * 844) };
+      const b = { x: terzi(r() * 390), y: terzi(r() * 844) };
+      const passo = { x: terzi((r() - 0.5) * 240), y: terzi((r() - 0.5) * 240) };
+      const g = nuovoGesto();
+      giu(g, { id: 1, ...a });
+      giu(g, { id: 2, ...b });
+      let grezza = { x: 0, y: 0, z: zPartenza };
+      grezza = accumula(grezza, muove(g, { id: 2, x: b.x + passo.x, y: b.y + passo.y }));
+      grezza = accumula(grezza, muove(g, { id: 1, x: a.x + passo.x, y: a.y + passo.y }));
+      const vista = applica(grezza, {}, { min: 1, max: 8 });
+      assert.equal(vista.z, zPartenza, `pan ${i} da ${zPartenza}×: ottenuto ${vista.z}`);
+    }
+  }
+});
+
+test('Critico 1 (Giro 3): allargare e poi tornare alla separazione di partenza, nello STESSO tocco, torna esatto', () => {
+  // `z` e' il rapporto ASSOLUTO dall'inizio del gesto, non un prodotto di
+  // rapporti per ronda: ri-basare `iniziale.d` a ogni ronda da' lo stesso
+  // numero in aritmetica esatta ma non in virgola mobile (misurato: 57% di
+  // questi casi a 1.5000000000000002).
+  const r = lcg(7);
+  for (let i = 0; i < 300; i++) {
+    const a = { x: terzi(r() * 390), y: terzi(r() * 844) };
+    const b = { x: terzi(r() * 390), y: terzi(r() * 844) };
+    const g = nuovoGesto();
+    giu(g, { id: 1, ...a });
+    giu(g, { id: 2, ...b });
+    let grezza = { x: 0, y: 0, z: 1.5 };
+    for (let k = 0; k < 3; k++) {
+      const s = terzi(r() * 80);
+      grezza = accumula(grezza, muove(g, { id: 1, x: a.x - s, y: a.y }));
+      grezza = accumula(grezza, muove(g, { id: 2, x: b.x + s, y: b.y }));
+    }
+    grezza = accumula(grezza, muove(g, { id: 1, ...a }));
+    grezza = accumula(grezza, muove(g, { id: 2, ...b }));
+    assert.equal(grezza.z, 1.5, `caso ${i}: ottenuto ${grezza.z}`);
+  }
+});
+
+test('Critico 2: un solo evento che non cambia la distanza vera non introduce zoom dal nulla', () => {
+  // Il secondo numero del report (Giro 1): «da z = 1, un fotogramma perso
+  // durante un pan di 100px → z = 6» — un difetto del vecchio meccanismo a
+  // compounding, che il Giro 3 elimina alla radice (vedi le prove Critico 1
+  // sopra). Qui la stessa idea di fondo, con un solo evento: id2 si sposta
+  // lungo un arco attorno a id1 (stessa distanza, 100, direzione diversa) —
+  // `fattore` deve restare 1, non introdurre zoom dal nulla.
+  const g = nuovoGesto();
+  giu(g, { id: 1, x: 0, y: 0 });
+  giu(g, { id: 2, x: 100, y: 0 });
+  const m = muove(g, { id: 2, x: 0, y: 100 }); // arco di raggio 100 attorno a id1: la distanza resta 100
+  assert.ok(Math.abs(m.fattore - 1) < 1e-9, `atteso 1, ottenuto ${m.fattore}`);
+  const grezza = accumula({ x: 0, y: 0, z: 1 }, m);
+  assert.equal(grezza.z, 1);
 });
 
 test('Importante 3: due dita nello stesso punto danno fattore finito, non Infinity', () => {
@@ -174,32 +282,42 @@ test('la tela non esce mai dalla cornice, a qualunque zoom', () => {
   assert.deepEqual(r, { x: -1064, y: -1402, z: 3 }, 'lo spostamento deve fermarsi al margine vero, non oltre');
 });
 
-test('Nuovo Problema 2: una stretta profonda non lascia una zona morta, un solo raddoppio rientra in vista', () => {
-  // Il difetto reale misurato nel browser: z grezzo corre libero (0.2, poi
-  // 0.4, poi 0.8 — DUE raddoppi senza alcun effetto visibile, il terzo porta
-  // finalmente a 1.6). Con la banda, lo stesso pizzico risponde súbito.
-  const limiti = { min: 1, max: 8 };
-  let grezza = { x: 0, y: 0, z: 2 };
-  grezza = accumula(grezza, { fattore: 0.1 }, limiti); // 2 × 0.1 = 0.2 grezzo
-  assert.equal(grezza.z, 0.5, 'la banda deve fermare lo zoom grezzo a min/2, non lasciarlo correre a 0.2');
+// Giro di correzione 3: `bandaGrezza` e' stata cancellata (vedi `gesti.js`,
+// storia in `accumula`) — le due prove precedenti la testavano direttamente
+// e sono sostituite da queste, che verificano la STESSA proprieta' (nessuna
+// zona morta dopo una stretta profonda) sul nuovo meccanismo: senza
+// compounding, non serve piu' una banda per garantirla.
 
-  grezza = accumula(grezza, { fattore: 2 }, limiti); // un SOLO raddoppio
-  assert.equal(grezza.z, 1, 'un solo raddoppio deve bastare a rientrare esattamente al pavimento');
+test('Nuovo Problema 2 (Giro 3): una stretta profonda, riaperta anche solo un po\', risponde SUBITO — nessuna banda necessaria', () => {
+  // Da un pizzico pulito a 2x (dita a 60px), una stretta violenta porta le
+  // dita quasi a toccarsi (4px: fattore reale assoluto 4/60), poi una
+  // riapertura MODESTA (non un ritorno ai 60px di partenza) le porta a 40px.
+  const g = nuovoGesto();
+  giu(g, { id: 1, x: 0, y: 0 });
+  giu(g, { id: 2, x: 60, y: 0 });
+  const stretta = muove(g, { id: 2, x: 4, y: 0 });
+  let grezza = accumula({ x: 0, y: 0, z: 2 }, stretta);
+  assert.ok(Math.abs(grezza.z - (2 * 4) / 60) < 1e-9, 'lo zoom grezzo riflette il rapporto FISICO vero, senza pavimento intermedio');
 
-  grezza = accumula(grezza, { fattore: 1.2 }, limiti); // un movimento piccolo, non un raddoppio
-  assert.ok(grezza.z > 1, 'subito dopo il pavimento un piccolo movimento e\' gia\' visibile: niente altra zona morta');
+  const riapertura = muove(g, { id: 2, x: 40, y: 0 });
+  grezza = accumula(grezza, riapertura);
+  // Rapporto assoluto dall'inizio del gesto: 40/60. Nessuna banda ha
+  // corrotto il riferimento nel mezzo, quindi la risposta e' immediata e
+  // proporzionale — non serve "recuperare" da un valore riscritto.
+  assert.ok(Math.abs(grezza.z - (2 * 40) / 60) < 1e-9, `atteso ${(2 * 40) / 60}, ottenuto ${grezza.z} — nessuna zona morta`);
+  assert.ok(grezza.z > 1, 'la riapertura modesta e\' gia\' visibile sopra il pavimento, senza raddoppi a vuoto');
 });
 
-test('Nuovo Problema 2: la banda non tocca un pan che sfiora appena il pavimento (Critico 2 resta esatto)', () => {
-  // Gli stessi numeri del Critico 2 (giro 1): un dip a 0.75 e uno a 0.9 sono
-  // ben dentro la banda (min/2 = 0.5) e non devono MAI essere corretti qui,
-  // o il pan non torna esattamente al punto di partenza.
-  const limiti = { min: 1, max: 8 };
-  let grezza = { x: 0, y: 0, z: 2.5 };
-  grezza = accumula(grezza, { fattore: 0.3 }, limiti); // 2.5 × 0.3 = 0.75, sopra la banda: intatto
-  assert.equal(grezza.z, 0.75, 'un dip modesto non deve essere toccato dalla banda');
-  grezza = accumula(grezza, { fattore: 1 / 0.3 }, limiti);
-  assert.ok(Math.abs(grezza.z - 2.5) < 1e-9, 'il pan torna esattamente a 2.5, la banda non ha corrotto il valore vero');
+test('Nuovo Problema 2 (Giro 3): un dip modesto (Critico 1 resta esatto) non ha piu\' bisogno di una banda per tornare esatto', () => {
+  const g = nuovoGesto();
+  giu(g, { id: 1, x: 0, y: 0 });
+  giu(g, { id: 2, x: 83, y: 0 });
+  const m1 = muove(g, { id: 2, x: 25, y: 0 }); // 25/83 ≈ 0.3, un dip modesto
+  let grezza = accumula({ x: 0, y: 0, z: 2.5 }, m1);
+  assert.ok(Math.abs(grezza.z - (2.5 * 25) / 83) < 1e-9, 'un dip modesto non deve essere toccato da nessuna banda: non ce n\'e\' piu\' una');
+  const m2 = muove(g, { id: 1, x: -58, y: 0 }); // torna alla separazione di partenza (83)
+  grezza = accumula(grezza, m2);
+  assert.ok(Math.abs(grezza.z - 2.5) < 1e-9, 'il pan torna esattamente a 2.5');
 });
 
 test('Nuovo Problema 3: il pavimento non fa piu\' scattare uno strappo nello spostamento', () => {
@@ -216,4 +334,98 @@ test('Nuovo Problema 3: il pavimento non fa piu\' scattare uno strappo nello spo
     'un salto qui e\' esattamente il vecchio sfarfallio a meta\' gesto',
   );
   assert.notEqual(alPavimento.y, 0, 'il pavimento non deve piu\' azzerare da solo lo spostamento');
+});
+
+// Giro di correzione 3, Nuovo Problema 3: lo sfarfallio si e' rivelato in
+// due meta' distinte. La prova sopra (Giro 2) copre SOLO y, con un palco
+// piu' corto della tela dove il margine al pavimento e' comunque non-zero
+// per la geometria — non poteva vedere il difetto vero, che vive sull'asse
+// x: li' il margine E' identicamente zero a z=1 PER COSTRUZIONE
+// (`larghezzaTela = palco.w * z`, sempre), quindi un tuffo transitorio di z
+// durante un pan (un dito alla volta, l'evento intermedio vede DAVVERO le
+// dita piu' vicine) faceva collassare a scatto lo spostamento in x, non solo
+// tremolare la larghezza — il collasso e' la stessa regressione che il Giro
+// 2 aveva gia' tolto, rientrata dalla geometria invece che da un caso
+// speciale.
+
+test('Nuovo Problema 3 (Giro 3): un tuffo intermedio di z non collassa piu\' il pan in x — misure del report', () => {
+  // Riproduce esattamente la tabella del controllore: partenza 2×,
+  // `translate(-60px, 0px)`, un pan con le dita a 83px e un passo di 60px.
+  const limiti = { min: 1, max: 8, palco: { w: 1064, h: 1064 }, tela: { w: 4000, h: 4000 } };
+  const g = nuovoGesto();
+  giu(g, { id: 1, x: 0, y: 0 });
+  giu(g, { id: 2, x: 83, y: 0 });
+
+  const m1 = muove(g, { id: 2, x: 23, y: 0 }); // -60: la separazione vera scende a 23/83
+  let grezza = accumula({ x: -60, y: 0, z: 2 }, m1);
+  const intermedio = applica(grezza, {}, limiti);
+  assert.ok(
+    Math.abs(intermedio.x - -90) < 1e-9,
+    `il fotogramma intermedio non deve collassare x: atteso -90, ottenuto ${intermedio.x} (il difetto reale dava 0)`,
+  );
+
+  const m2 = muove(g, { id: 1, x: -60, y: 0 }); // -60: la separazione torna a 83, il gesto e' un pan puro
+  grezza = accumula(grezza, m2);
+  const fine = applica(grezza, {}, limiti);
+  assert.ok(Math.abs(fine.z - 2) < 1e-9, `atteso 2×, ottenuto ${fine.z}`);
+  assert.ok(Math.abs(fine.x - -120) < 1e-9, `atteso -120px, ottenuto ${fine.x}`);
+});
+
+// Minore 3 (Giro 3): la guardia `Math.max(0, ...)` sul margine non e'
+// decorativa — protegge esattamente il caso "tela piu' bassa del palco su
+// un asse" (una tela panoramica in un palco quadrato, o il palco cresciuto
+// a meta' gesto come nell'Importante 2). Senza, uno sconfinamento negativo
+// pinza la posizione AL margine negativo, spingendo la tela fuori dal
+// palco invece di lasciarla centrata.
+
+test('Minore 3 (Giro 3): un margine negativo (tela piu\' bassa del palco) non spinge la tela fuori dalla cornice', () => {
+  const limiti = { min: 1, max: 8, palco: { w: 1000, h: 1000 }, tela: { w: 1000, h: 200 } };
+  // A z=1, larghezzaTela=1000, altezzaTela=1000*(200/1000)=200: la tela e'
+  // 800px piu' bassa del palco quadrato. Senza la guardia, margineY
+  // sarebbe -400, e `Math.min(-400, Math.max(400, y))` pinzerebbe y a -400
+  // per qualunque y di partenza.
+  const r = applica({ x: 0, y: 500, z: 1 }, {}, limiti);
+  assert.equal(r.y, 0, 'un margine negativo deve azzerarsi, non spingere la tela fuori dal palco');
+});
+
+// Trovato VERIFICANDO Nuovo Problema 3 (non un finding del controllore): un
+// margine misurato sullo zoom di inizio gesto e basta protegge il pan dal
+// tuffo transitorio, ma lo congela se, SENZA sollevare le dita, un pizzico
+// che ingrandisce e' seguito da un pan — un gesto singolo e naturale su un
+// telefono. `zMargine` (vedi `accumula`) si aggiorna a fine ronda: il pan
+// che segue uno spread a 2x si misura sul margine di 2x, non su quello di
+// 1x. Lo ZOOM invece resta assoluto dall'inizio del gesto (prove sopra).
+
+test('un pizzico che ingrandisce e poi continua a spostare, nello STESSO tocco, non blocca il pan sul margine vecchio', () => {
+  const limiti = { min: 1, max: 8, palco: { w: 251, h: 182 }, tela: { w: 4000, h: 4000 } };
+  const g = nuovoGesto();
+  giu(g, { id: 1, x: 0, y: 0 });
+  giu(g, { id: 2, x: 100, y: 0 });
+
+  // Ronda 1 — spread: separazione 100 → 200 (fattore 2, z: 1 → 2), senza
+  // sollevare le dita.
+  let grezza = { x: 0, y: -34.5, z: 1 }; // partenza: gia' al margine vero di 1x
+  const s1 = muove(g, { id: 1, x: -50, y: 0 });
+  grezza = accumula(grezza, s1);
+  const s2 = muove(g, { id: 2, x: 150, y: 0 });
+  assert.equal(s2.assestato, true, 'la ronda si chiude quando ENTRAMBE le dita si sono mosse');
+  grezza = accumula(grezza, s2);
+  assert.ok(Math.abs(grezza.z - 2) < 1e-9, `dopo lo spread atteso 2, ottenuto ${grezza.z}`);
+
+  // Ronda 2 — pan, STESSO tocco: entrambe le dita salgono di 70px, un
+  // evento a testa, senza mai sollevarle.
+  const p1 = muove(g, { id: 1, x: -50, y: -70 });
+  grezza = accumula(grezza, p1);
+  const p2 = muove(g, { id: 2, x: 150, y: -70 });
+  assert.equal(p2.assestato, true);
+  grezza = accumula(grezza, p2);
+
+  const vista = applica(grezza, {}, limiti);
+  // Al vero margine di 2x — (251×2 − 182)/2 = 160 — uno spostamento di
+  // −104,5 sta ben dentro: NON deve restare bloccato ai −34,5 del margine
+  // di 1x (il difetto: `zIniziale` congelato dall'inizio del tocco).
+  assert.ok(
+    Math.abs(vista.y - -104.5) < 1e-9,
+    `atteso -104.5 (il pan si muove liberamente dopo lo spread), ottenuto ${vista.y} (bloccato al vecchio margine se sbagliato)`,
+  );
 });
