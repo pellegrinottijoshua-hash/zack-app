@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import Dropzone from './components/Dropzone.jsx';
 import Compare from './components/Compare.jsx';
 import Library from './components/Library.jsx';
@@ -38,7 +38,7 @@ import { useBatch } from './hooks/useBatch.js';
 import { canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { TARGET_SIDE } from './engine/ready.js';
 import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/ricette.js';
-import { impilaRisultato, vaIndietro, vaAvanti } from './engine/storia.js';
+import { riduciStoria, STORIA_VUOTA } from './engine/storia.js';
 import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/ritaglio.js';
 import { DESCRITTORI, getDescrittore, strumentiVisibili, servizioAperto } from './servizi/index.js';
 import { mostraCrediti, mostraInFila } from './servizi/pelle.js';
@@ -424,7 +424,16 @@ export default function App() {
 
   const [file, setFile] = useState(null);
   const [beforeUrl, setBeforeUrl] = useState(null);
-  const [result, setResult] = useState(null); // { blob|text, url, kind, meta }
+  /*
+   * Il risultato, con le sue due pile «indietro» e «avanti», è UN solo stato
+   * guidato da un riduttore puro (`riduciStoria`, in `engine/storia.js`).
+   * Erano tre `useState`, e annulla/rifai chiamavano un setter dentro
+   * l'updater di un altro: React non garantisce quando l'updater interno
+   * gira, e «Rifai» si incastrava (Bloccante 1 della revisione finale,
+   * 2026-09-23). Chi cambia il risultato lo fa solo con `mandaStoria`.
+   */
+  const [cronaca, mandaStoria] = useReducer(riduciStoria, STORIA_VUOTA);
+  const result = cronaca.risultato; // { blob|text, url, kind, meta }
   const [busy, setBusy] = useState(null);
   const [busyNote, setBusyNote] = useState(null);
   /**
@@ -517,65 +526,33 @@ export default function App() {
   // per offrire di fermarlo.
   const [upscaling, setUpscaling] = useState(false);
   // Un passo indietro, come in qualunque programma di disegno. Otto passi
-  // bastano: piu' in la' non si torna, si ricomincia.
-  const [history, setHistory] = useState([]);
-  /*
-   * La pila del «avanti».
-   *
-   * L'annulla c'era e il rifai no: si tornava indietro e non si poteva più
-   * tornare avanti, cioè il passo indietro era irreversibile quanto quello
-   * che annullava. Si svuota a ogni risultato NUOVO — dopo aver dipinto,
-   * «avanti» porterebbe a una storia che non esiste più.
-   */
-  const [futuro, setFuturo] = useState([]);
-  const resultRef = useRef(null);
-  resultRef.current = result;
+  // bastano (`TETTO`): piu' in la' non si torna, si ricomincia. La pila del
+  // «avanti» si svuota a ogni risultato NUOVO — dopo aver dipinto, «avanti»
+  // porterebbe a una storia che non esiste più.
+  const history = cronaca.storia;
+  const futuro = cronaca.futuro;
 
   /*
    * Sostituisce il risultato tenendo da parte quello di prima, e va indietro
-   * o avanti fra le due pile. La regola delle pile è tutta in
-   * `engine/storia.js` (Critico 1 della revisione del Task 6, 2026-09-16):
-   * qui restano solo gli `useState` e la lettura/scrittura dello stato di
-   * React. Le funzioni sono nidificate perché `history` e `futuro` sono due
-   * stati distinti — leggere l'uno dentro l'updater dell'altro è l'unico modo
-   * di avere ENTRAMBI freschi nello stesso istante, anche quando `pushResult`
-   * viene chiamato da una catena asincrona (uno scontorno, un ingrandimento)
-   * partita in un render precedente.
+   * o avanti fra le due pile. Ognuna è UNA mossa sul riduttore: niente
+   * setter dentro altri setter, niente `mossa` letta prima che React l'abbia
+   * calcolata. Il riduttore riceve sempre lo stato fresco, anche quando
+   * `pushResult` arriva da una catena asincrona (uno scontorno, un
+   * ingrandimento) partita in un render precedente. La prova di sorgente in
+   * `test/storia.test.js` si arrossa se tornano i setter annidati.
    */
-  const pushResult = (next) => {
-    setHistory((h) => {
-      const mossa = impilaRisultato(h, resultRef.current);
-      setFuturo(mossa.futuro);
-      return mossa.storia;
-    });
-    setResult(next);
-  };
+  const pushResult = (next) => mandaStoria({ tipo: 'nuovo', risultato: next });
 
   function undoResult() {
-    setHistory((h) => {
-      let mossa = null;
-      setFuturo((f) => {
-        mossa = vaIndietro(h, f, resultRef.current);
-        return mossa ? mossa.futuro : f;
-      });
-      if (!mossa) return h;
-      setResult(mossa.risultato);
-      return mossa.storia;
-    });
+    mandaStoria({ tipo: 'indietro' });
   }
 
   function redoResult() {
-    setFuturo((f) => {
-      let mossa = null;
-      setHistory((h) => {
-        mossa = vaAvanti(h, f, resultRef.current);
-        return mossa ? mossa.storia : h;
-      });
-      if (!mossa) return f;
-      setResult(mossa.risultato);
-      return mossa.futuro;
-    });
+    mandaStoria({ tipo: 'avanti' });
   }
+
+  /** File nuovo, piano svuotato, lavoro ripreso: pile vuote e questo risultato. */
+  const azzeraRisultato = (risultato = null) => mandaStoria({ tipo: 'azzera', risultato });
   // Cambia a ogni azione sull'editor per far rileggere al pannello la
   // posizione della selezione, che la libreria muta fuori da React.
   const [editorTick, setEditorTick] = useState(0);
@@ -724,9 +701,7 @@ export default function App() {
   function onFile(f) {
     setError(null);
     setNotice(null);
-    setHistory([]);
-    setFuturo([]);
-    setResult(null);
+    azzeraRisultato();
     setFile(f);
     setBeforeUrl(own(f));
     // Un file trascinato da fuori non ha un'origine in libreria.
@@ -780,11 +755,9 @@ export default function App() {
   }, [library.ready]);
 
   function reset() {
-    setHistory([]);
-    setFuturo([]);
+    azzeraRisultato();
     setFile(null);
     setBeforeUrl(null);
-    setResult(null);
     setError(null);
     setNotice(null);
   }
@@ -926,9 +899,7 @@ export default function App() {
     setFile(original);
     setBeforeUrl(own(original));
     setSourceAssetId(assetId ?? null);
-    setHistory([]);
-    setFuturo([]);
-    setResult({ url: own(blob), blob, kind: 'png', meta: { strategy: 'browser', batch: true } });
+    azzeraRisultato({ url: own(blob), blob, kind: 'png', meta: { strategy: 'browser', batch: true } });
     setDaBlocco({ file: original, assetId: assetId ?? null });
     setBrushOpen(true);
   }
@@ -1915,9 +1886,7 @@ export default function App() {
         return;
       }
 
-      setHistory([]);
-      setFuturo([]);
-      setResult(null);
+      azzeraRisultato();
       setFile(asFile);
       setBeforeUrl(own(asFile));
       setSourceAssetId(item.id);
