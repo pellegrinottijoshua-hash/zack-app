@@ -13,23 +13,65 @@ const APP = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
  * comoda da scrivere, e chiude anche la libreria.
  */
 
-test('la libreria si vede ANCHE col muro alzato', () => {
+test('la libreria non sta dietro NESSUNA condizione', () => {
   /*
    * La prima stesura di questo test cercava che la libreria non fosse dietro
    * un `puoiLavorare(...) &&`, e passava — ma passava a VUOTO: la libreria era
    * dietro `!DESCRITTORI[tool]`, e dal 2026-09-09 tutti e cinque i servizi
-   * hanno un descrittore. Non era dietro il muro perche' non c'era proprio.
+   * avevano un descrittore. Non era dietro il muro perche' non c'era proprio.
    *
-   * Un test che puo' passare senza che la cosa esista non prova niente. Questo
-   * chiede il contrario: che la condizione NOMINI il muro, e nel verso giusto.
+   * La seconda stesura (Task 8, giro precedente) chiedeva che la condizione
+   * nominasse il muro nel verso giusto (`chiuso ||`). Passava anche quella,
+   * e intanto la libreria era raggiungibile SOLO dall'editor: entrati tutti
+   * i servizi nell'impianto, `!DESCRITTORI[tool]` (l'altra metà della
+   * condizione) era vero soltanto lì. Una prova che guarda la FORMA della
+   * guardia non vede la guardia sbagliata.
+   *
+   * La cura (Task 8, H2): la libreria si monta SEMPRE, senza condizione. Chi
+   * ha fatto dei file non li tiene in ostaggio dietro nessun `&&`, né
+   * commerciale né accidentale.
    */
   const i = APP.indexOf('<Library');
-  assert.notEqual(i, -1, 'la libreria non e’ montata in App.jsx');
-  const condizione = APP.slice(Math.max(0, i - 300), i);
-  assert.match(
-    condizione,
-    /chiuso \|\|/,
-    'la libreria non si vede col muro alzato: § 3.5 dice che non si chiude mai',
+  assert.notEqual(i, -1, 'la libreria non è montata in App.jsx');
+  // Finestra larga apposta: il commento JSX che precede `<Library` in
+  // produzione e' lungo diverse righe, e deve starci tutto (apertura
+  // compresa) perche' lo spogliatoio qui sotto lo riconosca.
+  const prima = APP.slice(Math.max(0, i - 1200), i);
+  /*
+   * ⚠️ Giro di correzione 1, Important 3: la prova precedente cercava
+   * l'ASSENZA di due nomi precisi (`chiuso`, `DESCRITTORI`) — una lista nera
+   * di due voci, buona solo contro i due modi in cui questa porta si è già
+   * chiusa. Il controller ha rimontato la libreria come
+   * `{puoiLavorare(statoConto) && (<Library … />)}` — un TERZO nome, che non
+   * sta nella lista — e la prova restava verde mentre i file del cliente
+   * finivano di nuovo dietro il muro dell'abbonamento.
+   *
+   * La cura: non si cerca più l'assenza di nomi, si prova l'EFFETTO. Una
+   * `<Library` senza nessuna condizione e' un fratello semplice nell'albero
+   * JSX — l'ultimo carattere di codice prima di lei (tolti i commenti JSX
+   * `{/* ... *\/}`, che non sono codice) e' la `>` di chiusura dell'elemento
+   * precedente. Qualunque condizione — `{x && (`, `{x ? (`, `{x && <Library`
+   * — finisce invece con `(` o con l'apertura `{` stessa: MAI con `>`.
+   *
+   * Si spoglia all'indietro un commento JSX alla volta (invece di un solo
+   * `.replace` globale) perché un `.replace` con finestra tagliata a meta'
+   * commento non trova l'apertura `{/*` e non toglie niente: qui invece si
+   * cerca l'ULTIMA apertura prima della chiusura finale, quale che sia la
+   * lunghezza del commento o quanti ce ne sono in fila.
+   */
+  let senzaCommentiJsx = prima;
+  for (;;) {
+    senzaCommentiJsx = senzaCommentiJsx.replace(/\s+$/, '');
+    if (!senzaCommentiJsx.endsWith('*/}')) break;
+    const apertura = senzaCommentiJsx.lastIndexOf('{/*');
+    if (apertura === -1) break;
+    senzaCommentiJsx = senzaCommentiJsx.slice(0, apertura);
+  }
+  const ultimoCarattere = senzaCommentiJsx.slice(-1);
+  assert.equal(
+    ultimoCarattere,
+    '>',
+    `la libreria e' preceduta da "…${senzaCommentiJsx.slice(-40)}": non e' più un fratello semplice nell'albero JSX — è di nuovo dietro una condizione`,
   );
 });
 

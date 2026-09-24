@@ -81,6 +81,74 @@ test('nessuna regola misura un’altezza SOLO in vh', () => {
 });
 
 /*
+ * `.shell` riserva spazio per la barra fissa in fondo con un numero scritto
+ * a mano — e i pezzi VERI della barra (il suo padding-top, il padding-bottom
+ * per il «presto» su due righe, l'altezza del cerchio piu' alto) sono
+ * dichiarati 3100 righe piu' in basso, in un media block diverso. Il giro di
+ * correzione 1 (Important 5) ha trovato esattamente questo scollegamento:
+ * la barra e' cresciuta (30 -> 42px di padding-bottom, Task 8) e il numero
+ * qui non l'ha seguita, finche' non l'ha corretto a mano un umano che ha
+ * misurato nel browser — la stessa distrazione che puo' ripetersi al
+ * prossimo cambiamento di uno qualunque dei tre pezzi. Questa prova lega i
+ * numeri: computa quanto usa DAVVERO la barra sommando i tre valori dal
+ * sorgente, e pretende che `.shell` ne riservi almeno tanto.
+ */
+test('.shell riserva almeno quanto la barra usa DAVVERO, non un numero a mano', () => {
+  // Il padding-top e il padding-bottom della barra fissa sul telefono, dallo
+  // stesso `padding: Npx Npx calc(Mpx + env(...))` che disegna «§ 8. I
+  // servizi in basso sono CERCHI».
+  const paddingBarra = CSS.match(
+    /padding:\s*(\d+)px\s+\d+px\s+calc\((\d+)px \+ env\(safe-area-inset-bottom/,
+  );
+  assert.ok(paddingBarra, 'non trovo più il padding di `.toolrail` sul telefono (§ 8 di styles.css)');
+  const paddingTop = Number(paddingBarra[1]);
+  const paddingBottom = Number(paddingBarra[2]);
+
+  // Il cerchio piu' alto della barra: lo scontorno, sempre piu' grande degli
+  // altri (e' il centro del prodotto).
+  const cerchio = CSS.match(
+    /\.toolrail \.tool-item\[data-servizio='scontorna'\]\s*\{[^}]*height:\s*(\d+)px/,
+  );
+  assert.ok(cerchio, 'non trovo più l’altezza del cerchio di Scontorna');
+  const altezzaCerchio = Number(cerchio[1]);
+
+  // Quanto riserva `.shell` per la barra fissa, sul telefono.
+  const riserva = dichiarazioni('.shell')
+    .map((b) => b.match(/padding-bottom:\s*calc\((\d+)px/))
+    .find(Boolean);
+  assert.ok(riserva, '.shell non riserva più uno spazio in calc() per la barra fissa');
+  const riservato = Number(riserva[1]);
+
+  const usatoDavvero = paddingTop + altezzaCerchio + paddingBottom;
+  assert.ok(
+    riservato >= usatoDavvero,
+    `.shell riserva ${riservato}px ma la barra ne usa davvero ${usatoDavvero}px ` +
+      `(${paddingTop} di padding-top + ${altezzaCerchio} del cerchio + ${paddingBottom} di padding-bottom): ` +
+      'la libreria torna sotto la barra fissa, come nel difetto già corretto una volta.',
+  );
+});
+
+/*
+ * Il nome di Brain (Important 4, giro di correzione 1): il suo cerchio e'
+ * uscito da FILA con Task 8 e ha perso il `.tool-name` sempre visibile che
+ * ogni cerchio della barra tiene sul telefono — la stessa mancanza che
+ * questo file stesso, qualche riga piu' sopra nel CSS vero, cita come
+ * l'esempio ammonitorio di Brain: «nessun modo di sapere quale fosse Brain
+ * e quale Suono». Il JSX puo' avere lo `<span className="brain-nome">`
+ * (provato da sorgente in `home.test.js`) e restare comunque invisibile se
+ * il CSS lo tiene `display: none` per sempre: questa prova chiede che, da
+ * qualche parte, torni `display: block`.
+ */
+test('il nome di Brain torna visibile sul telefono, non resta nascosto per sempre', () => {
+  const blocchi = dichiarazioni('.brain-nome');
+  assert.ok(blocchi.length > 0, '.brain-nome non è più dichiarato in styles.css');
+  assert.ok(
+    blocchi.some((b) => /display:\s*block/.test(b)),
+    '.brain-nome resta `display: none` anche sul telefono: Brain torna senza nome, la stessa mancanza già segnalata',
+  );
+});
+
+/*
  * La schermata non conta i propri figli.
  *
  * Il 2026-09-09 `.shell` era `grid-template-rows: auto 1fr auto`, e il numero

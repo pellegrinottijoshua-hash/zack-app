@@ -19,6 +19,31 @@
 import { alphaDaFondoPiatto } from './keying.js';
 
 /**
+ * Dove sta DAVVERO l'immagine dentro un canvas con `object-fit: contain`.
+ *
+ * Trovato verificando il Task 11 sul telefono (375×812, un file dentro):
+ * la tela della home e' larga quanto la colonna (337 px) ma pinzata in
+ * altezza (`max-height: 150px`), e `object-fit: contain` disegna un 2000×2000
+ * in 150×150 al centro, con 93,5 px di bande ai lati. Chi convertiva il
+ * tocco in pixel dell'immagine divideva per la SCATOLA (337), non per il
+ * disegno (150): misurato, un tocco sul pixel 520 cancellava il 786. Con la
+ * scatola nelle proporzioni dell'immagine questa funzione e' l'identita'.
+ *
+ * `scatola`: il `getBoundingClientRect()` del canvas; `naturale`: `{w,h}`.
+ */
+export function rettangoloDisegnato(scatola, naturale) {
+  const s = Math.min(scatola.width / naturale.w, scatola.height / naturale.h);
+  const width = naturale.w * s;
+  const height = naturale.h * s;
+  return {
+    left: scatola.left + (scatola.width - width) / 2,
+    top: scatola.top + (scatola.height - height) / 2,
+    width,
+    height,
+  };
+}
+
+/**
  * Quanto dev'essere piatto il fondo perché il ritaglio istantaneo sia
  * affidabile.
  *

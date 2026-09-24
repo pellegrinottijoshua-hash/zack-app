@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ritaglioIstantaneo, UNIFORMITA_MIN, MAX_FILE } from '../src/engine/ritaglio.js';
+import { ritaglioIstantaneo, UNIFORMITA_MIN, MAX_FILE, rettangoloDisegnato } from '../src/engine/ritaglio.js';
 import { pennellaGuidato } from '../src/engine/righello.js';
 
 /*
@@ -87,4 +87,23 @@ test('il pennello sul bordo dell immagine non esce dai byte', () => {
   assert.doesNotThrow(() => pennellaGuidato(alpha, w, h, { x: 0, y: 0, raggio: 9, valore: 255 }, null));
   assert.doesNotThrow(() => pennellaGuidato(alpha, w, h, { x: 15, y: 15, raggio: 9, valore: 255 }, null));
   assert.equal(alpha.length, w * h, 'la maschera non cambia misura');
+});
+
+// --- Task 11, trovato verificando sul telefono ------------------------------
+
+test('il tocco si converte sul rettangolo DISEGNATO, non sulla scatola del canvas', () => {
+  // Misurato a 375×812 con un file dentro: scatola 337×150 (la colonna,
+  // pinzata in altezza), immagine 2000×2000 disegnata con `object-fit:
+  // contain` in 150×150 al centro. Chi divideva per la scatola cancellava
+  // il pixel 786 toccando il 520.
+  const scatola = { left: 19, top: 322, width: 337, height: 150 };
+  const d = rettangoloDisegnato(scatola, { w: 2000, h: 2000 });
+  assert.deepEqual(d, { left: 19 + 93.5, top: 322, width: 150, height: 150 });
+  const tocco = d.left + (520 / 2000) * d.width;
+  assert.equal(Math.round(((tocco - d.left) / d.width) * 2000), 520);
+});
+
+test('con la scatola nelle proporzioni dell\'immagine, il rettangolo disegnato E\' la scatola', () => {
+  const scatola = { left: 37.5, top: 184.5, width: 300, height: 150 };
+  assert.deepEqual(rettangoloDisegnato(scatola, { w: 2000, h: 1000 }), scatola);
 });

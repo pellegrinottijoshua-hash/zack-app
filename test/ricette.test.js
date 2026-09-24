@@ -8,6 +8,7 @@ import {
   stessaRicetta,
   RICETTE_DI_FABBRICA,
   PASSI,
+  soloOfferti,
 } from '../src/engine/ricette.js';
 
 const piccola = { w: 800, h: 600 };
@@ -222,4 +223,25 @@ test('un fattore che non esiste non tocca la catena', () => {
   // Una chiave puo' arrivare da un archivio vecchio o scritta a mano: non
   // deve produrre un passo che nessuno sa eseguire.
   assert.deepEqual(commutaFattore(['scontorna'], 'x8'), ['scontorna']);
+});
+
+test('una catena non tiene acceso un passo che il tasto non offre più', () => {
+  // Chi aveva «salva in libreria» acceso se lo ritroverebbe attivo senza
+  // nessuna pastiglia per spegnerlo: un comportamento invisibile e
+  // irrevocabile, che è peggio di un comando in più.
+  assert.deepEqual(
+    soloOfferti(['scontorna', 'esporta', 'ridimensiona:x2', 'scarica'], ['scontorna', 'scarica']),
+    ['scontorna', 'ridimensiona:x2', 'scarica'],
+  );
+});
+
+test('soloOfferti non tocca i fattori: non sono passi, sono misure', () => {
+  assert.deepEqual(soloOfferti(['ridimensiona:d4'], ['scontorna']), ['ridimensiona:d4']);
+});
+
+test('senza elenco di offerti la catena resta intera', () => {
+  // I servizi che non dichiarano `passi` li offrono tutti: non devono perdere
+  // niente passando di qui.
+  const c = ['scontorna', 'buchi', 'esporta'];
+  assert.deepEqual(soloOfferti(c, undefined), c);
 });

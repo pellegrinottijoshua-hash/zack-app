@@ -214,6 +214,9 @@
       "label": "Trace style",
       "help": "How to read the image: flat colours, gradients, or black and white only."
     },
+    "preset": {
+      "title": "Look"
+    },
     "clean": {
       "label": "Tidy the result",
       "help": "Makes the file lighter: fewer decimals in the paths and fewer stray specks, with the same look."
@@ -387,9 +390,6 @@
   },
   "rail": {
     "title": "Services",
-    "local": "On your computer",
-    "paid": "Pay per use",
-    "balance": "Balance",
     "soon": "soon",
     "open": "Show the names",
     "close": "Icons only",
@@ -470,7 +470,11 @@
   },
   "sound": {
     "base": {
+      "title": "Starting voice",
       "neutra": "Natural"
+    },
+    "family": {
+      "title": "Family"
     },
     "claim": "Record your voice or bring one in, and transform it.",
     "saveVoice": "Save this voice",
@@ -610,6 +614,7 @@
   },
   "bar": {
     "undo": "Undo",
+    "redo": "Redo",
     "eraser": "Eraser",
     "crop": "Crop",
     "swap": "Swap file",
@@ -665,6 +670,7 @@
   "brain": {
     "pacco": "Pack it up",
     "riordina": {
+      "title": "How I tidy up",
       "gruppi": "By group",
       "tipo": "By kind",
       "compatta": "Tighten up",
@@ -769,17 +775,35 @@
   "immagine": {
     "claim": "Write what you want to see. Add your own assets as references.",
     "riferimenti": "References",
+    "misura": {
+      "title": "How big",
+      "1k": "1K",
+      "2k": "2K"
+    },
+    "formato": {
+      "title": "What shape",
+      "1_1": "1:1",
+      "9_16": "9:16",
+      "16_9": "16:9",
+      "4_5": "4:5",
+      "5_4": "5:4",
+      "3_4": "3:4",
+      "4_3": "4:3",
+      "2_3": "2:3",
+      "3_2": "3:2",
+      "21_9": "21:9"
+    },
     "prezzoNota": "this generation, full price",
     "saldoCorto": "You don’t have enough credit.",
     "escono": "The references you pick are sent to the provider: it’s the only thing that leaves your computer, and there’s no generating without sending it.",
     "salva": "Save to library",
     "salvato": "Saved to library.",
     "togli": "Remove",
-    "rapida": "Quick",
-    "grande": "Large",
     "attendi": "Zack is generating. It takes about twenty seconds.",
     "vuoto": "Write what you want to see first.",
     "errore": "I couldn't generate it. Try again in a moment.",
+    "rimborsato": "It didn't come out. The credit is back on your balance: you paid nothing.",
+    "rimborsoInCorso": "It didn't come out. Your credit comes back within a couple of hours — we check it ourselves, you don't have to do anything.",
     "assetMancante": "One of the assets you picked as a reference is no longer in the library. Remove it and try again.",
     "chiudi": "Done",
     "ruolo": { "personaggio": "Character", "oggetto": "Object", "stile": "Style" }

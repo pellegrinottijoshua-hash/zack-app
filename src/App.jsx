@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import Dropzone from './components/Dropzone.jsx';
 import Compare from './components/Compare.jsx';
 import Library from './components/Library.jsx';
@@ -12,6 +12,7 @@ import LanguageSwitch from './components/LanguageSwitch.jsx';
 // import HelpToggle from './components/HelpToggle.jsx';
 import Onboarding, { hasSeenOnboarding } from './components/Onboarding.jsx';
 import VectorTools from './components/VectorTools.jsx';
+import Icon from './components/Icon.jsx';
 import { resolveShortcut } from './engine/shortcuts.js';
 import { useLibrary } from './hooks/useLibrary.js';
 import ToolRail from './components/ToolRail.jsx';
@@ -37,12 +38,14 @@ import { useBatch } from './hooks/useBatch.js';
 import { canUpscale, estimateSeconds, getScale } from './engine/upscale.js';
 import { TARGET_SIDE } from './engine/ready.js';
 import { pianoZack, normalizza, fattoreDi, RICETTE_DI_FABBRICA } from './engine/ricette.js';
+import { riduciStoria, STORIA_VUOTA } from './engine/storia.js';
 import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/ritaglio.js';
 import { DESCRITTORI, getDescrittore, strumentiVisibili, servizioAperto } from './servizi/index.js';
+import { mostraCrediti, mostraInFila } from './servizi/pelle.js';
 import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
 import { statoLicenza, giorniAllaProva, puoiLavorare } from './engine/licenza.js';
 import { prezzoDi } from './engine/listino.js';
-import { formatEuro, toEuro } from './engine/ledger.js';
+import { formatEuro } from './engine/ledger.js';
 import { leggiLicenza, salvaLicenza } from './store/licenza.js';
 import {
   chiediLicenza,
@@ -61,15 +64,29 @@ import { famiglia, genera, suRitmo, SR } from './engine/synth.js';
 import { caricaFileDiProva, deveMostrareProva, segnaProvaVista } from './engine/prova.js';
 import { SERVICES, getService, firstReady, NOMI_VECCHI } from './services.js';
 
-/** La catena salvata per un servizio, o quella di fabbrica se non c'è. */
+/**
+ * La catena salvata per un servizio, o quella di fabbrica se non c'è.
+ *
+ * ⚠️ Qui NON si riduce a `soloOfferti` (Critico 2 della revisione del Task 6,
+ * 2026-09-16): farlo cancellava «buchi» — richiudi le controforme — anche
+ * dalle catene salvate e dalla ricetta di fabbrica, rendendo `closeHoles`
+ * ineseguibile da ogni punto del prodotto. La riduzione alle pastiglie
+ * offerte spetta a chi disegna il punto oro (`Piano.jsx`, con
+ * `servizio.tasto.passi`), non a chi legge il dato: è la stessa regola già
+ * scritta per la ricetta condivisa dalla home in `landing/Landing.jsx`
+ * («vanno ignorati, non cancellati»). Il dato resta intero, la pastiglia sola
+ * si nasconde.
+ */
 function leggiRicetta(servizio) {
   const fabbrica = RICETTE_DI_FABBRICA[servizio] || [];
+  let letta;
   try {
     const salvata = localStorage.getItem(`jayl.zack.${servizio}`);
-    return salvata ? normalizza(JSON.parse(salvata)) : fabbrica;
+    letta = salvata ? JSON.parse(salvata) : fabbrica;
   } catch {
-    return fabbrica;
+    letta = fabbrica;
   }
+  return normalizza(letta);
 }
 import { bundleAll, bundleBlobs } from './store/bundle.js';
 import { useEngine } from './hooks/useEngine.js';
@@ -134,6 +151,17 @@ const STRATEGIE = {
 // e un trattino dice la verità.
 const secs = (ms) => (Number.isFinite(ms) ? `${(ms / 1000).toFixed(1)}s` : '—');
 
+/**
+ * La predefinita di un gruppo del punto oro, letta dal descrittore.
+ *
+ * Un servizio può avere più di un gruppo (Immagine ne avrà due, il video ne
+ * avrà tre): senza dire QUALE gruppo, `tasto.predefinita` da solo non basta
+ * più a rispondere. I compiti dopo questo riusano questa funzione, invece di
+ * ripetere `getDescrittore(id).tasto.gruppi.find(...)` ad ogni `useState`.
+ */
+const predefinitaDi = (id, gruppo) =>
+  getDescrittore(id).tasto.gruppi.find((g) => g.id === gruppo).predefinita;
+
 export default function App() {
   const [apiState, setApiState] = useState('offline');
   /**
@@ -196,7 +224,7 @@ export default function App() {
    * Sta qui e non dentro `Brain` perché il tasto vive nell'impianto: se lo
    * stato stesse nel componente, il tasto non potrebbe leggerlo.
    */
-  const [regolaRiordino, setRegolaRiordino] = useState(getDescrittore('brain').tasto.predefinita);
+  const [regolaRiordino, setRegolaRiordino] = useState(predefinitaDi('brain', 'riordino'));
   /**
    * Lo strumento di disegno acceso nel vettoriale.
    *
@@ -288,6 +316,14 @@ export default function App() {
   const chiusoPerSaldo = chiuso && DESCRITTORI[tool]?.serve === 'saldo' && puoiLavorare(statoConto);
 
   /**
+   * La STESSA lettura che decide il muro, non una seconda (H1-bis,
+   * 2026-09-15): `mostraInFila` la consulta per decidere chi resta nella
+   * fila, e non è mai `abbonato: statoConto === 'qualcosa'` scritto a mano
+   * in un secondo posto, che divergerebbe dal muro al primo stato nuovo.
+   */
+  const abbonato = puoiLavorare(statoConto);
+
+  /**
    * Chiede al server chi siamo, e se ne ricorda.
    *
    * Se il server non risponde **non si tocca la licenza salvata**: la grazia
@@ -334,7 +370,7 @@ export default function App() {
    * Sta qui e non dentro `SoundLab` per la stessa ragione della regola di
    * Brain: la scelta si fa nel punto oro, che è dell'impianto.
    */
-  const [baseVoce, setBaseVoce] = useState(getDescrittore('vocale').tasto.predefinita);
+  const [baseVoce, setBaseVoce] = useState(predefinitaDi('vocale', 'base'));
   /**
    * I filtri impostati dal tasto, come scostamento dalla ricetta scelta.
    *
@@ -357,7 +393,7 @@ export default function App() {
    * sempre lo stesso suono, quindi cio' che hai appena trovato si ritrova.
    */
   const [effetto, setEffetto] = useState(() => {
-    const f = famiglia(getDescrittore('effetti').tasto.predefinita);
+    const f = famiglia(predefinitaDi('effetti', 'famiglia'));
     return { famiglia: f.id, param: { ...f.param }, durata: f.durata, seme: 1 };
   });
   /**
@@ -388,7 +424,16 @@ export default function App() {
 
   const [file, setFile] = useState(null);
   const [beforeUrl, setBeforeUrl] = useState(null);
-  const [result, setResult] = useState(null); // { blob|text, url, kind, meta }
+  /*
+   * Il risultato, con le sue due pile «indietro» e «avanti», è UN solo stato
+   * guidato da un riduttore puro (`riduciStoria`, in `engine/storia.js`).
+   * Erano tre `useState`, e annulla/rifai chiamavano un setter dentro
+   * l'updater di un altro: React non garantisce quando l'updater interno
+   * gira, e «Rifai» si incastrava (Bloccante 1 della revisione finale,
+   * 2026-09-23). Chi cambia il risultato lo fa solo con `mandaStoria`.
+   */
+  const [cronaca, mandaStoria] = useReducer(riduciStoria, STORIA_VUOTA);
+  const result = cronaca.risultato; // { blob|text, url, kind, meta }
   const [busy, setBusy] = useState(null);
   const [busyNote, setBusyNote] = useState(null);
   /**
@@ -459,7 +504,9 @@ export default function App() {
    *  Effetti. */
   const [promptImmagine, setPromptImmagine] = useState('');
   /** La misura scelta nel punto oro: costano uguale, vedi immagine.js. */
-  const [misuraImmagine, setMisuraImmagine] = useState(getDescrittore('immagine').tasto.predefinita);
+  const [misuraImmagine, setMisuraImmagine] = useState(predefinitaDi('immagine', 'misura'));
+  /** La forma scelta nel punto oro. Costa uguale, come la misura. */
+  const [formatoImmagine, setFormatoImmagine] = useState(predefinitaDi('immagine', 'formato'));
   const [brushOpen, setBrushOpen] = useState(false);
   const [batchFiles, setBatchFiles] = useState([]);
   /** Con quale strumento si e' aperto il pennello, per accendere il cerchio. */
@@ -479,24 +526,33 @@ export default function App() {
   // per offrire di fermarlo.
   const [upscaling, setUpscaling] = useState(false);
   // Un passo indietro, come in qualunque programma di disegno. Otto passi
-  // bastano: piu' in la' non si torna, si ricomincia.
-  const [history, setHistory] = useState([]);
-  const resultRef = useRef(null);
-  resultRef.current = result;
+  // bastano (`TETTO`): piu' in la' non si torna, si ricomincia. La pila del
+  // «avanti» si svuota a ogni risultato NUOVO — dopo aver dipinto, «avanti»
+  // porterebbe a una storia che non esiste più.
+  const history = cronaca.storia;
+  const futuro = cronaca.futuro;
 
-  /** Sostituisce il risultato tenendo da parte quello di prima. */
-  const pushResult = (next) => {
-    setHistory((h) => [...h, resultRef.current].slice(-8));
-    setResult(next);
-  };
+  /*
+   * Sostituisce il risultato tenendo da parte quello di prima, e va indietro
+   * o avanti fra le due pile. Ognuna è UNA mossa sul riduttore: niente
+   * setter dentro altri setter, niente `mossa` letta prima che React l'abbia
+   * calcolata. Il riduttore riceve sempre lo stato fresco, anche quando
+   * `pushResult` arriva da una catena asincrona (uno scontorno, un
+   * ingrandimento) partita in un render precedente. La prova di sorgente in
+   * `test/storia.test.js` si arrossa se tornano i setter annidati.
+   */
+  const pushResult = (next) => mandaStoria({ tipo: 'nuovo', risultato: next });
 
   function undoResult() {
-    setHistory((h) => {
-      if (!h.length) return h;
-      setResult(h[h.length - 1]);
-      return h.slice(0, -1);
-    });
+    mandaStoria({ tipo: 'indietro' });
   }
+
+  function redoResult() {
+    mandaStoria({ tipo: 'avanti' });
+  }
+
+  /** File nuovo, piano svuotato, lavoro ripreso: pile vuote e questo risultato. */
+  const azzeraRisultato = (risultato = null) => mandaStoria({ tipo: 'azzera', risultato });
   // Cambia a ogni azione sull'editor per far rileggere al pannello la
   // posizione della selezione, che la libreria muta fuori da React.
   const [editorTick, setEditorTick] = useState(0);
@@ -645,8 +701,7 @@ export default function App() {
   function onFile(f) {
     setError(null);
     setNotice(null);
-    setHistory([]);
-    setResult(null);
+    azzeraRisultato();
     setFile(f);
     setBeforeUrl(own(f));
     // Un file trascinato da fuori non ha un'origine in libreria.
@@ -700,10 +755,9 @@ export default function App() {
   }, [library.ready]);
 
   function reset() {
-    setHistory([]);
+    azzeraRisultato();
     setFile(null);
     setBeforeUrl(null);
-    setResult(null);
     setError(null);
     setNotice(null);
   }
@@ -845,8 +899,7 @@ export default function App() {
     setFile(original);
     setBeforeUrl(own(original));
     setSourceAssetId(assetId ?? null);
-    setHistory([]);
-    setResult({ url: own(blob), blob, kind: 'png', meta: { strategy: 'browser', batch: true } });
+    azzeraRisultato({ url: own(blob), blob, kind: 'png', meta: { strategy: 'browser', batch: true } });
     setDaBlocco({ file: original, assetId: assetId ?? null });
     setBrushOpen(true);
   }
@@ -1596,6 +1649,7 @@ export default function App() {
         prompt: promptImmagine,
         riferimenti: references,
         misura: misuraImmagine,
+        formato: formatoImmagine,
         leggiAsset: async (assetId) => {
           try {
             const { file: f } = await library.read(assetId);
@@ -1622,7 +1676,22 @@ export default function App() {
           ? t('immagine.saldoCorto')
           : e.code === 'asset-mancante'
             ? t('immagine.assetMancante')
-            : t('immagine.errore'),
+            : e.code === 'fornitore'
+              /*
+               * Il rimborso SI DICE (spec § 6). Chi ha appena speso quindici
+               * centesimi e vede solo «riprova» non sa se ha perso i soldi, e
+               * la seconda volta non riprova affatto.
+               *
+               * ⚠️ Giro di correzioni 1: il ternario parte dal ramo PRUDENTE,
+               * non da quello ottimista. «Il credito ti torna» è vero anche a
+               * rimborso già avvenuto; «non hai pagato niente» è una bugia se
+               * il rimborso non è passato. Un `e.rimborsato` sbagliato (nome
+               * del campo cambiato, o dimenticato in `conto.js`) arriva qui
+               * `undefined` — e `undefined === true` è falso, quindi cade sul
+               * messaggio prudente, mai su quello ottimista.
+               */
+              ? t(e.rimborsato === true ? 'immagine.rimborsato' : 'immagine.rimborsoInCorso')
+              : t('immagine.errore'),
       );
     } finally {
       setBusy(null);
@@ -1662,28 +1731,32 @@ export default function App() {
   }
 
   /**
-   * Chi risponde alle pastiglie del punto oro, per servizio.
+   * Chi risponde alle pastiglie del punto oro, per servizio e per gruppo.
    *
-   * Una mappa e non tre `tool === ...` di fila: il punto oro fa la stessa
-   * domanda a tutti — «cosa farà il tasto quando lo premo» — e chi aggiunge
-   * un servizio nuovo deve trovare UN posto dove rispondere, non tre righe
-   * gemelle sparse fra le props.
+   * Due livelli e non uno: un servizio può avere più di una domanda aperta
+   * (Immagine ne ha due, il video ne avrà tre), e una mappa piatta le
+   * confonderebbe fra loro.
    */
-  const OPZIONE = {
-    brain: { valore: regolaRiordino, cambia: setRegolaRiordino },
-    vocale: { valore: baseVoce, cambia: setBaseVoce },
-    vettorializza: { valore: s.tracePreset, cambia: (id) => set({ tracePreset: id }) },
+  const SCELTE = {
+    brain: { riordino: { valore: regolaRiordino, cambia: setRegolaRiordino } },
+    vocale: { base: { valore: baseVoce, cambia: setBaseVoce } },
+    vettorializza: { preset: { valore: s.tracePreset, cambia: (id) => set({ tracePreset: id }) } },
     effetti: {
-      valore: effetto.famiglia,
-      // Cambiare famiglia riporta le manopole a quelle di casa sua: le
-      // manopole di «vento» su «click» sarebbero numeri che non vogliono dire
-      // niente, e il suono uscirebbe sbagliato senza che si capisca perche'.
-      cambia: (id) => {
-        const f = famiglia(id);
-        setEffetto({ famiglia: id, param: { ...f.param }, durata: f.durata, seme: 1 });
+      famiglia: {
+        valore: effetto.famiglia,
+        // Cambiare famiglia riporta le manopole a quelle di casa sua: le
+        // manopole di «vento» su «click» sarebbero numeri che non vogliono dire
+        // niente, e il suono uscirebbe sbagliato senza che si capisca perche'.
+        cambia: (id) => {
+          const f = famiglia(id);
+          setEffetto({ famiglia: id, param: { ...f.param }, durata: f.durata, seme: 1 });
+        },
       },
     },
-    immagine: { valore: misuraImmagine, cambia: setMisuraImmagine },
+    immagine: {
+      misura: { valore: misuraImmagine, cambia: setMisuraImmagine },
+      formato: { valore: formatoImmagine, cambia: setFormatoImmagine },
+    },
   };
 
   /**
@@ -1813,8 +1886,7 @@ export default function App() {
         return;
       }
 
-      setHistory([]);
-      setResult(null);
+      azzeraRisultato();
       setFile(asFile);
       setBeforeUrl(own(asFile));
       setSourceAssetId(item.id);
@@ -1899,6 +1971,43 @@ export default function App() {
     [batchFiles],
   );
   useEffect(() => () => anteprime.forEach((a) => URL.revokeObjectURL(a.url)), [anteprime]);
+
+  /**
+   * Il gesto con cui si apre un servizio: azzera l'avviso, imposta lo
+   * strumento, rilegge la sua ricetta del tasto Zack.
+   *
+   * ⚠️ È LO STESSO gesto per due cerchi diversi — quello della fila
+   * (`onPick` di `ToolRail`) e quello di Brain, ora fuori dalla fila (H2,
+   * 2026-09-15): prima di questa funzione erano due copie della stessa cosa,
+   * e due copie divergono alla prima modifica fatta a una sola.
+   */
+  const apriServizio = (id) => {
+    setNotice(null);
+    setTool(id);
+    setRicetta(leggiRicetta(id));
+  };
+
+  /**
+   * Se il servizio aperto sparisce dalla fila, non si resta su una
+   * schermata irraggiungibile.
+   *
+   * Succede quando il muro si accende (o l'abbonamento scade) mentre si è
+   * su un servizio da abbonamento: `mostraInFila` lo toglie dalla barra, e
+   * nessun cerchio resterebbe acceso. Si ripiega su `scontorna`, che è dove
+   * l'app comincia ed è SEMPRE in fila (H1-bis). Brain non rientra in questo
+   * controllo: non è mai nella fila, ma `mostraInFila` lo lascia comunque
+   * passare (`serve: 'niente'`), quindi non scatta mai per lui.
+   *
+   * Sta QUI, sopra il `return` anticipato del motore, per la stessa ragione
+   * scritta sopra `anteprime`: un hook dopo un `return` condizionale gira in
+   * alcuni render e non in altri.
+   */
+  useEffect(() => {
+    if (!mostraInFila(DESCRITTORI[tool], { muroAcceso, abbonato })) {
+      apriServizio('scontorna');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tool, muroAcceso, abbonato]);
 
   // L'attesa dipende dal MOTORE, non dal server. Il backend serve solo alla
   // libreria su disco: legare tutta l'interfaccia alla sua risposta rendeva
@@ -2092,7 +2201,17 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               onFix={fixFromBatch}
               onRename={rinominaRisultato}
               onDownload={scaricaRisultato}
-              onDownloadAll={null}
+              /* Lo zip dei RISULTATI DEL BLOCCO, non della libreria: sono due
+                 zip diversi, e confonderli e' gia' costato una correzione una
+                 volta (vedi il commento su `scaricaIlPiano`, qui sopra).
+                 `scaricaIlPiano` con `batch.results.length > 0` prende gia'
+                 il ramo del blocco — qui dentro non e' mai zero, perche'
+                 `BatchGrid` si monta solo quando i risultati ci sono (vedi la
+                 guardia poco sopra). Prima era `null`: il tasto in alto a
+                 destra e' sparito con Task 7 (e' rinato come cerchio per il
+                 file singolo), ma per il blocco di tre non c'era piu'
+                 nessuna strada — Critico 3 della revisione. */
+              onDownloadAll={scaricaIlPiano}
               onClose={() => {
                 batch.clear();
                 setBatchFiles([]);
@@ -2226,7 +2345,15 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               busy={busy}
               busyNote={busyNote}
               quanto={quanto}
-              labels={['originale', tool === 'scontorna' ? 'scontornato' : 'vettoriale']}
+              /* S3: via la scritta «scontornato» dal risultato. Per lo
+                 scontorno `labels` è null e non `['', '']`: `Compare` ricade
+                 su `result.before`/`result.after` (già in it.json/en.json —
+                 «originale»/«ritagliato» — non «scontornato»), quindi il
+                 confronto resta leggibile invece di restare muto. Se un
+                 domani quelle chiavi dovessero somigliare troppo alla parola
+                 tolta, la scelta da rifare è passare `['', '']` e nascondere
+                 `.tag` col CSS. */
+              labels={tool === 'scontorna' ? null : ['originale', 'vettoriale']}
             />
           ) : (
             <Dropzone
@@ -2290,26 +2417,22 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
           })()}
 
         {/*
-         * Critical del giro di correzioni: questo tasto era racchiuso in una
-         * guardia che lo toglieva quando il saldo era a zero, ed è l'UNICO
-         * ingresso al pannello della ricarica in tutta l'app (i due montaggi
-         * di `<Ricarica>` dipendono entrambi da `sopraLaTela === 'ricarica'`,
-         * che solo lui imposta). Con un saldo appena aperto — lo stato di
-         * OGNI cliente nuovo, il primo momento d'acquisto per cui Task 8
-         * esiste — il tasto non c'era e non c'era un'alternativa: vicolo
-         * chiuso.
+         * H3: i crediti non si vedono in home né in scontorna — chi apre
+         * un'app gratis vuole scontornare, non leggere «0,00 €».
          *
-         * Il motivo per cui non se n'era accorto nessuno conta più del bug:
-         * ogni verifica a schermo del Task 8 è partita da una licenza con
-         * cinquemila millesimi già in `localStorage` (una sessione
-         * precedente, mai svuotata). Il cammino a saldo vuoto — l'unico che
-         * ogni cliente percorre davvero — non era mai stato provato.
-         * «0,00 €» è onesto, ed è la porta: il tasto si mostra sempre, senza
-         * più nessuna guardia intorno.
+         * ⚠️ Il tasto NON sparisce dall'app: è l'unica porta verso la
+         * ricarica, e in B2 una guardia intorno a questo stesso tasto è
+         * costata il difetto peggiore di tutto il giro (vicolo cieco a saldo
+         * zero, con un cliente nuovo — saldo appena aperto — davanti a un
+         * ingresso che non c'era). Qui la guardia è sul SERVIZIO, non sul
+         * saldo: dentro Immagine c'è sempre, con qualunque cifra, «0,00 €»
+         * compreso.
          */}
-        <button className="saldo" onClick={() => setSopraLaTela('ricarica')}>
-          {formatEuro(crediti, getLang())}
-        </button>
+        {mostraCrediti(tool) && (
+          <button className="saldo" onClick={() => setSopraLaTela('ricarica')}>
+            {formatEuro(crediti, getLang())}
+          </button>
+        )}
       </div>
 
       {showOnboarding && <Onboarding onClose={() => setShowOnboarding(false)} />}
@@ -2318,17 +2441,40 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
         <ToolRail
           current={tool}
           collapsed={isEditor}
-          balance={toEuro(crediti)}
+          muroAcceso={muroAcceso}
+          abbonato={abbonato}
           onPick={(svc) => {
             if (!svc.ready) {
               setNotice(`${t('soon.title')} — ${t('soon.body')}`);
               return;
             }
-            setNotice(null);
-            setTool(svc.id);
-            setRicetta(leggiRicetta(svc.id));
+            apriServizio(svc.id);
           }}
         />
+
+        {/*
+         * Brain, in alto a sinistra e sempre presente (H2).
+         *
+         * È un cerchio e non una colonna: aperta mangerebbe larghezza alla
+         * tela in ogni schermata, e la tela è il lavoro. Premuto, apre il suo
+         * canva — la stessa cosa che faceva il suo cerchio nella barra.
+         */}
+        <button
+          className="brain-tasto"
+          aria-pressed={tool === 'brain'}
+          aria-label={t('tool.brain.label')}
+          title={t('tool.brain.help')}
+          onClick={() => apriServizio('brain')}
+        >
+          <Icon name="brain" draw />
+          {/* Il nome, visibile SEMPRE sul telefono: stessa regola dei cerchi
+              della barra (styles.css, § 8) — su un touch `title` non compare
+              mai, ed e' la mancanza che il committente aveva segnalato
+              proprio su Brain («nessun modo di sapere quale fosse Brain e
+              quale Suono»). Tolto dalla fila (Task 8), il suo cerchio l'ha
+              persa; la riprende qui. */}
+          <span className="brain-nome">{t('tool.brain.label')}</span>
+        </button>
 
         <section className="stage">
           {/* Lo scaricamento si vede SEMPRE: `bannerOpen` serve a chiudere
@@ -2574,8 +2720,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 ) : null
               }
               inCorso={statoDelPiano(tool, statoPiano).inCorso}
-              opzione={OPZIONE[tool]?.valore ?? regolaRiordino}
-              onOpzione={OPZIONE[tool]?.cambia ?? setRegolaRiordino}
+              scelte={Object.fromEntries(
+                Object.entries(SCELTE[tool] || {}).map(([g, v]) => [g, v.valore]),
+              )}
+              onScelta={(gruppo, id) => SCELTE[tool]?.[gruppo]?.cambia(id)}
               /* Togliere il file singolo: senza conferma, perche' e' un
                  gesto piccolo e reversibile — il file sta ancora sul disco
                  dell'utente, e il `+` e' li' accanto. */
@@ -2670,11 +2818,6 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 runZack();
               }}
               onRicetta={salvaRicetta}
-              /* Il tasto in alto a destra scarica CIO' CHE C'E': i tre file
-                 della colonna se il blocco e' finito, il file singolo se il
-                 piano ne ha uno solo. Sono lo stesso gesto. */
-              onScarica={scaricaIlPiano}
-              puoiScaricare={batch.results.length > 0 || canExport}
               strumenti={(() => {
                 /*
                  * Il descrittore dice QUALI cerchi e QUANDO; qui si dice cosa
@@ -2691,6 +2834,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   erase: () => apriPennello('erase'),
                   undo: undoResult,
                   swap: swapFile,
+                  scarica: scaricaIlPiano,
+                  penna: () => apriPennello('restore'),
+                  indietro: undoResult,
+                  avanti: redoResult,
                   freccia: () => setCollegaBrain((v) => (v ? null : { da: null })),
                   riascolta: voce.riascolta,
                   unAltro: () => setEffetto((e) => ({ ...e, seme: e.seme + 1 })),
@@ -2727,6 +2874,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   righello: brushOpen && modoPennello === 'righello',
                   restore: brushOpen && modoPennello === 'restore',
                   erase: brushOpen && modoPennello === 'erase',
+                  penna: brushOpen && modoPennello !== 'righello',
                   freccia: Boolean(collegaBrain),
                   ritmo: effettiAudio.recording,
                   tutorial: sopraLaTela === 'tutorial',
@@ -2790,6 +2938,9 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   disabled:
                     Boolean(busy) ||
                     (str.id === 'undo' && history.length === 0) ||
+                    (str.id === 'indietro' && history.length === 0) ||
+                    (str.id === 'avanti' && futuro.length === 0) ||
+                    (str.id === 'scarica' && !(batch.results.length > 0 || canExport)) ||
                     (str.id === 'annulla' && !(tool === 'vocale' ? filtriDiPrima : telaDiPrima)) ||
                     // I nodi non hanno cosa modificare finche' non e' scelto un
                     // tracciato: acceso, sarebbe un comando che non risponde.
@@ -2893,51 +3044,45 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
         </aside>
       </div>
 
-      {/* La libreria non compare nello scontorno: il piano e' vuoto, e
-          «scarica tutto» e' diventato l'icona in alto a destra. Resta in
-          tutti gli altri servizi, dove il lavoro si accumula. */}
       {/*
-        ⚠️ **La libreria si vede anche col muro alzato** (spec § 3.5): chi non
-        ha pagato deve poter guardare e scaricare i propri file. Un prodotto
-        che li tiene in ostaggio non e' un prodotto.
-
-        E fin qui era `!DESCRITTORI[tool]`, cioe' «solo nei servizi fuori
-        dall'impianto» — che dal 2026-09-09 non sono piu' nessuno: entrati
-        tutti e cinque, la libreria era diventata IRRAGGIUNGIBILE da qualunque
-        schermata. Trovato mettendo il muro, non riferito da nessuno.
-      */}
-      {(chiuso || !DESCRITTORI[tool]) && (
-        <Library
-          store={library}
-          open={libOpen}
-          onToggle={() =>
-            setLibOpen((v) => {
-              const next = !v;
-              try {
-                localStorage.setItem('jayl.libOpen', next ? '1' : '0');
-              } catch {
-                /* la sessione corrente funziona lo stesso */
-              }
-              return next;
-            })
-          }
-          big={libBig}
-          onToggleBig={() =>
-            setLibBig((v) => {
-              const next = !v;
-              try {
-                localStorage.setItem('jayl.libBig', next ? '1' : '0');
-              } catch {
-                /* la sessione corrente funziona lo stesso */
-              }
-              return next;
-            })
-          }
-          onOpenInEditor={openWorkInEditor}
-          onDownloadAll={downloadAll}
-          onAssetAction={assetAction}
-        />
-      )}
+       * ⚠️ La libreria si vede SEMPRE — non «anche col muro alzato» (spec
+       * § 3.5), che era la vecchia condizione scritta a guardia: col muro
+       * spento diventava vera solo dentro l'editor SVG, e da lì soltanto,
+       * rendendo l'archivio del cliente irraggiungibile da ogni altra
+       * schermata. I file di chi li ha fatti non stanno dietro nessuna
+       * porta — né commerciale né accidentale, e stavolta senza eccezioni:
+       * niente da nominare, niente da dimenticare di aggiornare.
+       */}
+      <Library
+        store={library}
+        open={libOpen}
+        onToggle={() =>
+          setLibOpen((v) => {
+            const next = !v;
+            try {
+              localStorage.setItem('jayl.libOpen', next ? '1' : '0');
+            } catch {
+              /* la sessione corrente funziona lo stesso */
+            }
+            return next;
+          })
+        }
+        big={libBig}
+        onToggleBig={() =>
+          setLibBig((v) => {
+            const next = !v;
+            try {
+              localStorage.setItem('jayl.libBig', next ? '1' : '0');
+            } catch {
+              /* la sessione corrente funziona lo stesso */
+            }
+            return next;
+          })
+        }
+        onOpenInEditor={openWorkInEditor}
+        onDownloadAll={downloadAll}
+        onAssetAction={assetAction}
+      />
 
       {!DESCRITTORI[tool] && <footer className="statusbar">
         <span>

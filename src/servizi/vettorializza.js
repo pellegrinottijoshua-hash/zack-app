@@ -41,12 +41,18 @@ export default {
      *
      * Le etichette sono quelle che `engine/trace.js` già dichiara.
      */
-    opzioni: [
-      { id: 'poster', label: 'trace.poster.label' },
-      { id: 'photo', label: 'trace.photo.label' },
-      { id: 'bw', label: 'trace.bw.label' },
+    gruppi: [
+      {
+        id: 'preset',
+        label: 'vector.preset.title',
+        predefinita: 'poster',
+        opzioni: [
+          { id: 'poster', label: 'trace.poster.label' },
+          { id: 'photo', label: 'trace.photo.label' },
+          { id: 'bw', label: 'trace.bw.label' },
+        ],
+      },
     ],
-    predefinita: 'poster',
   },
 
   strumenti: [

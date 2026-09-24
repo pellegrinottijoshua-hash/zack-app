@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
 import { FATTORI, PASSI, commutaFattore, commutaPasso } from '../engine/ricette.js';
+import { postoDelPiu, mostraMascotte, cerchiPerLato } from '../servizi/pelle.js';
 import Icon from './Icon.jsx';
 
 /**
@@ -9,15 +10,17 @@ import Icon from './Icon.jsx';
  * È la stessa schermata della home, con lo studio dietro. Il principio è che
  * **il piano di lavoro è vuoto**: niente barra dei comandi sopra la tela,
  * niente pannello della qualità di fianco, niente due pulsanti in fondo. Ci
- * sono cinque cose sole, e stanno agli angoli:
+ * sono quattro cose sole, e stanno agli angoli:
  *
  * - il `+` grande in mezzo, che è il gesto con cui si comincia;
  * - il **tasto Zack** in basso a destra, sopra la fila dei servizi: è lui che
  *   fa il lavoro, e la catena la decide il punto oro;
- * - la **mascotte** in basso a sinistra, ferma, accanto al tasto;
- * - **scarica** in alto a destra, che è il gesto che chiude;
+ * - la **mascotte** in basso a sinistra, ferma, accanto al tasto — finché il
+ *   piano è vuoto: `mostraMascotte` decide quando c'è;
  * - gli **strumenti a destra**, cerchi in colonna, che compaiono *dopo* —
  *   quando c'è qualcosa da correggere. Prima non ci sarebbe niente da fare.
+ *   **Scarica** (Task 7) è tornato dall'angolo in alto a destra a essere uno
+ *   di questi cerchi: lo stesso gesto, un posto solo.
  *
  * La scelta del modello è finita dentro il punto oro insieme alla catena: sono
  * tutt'e due «come deve comportarsi il tasto», e in mezzo allo schermo erano
@@ -56,14 +59,12 @@ export default function Piano({
   onZack,
   onRicetta,
   onModello,
-  onScarica,
-  puoiScaricare,
   /** Il menu del `+`, aperto: un momento, non uno stato del prodotto. */
   menu,
   onMenu,
-  /** L'opzione scelta nel punto oro, per i servizi che ne dichiarano. */
-  opzione,
-  onOpzione,
+  /** Le scelte del punto oro, un valore per gruppo: `{ [gruppo]: idScelto }`. */
+  scelte,
+  onScelta,
   /** Il pannello aperto sopra la tela: gli avanzati, quando c'è qualcosa. */
   pannello,
   /** Sta succedendo qualcosa che l'utente deve poter fermare (una registrazione). */
@@ -96,6 +97,14 @@ export default function Piano({
   // scontorno scritta dentro il pezzo che dovrebbe valere per tutti.
   const offerti = models.filter((m) => servizio.tasto.modelli.includes(m.id));
 
+  /* Dove sta il `+`, e se la mascotte c'è: due decisioni che vivevano dentro
+     i ternari di questo JSX, cioè dove nessun test poteva vederle. */
+  const posto = postoDelPiu(servizio.id, { quanti, tetto: servizio.accetta.quanti });
+
+  /* Quanti cerchi per fianco: il palco li conta per farsi alto quanto la
+     sua colonna più lunga (`min-height` di `.sc` in styles.css). */
+  const cerchi = cerchiPerLato(strumenti);
+
   return (
     <div
       className="sc"
@@ -116,6 +125,7 @@ export default function Piano({
         onFiles([...e.dataTransfer.files]);
       }}
       data-sopra={sopra || undefined}
+      style={{ '--colonna-sinistra': cerchi.sinistra, '--colonna-destra': cerchi.destra }}
       /* Le colonne degli strumenti sono sovrapposte, non affiancate: senza
          dirlo alla tela, su 390 px coprirebbero 44 px di lavoro per lato.
          Contratto § 7.2: «la tela resta grande — 390 − 44 − 44 = 302». */
@@ -127,30 +137,9 @@ export default function Piano({
             : undefined
       }
     >
-      {/* Scarica, in alto a destra: il gesto che chiude il lavoro, e non
-          appartiene a nessuno dei file in particolare. */}
-      <button
-        className="sc-scarica"
-        disabled={!puoiScaricare || busy}
-        onClick={onScarica}
-        title={t('action.export.label')}
-        aria-label={t('action.export.label')}
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22">
-          <path
-            d="M12 3v11m0 0 4-4m-4 4-4-4M4 19h16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-
       {/*
-        Col piano gia' occupato, il `+` e la croce restano — piccoli, in alto a
-        sinistra, dove non c'e' nient'altro.
+        Col piano gia' occupato, il `+` e la croce restano — piccoli, a
+        sinistra del file, dove non c'e' nient'altro.
 
         E' il contratto UX §5, che diceva gia' tutt'e due e non era rispettato
         (segnalato dal committente il 2026-09-05): «il `+` si vede con 1 o 2,
@@ -158,10 +147,20 @@ export default function Piano({
         solo». Il codice mostrava il `+` SOLO a piano vuoto, e la croce solo
         dalla colonna da due in su: con un file solo non c'era modo ne' di
         aggiungerne un altro ne' di toglierlo, se non ricominciando.
+
+        `posto` (Task 7, `pelle.js`) decide DOVE sta il +, non se l'angolo
+        c'è: sono due domande diverse, e confonderle è stato un Critico della
+        revisione (Giro di correzioni 1). Con `quanti === tetto` (es. UN file
+        su un servizio che ne accetta uno solo) `posto` torna `null` — il `+`
+        non serve più, è al tetto — ma la × per togliere quel file resta
+        viva: era lei sola a mancare, con `onTogli` cablato e nessun'altra
+        strada nel codice per svuotare il piano. L'angolo quindi si monta
+        quando c'è ALMENO UNA delle due cose da mostrarci; le due guardie
+        interne restano indipendenti e decidono ciascuna il suo pezzo.
       */}
-      {!vuoto && (
-        <div className="sc-angolo">
-          {quanti > 0 && quanti < servizio.accetta.quanti && (
+      {(posto === 'sinistra' || (quanti === 1 && onTogli)) && (
+        <div className="sc-angolo" data-posto="sinistra">
+          {posto === 'sinistra' && (
             <button
               className="sc-piu-piccolo"
               onClick={onPick}
@@ -199,7 +198,20 @@ export default function Piano({
       )}
 
       {/* La tela. Vuota c'è il `+` e basta: è il gesto con cui si comincia, ed
-          è grande perché intorno non c'è nient'altro. */}
+          è grande perché intorno non c'è nient'altro.
+
+          `vuoto` e non `posto === 'centro'`: sono due domande diverse, e
+          scambiarle è stato un Critico della revisione (Giro di correzioni 1,
+          `src/servizi/piano.js:56-62`). `postoDelPiu` conta i FILE — su
+          Immagine i riferimenti, sul Vettoriale i file portati dentro — e con
+          zero di quelli torna `'centro'` anche se la tela NON è vuota: per
+          Immagine è il prompt (col Preventivo e i riferimenti scelti), per il
+          Vettoriale è il foglio da disegno con gli otto strumenti già accesi
+          sopra. Montare lì il `+` grande al posto di `children` smontava
+          quella schermata per intero — lo stesso guasto del righello.
+          `vuoto` (`pianoVuoto`, `piano.js`) è la prop che c'è da sempre e
+          risponde alla domanda giusta: «c'è qualcosa sopra il piano, o sta
+          succedendo qualcosa?». */}
       <div className="sc-tela">
         {vuoto ? (
           <div className="sc-vuoto">
@@ -275,17 +287,23 @@ export default function Piano({
       {pannello && <div className="sc-pannello">{pannello}</div>}
 
       {/* In basso: la mascotte a sinistra, il tasto a destra. Sopra la fila
-          dei servizi, che sta sotto di loro. */}
-      <img
-        className="sc-zack"
-        src="/zack/zack-disegna.webp"
-        srcSet="/zack/zack-disegna-360.webp 360w, /zack/zack-disegna.webp 720w"
-        sizes="150px"
-        alt=""
-        aria-hidden="true"
-        width="720"
-        height="720"
-      />
+          dei servizi, che sta sotto di loro.
+
+          `mostraMascotte` (Task 5, `pelle.js`): c'è finché il piano è vuoto,
+          e solo sui servizi che hanno uno stato vuoto — non su Brain, dove
+          la tela vuota è il punto di partenza e non un'attesa. */}
+      {mostraMascotte(servizio.id, { quanti }) && (
+        <img
+          className="sc-zack"
+          src="/zack/zack-disegna.webp"
+          srcSet="/zack/zack-disegna-360.webp 360w, /zack/zack-disegna.webp 720w"
+          sizes="150px"
+          alt=""
+          aria-hidden="true"
+          width="720"
+          height="720"
+        />
+      )}
 
       <div className="sc-tasto" ref={box}>
         <button
@@ -385,7 +403,7 @@ export default function Piano({
                 pastiglie che non toccano niente: il tasto li' riordina. */}
             {servizio.tasto.azione === 'catena' && (
               <div className="sc-catena">
-                {PASSI.map((passo) => {
+                {(servizio.tasto.passi || PASSI).map((passo) => {
                   const acceso = ricetta.includes(passo);
                   return (
                     <button
@@ -402,24 +420,24 @@ export default function Piano({
               </div>
             )}
 
-            {/* Le opzioni del tasto, per chi non ha una catena: su Brain sono
-                le quattro regole di riordino. Rispondono alla stessa domanda
-                del punto oro — «cosa fara' quando lo premo» — quindi stanno
-                dove sta gia' quella risposta. */}
-            {servizio.tasto.opzioni && (
-              <div className="sc-fattori" role="group" aria-label={t('zack.what')}>
-                {servizio.tasto.opzioni.map((o) => (
+            {/* Le scelte del tasto, un gruppo per domanda: su Brain la regola
+                di riordino, su Immagine la misura e il formato. Rispondono
+                tutte alla stessa domanda del punto oro — «cosa farà quando lo
+                premo» — quindi stanno dove sta già quella risposta. */}
+            {(servizio.tasto.gruppi || []).map((g) => (
+              <div className="sc-fattori" role="group" aria-label={t(g.label)} key={g.id}>
+                {g.opzioni.map((o) => (
                   <button
                     key={o.id}
                     className="pastiglia"
-                    aria-pressed={opzione === o.id}
-                    onClick={() => onOpzione(o.id)}
+                    aria-pressed={(scelte?.[g.id] ?? g.predefinita) === o.id}
+                    onClick={() => onScelta(g.id, o.id)}
                   >
                     {t(o.label)}
                   </button>
                 ))}
               </div>
-            )}
+            ))}
           </div>
         )}
       </div>

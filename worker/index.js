@@ -322,7 +322,7 @@ async function genera(req, env) {
   // ⚠️ `'grande'` (2K) e non `'rapida'` (1K): costano uguale — stessi 1120
   // token d'immagine, misurato — e il 2K dà quattro volte i pixel per tre
   // secondi in più. Non c'è ragione di offrire di meno per default.
-  const { servizio, prompt, riferimenti = [], misura = 'grande' } = await req.json().catch(() => ({}));
+  const { servizio, prompt, riferimenti = [], misura = 'grande', formato = '1:1' } = await req.json().catch(() => ({}));
 
   const voce = LISTINO[servizio];
   if (!voce) return json({ errore: 'servizio-sconosciuto' }, 400);
@@ -404,8 +404,16 @@ async function genera(req, env) {
     const misuraGoogle = (voce.misure && Object.hasOwn(voce.misure, misura))
       ? voce.misure[misura]
       : voce.misure?.grande || '1K';
+    // ⚠️ `Object.hasOwn` come per la misura, e per la stessa ragione: `?.[x]`
+    // guarda anche la catena dei prototipi, quindi `formato: 'toString'`
+    // troverebbe una funzione. Un formato sconosciuto NON è un errore da
+    // 400: si ricade sul quadrato, perché il cliente ha già pagato e una
+    // forma diversa da quella scelta è meno peggio di un addebito perso.
+    const formatoGoogle = (voce.formati && Object.hasOwn(voce.formati, formato))
+      ? voce.formati[formato]
+      : voce.formati?.['1:1'];
     const { dati, mime, costoReale } = await generaConGoogle({
-      voce, prompt, riferimenti, misura: misuraGoogle, env,
+      voce, prompt, riferimenti, misura: misuraGoogle, formato: formatoGoogle, env,
     });
 
     /*
@@ -439,10 +447,12 @@ async function genera(req, env) {
      * 'rimborsato', e lo spazzino del Task 5 — che raccoglie SOLO i lavori
      * 'in-corso' — non lo ritroverebbe mai più. Nessuno se ne accorgerebbe.
      *
-     * Si lascia invece il lavoro 'in-corso': lo spazzino ci riprova fra
-     * trenta minuti, che è il mestiere per cui esiste. E si risponde col
-     * saldo che risulta DAVVERO (`rimasto`, il saldo dopo l'addebito), non
-     * con quello sperato (`rimasto + prezzo`).
+     * Si lascia invece il lavoro 'in-corso': lo spazzino lo raccoglie al
+     * prossimo giro — passa ogni ora (`wrangler.jsonc`, `crons: ['0 * * * *']`),
+     * non ogni trenta minuti: `APPESO_MINUTI` qui sotto è l'età minima perché
+     * un lavoro venga raccolto, non la cadenza delle passate. E si risponde
+     * col saldo che risulta DAVVERO (`rimasto`, il saldo dopo l'addebito),
+     * non con quello sperato (`rimasto + prezzo`).
      *
      * L'id del lavoro si passa solo se la riga esiste davvero — altrimenti
      * `null`, che `accredita` accetta (`p_lavoro` ha default `null`): con la
@@ -458,13 +468,15 @@ async function genera(req, env) {
       // fa gia' per `/me`) che inventare un numero da un `rimasto` che non
       // e' mai esistito.
       return json({
-        errore: 'fornitore', dettaglio: e.code || 'ignoto',
+        errore: 'fornitore', dettaglio: e.code || 'ignoto', rimborsato: true,
         saldo: rimasto === null ? null : rimasto + prezzo,
       }, 502);
     }
     /*
      * Il rimborso non ha preso: la riga (se esiste) NON si tocca, resta
-     * 'in-corso' com'è nata — lo spazzino ci riprova fra trenta minuti.
+     * 'in-corso' com'è nata — lo spazzino la raccoglie al prossimo giro
+     * orario, non entro trenta minuti (vedi il commento sopra e
+     * `APPESO_MINUTI`).
      *
      * ⚠️ Caso peggiore: riga mai creata E rimborso fallito. Lì lo spazzino
      * non può aiutare — guarda solo `lavori`, e qui non c'è nessuna riga da
@@ -473,7 +485,7 @@ async function genera(req, env) {
      * transazione dell'addebito, prima ancora che si arrivasse qui. La
      * riconciliazione lo vede lì, non in `lavori`.
      */
-    return json({ errore: 'fornitore', dettaglio: e.code || 'ignoto', saldo: rimasto }, 502);
+    return json({ errore: 'fornitore', dettaglio: e.code || 'ignoto', rimborsato: false, saldo: rimasto }, 502);
   }
 }
 

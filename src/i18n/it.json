@@ -214,6 +214,9 @@
       "label": "Tipo di tracciato",
       "help": "Come interpretare l'immagine: colori piatti, sfumature o solo bianco e nero."
     },
+    "preset": {
+      "title": "Resa"
+    },
     "clean": {
       "label": "Pulisci il risultato",
       "help": "Alleggerisce il file: meno decimali nei tracciati e meno puntini isolati, a parità di aspetto."
@@ -387,9 +390,6 @@
   },
   "rail": {
     "title": "Servizi",
-    "local": "Sul tuo computer",
-    "paid": "A consumo",
-    "balance": "Saldo",
     "soon": "presto",
     "open": "Mostra i nomi",
     "close": "Solo icone",
@@ -470,7 +470,11 @@
   },
   "sound": {
     "base": {
+      "title": "Voce di partenza",
       "neutra": "Naturale"
+    },
+    "family": {
+      "title": "Famiglia"
     },
     "claim": "Registra la tua voce o portane una, e trasformala.",
     "saveVoice": "Salva questa voce",
@@ -610,6 +614,7 @@
   },
   "bar": {
     "undo": "Annulla",
+    "redo": "Rifai",
     "eraser": "Gomma",
     "crop": "Ritaglia",
     "swap": "Cambia file",
@@ -665,6 +670,7 @@
   "brain": {
     "pacco": "Fai un pacco",
     "riordina": {
+      "title": "Come riordino",
       "gruppi": "Per gruppi",
       "tipo": "Per tipo",
       "compatta": "Compatta",
@@ -769,17 +775,35 @@
   "immagine": {
     "claim": "Scrivi cosa vuoi vedere. Aggiungi i tuoi asset come riferimento.",
     "riferimenti": "Riferimenti",
+    "misura": {
+      "title": "Quanto grande",
+      "1k": "1K",
+      "2k": "2K"
+    },
+    "formato": {
+      "title": "Che forma",
+      "1_1": "1:1",
+      "9_16": "9:16",
+      "16_9": "16:9",
+      "4_5": "4:5",
+      "5_4": "5:4",
+      "3_4": "3:4",
+      "4_3": "4:3",
+      "2_3": "2:3",
+      "3_2": "3:2",
+      "21_9": "21:9"
+    },
     "prezzoNota": "questa generazione, prezzo pieno",
     "saldoCorto": "Non hai abbastanza credito.",
     "escono": "I riferimenti che scegli vengono mandati al fornitore: è l’unica cosa che esce dal tuo computer, e senza mandarla non si può generare.",
     "salva": "Salva in libreria",
     "salvato": "Salvata in libreria.",
     "togli": "Togli",
-    "rapida": "Rapida",
-    "grande": "Grande",
     "attendi": "Zack sta generando. Ci mette una ventina di secondi.",
     "vuoto": "Scrivi prima cosa vuoi vedere.",
     "errore": "Non sono riuscito a generare. Riprova fra un momento.",
+    "rimborsato": "Non è venuta. Il credito è tornato sul tuo saldo: non hai pagato niente.",
+    "rimborsoInCorso": "Non è venuta. Il credito ti torna entro un paio d'ore — controlliamo noi, non devi fare niente.",
     "assetMancante": "Un asset scelto come riferimento non è più nella libreria. Toglilo e riprova.",
     "chiudi": "Va bene così",
     "ruolo": { "personaggio": "Personaggio", "oggetto": "Oggetto", "stile": "Stile" }

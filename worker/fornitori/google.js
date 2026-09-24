@@ -59,9 +59,11 @@ function costoVero(u) {
 /**
  * @param misura `'1K'` o `'2K'` — la sceglie il cliente e **costano uguale**:
  *   stessi 1120 token d'immagine, quattro volte i pixel (misurato).
+ * @param formato l'`aspectRatio` che Google si aspetta (es. `'9:16'`), oppure
+ *   `undefined` per lasciare a Google la sua forma di default.
  * @returns `{ dati, mime, costoReale }`, oppure solleva.
  */
-export async function generaConGoogle({ voce, prompt, riferimenti = [], misura = '1K', env }) {
+export async function generaConGoogle({ voce, prompt, riferimenti = [], misura = '1K', formato, env }) {
   const parti = [{ text: prompt }, ...riferimenti.map(pezzo).filter(Boolean)];
 
   const res = await fetch(`${BASE}/${voce.modello}:generateContent?key=${env.GOOGLE_API_KEY}`, {
@@ -76,7 +78,9 @@ export async function generaConGoogle({ voce, prompt, riferimenti = [], misura =
        * generazione, e il difetto si sarebbe visto col primo cliente.
        * `imageConfig` invece è vero — misurato il 2026-09-10.
        */
-      generationConfig: { imageConfig: { imageSize: misura } },
+      generationConfig: {
+        imageConfig: { imageSize: misura, ...(formato ? { aspectRatio: formato } : {}) },
+      },
     }),
   });
 

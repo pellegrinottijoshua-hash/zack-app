@@ -13,6 +13,9 @@ import {
   CATEGORIE,
 } from '../engine/brain.js';
 import Icon from './Icon.jsx';
+// Con l'alias: `muovi` qui e' gia' quello di `engine/brain.js` (sposta un
+// oggetto), e `muove` accanto a lui si confonderebbe a ogni lettura.
+import { nuovoGesto, giu as ditoGiu, muove as ditoMuove, su as ditoSu, dueDita, ancora } from '../engine/gesti.js';
 
 /**
  * Brain: la tela dove le idee si mettono in ordine.
@@ -221,6 +224,15 @@ function Brain({
   const [vista, setVista] = useState({ x: 40, y: 40, z: 1 });
   const piano = useRef(null);
   const preso = useRef(null);
+  /**
+   * Due dita muovono e ingrandiscono la mappa, un dito trascina l'oggetto
+   * (Task 11). `gesto` sono le dita appoggiate; `pizzico` e' la vista e
+   * l'angolo del piano all'INIZIO del pizzico — `ancora` ricalcola ogni
+   * evento da li', mai dal passo precedente. `vista` resta l'unico stato:
+   * la rotella e «centra» scrivono nello stesso posto.
+   */
+  const gesto = useRef(nuovoGesto());
+  const pizzico = useRef(null);
 
   const perId = useMemo(() => new Map(assets.map((a) => [a.id, a])), [assets]);
 
@@ -228,6 +240,8 @@ function Brain({
   // Trascinamento. I puntatori si catturano: senza, uscire dalla finestra
   // mentre si trascina lascia l'oggetto attaccato al mouse per sempre.
   function prendi(e, id) {
+    // Il secondo dito non prende niente: sta cominciando un pizzico.
+    if (dueDita(gesto.current)) return;
     if (e.target.closest('input, textarea, audio, video, button')) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     preso.current = { id, x: e.clientX, y: e.clientY };
@@ -247,6 +261,57 @@ function Brain({
   const molla = () => {
     preso.current = null;
   };
+
+  /**
+   * Ogni dito che si appoggia sul piano, PRIMA che l'oggetto sotto lo prenda
+   * (fase di cattura): e' l'unico modo di sapere che e' il secondo quando
+   * l'oggetto decide se prenderlo.
+   */
+  function ditoAppoggiato(e) {
+    // Il primo dito di un tocco nuovo azzera: un dito alzato fuori dal piano
+    // (evento perso) non deve restare come fantasma e fare di ogni tocco
+    // successivo un «secondo dito».
+    if (e.isPrimary) gesto.current = nuovoGesto();
+    ditoGiu(gesto.current, { id: e.pointerId, x: e.clientX, y: e.clientY });
+    if (!dueDita(gesto.current)) return;
+    // ⚠️ Il brief: con un oggetto in mano, il secondo dito lo MOLLA prima di
+    // cominciare — altrimenti l'oggetto vola via seguendo il centro delle due
+    // dita. `prendi` (che gira dopo, sull'oggetto) non lo riprende.
+    preso.current = null;
+    const r = piano.current.getBoundingClientRect();
+    pizzico.current = { inizio: { ...vista }, left: r.left, top: r.top };
+  }
+
+  function ditoMosso(e) {
+    const m = ditoMuove(gesto.current, { id: e.pointerId, x: e.clientX, y: e.clientY });
+    if (!m) {
+      trascina(e);
+      return;
+    }
+    const p = pizzico.current;
+    if (!p) return;
+    const { left: l, top: t } = p;
+    const cont = riquadro(items);
+    const el = piano.current;
+    setVista(
+      ancora(
+        p.inizio,
+        { fattore: m.fattore, cx: m.cx - l, cy: m.cy - t, cx0: m.cx0 - l, cy0: m.cy0 - t },
+        {
+          min: ZOOM_MIN,
+          max: ZOOM_MAX,
+          palco: el ? { w: el.clientWidth, h: el.clientHeight } : undefined,
+          contenuto: cont || undefined,
+        },
+      ),
+    );
+  }
+
+  function ditoAlzato(e) {
+    ditoSu(gesto.current, e.pointerId);
+    if (!dueDita(gesto.current)) pizzico.current = null;
+    molla();
+  }
 
   function rotella(e) {
     if (!e.ctrlKey && !e.metaKey) {
@@ -303,9 +368,13 @@ function Brain({
           className="brain-piano"
           ref={piano}
           onWheel={rotella}
-          onPointerMove={trascina}
-          onPointerUp={molla}
+          onPointerDownCapture={ditoAppoggiato}
+          onPointerMove={ditoMosso}
+          onPointerUp={ditoAlzato}
+          onPointerCancel={ditoAlzato}
           onPointerDown={(e) => {
+            // Il secondo dito sul vuoto comincia un pizzico, non deseleziona.
+            if (dueDita(gesto.current)) return;
             if (e.target === e.currentTarget || e.target.classList.contains('brain-tela')) {
               setScelto(null);
               onCollega(null);
@@ -382,6 +451,8 @@ function Brain({
                     if (a && KIND_TESTO.includes(a.kind)) setAperto(a);
                   }}
                   onPointerDown={(e) => {
+                    // Un secondo dito non disegna frecce e non prende oggetti.
+                    if (dueDita(gesto.current)) return;
                     if (collega) {
                       // Due clic: il primo sceglie da dove, il secondo dove.
                       // Dopo il secondo la modalità RESTA accesa: chi disegna

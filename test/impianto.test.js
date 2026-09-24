@@ -11,6 +11,7 @@ import { DESCRITTORI } from '../src/servizi/index.js';
  * niente — si vede aprendo il servizio, ed e' gia' costato una volta.
  */
 const APP = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
+const PIANO = readFileSync(new URL('../src/components/Piano.jsx', import.meta.url), 'utf8');
 
 test('App.jsx costruisce gli strumenti dal descrittore', () => {
   assert.match(APP, /strumentiVisibili\(/, 'gli strumenti sono ancora scritti a mano dentro App.jsx');
@@ -42,6 +43,34 @@ test('ogni strumento dichiarato ha un gesto che lo esegue', () => {
       assert.match(mappa, new RegExp(`\\b${s.id}\\b`), `manca il gesto per «${s.id}» (${d.id})`);
     }
   }
+});
+
+test('leggiRicetta NON amputa la ricetta salvata: soloOfferti non ci abita più', () => {
+  /*
+   * Il difetto che questa prova impedisce ora (Critico 2 della revisione del
+   * Task 6, 2026-09-16 — rovescia il test precedente, che chiedeva l'esatto
+   * contrario): `leggiRicetta` che passa da `soloOfferti` cancellava «buchi»
+   * — richiudi le controforme — anche dalle catene salvate e dalla ricetta
+   * di fabbrica, rendendo `closeHoles` ineseguibile da qualunque punto del
+   * prodotto, fabbrica compresa. La regola vera è l'opposto, ed è già scritta
+   * in `landing/Landing.jsx` per la ricetta condivisa dalla home: i passi che
+   * il tasto non offre più vanno IGNORATI dalla pastiglia, non CANCELLATI dal
+   * dato — chi ha costruito una catena non deve perderla passando da un
+   * punto che offre meno pastiglie.
+   */
+  const inizio = APP.indexOf('function leggiRicetta');
+  assert.notEqual(inizio, -1, 'leggiRicetta non esiste piu’ in App.jsx');
+  const fine = APP.indexOf('\nimport', inizio);
+  assert.notEqual(fine, -1, 'leggiRicetta non finisce piu’ dove il test la cerca');
+  const corpo = APP.slice(inizio, fine);
+  assert.doesNotMatch(corpo, /soloOfferti\(/, 'leggiRicetta torna ad amputare la ricetta salvata');
+});
+
+test('è il punto oro (Piano.jsx), non leggiRicetta, a filtrare le pastiglie offerte', () => {
+  // Il gemello della prova sopra: se nessuno filtrasse più le pastiglie da
+  // nessuna parte, un passo che il tasto non offre tornerebbe a comparire
+  // come pastiglia accesa — la stessa botola del Task 6, dall'altro verso.
+  assert.match(PIANO, /tasto\.passi/, 'Piano.jsx non filtra piu’ le pastiglie con tasto.passi');
 });
 
 test('«filmato» non compare piu’ nelle liste di esclusione', () => {
@@ -258,32 +287,120 @@ test('«c’e’ un risultato» non vuol dire PNG per tutti', () => {
   );
 });
 
-test('sul desktop il tasto Zack sta in ALTO, non in basso', () => {
+// ⚠️ Task 9 (committente, 2026-09-15) ha SUPERATO il contratto § 8
+// (2026-09-04): la pianta dello studio rimanda il tasto Zack in basso al
+// centro — «sotto di lui non c'e' piu' la fila dei servizi, che e' salita in
+// cima» — e il pannello del punto oro torna ad aprirsi SOPRA di lui, non
+// sotto. Le due prove qui sotto controllavano la decisione vecchia (tasto in
+// alto, pannello in giu'); sono state riscritte sulla decisione nuova, non
+// cancellate — lo stesso principio che il file applica a se stesso.
+//
+// ⚠️ C3 + M1 (revisione, giro di correzione 1): il file ha DUE blocchi
+// `@media (min-width: 761px)` — questo (Task 9, riga ~1574) e il §8
+// (2026-09-04, più in basso), che vince la cascata sulle stesse proprietà
+// perché sta dopo nel file. Le due prove qui sotto facevano
+// `CSS.slice(CSS.indexOf(...))` e poi `.match()` SENZA `/g`: il primo
+// `.sc-tasto {...}` (o `.sc-tuo {...}`) che il motore incontra dopo quel
+// punto è quello scritto da QUESTO blocco — cioè quello giusto per
+// costruzione, non quello che vince davvero nel browser. Il controller ha
+// rimesso `top: 58px` e `top: calc(100% + 10px)` nel blocco §8 (quello che
+// vince) e la suite è restata verde. `ogniRegolaDesktop` estrae OGNI blocco
+// `@media (min-width: 761px)` del file (bilanciando le graffe, non una
+// finestra a lunghezza fissa — altrimenti si ricade in I4) e le due prove
+// ora controllano OGNI occorrenza della regola, in entrambi i blocchi.
+// Anche la guardia era a metà: `/top:\s*\d/` non vede `top: calc(...)`, e
+// `/top:\s*calc/` non vede `top: 100px`. Le due forme sono guardate insieme.
+/*
+ * ⚠️ Minor (revisione, giro di correzione 2): il bilanciamento delle graffe
+ * contava anche quelle dentro i commenti (innocuo oggi — zero graffe nei
+ * commenti di questo blocco — ma non una garanzia per sempre), e la regola
+ * per selettore cercava `\.selettore\s*\{([^}]*)\}`: un COMMENTO con una `}`
+ * dentro la regola guardata tronca quella finestra prima della proprietà
+ * cercata, e un selettore RAGGRUPPATO (`.sc-tasto,\n  .altro {`) non è mai
+ * seguito subito da `{`, quindi sfuggirebbe. Le due funzioni sotto tolgono i
+ * commenti prima di contare/cercare e confrontano i selettori spezzati per
+ * virgola invece di pretendere che il selettore preceda subito la graffa.
+ */
+function trovaFineBlocco(css, inizio) {
+  let profondita = 1;
+  let i = inizio;
+  while (profondita > 0 && i < css.length) {
+    if (css.startsWith('/*', i)) {
+      const fine = css.indexOf('*/', i + 2);
+      i = fine === -1 ? css.length : fine + 2;
+      continue;
+    }
+    if (css[i] === '{') profondita++;
+    else if (css[i] === '}') profondita--;
+    i++;
+  }
+  return i - 1;
+}
+
+function regoleDelSelettore(blocco, selettoreEsatto) {
+  const senzaCommenti = blocco.replace(/\/\*[\s\S]*?\*\//g, '');
+  const risultati = [];
+  const re = /([^{}]+)\{([^{}]*)\}/g;
+  let m;
+  while ((m = re.exec(senzaCommenti))) {
+    const selettori = m[1].split(',').map((s) => s.replace(/\s+/g, ' ').trim());
+    if (selettori.includes(selettoreEsatto)) risultati.push(m[2]);
+  }
+  return risultati;
+}
+
+function ogniRegolaDesktop(css, selettore) {
+  const blocchi = [];
+  const apertura = /@media \(min-width: 761px\)\s*\{/g;
+  let m;
+  while ((m = apertura.exec(css))) {
+    const i = m.index + m[0].length;
+    const fine = trovaFineBlocco(css, i);
+    blocchi.push(css.slice(i, fine));
+    apertura.lastIndex = fine;
+  }
+  return blocchi.flatMap((b) => regoleDelSelettore(b, `.${selettore}`));
+}
+
+test('sul desktop il tasto Zack sta in BASSO al centro, non piu’ in alto a destra', () => {
   /*
-   * Contratto § 8, e richiesta esplicita del committente del 2026-09-04: «il
-   * desktop voglio il tasto zack medio grande a destra in alto», «zack va nel
-   * canva in alto a destra, sotto» libreria e scarica.
-   *
-   * E' una regola CSS dentro una media query, quindi nessun test di
-   * comportamento la vede: si legge il foglio. Misurato nel browser a 1280 px
-   * — tasto a (701, 153), scarica a (911, 95), strumenti a (913, 310), cioe'
-   * 14 px sotto il tasto.
+   * Misurato nel browser a 1280 px dopo Task 9: il tasto e' centrato in
+   * orizzontale (`left: 50%; transform: translateX(-50%)`) e NON porta piu'
+   * nessun `top:` che lo ancori in alto — ricade sulla regola base
+   * (`bottom: 8px`), la stessa lettura di sorgente usata da questo file
+   * prima del contratto § 8.
    */
   const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
-  const desktop = CSS.slice(CSS.indexOf('@media (min-width: 761px)'));
-  assert.ok(desktop.length > 0, 'la media query del desktop non esiste piu’');
-  const blocco = desktop.match(/\.sc-tasto\s*\{([^}]*)\}/);
-  assert.ok(blocco, 'il desktop non dice piu’ dove sta il tasto');
-  assert.match(blocco[1], /top:/, 'il tasto non e’ ancorato in alto');
-  assert.match(blocco[1], /bottom:\s*auto/, 'il tasto e’ ancora ancorato anche in basso');
+  const regole = ogniRegolaDesktop(CSS, 'sc-tasto');
+  assert.ok(regole.length > 0, 'il desktop non dice piu’ dove sta il tasto');
+  for (const regola of regole) {
+    assert.doesNotMatch(
+      regola,
+      /top:\s*(?:calc|\d)/,
+      'il tasto e’ tornato ad ancorarsi in alto in uno dei blocchi ≥761px',
+    );
+  }
+  assert.ok(
+    regole.some((r) => /left:\s*50%/.test(r)),
+    'il tasto non e’ piu’ centrato in orizzontale in nessun blocco ≥761px',
+  );
 });
 
-test('sul desktop il pannello del punto oro si apre in giu’', () => {
-  // Da un tasto in alto, aprirsi verso l'alto vuol dire finire fuori dalla
-  // tela e meta' sotto la striscia nera.
+test('sul desktop il pannello del punto oro si apre in SU, sopra il tasto', () => {
+  // Il tasto e' tornato in basso: aprirsi verso il basso vuol dire finire
+  // sotto la fila dei servizi, che ora sta in cima ma non lascia spazio li'.
   const CSS = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
-  const desktop = CSS.slice(CSS.indexOf('@media (min-width: 761px)'));
-  const blocco = desktop.match(/\.sc-tuo\s*\{([^}]*)\}/);
-  assert.ok(blocco, 'il pannello non e’ stato girato per il desktop');
-  assert.match(blocco[1], /bottom:\s*auto/, 'il pannello si apre ancora verso l’alto');
+  const regole = ogniRegolaDesktop(CSS, 'sc-tuo');
+  assert.ok(regole.length > 0, 'il pannello non e’ stato girato per il desktop');
+  for (const regola of regole) {
+    assert.doesNotMatch(
+      regola,
+      /top:\s*(?:calc|\d)/,
+      'il pannello e’ tornato ad aprirsi verso il basso in uno dei blocchi ≥761px',
+    );
+  }
+  assert.ok(
+    regole.some((r) => /left:\s*50%/.test(r)),
+    'il pannello non e’ piu’ centrato sotto il tasto in nessun blocco ≥761px',
+  );
 });

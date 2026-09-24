@@ -11,8 +11,8 @@
  */
 export default {
   id: 'brain',
-  /** Gira sul computer del cliente: lo paga l'abbonamento, non i crediti. */
-  serve: 'abbonamento',
+  /** Gratis per tutti: è la libreria, e i file sono di chi li ha fatti. */
+  serve: 'niente',
   claim: 'brain.claim',
 
   /*
@@ -40,13 +40,19 @@ export default {
      * dei fattori dell'ingrandimento: sono tutte risposte alla domanda «cosa
      * farà il tasto quando lo premo», e quella domanda ha un posto solo.
      */
-    opzioni: [
-      { id: 'gruppi', label: 'brain.riordina.gruppi' },
-      { id: 'tipo', label: 'brain.riordina.tipo' },
-      { id: 'compatta', label: 'brain.riordina.compatta' },
-      { id: 'frecce', label: 'brain.riordina.frecce' },
+    gruppi: [
+      {
+        id: 'riordino',
+        label: 'brain.riordina.title',
+        predefinita: 'gruppi',
+        opzioni: [
+          { id: 'gruppi', label: 'brain.riordina.gruppi' },
+          { id: 'tipo', label: 'brain.riordina.tipo' },
+          { id: 'compatta', label: 'brain.riordina.compatta' },
+          { id: 'frecce', label: 'brain.riordina.frecce' },
+        ],
+      },
     ],
-    predefinita: 'gruppi',
   },
 
   /*

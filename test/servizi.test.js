@@ -11,6 +11,7 @@ import {
 } from '../src/servizi/index.js';
 import it from '../src/i18n/it.json' with { type: 'json' };
 import en from '../src/i18n/en.json' with { type: 'json' };
+import { PASSI } from '../src/engine/ricette.js';
 
 /*
  * Il descrittore di un servizio: cosa accetta il `+`, cosa fa il tasto Zack,
@@ -27,16 +28,31 @@ import en from '../src/i18n/en.json' with { type: 'json' };
  * Qui il comportamento e' DATI, quindi si guarda invece di cercarlo.
  */
 
-test('lo scontorno con un risultato mostra i quattro strumenti di correzione', () => {
-  const s = strumentiVisibili(getDescrittore('scontorna'), { file: true, risultato: true });
-  assert.deepEqual(s.map((x) => x.id), ['righello', 'restore', 'erase', 'undo']);
+test('prima di Zack la colonna destra non esiste', () => {
+  // S2: «download e indietro non esistono prima di Zack». Un file sul piano
+  // non è un lavoro da correggere: non c'è ancora niente su cui premere.
+  const s = strumentiVisibili(getDescrittore('scontorna'), { file: true, risultato: false });
+  assert.deepEqual(s, []);
 });
 
-test('lo scontorno col solo file mostra annulla e cambia file', () => {
-  // Prima del risultato non c'e' niente da correggere: il righello e i due
-  // pennelli non hanno su cosa lavorare.
-  const s = strumentiVisibili(getDescrittore('scontorna'), { file: true, risultato: false });
-  assert.deepEqual(s.map((x) => x.id), ['undo', 'swap']);
+test('dopo Zack compaiono i cinque, in quest’ordine', () => {
+  const s = strumentiVisibili(getDescrittore('scontorna'), { file: true, risultato: true });
+  assert.deepEqual(s.map((x) => x.id), ['scarica', 'righello', 'penna', 'indietro', 'avanti']);
+});
+
+test('il tasto oro dello scontorno offre solo togli-sfondo e scarica', () => {
+  // S5: niente «richiudi i buchi», niente «misura di stampa», niente «salva
+  // in libreria» — quelli restano sotto Avanzati, dove stanno i gesti di
+  // rifinitura.
+  assert.deepEqual(getDescrittore('scontorna').tasto.passi, ['scontorna', 'scarica']);
+});
+
+test('i passi offerti sono passi VERI del motore', () => {
+  // Un passo inventato qui sarebbe una pastiglia che si accende e non fa
+  // niente: lo stesso guasto del righello del 2026-09-04.
+  for (const d of Object.values(DESCRITTORI)) {
+    for (const p of d.tasto.passi || []) assert.ok(PASSI.includes(p), `${d.id}: «${p}» non è un passo`);
+  }
 });
 
 test('il piano vuoto non mostra nessuno strumento', () => {
@@ -78,7 +94,7 @@ test('ogni etichetta di ogni descrittore esiste in tutt’e due le lingue', () =
    */
   const at = (dict, key) => key.split('.').reduce((o, p) => (o == null ? o : o[p]), dict);
   for (const [id, d] of Object.entries(DESCRITTORI)) {
-    const opzioni = (d.tasto.opzioni || []).map((o) => o.label);
+    const opzioni = (d.tasto.gruppi || []).flatMap((g) => [g.label, ...g.opzioni.map((o) => o.label)]);
     for (const chiave of [d.claim, ...d.strumenti.map((s) => s.label), ...opzioni]) {
       for (const [lang, dict] of [['it', it], ['en', en]]) {
         assert.equal(
@@ -89,6 +105,32 @@ test('ogni etichetta di ogni descrittore esiste in tutt’e due le lingue', () =
       }
     }
   }
+});
+
+test('ogni gruppo del punto oro ha una predefinita che esiste davvero', () => {
+  // Una predefinita fuori dalle opzioni vuol dire nessuna pastiglia accesa
+  // all'apertura, e il tasto che fa una cosa che nessuno ha scelto.
+  for (const d of Object.values(DESCRITTORI)) {
+    for (const g of d.tasto.gruppi || []) {
+      assert.ok(g.id && g.label, `${d.id}: un gruppo senza id o label`);
+      assert.ok(
+        g.opzioni.some((o) => o.id === g.predefinita),
+        `${d.id}/${g.id}: «${g.predefinita}» non è fra le opzioni`,
+      );
+    }
+  }
+});
+
+test('la forma vecchia delle opzioni viene rifiutata, non ignorata', () => {
+  // Un `opzioni` dimenticato in un descrittore non farebbe comparire NIENTE:
+  // lo stesso guasto silenzioso di uno stato fuori da QUANDO.
+  const d = { ...getDescrittore('brain'), tasto: { azione: 'riordina', modelli: [], fattori: false, opzioni: [{ id: 'x', label: 'y' }], predefinita: 'x' } };
+  assert.throws(() => validaDescrittore(d), /gruppi/);
+});
+
+test('un gruppo senza opzioni è un comando che non si può premere', () => {
+  const d = { ...getDescrittore('brain'), tasto: { azione: 'riordina', modelli: [], fattori: false, gruppi: [{ id: 'vuoto', label: 'x', opzioni: [], predefinita: 'x' }] } };
+  assert.throws(() => validaDescrittore(d), /vuoto/);
 });
 
 test('uno stato «quando» inventato viene rifiutato', () => {
@@ -153,8 +195,8 @@ test('ogni servizio dichiara COSA gli serve, e da una lista chiusa', () => {
   }
 });
 
-test('i cinque strumenti locali chiedono l’abbonamento', () => {
-  for (const id of ['scontorna', 'brain', 'vocale', 'effetti', 'vettorializza']) {
+test('tre strumenti locali chiedono abbonamento', () => {
+  for (const id of ['vocale', 'effetti', 'vettorializza']) {
     assert.equal(DESCRITTORI[id].serve, 'abbonamento', `${id} ha cambiato regola`);
   }
 });
@@ -194,4 +236,38 @@ test('uno strumento senza descrittore resta chiuso, non passa gratis quando il m
    */
   assert.equal(servizioAperto(undefined, { stato: 'scaduto', crediti: 99999, prezzo: 0 }), false);
   assert.equal(servizioAperto(undefined, { stato: 'aperto', crediti: 0, prezzo: 0 }), true);
+});
+
+
+test('scontorna e brain non chiedono niente a nessuno', () => {
+  for (const id of ['scontorna', 'brain']) {
+    assert.equal(getDescrittore(id).serve, 'niente');
+    assert.equal(
+      servizioAperto(getDescrittore(id), { stato: 'mai-entrato', crediti: 0, prezzo: 0 }),
+      true,
+      id + ' deve aprirsi anche a chi non e mai entrato',
+    );
+  }
+});
+
+test('niente non apre gli altri due livelli', () => {
+  assert.equal(
+    servizioAperto(getDescrittore('vettorializza'), { stato: 'mai-entrato' }),
+    false,
+    'abbonamento non si apre da solo',
+  );
+  assert.equal(
+    servizioAperto(getDescrittore('immagine'), { stato: 'aperto', crediti: 0, prezzo: 146 }),
+    false,
+    'generazione non si apre a saldo zero',
+  );
+});
+
+test('SERVE elenca i tre livelli, e rifiuta il quarto', () => {
+  assert.deepEqual(SERVE, ['niente', 'abbonamento', 'saldo']);
+  assert.throws(
+    () => validaDescrittore({ ...getDescrittore('scontorna'), serve: 'gratis' }),
+    /gratis/,
+    'un livello inventato deve dirlo, non passare in silenzio',
+  );
 });

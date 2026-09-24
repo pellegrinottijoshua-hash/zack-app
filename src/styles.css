@@ -79,7 +79,17 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: hidden;
+  /* ⚠️ Giro finale del Bloccante 2 (2026-09-24). Era `overflow: hidden`: la
+     schermata non scorreva MAI, quindi quando lo spazio non bastava qualcuno
+     doveva sparire — il palco sotto la libreria, o la libreria fuori dallo
+     schermo, o la colonna degli strumenti accorciata. Ora ognuno tiene la
+     misura che il suo contenuto chiede (`.main`: servizi + palco + colonne,
+     vedi `.sc`; la libreria: testata + un corpo minimo) e, se lo schermo è
+     più basso della somma, la PAGINA scorre, con la sua barra. La testata
+     della libreria, l'unica uscita, resta incollata in fondo allo schermo
+     (`position: sticky` su `.library-head`). */
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .topbar {
@@ -196,13 +206,23 @@ body {
   display: grid;
   grid-template-columns: var(--toolrail) 1fr var(--rail);
   /* E' lui che si prende lo spazio che avanza, e lo dice qui invece di
-     ereditarlo dall'essere il secondo figlio di qualcosa. */
-  flex: 1;
+     ereditarlo dall'essere il secondo figlio di qualcosa.
+
+     `1 0 auto` e non `1` (= `1 1 0%`), giro finale del Bloccante 2
+     (2026-09-24): la base è il suo CONTENUTO (servizi + palco, e il palco
+     sa quanto gli serve: `.sc`) e non si stringe mai sotto — con `1 1 0%`
+     e `min-height: 0` si prendeva 138px a 390×844 con la libreria aperta,
+     e il palco le sbordava sopra la testata. Cresce, invece, se avanza. */
+  flex: 1 0 auto;
   min-height: 0;
   /* NIENTE transizione su grid-template-columns: con un valore che arriva da
      una variabile CSS la traccia resta congelata al vecchio valore e il
      cambio di layout non avviene affatto. Verificato il 2026-08-25: la barra
      restava a 190px pur avendo la variabile a 56px. */
+  /* Brain (`.brain-tasto`) e' figlio diretto di `.main`, posizionato in
+     assoluto: senza questo si ancorava al primo antenato posizionato che
+     trovava — nessuno, prima di questa riga — cioe' alla pagina intera. */
+  position: relative;
 }
 
 /* Mentre si lavora contano i pixel della tela, non i nomi. */
@@ -210,7 +230,20 @@ body {
   --toolrail: 56px;
 }
 
-@media (max-width: 940px) {
+/* ⚠️ Correzione 1 (revisione, C1): era `max-width: 940px`. Sopra i 760px la
+   pianta dello studio (Task 9, `@media (min-width: 761px)` più in basso)
+   governa già `.main` — stessa proprietà, stessa specificità, e la vittoria
+   fra le due andava a chi sta più in basso nel file, cioè alla pianta.
+   Prima di questo commit questo era voluto (a 761-940px non c'era ancora una
+   pianta), ma con la pianta la doppia dichiarazione per la stessa fascia
+   diventa un difetto latente affidato all'ordine del file, non una scelta:
+   misurato, a 800px il canvas era tornato a 430px invece dei 610/744px che
+   dava questa regola da sola. Restringerla al telefono (che aveva già,
+   invariata, la propria riscrittura di `.main` e di questo stesso bordo
+   dentro `@media (max-width: 760px)`, poco più sotto: questa riga era già
+   ridondante lì) chiude la fascia doppia in modo esplicito — un solo blocco
+   governa `.main` per ogni larghezza, non più la cascata a deciderlo. */
+@media (max-width: 760px) {
   .main {
     grid-template-columns: var(--toolrail) 1fr;
   }
@@ -648,21 +681,16 @@ body {
 /* ─── library ───────────────────────────────────────────────────────────── */
 
 .library {
-  border-top: 1px solid var(--linea);
-  background: var(--fondo-2);
-  display: grid;
-  grid-template-rows: auto 0fr;
-  /* NIENTE transizione su grid-template-rows. Fra `0fr` e `minmax(0, 64vh)`
-     non c'è interpolazione possibile: la traccia resta congelata al valore
-     vecchio, senza errori e senza animazione — la libreria si apriva alta zero
-     pixel. È lo stesso difetto già visto su grid-template-columns nella barra
-     degli strumenti, sull'altro asse. Verificato il 2026-08-25: tolta la
-     transizione, la riga passa da 0px a 576px all'istante. */
-}
-
-/* A strip, not a second workspace: the stage must keep the room. */
-.library[data-open='true'] {
-  grid-template-rows: auto minmax(0, 260px);
+  /* ⚠️ Giro finale del Bloccante 2 (2026-09-24). La libreria non ha una
+     scatola sua: testata e corpo sono figli diretti di `.shell`, e ognuno
+     ha la sua regola. Il motivo è uno solo, ed è la testata — l'unica
+     uscita da una libreria aperta, che `jayl.libOpen` riapre a ogni visita.
+     Dentro una scatola comune, quando lo spazio non bastava la scatola si
+     stringeva e la testata spariva con lei (a 844×390 fuori dallo schermo,
+     0px visibili); e un `position: sticky` resta chiuso dentro la scatola
+     del genitore. Figlia diretta di `.shell`, la testata si incolla al fondo
+     dello SCHERMO, sempre visibile, e il corpo le scorre sotto. */
+  display: contents;
 }
 
 .library-head {
@@ -672,6 +700,18 @@ body {
   padding: 9px var(--pad);
   cursor: pointer;
   user-select: none;
+  flex: none;
+  border-top: 1px solid var(--linea);
+  background: var(--fondo-2);
+  /* Incollata in fondo allo schermo quando la pagina scorre. `bottom: 0` è
+     il fondo del CONTENUTO di `.shell`, cioè sopra il suo `padding-bottom`:
+     sul telefono la testata si ferma da sola sopra la barra fissa dei
+     servizi (misurato: con `bottom: 128px` si fermava 128px ancora più su,
+     sopra il punto oro). Sopra il palco (z-index 5); sotto il pannello oro
+     e il tasto Brain (6) e la barra fissa dei servizi (20). */
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
 }
 
 .library-head .count {
@@ -691,7 +731,27 @@ body {
 }
 
 .library-body {
+  /* Chiusa, il corpo non c'è: niente filtri invisibili sotto la testata. */
+  display: none;
+  background: var(--fondo-2);
+  position: relative;
+  z-index: 5;
   overflow: hidden;
+  /* In colonna, e la striscia si prende il RESTO (`flex: 1`), non il 100%.
+     Era `height: 100%` sulla striscia: il 100% del corpo, spinto in basso da
+     ricerca, filtri e nota (151px a 390) — lo scorrimento finiva sotto il
+     taglio di `overflow: hidden`, e l'ultima fila di asset, coi suoi
+     comandi, non entrava mai in vista (Bloccante 2, 2026-09-23). */
+  flex-direction: column;
+}
+/* Aperta: il corpo vuole la sua misura (una striscia, 260px) e, se lo
+   schermo è corto, CEDE per primo — fino a un minimo che lascia ancora una
+   fila di asset raggiungibile. Sotto quel minimo non si stringe più: scorre
+   la pagina. Il palco non cede mai (`.main { flex: 1 0 auto }`). */
+.library[data-open='true'] .library-body {
+  display: flex;
+  flex: 0 1 260px;
+  min-height: min(260px, 300px);
 }
 
 .strip {
@@ -699,7 +759,8 @@ body {
   gap: 10px;
   padding: 0 var(--pad) var(--pad);
   overflow-x: auto;
-  height: 100%;
+  flex: 1 1 0;
+  min-height: 0;
   align-items: flex-start;
 }
 
@@ -1386,7 +1447,15 @@ body {
 .toolrail {
   min-width: 0;
   padding: 12px 10px;
-  border-right: 1px solid var(--linea);
+  /* NIENTE bordo destro, in nessuna larghezza. Dal Task 9 la barra dei
+     servizi non è MAI una colonna: è una riga in cima (≥761px, con il suo
+     `border-bottom`) o una barra fissa in fondo (≤760px, con il suo
+     `border-top`). C'erano quattro `border-right` — questo, uno nudo più in
+     basso nel file (`2px solid var(--nero)`) e due `border-right: 0` nelle
+     media query — e a specificità pari vinceva il nudo, perché veniva dopo:
+     dipingeva un moncone nero da 2×112px al bordo destro dello schermo sul
+     desktop (2×122 sul telefono), mentre gli zeri non facevano niente.
+     Tolti tutti e quattro: una cosa sola da dire, detta una volta. */
   background: var(--fondo);
   display: flex;
   flex-direction: column;
@@ -1398,23 +1467,6 @@ body {
    raggiungibili col passaggio del mouse. */
 .toolrail[data-collapsed='true'] {
   padding: 12px 8px;
-}
-
-.toolrail .group-label {
-  margin: 10px 0 4px;
-  padding: 0 6px;
-  font-size: 8px;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--inchiostro-3);
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.toolrail[data-collapsed='true'] .group-label {
-  text-align: center;
-  padding: 0;
 }
 
 .tool-item {
@@ -1528,31 +1580,206 @@ body {
   color: var(--oro);
 }
 
-.rail-foot {
-  margin-top: auto;
-  padding: 10px 6px 2px;
-  border-top: 1px solid var(--linea);
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--inchiostro-3);
-}
-
-.rail-foot b {
-  margin-left: auto;
-  font-size: 11px;
-  letter-spacing: 0;
-  text-transform: none;
+/* Brain: in alto a sinistra, speculare al pocket che arriverà (H2). */
+.brain-tasto {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid var(--linea-viva);
+  border-radius: 50%;
+  background: var(--fondo);
   color: var(--inchiostro);
-  font-weight: 500;
+  cursor: pointer;
+}
+.brain-tasto[aria-pressed='true'] {
+  background: var(--inchiostro);
+  color: var(--fondo);
+}
+/* Nascosto per difetto: su desktop c'e' il passaggio del mouse (`title`), e
+   un nome permanente sotto un cerchio in alto a sinistra sconfinerebbe sulla
+   tela. Torna visibile SOLO sul telefono, dentro il media query § 8 di
+   styles.css — stessa regola di `.tool-name`. */
+.brain-nome {
+  display: none;
 }
 
-.toolrail[data-collapsed='true'] .rail-foot {
-  justify-content: center;
-  font-size: 12px;
+/* ══ La pianta dello studio (committente, 2026-09-15) ═══════════════════
+   Quattro bordi, quattro mestieri, nessuna sovrapposizione:
+   i SERVIZI in alto, BRAIN a sinistra, gli STRUMENTI a destra (dove sono
+   già: `.sc-strumenti` è ancorata al fianco della tela), il TASTO ZACK in
+   basso al centro. Il pocket, quando arriverà, va in alto a destra.
+
+   Era una colonna a sinistra: una barra verticale mangia larghezza alla tela
+   in permanenza, e su una schermata larga la larghezza è proprio ciò che si
+   sta comprando.
+
+   ⚠️ Questo deve restare il PRIMO `@media (min-width: 761px)` del file:
+   `test/home.test.js` cerca la pianta a partire dalla prima occorrenza della
+   media query, e il blocco più vecchio più in basso (§8, 2026-09-04) non
+   parla più di `.toolrail`/`.main` — parla solo di `.sc-tasto`. */
+@media (min-width: 761px) {
+  .main {
+    /* ⚠️ Correzione 1 (revisione, Ruling A): la terza traccia era
+       `var(--rail)`, cioè 300px riservati SEMPRE — ma `.rail` è
+       `display: none` in ogni stato raggiungibile oggi (App.jsx monta
+       `<Rail>` solo quando `DESCRITTORI[tool]` esiste, e ogni servizio
+       apribile ne ha uno: `data-vuota` è sempre vero). Il §4 dello spec dice
+       l'opposto del piano: «Gli strumenti del servizio a destra, DOVE SONO
+       ADESSO» — non si sposta `.sc-strumenti` in una colonna nuova, resta
+       ancorata al fianco della tela come sempre. `auto` costa zero mentre la
+       traccia è vuota (misurato: recupera la larghezza che a 761-940px
+       stava sparendo dentro `var(--rail)`, 300px fissi) e si apre da solo
+       il giorno che un servizio senza descrittore renderà `.rail` vivo
+       (fase 3) — la `grid-area: pannello` di `.rail`, due righe sotto,
+       resta per quel giorno. */
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'servizi servizi servizi'
+      'brain   tela    pannello';
+  }
+  .toolrail {
+    grid-area: servizi;
+    flex-direction: row;
+    /* `flex-start` e non `center`: il nome sotto ogni cerchio (vedi
+       `.toolrail .tool-name` qui sotto) ha bisogno di spazio SOTTO il
+       cerchio, non sopra — centrare la riga avrebbe diviso quello spazio a
+       metà e tolto proprio quello che serve. */
+    align-items: flex-start;
+    justify-content: center;
+    gap: 8px;
+    /* Riserva per il nome che esce dal cerchio più basso (Scontorna, 72px):
+       72 + 4 di margine + ~11 di riga a 9px = 87, contro i 72 + 12 di prima
+       — 26px di riserva bastano e avanzano (misurato nel browser). Senza
+       questa riga il nome, ora fuori dal flusso della colonna, sarebbe
+       tagliato da `overflow-y: hidden` due righe sotto. */
+    padding-bottom: 26px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-bottom: 2px solid var(--nero);
+  }
+  /* ⚠️ MINOR 1 (giro di correzione 3): `.toolrail[data-collapsed='true']`
+     (riga ~1416, fuori da un media query) dichiara `padding: 12px 8px` —
+     specificità 0,2,0, che batte la `padding-bottom: 26px` qui sopra
+     (0,1,0) A PRESCINDERE dall'ordine nel file. La barra CHIUSA e' lo
+     stato di PARTENZA di ogni utente desktop (stesso fatto di Critical 2,
+     qualche schermo più in basso): con `localStorage` pulito la riserva
+     scritta apposta per il nome più basso (Scontorna, 72px) resta sempre
+     spesa a 12px, non 26. Misurato: altezza di `.toolrail` 98px invece di
+     112px, "Scontorna" scontornata di +0.80px dalla `overflow-y: hidden`
+     due righe sopra — nessun'altra etichetta ha discendenti nella riga di
+     base, quindi oggi il taglio cade in uno spazio bianco, ma la riserva
+     scritta per proteggerlo è comunque disattiva esattamente nello stato
+     che conta di più. A specificità pari (0,2,0 anche questa) vince chi
+     viene dopo nel file: questa regola, non quella di riga ~1416. */
+  .toolrail[data-collapsed='true'] {
+    padding-bottom: 26px;
+  }
+  .toolrail .tool-item,
+  .toolrail[data-collapsed='true'] .tool-item {
+    /* `position: relative`: e' il riferimento di `.toolrail .tool-name` qui
+       sotto, che esce dal cerchio con `position: absolute`. */
+    position: relative;
+    flex-direction: column;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+  }
+  .toolrail .tool-item[data-servizio='scontorna'] {
+    width: 72px;
+    height: 72px;
+  }
+  /* Correzione 2 (revisione, Ruling B): il nome ESCE dal cerchio, sotto —
+     come lo fa già il telefono (`.toolrail .tool-name` dentro
+     `@media (max-width: 760px)`), non dentro. Misurato PRIMA di questa
+     riga: dentro un cerchio da 56px, con l'icona (17px) e — per Immagine e
+     Video, che portano anche un prezzo/«presto» — una terza riga, il nome
+     arrivava ad altezza 0 (`.tool-name` ha `overflow: hidden` per i puntini
+     di sospensione, e per un elemento flessibile con overflow diverso da
+     `visible` il minimo automatico è ZERO: è lui il primo a sparire quando
+     lo spazio non basta). Gli altri quattro sopravvivevano compressi a 10px
+     invece dei 16,5 naturali. Tolto dal flusso della colonna (che ora
+     contiene solo icona e prezzo/«presto», due elementi, non tre) il nome
+     smette di competere per lo spazio e torna alla sua altezza naturale.
+
+     ⚠️ Difetto trovato in browser (giro di correzione 2, non segnalato dal
+     controller): senza `color` qui, `.tool-name` eredita `var(--panna)` —
+     il crema scritto per un'etichetta DENTRO il cerchio nero (`.tool-item`
+     è nero con testo panna, regola condivisa più in basso nel file). Fuori
+     dal cerchio, sopra il fondo panna della pagina, panna-su-panna è
+     INVISIBILE (misurato: `getComputedStyle` dava lo stesso
+     `rgb(245, 240, 232)` per il testo e per `body`), su TUTTI e sei i
+     cerchi tranne quello attivo (che vince col suo `color: var(--oro)`,
+     visibile per contrasto col fondo). Il Ruling B del giro 1 aveva
+     misurato solo l'ALTEZZA (11px, uniforme) — mai il colore — quindi la
+     suite restava verde con un nome tecnicamente presente e otticamente
+     invisibile. La stessa situazione (nome fuori dal cerchio, sopra il
+     fondo panna) esiste già più sotto in questo file per il telefono e per
+     `.brain-nome`: entrambi dichiarano `color: var(--inchiostro)` per lo
+     stesso motivo — qui mancava. */
+  .toolrail .tool-name {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 4px;
+    width: max-content;
+    max-width: 72px;
+    text-align: center;
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    color: var(--inchiostro);
+  }
+  .brain-tasto {
+    grid-area: brain;
+    position: static;
+    align-self: start;
+    margin: 12px;
+  }
+  .stage { grid-area: tela; }
+  .rail { grid-area: pannello; }
+
+  /* Il tasto Zack scende al centro: sotto di lui non c'è più la fila dei
+     servizi, che è salita in cima. */
+  .sc-tasto {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    /* M2 (revisione): `transform` crea un contesto di sovrapposizione per
+       `.sc-tasto`, che senza uno z-index esplicito vale «auto» nell'ordine
+       del genitore — sotto ai 3 di `.sc-strumenti`, che è un fratello. Senza
+       questa riga `.sc-tuo` (z-index: 6, ma dichiarato DENTRO il contesto di
+       `.sc-tasto`) resterebbe intrappolato sotto la colonna degli
+       strumenti se mai si sovrapponessero: il suo 6 vale solo dentro
+       `.sc-tasto`, non fuori. Nessuna collisione oggi (misurato), ma il
+       rischio era latente. */
+    z-index: 6;
+  }
+  .sc-tuo {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* `.rail-apri` (la freccetta che allarga la colonna dei servizi) non ha
+     più un lato da allargare: qui sopra i 760px la fila e' orizzontale, non
+     più una colonna con nomi da aprire o chiudere. Nascosta e non tolta —
+     il markup e la regola restano intatti per `.toolrail[data-collapsed]`,
+     che sotto i 761px (telefono) e' ancora la barra fissa in basso.
+     `--toolrail` (la variabile che dava la larghezza alla vecchia colonna)
+     resta anch'essa non toccata per lo stesso motivo: nessuna regola qui
+     dentro la legge più, ma `.shell[data-working='true']` continua a
+     scriverla, e non e' compito di questo commit smontare quel filo. */
+  .rail-apri {
+    display: none;
+  }
 }
 
 /* ─── azioni sull'asset ─────────────────────────────────────────────────── */
@@ -1714,8 +1941,22 @@ body {
   }
 
   .shell {
-    /* Spazio per la barra strumenti fissa in fondo. */
-    padding-bottom: 60px;
+    /*
+     * Spazio per la barra strumenti fissa in fondo.
+     *
+     * ⚠️ Task 8 (H1-bis, 2026-09-15): la barra e' cresciuta a 122px (misurato
+     * a 390×844 — 8px di padding-top, il cerchio da 72px di Scontorna, e i
+     * 42px di padding-bottom aggiunti qui sotto per il «presto» su due
+     * righe), contro i 60px riservati qui: bastavano quando il
+     * padding-bottom della barra era 30px (prima di Task 8).
+     *
+     * Trovato perche' la libreria ora si monta SEMPRE (Step 6): rimasta a
+     * 60px, finiva nel flusso normale SOTTO la barra fissa — `.toolrail` e'
+     * `position: fixed` con z-index piu' alto, e cattura il tocco anche
+     * negli spazi vuoti fra i cerchi. La libreria era quindi invisibile a
+     * schermo E non cliccabile, non solo «montata» come dice il test.
+     */
+    padding-bottom: calc(128px + env(safe-area-inset-bottom, 0px));
   }
 
   .topbar {
@@ -1761,6 +2002,20 @@ body {
     padding: var(--pad);
     min-height: 220px;
   }
+
+  /* Sul telefono il tasto Brain sta sopra l'angolo in alto a sinistra del
+     palco (`.brain-tasto`: assoluto, 8px dal bordo di `.main`, 46px più il
+     nome sotto). L'angolo col `+` e la croce (riportato in alto quando c'è
+     una colonna a sinistra, vedi `.sc[data-fianchi='due'] .sc-angolo`,
+     dove sta anche il suo `top: 64px` per il telefono: a specificità pari
+     deve venire DOPO la regola desktop) scende sotto di lui, e la colonna
+     sinistra sotto l'angolo: due cerchi
+     da 46 e 8 di spazio fanno 100, più 12 di respiro. Bloccante 2 della
+     revisione finale, 2026-09-23. */
+  .sc[data-fianchi='due'] .sc-strumenti[data-lato='sinistra'] {
+    top: 176px;
+  }
+
 
   .rail {
     --rail: auto;
@@ -1810,7 +2065,6 @@ body {
     align-items: center;
     gap: 4px;
     padding: 6px 8px;
-    border-right: 0;
     border-top: 1px solid var(--linea);
     overflow-x: auto;
     overflow-y: hidden;
@@ -1820,10 +2074,8 @@ body {
    *
    * Nasconderlo lasciava otto cerchi neri con dentro un segno astratto, e su
    * un touch non c'è il passaggio del mouse: `title` non compare mai, quindi
-   * non c'era NESSUN modo di sapere quale fosse Brain e quale Suono. Le
-   * etichette di gruppo e i prezzi sì che se ne vanno — sono contorno, il nome
-   * è la navigazione. */
-  .toolrail .group-label,
+   * non c'era NESSUN modo di sapere quale fosse Brain e quale Suono. I prezzi
+   * sì che se ne vanno — sono contorno, il nome è la navigazione. */
   .toolrail .tool-price,
   .toolrail .tool-soon,
   .toolrail .tool-name,
@@ -1863,14 +2115,6 @@ body {
        `visible` azzera la dimensione minima automatica. In colonna l'etichetta
        si restringeva a zero — misurata alta 0 px, col testo dentro e
        invisibile (2026-08-27). */
-    flex: none;
-  }
-
-  .rail-foot {
-    margin: 0 0 0 auto;
-    padding: 0 8px;
-    border-top: 0;
-    border-left: 1px solid var(--linea);
     flex: none;
   }
 
@@ -1914,8 +2158,9 @@ body {
   }
 
   /* La striscia dei lavori si sfoglia col dito. */
-  .library[data-open='true'] {
-    grid-template-rows: auto minmax(0, 46vh);
+  .library[data-open='true'] .library-body {
+    flex-basis: 46vh;
+    min-height: min(46vh, 300px);
   }
 
   .work {
@@ -2302,10 +2547,11 @@ body {
    spazio alla tela. Non va bene per SCEGLIERE fra ottanta lavori — di lato
    si scorre all'infinito e i comandi di ogni lavoro restano sotto il taglio.
    In grande diventa una griglia che scorre in basso. */
-.library[data-open='true'][data-size='grande'] {
+.library[data-open='true'][data-size='grande'] .library-body {
   /* Meta' schermo scarsa: piu' in la' la tela diventa una fessura e non si
      lavora piu', si sfoglia soltanto. */
-  grid-template-rows: auto minmax(0, 52vh);
+  flex-basis: 52vh;
+  min-height: min(52vh, 300px);
 }
 
 .library[data-size='grande'] .strip {
@@ -3859,9 +4105,8 @@ body {
   border-top: 2px solid var(--nero);
 }
 
-.toolrail {
-  border-right: 2px solid var(--nero);
-}
+/* `.toolrail` qui aveva `border-right: 2px solid var(--nero)`: vedi la
+   regola base di `.toolrail`, la barra non ha più un fianco destro. */
 
 /* La tela: il panna della pagina, con il filo che la delimita. */
 .stage,
@@ -4235,6 +4480,67 @@ body {
 .toolrail[data-collapsed='true'] .tool-name {
   display: none;
 }
+/*
+ * Lo stesso vale per il «presto» (Task 8, H1-bis): tolto `!collapsed` dal
+ * JSX (`ToolRail.jsx`) perché sul telefono deve vedersi sempre, sul
+ * desktop CHIUSO — cerchi soli, colonna stretta — restava comunque `block`
+ * e sporgeva fuori dal cerchio di 46 px (misurato: dentro un pulsante
+ * `justify-content: center` un secondo figlio con `margin-left: auto` si
+ * spinge fuori dal bordo). Si nasconde qui come il nome, e torna visibile
+ * SOLO sul telefono qui sotto.
+ */
+.toolrail[data-collapsed='true'] .tool-soon {
+  display: none;
+}
+
+/* ══ Critical 2 (giro di correzione 2, 2026-09-16): la barra CHIUSA e' lo
+   stato di PARTENZA di ogni utente desktop — `ToolRail.jsx` legge
+   `localStorage.getItem('jayl.rail') === 'aperta'`, falso finche' nessuno
+   ha mai premuto `.rail-apri` — e quel bottone e' nascosto sopra i 760px
+   (vedi `.rail-apri { display: none }` nella pianta dello studio, piu' in
+   alto in questo file). Nessun gesto porta un utente desktop mai arrivato
+   a scrivere "aperta" in quella chiave.
+
+   La regola qui sopra (`display: none`, specificita' 0,3,0) batte per
+   specificita' la `.toolrail .tool-name` della pianta dello studio (0,2,0):
+   risultato, sei cerchi senza nome per chiunque non abbia gia' trovato e
+   usato una freccetta che qui sopra non esiste piu'.
+
+   La colonna «aperta/chiusa» non significa piu' niente in una FILA
+   orizzontale — non c'e' larghezza da risparmiare nascondendo un'etichetta
+   di 9px sotto un cerchio che occupa comunque il suo posto nella fila — e
+   la stessa regola vale anche quando la barra e' collassata a forza
+   dall'editor (`forzata`, in `ToolRail.jsx`): in riga non c'e' nessuna tela
+   da allargare togliendo un nome. Qui, sopra i 760px, lo stato collassato
+   smette di sopprimere il nome — stessa specificita' (0,3,0) della regola
+   generale qui sopra, ma DOPO di lei nel file: a specificita' pari vince
+   chi viene dopo, come gia' fa il blocco telefono qui sotto con la stessa
+   tecnica. */
+@media (min-width: 761px) {
+  .toolrail[data-collapsed='true'] .tool-name {
+    display: block;
+  }
+}
+
+/* ══ RULING (giro di correzione 3, 2026-09-16): la stessa domanda, per
+   `.tool-soon` — il marcatore «presto» di Video. `.toolrail[data-
+   collapsed='true'] .tool-soon { display: none; }`, qualche riga più in
+   alto in questo file, ha la STESSA specificità (0,3,0) e la STESSA
+   ragione di quella di `.tool-name` appena sopra (un cerchio muto sul
+   telefono e' un guasto, non un'attesa — Task 8, H1-bis) — e vale anche
+   sopra i 760px, dove Critical 2 ha appena tolto la stessa soppressione dal
+   nome. In una fila orizzontale non c'e' larghezza da risparmiare
+   nascondendo un'etichetta di 8px sotto un cerchio che occupa comunque il
+   suo posto: non nascondere il nome ma nascondere ancora «presto» sarebbe
+   il codice a dire due cose diverse sulla stessa domanda. Non e' una porta
+   CHIUSA — Video apre comunque la schermata «non c'e' ancora» al clic — ma
+   il criterio di Critical 2 vale verbatim anche qui. Stessa tecnica:
+   specificita' pari, vince chi viene dopo nel file. */
+@media (min-width: 761px) {
+  .toolrail[data-collapsed='true'] .tool-soon {
+    display: block;
+  }
+}
 @media (max-width: 760px) {
   .toolrail[data-collapsed='true'] .tool-name,
   .toolrail .tool-name {
@@ -4286,6 +4592,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* ⚠️ Bloccante 2 della revisione finale (2026-09-23): ciò che non entra
+     nella tela SCORRE dentro la tela, non le esce di dosso. Centrato e
+     visibile, il contenuto troppo alto sbordava di metà in su e di metà in
+     giù: il `+` di Scontorna saliva sotto la fila dei servizi (1280×800,
+     libreria aperta) e il preventivo di Immagine scendeva sotto il tasto
+     Zack, che lo copriva. `safe` tiene l'inizio del contenuto dentro la
+     tela quando trabocca, invece di centrarlo fuori dalla vista. */
+  overflow: auto;
+  align-items: safe center;
+  justify-content: safe center;
 }
 
 /* Il `+`: grande, perche' intorno non c'e' nient'altro ed e' il gesto con
@@ -4311,30 +4627,10 @@ body {
   color: var(--fondo);
 }
 
-.sc-scarica {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 4;
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  padding: 0;
-  border: 1px solid var(--linea-viva);
-  border-radius: 50%;
-  background: var(--fondo);
-  color: var(--inchiostro);
-  cursor: pointer;
-}
-.sc-scarica:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-.sc-scarica:hover:not(:disabled) {
-  background: var(--inchiostro);
-  color: var(--fondo);
-}
+/* `.sc-scarica` (il cerchio d'angolo in alto a destra) è finito qui — Task 7,
+   S3: lo stesso gesto rinasce come cerchio della colonna (`.sc-strumenti`),
+   dichiarato in `src/servizi/scontorna.js` con `id: 'scarica'`, invece di
+   vivere due volte in due punti diversi dello schermo. */
 
 /* Gli strumenti: cerchi in colonna, a destra, sul fianco della tela. Il nome
    sta nel `title` — la parola ruba larghezza alla tela in ogni schermata. */
@@ -4346,6 +4642,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  /* NIENTE `max-height` e niente scorrimento (giro finale del Bloccante 2,
+     2026-09-24): una colonna accorciata che scorre senza barra nascondeva
+     «Rifai» proprio dopo «Annulla», e metà degli strumenti del Vettoriale.
+     La colonna è sempre lunga quanto i suoi cerchi; è il PALCO a farle
+     posto (`min-height` di `.sc`, che conta i cerchi). */
 }
 /* La tela si stringe di quanto le colonne coprono, invece di lasciarsele
    addosso. Misurato a 390 px: con due colonne restano 302, che e' il numero
@@ -4605,8 +4906,55 @@ body {
    identico, mascotte e tasto a metà schermo con 308 px di vuoto sotto.
    Ora la riga collassa da sola: la traccia è `auto` e il minimo del pannello
    sta sull'elemento. Vedi il commento su `.main` nella media query sopra. */
+/* ⚠️ Quanto palco serve (giro finale del Bloccante 2, 2026-09-24). Non più
+   `min-height: 0`: il palco chiede la misura del suo contenuto vero, e
+   `.main` (`flex: 1 0 auto`) gliela dà — se lo schermo è più basso, scorre
+   la pagina. Il più grande di tre:
+   - il `+` (`.sc-piu`, `clamp(96px, 18dvh, 150px)`) più la zona di
+     mascotte e tasto Zack (il `padding-bottom` di `.sc`, «5-6» più in basso);
+   - la colonna DESTRA: parte a 60px, 52px per cerchio (44 + 8 di spazio);
+   - la colonna SINISTRA: parte a 112px (sotto l'angolo col `+` e la croce).
+   Quanti cerchi ci sono lo dice `Piano.jsx` (`--colonna-destra`,
+   `--colonna-sinistra`, dagli strumenti VISIBILI in quel momento): una
+   colonna accorciata che scorreva senza barra nascondeva «Rifai» proprio
+   dopo «Annulla», e i cinque strumenti in fondo al Vettoriale. */
 .sc {
-  min-height: 0;
+  min-height: max(
+    calc(clamp(96px, 18dvh, 150px) + max(clamp(96px, 15dvh, 150px), clamp(200px, 20vw, 260px) * 0.56)),
+    calc(60px + var(--colonna-destra, 0) * 52px),
+    calc(112px + var(--colonna-sinistra, 0) * 52px)
+  );
+}
+/* Sul desktop il tasto Zack (largo `clamp(200px, 20vw, 260px)`, alto 0,56
+   volte tanto: 145px a 1366) è più alto dello spazio che `.sc` gli lascia
+   in fondo (`clamp(96px, 15dvh, 150px)`, 115px a 768 di altezza): entrava
+   nella tela di 24px, e a palco stretto copriva il preventivo di Immagine
+   (misurato a 1366×768, libreria aperta). «Lo spazio in basso e' della
+   mascotte e del tasto: la tela non ci arriva sotto» — ora è vero anche
+   qui. Il telefono ha già la sua misura (tasto 123px, spazio 126px). */
+@media (min-width: 761px) {
+  .sc-tela {
+    margin-bottom: max(0px, calc(clamp(200px, 20vw, 260px) * 0.56 - clamp(96px, 15dvh, 150px)));
+  }
+}
+/* Sul telefono il tasto Zack sta a DESTRA, col punto oro «Cosa farà»
+   proprio sotto la colonna destra: la colonna deve finire PRIMA del punto
+   oro, non sopra. Il tasto è largo `clamp(220px, 38vw, 340px)` (vedi
+   `.sc-tasto`, «5-6») e alto 0,56 volte la sua larghezza (l'ovale:
+   misurato 123px su 220); scende 6px sotto `.sc` e il punto oro gli sporge
+   12px sopra — da cui i 66px: 60 di partenza della colonna + 12 − 6.
+   Misurato a 375×548 prima di questa riga: con la sola zona del
+   `padding-bottom` (96px) «Rifai» copriva il punto oro. E la sinistra parte
+   più in basso, a 176px, sotto il tasto Brain e l'angolo (vedi il blocco
+   del telefono). */
+@media (max-width: 760px) {
+  .sc {
+    min-height: max(
+      calc(clamp(96px, 18dvh, 150px) + clamp(96px, 15dvh, 150px)),
+      calc(66px + var(--colonna-destra, 0) * 52px + clamp(220px, 38vw, 340px) * 0.56),
+      calc(176px + var(--colonna-sinistra, 0) * 52px)
+    );
+  }
 }
 
 /* Il piano quando ci si trascina sopra un file: si accende, come il
@@ -4814,7 +5162,19 @@ body {
    e piu' grande — e' il centro del prodotto, ed e' il punto che il pollice
    raggiunge senza spostare la mano. */
 @media (max-width: 760px) {
-  .toolrail {
+  /*
+   * ⚠️ `[data-collapsed='true']` va ripetuto qui: `.toolrail[data-collapsed=
+   * 'true'] { padding: 12px 8px }` (riga 1403, fuori da un media query) ha
+   * specificità più alta di `.toolrail` da solo, e vince SEMPRE su questa
+   * regola — indipendentemente dall'ordine nel file — ogni volta che la
+   * barra è chiusa, cioè per difetto (`aperta` parte `false`). Senza
+   * ripeterlo qui, questo padding-bottom non si applica mai sul telefono:
+   * trovato misurando che il «presto» di Video restava tagliato dal fondo
+   * dello schermo nonostante il valore qui sotto. La stessa doppia lista è
+   * già usata due righe più sotto per `.tool-item`, per lo stesso motivo.
+   */
+  .toolrail,
+  .toolrail[data-collapsed='true'] {
     justify-content: center;
     /* 6 e non 10: con la divisione di «suono» i servizi sono diventati SEI, e
        a 390 px la fila sbordava — «Brain», il primo, entrava tagliato di 7 px.
@@ -4826,8 +5186,13 @@ body {
        «Scontorna» finiva sotto il bordo dello schermo. */
     /* Il cerchio dello scontorno e' 16 px piu' alto degli altri, e il suo
        nome finisce 16 px piu' in basso: misurato, arrivava a 810 px su 812.
-       Lo spazio in fondo lo tiene in conto. */
-    padding: 8px 8px calc(30px + env(safe-area-inset-bottom, 0px));
+       Lo spazio in fondo lo tiene in conto.
+       ⚠️ Da 30 a 42 px con Task 8 (H1-bis, 2026-09-15): il «presto» di
+       Video adesso sta anche sul telefono (decisione del committente — un
+       cerchio muto è un guasto, non un'attesa), su una seconda riga sotto
+       il nome. Misurato nel browser a 390×844: senza i 12 px in più quella
+       riga finiva tagliata dal bordo dello schermo. */
+    padding: 8px 8px calc(42px + env(safe-area-inset-bottom, 0px));
     overflow: visible;
   }
   .toolrail .tool-item,
@@ -4850,11 +5215,53 @@ body {
     max-width: 72px;
     color: var(--inchiostro);
   }
+  /*
+   * Il «presto» di Video: seconda riga, sotto il nome — non dietro
+   * `!collapsed` (vedi `ToolRail.jsx`), perché in fondo allo schermo non
+   * c'è il passaggio del mouse e un cerchio muto è un guasto, non
+   * un'attesa (H1-bis, 2026-09-15).
+   *
+   * ⚠️ `[data-collapsed='true']` ripetuto anche qui, come per `.tool-name`
+   * qualche riga sopra: la regola che lo nasconde sul desktop chiuso ha
+   * quella stessa specificità, e la batte a prescindere dall'ordine se non
+   * viene eguagliata.
+   */
+  .toolrail .tool-soon,
+  .toolrail[data-collapsed='true'] .tool-soon {
+    display: block;
+    position: absolute;
+    top: calc(100% + 14px);
+    left: 50%;
+    transform: translateX(-50%);
+    margin-left: 0;
+    padding: 0;
+    border: 0;
+    font-size: 8px;
+    white-space: nowrap;
+  }
   /* Lo scontorno: piu' grande degli altri, sempre — non solo quando e'
      aperto. La sua misura dice che e' il centro, non che e' selezionato. */
   .toolrail .tool-item[data-servizio='scontorna'] {
     width: 72px;
     height: 72px;
+  }
+  /* Brain, come i cerchi della barra: sul telefono il nome torna visibile,
+     sotto il cerchio. Important 4 del giro di correzione 1 — Brain e' uscito
+     da FILA (Task 8) e ha perso il nome che gli altri cerchi tengono sempre
+     qui sotto per lo stesso motivo (`title` non compare mai su un touch). */
+  .brain-nome {
+    display: block;
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 68px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 10px;
+    text-align: center;
+    color: var(--inchiostro);
   }
   /* Con i cerchi al centro non serve piu' spingerli con mezzo schermo di
      margine: ci stanno tutti e cinque. */
@@ -4864,10 +5271,6 @@ body {
   }
   .toolrail .tool-item[aria-pressed='true'] {
     transform: none;
-  }
-  /* Il saldo in euro non ha niente a che fare con la scelta del servizio. */
-  .toolrail .rail-foot {
-    display: none;
   }
 }
 
@@ -5019,10 +5422,9 @@ body {
   padding: 0;
 }
 
-/* Il `+` e la croce quando il piano è già occupato: piccoli, in alto a
-   sinistra, dove non c'è nient'altro — l'angolo a destra è dello «scarica».
-   Contratto UX §5: il `+` si vede con 1 o 2 file e sparisce al terzo, e ogni
-   file ha la sua iconcina per andarsene. */
+/* Il `+` e la croce quando il piano è già occupato: piccoli, dove non c'è
+   nient'altro. Contratto UX §5: il `+` si vede con 1 o 2 file e sparisce al
+   terzo, e ogni file ha la sua iconcina per andarsene. */
 .sc-angolo {
   position: absolute;
   top: 0;
@@ -5030,6 +5432,37 @@ body {
   z-index: 4;
   display: flex;
   gap: 8px;
+}
+/* Il `+` col piano occupato: a SINISTRA del file, perché il piano si legge
+   «entra da sinistra, esce a destra» — l'uscita (T2) sta a destra, e i due
+   non si contendono lo stesso bordo. */
+.sc-angolo[data-posto='sinistra'] {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 4;
+}
+/* Con una colonna di strumenti anche a SINISTRA (`data-fianchi='due'`:
+   Vettoriale, Brain) l'angolo torna nell'angolo, in alto. La colonna
+   sinistra comincia a 112px apposta per stargli sotto («Sotto il `+` e la
+   croce, che stanno nello stesso angolo»); a metà altezza, invece, la croce
+   finiva sopra la Matita del Vettoriale e il `+` sopra «Centra tutto» di
+   Brain appena il palco si accorciava (libreria aperta): premere l'uno
+   premeva l'altro. Bloccante 2 della revisione finale, 2026-09-23. */
+.sc[data-fianchi='due'] .sc-angolo[data-posto='sinistra'] {
+  top: 0;
+  transform: none;
+}
+/* Sul telefono, sotto il tasto Brain (vedi la colonna sinistra nel blocco
+   del telefono, che scende a 176px per lo stesso motivo). */
+@media (max-width: 760px) {
+  .sc[data-fianchi='due'] .sc-angolo[data-posto='sinistra'] {
+    top: 64px;
+  }
 }
 .sc-piu-piccolo {
   display: grid;
@@ -5050,61 +5483,52 @@ body {
   color: var(--fondo);
 }
 
-/* ══ Il desktop (contratto § 8) ══════════════════════════════════════════
-   Stesso impianto, e la mappa di § 5.1 vale identica. Due differenze sole:
+/* ══ Il desktop (contratto § 8, 2026-09-04 — SUPERATO da Task 9,
+   2026-09-15) ═════════════════════════════════════════════════════════
+   Questo blocco spostava il tasto Zack «nella tela in alto a destra». La
+   pianta dello studio del 2026-09-15 (vedi il blocco `@media (min-width:
+   761px)` più in alto in questo file) l'ha rimandato in basso al centro —
+   sotto di lui non c'è più la fila dei servizi, che è salita in cima — e
+   quella frase non vale più. Restano qui SOLO le regole che quella
+   decisione non tocca: la misura «medio-grande» del tasto e la colonna
+   sinistra degli strumenti, che non dipendevano dalla sua posizione.
 
-   - i servizi passano dalla fila in basso alla colonna a sinistra — e quello
-     lo fa gia' il `.toolrail`, che sopra i 760 px e' una colonna;
-   - **il tasto Zack sta nella tela in alto a destra, medio-grande**, sotto la
-     striscia, che resta di libreria, faccia e scarica.
-
-   Gli strumenti restano ATTACCATI al tasto, in colonna sotto di lui: e' la
-   stessa forma che hanno su mobile, ruotata dal basso al lato. Il bordo destro
-   diventa una cosa sola — chi fa il lavoro, e con cosa lo si corregge.
-
-   La mascotte resta in basso a sinistra della tela, accanto alla colonna dei
-   servizi: e' l'unica cosa che NON si sposta, ed e' voluto — e' il punto fermo
-   che dice che e' la stessa schermata. */
+   La mascotte resta in basso a sinistra della tela: e' l'unica cosa che non
+   si e' mai spostata in nessuna delle due piante. */
 @media (min-width: 761px) {
   .sc-tasto {
-    /* Sotto `.sc-scarica`, che sta a filo in alto ed e' 46 px. */
-    top: 58px;
-    right: 0;
-    bottom: auto;
     /* «Medio grande» (committente, 2026-09-04): piu' piccolo dei 340 px che
-       aveva in basso, dove riempiva l'angolo, e piu' grande di un pulsante. */
+       aveva in basso, dove riempiva l'angolo, e piu' grande di un pulsante.
+       Restava vero anche spostato: la misura non dipendeva da dove sta. */
     width: clamp(200px, 20vw, 260px);
   }
 
-  /* Il pannello del punto oro si apre in GIU', non in su: da un tasto in alto
-     si aprirebbe fuori dalla tela, e la meta' di sopra finirebbe sotto la
-     striscia nera. */
-  .sc-tuo {
-    top: calc(100% + 10px);
-    bottom: auto;
-  }
+  /* `top`/`right`/`bottom` non si toccano più qui: senza quella riga il
+     tasto ricade sulla regola base (`bottom: 8px`) più la nuova pianta
+     (`left: 50%; transform: translateX(-50%)`, dichiarata nel blocco più in
+     alto) — cioè in basso al centro, com'è dal 2026-09-15. */
 
-  /* La colonna degli strumenti scende da sotto il tasto invece di partire
-     dall'alto: attaccata a lui, non parcheggiata al bordo.
+  /* `.sc-tuo` non si tocca più qui: senza l'override che lo apriva in giù,
+     ricade sulla regola base (`bottom: calc(100% + 10px)`), che lo apre
+     SOPRA il tasto — corretto ora che il tasto è tornato in basso. */
 
-     Il valore e' calcolato, non indovinato: 58 (dove comincia il tasto) + la
-     sua altezza — larghezza per 670/1200, che e' la proporzione
-     dell'immagine — + 14 di respiro. */
-  .sc-strumenti[data-lato='destra'] {
-    top: calc(58px + clamp(200px, 20vw, 260px) * 0.558 + 14px);
-  }
+  /* La colonna degli strumenti a destra non è più «attaccata» al tasto: era
+     un calcolo che partiva da dove cominciava il tasto quand'era in alto
+     (58px + la sua altezza + 14 di respiro). Il tasto non è più lì, e quel
+     calcolo puntava a un punto vuoto della tela. Senza l'override qui
+     ricade sulla regola base (`top: 60px`), la stessa che aveva prima del
+     contratto § 8 — vicino alla striscia, lontana dal tasto in basso. */
 
   /* A sinistra non c'e' nessun tasto sopra: la colonna resta dove sta su
-     mobile, sotto il `+` e la croce dell'angolo. */
-  .sc-strumenti[data-lato='sinistra'] {
-    top: 112px;
-  }
+     mobile, sotto il `+` e la croce dell'angolo. (La regola base già dice
+     `top: 112px` — questa ripetizione a 761px era ridondante e non serve
+     più: la lascio fuori invece di copiarla due volte.) */
 
-  /* Lo spazio in fondo serviva al tasto, che ora non e' piu' li'. Resta
-     quello della mascotte, che in basso a sinistra ci sta ancora. */
-  .sc {
-    padding-bottom: clamp(60px, 9vh, 96px);
-  }
+  /* Lo spazio in fondo torna a servire ANCHE al tasto, che è tornato in
+     basso: senza l'override qui ricade sulla regola generale (§ 5-6,
+     `clamp(96px, 15dvh, 150px)`), che è la stessa misura usata per la
+     mascotte — i due tornano ad avere lo stesso spazio riservato che
+     avevano prima del contratto § 8. */
 }
 
 /* ── Mentre il microfono è acceso ────────────────────────────────────────
