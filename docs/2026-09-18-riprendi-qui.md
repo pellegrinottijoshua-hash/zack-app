@@ -241,3 +241,20 @@ budget token):
    comando, confronto col foglio di stile di `main`).
 3. `npm test` e `npm run build` verdi → chiedi al committente se fondere e
    pubblicare. Tutto il resto va nei minori, non in altri giri.
+
+---
+
+## ✅ 2026-09-24 — FASE 1 CHIUSA, FUSA E PUBBLICATA
+
+L'aggiornamento qui sopra è **superato**. La correzione dei residui è in
+`1e09c3f`/`a98f43b`: nessun comando raggiungibile su `main` è diventato
+irraggiungibile, sulle 10 misure di schermo. La fase è fusa in `main` con
+`4c468d4` (783 prove verdi, build ok sul risultato della fusione), e **Workers
+Builds: zack-app → success**. Il ramo `fase-1-la-pelle` è stato cancellato.
+
+**La prossima sessione comincia dalla fase 2** (comprare senza account). Prima
+di cominciarla c'è una sola cosa da fare: la regola §3.1 qui sopra, la prova di
+raggiungibilità nel browser. I minori rimandati, numerati da 1 a 28, stanno nel
+ledger `.superpowers/sdd/2026-09-15-la-pelle/progress.md`, e c'è un cancello
+duro prima di accendere il muro: a `VITE_MURO=1` Immagine deve mostrare il
+prezzo, non «Entra per usare lo studio».
