@@ -1437,7 +1437,15 @@ body {
 .toolrail {
   min-width: 0;
   padding: 12px 10px;
-  border-right: 1px solid var(--linea);
+  /* NIENTE bordo destro, in nessuna larghezza. Dal Task 9 la barra dei
+     servizi non è MAI una colonna: è una riga in cima (≥761px, con il suo
+     `border-bottom`) o una barra fissa in fondo (≤760px, con il suo
+     `border-top`). C'erano quattro `border-right` — questo, uno nudo più in
+     basso nel file (`2px solid var(--nero)`) e due `border-right: 0` nelle
+     media query — e a specificità pari vinceva il nudo, perché veniva dopo:
+     dipingeva un moncone nero da 2×112px al bordo destro dello schermo sul
+     desktop (2×122 sul telefono), mentre gli zeri non facevano niente.
+     Tolti tutti e quattro: una cosa sola da dire, detta una volta. */
   background: var(--fondo);
   display: flex;
   flex-direction: column;
@@ -1650,7 +1658,6 @@ body {
     padding-bottom: 26px;
     overflow-x: auto;
     overflow-y: hidden;
-    border-right: 0;
     border-bottom: 2px solid var(--nero);
   }
   /* ⚠️ MINOR 1 (giro di correzione 3): `.toolrail[data-collapsed='true']`
@@ -2076,7 +2083,6 @@ body {
     align-items: center;
     gap: 4px;
     padding: 6px 8px;
-    border-right: 0;
     border-top: 1px solid var(--linea);
     overflow-x: auto;
     overflow-y: hidden;
@@ -4115,9 +4121,8 @@ body {
   border-top: 2px solid var(--nero);
 }
 
-.toolrail {
-  border-right: 2px solid var(--nero);
-}
+/* `.toolrail` qui aveva `border-right: 2px solid var(--nero)`: vedi la
+   regola base di `.toolrail`, la barra non ha più un fianco destro. */
 
 /* La tela: il panna della pagina, con il filo che la delimita. */
 .stage,
