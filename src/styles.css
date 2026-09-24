@@ -35,6 +35,15 @@
   --editoriale: 'Cormorant Garamond', Georgia, serif;
 
   --pad: clamp(14px, 1.8vw, 24px);
+  /* Quanto palco serve perché niente trabocchi: il `+` (`.sc-piu`, alto
+     `clamp(96px, 18dvh, 150px)`), lo spazio in fondo che `.sc` lascia alla
+     mascotte e al tasto Zack (`padding-bottom: clamp(96px, 15dvh, 150px)`,
+     «5-6» più in basso) e il respiro del palco sopra e sotto. Sta su `.main`
+     in entrambe le piante (Bloccante 2 della revisione finale, 2026-09-23):
+     con la libreria aperta era il palco a cedere, e il suo contenuto
+     sbordava sulla testata della libreria (telefono) o sotto la fila dei
+     servizi (desktop). Se cambiano quelle due misure, cambia anche questa. */
+  --palco-minimo: calc(clamp(96px, 18dvh, 150px) + clamp(96px, 15dvh, 150px) + 2 * var(--pad));
   --rail: 300px;
   /* La larghezza della barra servizi la decide il LAYOUT, non l'elemento: in
      una griglia la traccia vince sulla width dell'item, e cambiarla sull'item
@@ -669,6 +678,22 @@ body {
   background: var(--fondo-2);
   display: grid;
   grid-template-rows: auto 0fr;
+  /* ⚠️ Bloccante 2 della revisione finale (2026-09-23). Due righe, due
+     compiti:
+     - `min-height: 0`: figlia di `.shell` (colonna flessibile alta quanto
+       lo schermo), la libreria aveva il minimo automatico = TUTTA la sua
+       altezza (in verticale min-content e max-content coincidono), quindi
+       non cedeva mai: era il palco a sbordarle sopra. Ora, quando lo spazio
+       non basta, si stringe lei — e la sua striscia scorre.
+     - `position: relative; z-index: 5`: la testata (chiudi, «Riduci»,
+       «Scarica tutto») è l'unica porta d'uscita da una libreria aperta, e
+       `jayl.libOpen` la riapre a ogni visita. Nessun trabocco del palco
+       deve poterla coprire. Resta sotto la barra fissa dei servizi del
+       telefono (z-index 20), che le sta sotto e non sopra grazie al
+       `padding-bottom` di `.shell`. */
+  min-height: 0;
+  position: relative;
+  z-index: 5;
   /* NIENTE transizione su grid-template-rows. Fra `0fr` e `minmax(0, 64vh)`
      non c'è interpolazione possibile: la traccia resta congelata al valore
      vecchio, senza errori e senza animazione — la libreria si apriva alta zero
@@ -709,6 +734,14 @@ body {
 
 .library-body {
   overflow: hidden;
+  /* In colonna, e la striscia si prende il RESTO (`flex: 1`), non il 100%.
+     Era `height: 100%` sulla striscia: il 100% del corpo, spinto in basso da
+     ricerca, filtri e nota (151px a 390) — lo scorrimento finiva sotto il
+     taglio di `overflow: hidden`, e l'ultima fila di asset, coi suoi
+     comandi, non entrava mai in vista (Bloccante 2, 2026-09-23). */
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .strip {
@@ -716,7 +749,8 @@ body {
   gap: 10px;
   padding: 0 var(--pad) var(--pad);
   overflow-x: auto;
-  height: 100%;
+  flex: 1 1 0;
+  min-height: 0;
   align-items: flex-start;
 }
 
@@ -1591,6 +1625,12 @@ body {
     grid-template-areas:
       'servizi servizi servizi'
       'brain   tela    pannello';
+    /* ⚠️ Bloccante 2 della revisione finale (2026-09-23): a 1280×800 con la
+       libreria aperta il palco scendeva a 148px, la tela a ZERO, e il `+`
+       risaliva sotto la fila dei servizi. Il minimo è la fila dei servizi
+       (112px, misurata: 12 + il cerchio di Scontorna 72 + 26 di riserva per
+       il nome + 2 di bordo) più ciò che il palco contiene davvero. */
+    min-height: calc(112px + var(--palco-minimo));
   }
   .toolrail {
     grid-area: servizi;
@@ -1945,11 +1985,47 @@ body {
   .main {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(200px, 1fr) auto;
+    /* ⚠️ Bloccante 2 della revisione finale (2026-09-23): il minimo del
+       palco deve stare ANCHE su `.main`, non solo su `.stage`. `.main` è
+       `flex: 1; min-height: 0` dentro `.shell` (colonna alta quanto lo
+       schermo): con la libreria aperta a 52vh si prendeva 138px, il palco
+       teneva i suoi 220 e SBORDAVA di 82px sopra la testata della libreria
+       — tasto Zack e mascotte dipinti sopra «Riduci» e «Scarica tutto»
+       (premere «Scarica tutto» premeva ZACK), e la libreria, aperta per
+       sempre da `jayl.libOpen`, non si chiudeva più. Con il minimo qui, è
+       la libreria a stringersi (`min-height: 0` su `.library`, la sua riga
+       è `minmax(0, …)`), non il palco. Non 220px (il minimo di `.stage`):
+       a 220 il `+` da 150px non entrava nella tela da 69px e saliva sopra
+       la barra in cima. `--palco-minimo` è ciò che il palco contiene
+       davvero (300px a 390×844). */
+    min-height: var(--palco-minimo);
   }
 
   .stage {
     padding: var(--pad);
     min-height: 220px;
+  }
+
+  /* Sul telefono il tasto Brain sta sopra l'angolo in alto a sinistra del
+     palco (`.brain-tasto`: assoluto, 8px dal bordo di `.main`, 46px più il
+     nome sotto). L'angolo col `+` e la croce (riportato in alto quando c'è
+     una colonna a sinistra, vedi `.sc[data-fianchi='due'] .sc-angolo`,
+     dove sta anche il suo `top: 64px` per il telefono: a specificità pari
+     deve venire DOPO la regola desktop) scende sotto di lui, e la colonna
+     sinistra sotto l'angolo: due cerchi
+     da 46 e 8 di spazio fanno 100, più 12 di respiro. Bloccante 2 della
+     revisione finale, 2026-09-23. */
+  .sc[data-fianchi='due'] .sc-strumenti[data-lato='sinistra'] {
+    top: 176px;
+    max-height: calc(100% - 176px);
+  }
+  /* Sul telefono il tasto Zack sta a DESTRA (non al centro come sul
+     desktop), col punto oro «Cosa farà» proprio sotto la colonna destra: a
+     palco corto (libreria aperta) «Annulla» e «Avanzati» del Vettoriale e di
+     Brain lo coprivano. La colonna destra si ferma dove comincia la zona del
+     tasto (il `padding-bottom` di `.sc`, «5-6») e scorre. */
+  .sc .sc-strumenti[data-lato='destra'] {
+    max-height: calc(100% - 60px - clamp(96px, 15dvh, 150px));
   }
 
   .rail {
@@ -4527,6 +4603,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* ⚠️ Bloccante 2 della revisione finale (2026-09-23): ciò che non entra
+     nella tela SCORRE dentro la tela, non le esce di dosso. Centrato e
+     visibile, il contenuto troppo alto sbordava di metà in su e di metà in
+     giù: il `+` di Scontorna saliva sotto la fila dei servizi (1280×800,
+     libreria aperta) e il preventivo di Immagine scendeva sotto il tasto
+     Zack, che lo copriva. `safe` tiene l'inizio del contenuto dentro la
+     tela quando trabocca, invece di centrarlo fuori dalla vista. */
+  overflow: auto;
+  align-items: safe center;
+  justify-content: safe center;
 }
 
 /* Il `+`: grande, perche' intorno non c'e' nient'altro ed e' il gesto con
@@ -4567,6 +4653,17 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  /* ⚠️ Bloccante 2 della revisione finale (2026-09-23): la colonna non esce
+     dal palco — se i cerchi non ci stanno, SCORRE. Lunga quanto il suo
+     contenuto, a palco corto (libreria aperta) scendeva oltre il fondo di
+     `.sc`. Sul telefono si ferma anche prima, dove comincia la zona del
+     tasto Zack (vedi `.sc .sc-strumenti[data-lato='destra']` nel blocco del
+     telefono). `max-height` e non `bottom`: una colonna corta non deve
+     diventare un rettangolo vuoto che ruba i tocchi. */
+  max-height: calc(100% - 60px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
 }
 /* La tela si stringe di quanto le colonne coprono, invece di lasciarsele
    addosso. Misurato a 390 px: con due colonne restano 302, che e' il numero
@@ -4589,6 +4686,12 @@ body {
   left: 0;
   /* Sotto il `+` e la croce, che stanno nello stesso angolo. */
   top: 112px;
+  /* La sinistra può scendere fino in fondo: nella zona del tasto, a
+     sinistra, c'è solo la mascotte, che è `pointer-events: none`. Fermarla
+     come la destra la faceva sparire del tutto a palco corto (390×844,
+     libreria aperta: altezza 0, gli otto strumenti del Vettoriale
+     irraggiungibili). */
+  max-height: calc(100% - 112px);
 }
 
 /* Gli avanzati, sopra la tela e non di fianco: di fianco vorrebbe dire
@@ -5318,6 +5421,24 @@ body {
   flex-direction: column;
   gap: 8px;
   z-index: 4;
+}
+/* Con una colonna di strumenti anche a SINISTRA (`data-fianchi='due'`:
+   Vettoriale, Brain) l'angolo torna nell'angolo, in alto. La colonna
+   sinistra comincia a 112px apposta per stargli sotto («Sotto il `+` e la
+   croce, che stanno nello stesso angolo»); a metà altezza, invece, la croce
+   finiva sopra la Matita del Vettoriale e il `+` sopra «Centra tutto» di
+   Brain appena il palco si accorciava (libreria aperta): premere l'uno
+   premeva l'altro. Bloccante 2 della revisione finale, 2026-09-23. */
+.sc[data-fianchi='due'] .sc-angolo[data-posto='sinistra'] {
+  top: 0;
+  transform: none;
+}
+/* Sul telefono, sotto il tasto Brain (vedi la colonna sinistra nel blocco
+   del telefono, che scende a 176px per lo stesso motivo). */
+@media (max-width: 760px) {
+  .sc[data-fianchi='due'] .sc-angolo[data-posto='sinistra'] {
+    top: 64px;
+  }
 }
 .sc-piu-piccolo {
   display: grid;
