@@ -209,3 +209,35 @@ Tre cose da fare diversamente, perché tocca il denaro:
   esserlo. (Un rapporto ci è già cascato.)
 - **«Nessuna porta si chiude»** resta il vincolo più duro del progetto. In questa
   fase ha preso 13 difetti, **tutti sotto una suite verde**.
+
+---
+
+## ⚠️ AGGIORNAMENTO 2026-09-24 — dove si è fermata la sessione
+
+**Leggi questo per primo.** Gli 11 compiti sono **tutti chiusi e approvati**.
+La revisione finale di ramo ha trovato due bloccanti, **corretti e committati**:
+
+- `9eb9be8` — annulla/rifai: risultato, storia e futuro in un solo `useReducer`
+  col riduttore puro `riduciStoria` (`src/engine/storia.js`). Verificato con clic veri.
+- `d0016eb` — la libreria sul telefono si chiude di nuovo.
+- `f81592b` — tolto il `border-right` morto della barra dei servizi.
+
+**Resta UNA cosa sola:** `d0016eb` ha aperto tre porte nuove — telefono in
+orizzontale (testata della libreria fuori schermo), portatili 1280×800 e
+1366×768 a libreria aperta («Rifai» e 5 strumenti del Vettoriale nascosti),
+390×844 (colonna di Scontorna ridotta a 21px). **Regola già decisa:** cede il
+**corpo** della libreria, mai la **testata** e mai la **colonna degli
+strumenti**. Un agente la stava applicando: controlla `git log` (commit
+`wip: la libreria cede il corpo…`) e il rapporto
+`.superpowers/sdd/2026-09-15-la-pelle/final-fix-report.md`.
+
+**Come chiudere, senza altre revisioni Opus** (decisione del committente,
+budget token):
+1. Se ci sono file modificati non committati → committali come `wip`.
+2. Finisci la correzione, poi **controlla tu** che nella matrice
+   390×844, 390×664, 375×548, 667×375, 844×390, 932×430, 844×340, 800×700,
+   1280×800, 1366×768 — libreria aperta e chiusa — **niente di raggiungibile su
+   `main` sia diventato irraggiungibile** (`elementFromPoint` al centro di ogni
+   comando, confronto col foglio di stile di `main`).
+3. `npm test` e `npm run build` verdi → chiedi al committente se fondere e
+   pubblicare. Tutto il resto va nei minori, non in altri giri.
