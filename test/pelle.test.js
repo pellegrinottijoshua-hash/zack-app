@@ -299,3 +299,22 @@ test('la fila filtra DAVVERO con mostraInFila, con le variabili vere', () => {
     'la fila non filtra più con mostraInFila(DESCRITTORI[s.id], { muroAcceso, abbonato }): il .filter è sparito, o gli argomenti non sono più le prop vere',
   );
 });
+
+// Giro finale del Bloccante 2 (2026-09-24): il palco conta i cerchi per
+// fianco per farsi alto quanto la sua colonna più lunga.
+test('cerchiPerLato: chi non dichiara un lato sta a destra', async () => {
+  const { cerchiPerLato } = await import('../src/servizi/pelle.js');
+  assert.deepEqual(cerchiPerLato([]), { sinistra: 0, destra: 0 });
+  assert.deepEqual(cerchiPerLato(), { sinistra: 0, destra: 0 });
+  assert.deepEqual(
+    cerchiPerLato([{ id: 'a' }, { id: 'b', lato: 'destra' }, { id: 'c', lato: 'sinistra' }]),
+    { sinistra: 1, destra: 2 },
+  );
+});
+
+test('cerchiPerLato: il Vettoriale ha otto cerchi a sinistra (quelli che sparivano a 1280×800)', async () => {
+  const { cerchiPerLato } = await import('../src/servizi/pelle.js');
+  const { strumentiVisibili, getDescrittore } = await import('../src/servizi/index.js');
+  const d = getDescrittore('vettorializza');
+  assert.deepEqual(cerchiPerLato(strumentiVisibili(d, { file: true, risultato: false })).sinistra, 8);
+});

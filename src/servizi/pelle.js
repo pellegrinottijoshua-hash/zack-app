@@ -82,3 +82,25 @@ export function mostraInFila(descrittore, { muroAcceso = false, abbonato = false
   if (descrittore?.serve !== 'abbonamento') return true;
   return abbonato;
 }
+
+/**
+ * Quanti cerchi ci sono su ciascun fianco del palco.
+ *
+ * Giro finale del Bloccante 2 della revisione finale (2026-09-24). Il palco
+ * deve far posto alla sua colonna di strumenti INTERA — accorciata e
+ * scorrevole senza barra, nascondeva «Rifai» proprio dopo «Annulla» e i
+ * cinque strumenti in fondo al Vettoriale. Quanto è lunga la colonna lo
+ * sanno solo gli strumenti visibili in quel momento; il CSS di `.sc` lo
+ * legge da `--colonna-destra` / `--colonna-sinistra`, che `Piano.jsx`
+ * scrive con questi due numeri. Chi non dichiara un lato sta a destra,
+ * come nelle colonne stesse.
+ */
+export function cerchiPerLato(strumenti = []) {
+  let sinistra = 0;
+  let destra = 0;
+  for (const s of strumenti) {
+    if ((s.lato || 'destra') === 'sinistra') sinistra += 1;
+    else destra += 1;
+  }
+  return { sinistra, destra };
+}

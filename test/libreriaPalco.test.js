@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 /*
- * La libreria aperta e il palco: nessuno dei due dipinge sull'altro.
+ * La libreria aperta e il palco: nessuno dei due dipinge sull'altro, e
+ * quando lo spazio non basta cede il corpo della libreria.
  *
  * Bloccante 2 della revisione finale della fase 1 (2026-09-23). Sul telefono
  * (390×844) la libreria, aperta una volta, non si chiudeva più: `.main` è
@@ -65,38 +66,65 @@ const di = (selettore, media = '') => TUTTE.filter((r) => r.selettore === selett
 const TELEFONO = '@media (max-width: 760px)';
 const DESKTOP = '@media (min-width: 761px)';
 
-test('la libreria sta sopra il palco, e sotto la barra fissa del telefono', () => {
-  const lib = di('.library');
-  assert.equal(valore(lib, 'position'), 'relative', '.library deve essere posizionata perché z-index valga');
-  const z = Number(valore(lib, 'z-index'));
-  assert.ok(z > 0, `.library senza z-index: il palco che trabocca le dipinge sopra la testata (z-index = ${valore(lib, 'z-index')})`);
+/*
+ * Giro finale (2026-09-24), ruling del controllore: quando lo spazio in
+ * verticale finisce, cede il CORPO della libreria — mai la TESTATA (l'unica
+ * uscita) e mai la COLONNA degli strumenti (l'unica strada per annulla,
+ * rifai, scarica). Il primo giro (`d0016eb`) faceva cedere la libreria
+ * intera fino a zero (testata fuori schermo a 844×390) e accorciava la
+ * colonna con uno scorrimento senza barra («Rifai» a 0px a 1280×800).
+ */
+test('la testata della libreria è figlia della pagina e resta incollata in fondo', () => {
+  assert.equal(valore(di('.library'), 'display'), 'contents', 'dentro una scatola comune la testata cede con lei');
+  const testa = di('.library-head');
+  assert.equal(valore(testa, 'position'), 'sticky');
+  assert.equal(valore(testa, 'bottom'), '0');
+  assert.equal(valore(testa, 'flex'), 'none', 'la testata non si stringe mai');
+  const z = Number(valore(testa, 'z-index'));
+  assert.ok(z > 0, 'la testata deve stare sopra il palco');
   const barra = Number(valore(di('.toolrail', TELEFONO), 'z-index'));
-  assert.ok(barra > z, `la barra fissa dei servizi (z ${barra}) deve restare sopra la libreria (z ${z})`);
+  assert.ok(barra > z, `la barra fissa dei servizi (z ${barra}) deve restare sopra la testata (z ${z})`);
+  // Sul telefono NIENTE `bottom` in più: il `padding-bottom` di `.shell`
+  // tiene già la testata sopra la barra fissa (con 128px in più si fermava
+  // sopra il punto oro — misurato).
+  assert.equal(valore(di('.library-head', TELEFONO), 'bottom'), undefined);
+  assert.equal(valore(di('.shell'), 'overflow-y'), 'auto', 'se lo schermo è più basso della somma, la pagina scorre');
 });
 
-test('la libreria cede lo spazio, e la sua striscia scorre dentro il corpo', () => {
-  assert.equal(valore(di('.library'), 'min-height'), '0', '.library senza min-height: 0 non si stringe mai: cede il palco');
-  const corpo = di('.library-body');
-  assert.equal(valore(corpo, 'display'), 'flex');
-  assert.equal(valore(corpo, 'flex-direction'), 'column');
+test('cede il corpo della libreria, fino a un minimo; la striscia scorre dentro il corpo', () => {
+  assert.equal(valore(di('.library-body'), 'display'), 'none', 'chiusa, il corpo non c’è');
+  const aperto = di(".library[data-open='true'] .library-body");
+  assert.equal(valore(aperto, 'display'), 'flex');
+  assert.match(valore(aperto, 'flex') ?? '', /^0 1 /, 'il corpo deve poter cedere (flex-shrink 1)');
+  assert.match(valore(aperto, 'min-height') ?? '', /min\(/, 'il corpo cede fino a un minimo, non a zero');
+  for (const [sel, media] of [[".library[data-open='true'] .library-body", TELEFONO], [".library[data-open='true'][data-size='grande'] .library-body", '']]) {
+    assert.ok(valore(di(sel, media), 'flex-basis'), `${sel} ${media}: manca la misura che il corpo vuole`);
+    assert.match(valore(di(sel, media), 'min-height') ?? '', /min\(/, `${sel} ${media}: manca il minimo`);
+  }
+  assert.equal(valore(di('.library-body'), 'flex-direction'), 'column');
   const strip = di('.strip');
   assert.notEqual(valore(strip, 'height'), '100%', "`.strip { height: 100% }` spinge l'ultima fila sotto il taglio del corpo");
   assert.equal(valore(strip, 'min-height'), '0');
   assert.match(valore(strip, 'flex') ?? '', /^1\b/, '.strip deve prendersi il resto del corpo (flex: 1)');
 });
 
-test('il palco ha un minimo su .main, in tutte e due le piante', () => {
-  const minimo = valore(di(':root'), '--palco-minimo');
-  assert.ok(minimo, 'manca --palco-minimo su :root');
-  assert.equal(valore(di('.main', TELEFONO), 'min-height'), 'var(--palco-minimo)', 'telefono: .main deve tenere il minimo del palco');
-  assert.match(valore(di('.main', DESKTOP), 'min-height') ?? '', /var\(--palco-minimo\)/, 'desktop: .main deve tenere servizi + palco');
-  // Il minimo è fatto delle due misure che il palco contiene davvero: se
-  // una cambia e l'altra no, il minimo mente.
-  const piu = di('.sc-piu').map((r) => r.corpo).join(';');
-  const alto = [...piu.matchAll(/(?:^|;|\s)height\s*:\s*(clamp\([^;]*dvh[^;]*\))/g)].at(-1)?.[1];
-  assert.ok(alto && minimo.includes(alto), `--palco-minimo (${minimo}) non contiene l'altezza del + (${alto})`);
-  const fondo = valore(di('.sc'), 'padding-bottom');
-  assert.ok(fondo && minimo.includes(fondo), `--palco-minimo (${minimo}) non contiene lo spazio del tasto (${fondo})`);
+test('il palco non cede mai, e chiede quanto la sua colonna più lunga', () => {
+  assert.equal(valore(di('.main'), 'flex'), '1 0 auto', '.main deve partire dal suo contenuto e non stringersi');
+  for (const media of ['', TELEFONO]) {
+    const min = valore(di('.sc', media), 'min-height') ?? '';
+    assert.match(min, /var\(--colonna-destra/, `.sc ${media}: il minimo deve contare i cerchi a destra`);
+    assert.match(min, /var\(--colonna-sinistra/, `.sc ${media}: il minimo deve contare i cerchi a sinistra`);
+  }
+  // Sul telefono la colonna destra deve finire sopra il tasto Zack (e il
+  // suo punto oro): il minimo ne conta la misura.
+  assert.match(valore(di('.sc', TELEFONO), 'min-height') ?? '', /clamp\(220px, 38vw, 340px\)/);
+  // Sul desktop la tela si ferma sopra il tasto.
+  assert.match(valore(di('.sc-tela', DESKTOP), 'margin-bottom') ?? '', /clamp\(200px, 20vw, 260px\)/);
+  // Chi scrive i due numeri: Piano, dagli strumenti visibili.
+  const PIANO = readFileSync(new URL('../src/components/Piano.jsx', import.meta.url), 'utf8');
+  assert.match(PIANO, /cerchiPerLato\(strumenti\)/);
+  assert.match(PIANO, /'--colonna-sinistra':\s*cerchi\.sinistra/);
+  assert.match(PIANO, /'--colonna-destra':\s*cerchi\.destra/);
 });
 
 test('ciò che non entra nella tela scorre dentro la tela', () => {
@@ -119,13 +147,11 @@ test("con due colonne l'angolo sta nell'angolo, e sul telefono sotto Brain", () 
   assert.ok(colonna >= angolo + 100, `la colonna sinistra (top ${colonna}) deve partire sotto l'angolo (${angolo} + 100)`);
 });
 
-test('le colonne degli strumenti non escono dal palco: scorrono', () => {
-  const col = di('.sc-strumenti');
-  assert.ok(valore(col, 'max-height'), '.sc-strumenti senza max-height scende oltre il palco');
-  assert.equal(valore(col, 'overflow-y'), 'auto');
-  assert.match(
-    valore(di(".sc .sc-strumenti[data-lato='destra']", TELEFONO), 'max-height') ?? '',
-    /clamp\(96px, 15dvh, 150px\)/,
-    'sul telefono la colonna destra deve fermarsi sopra il punto oro del tasto Zack',
-  );
+test('la colonna degli strumenti non si accorcia e non scorre', () => {
+  for (const [sel, media] of [['.sc-strumenti', ''], [".sc-strumenti[data-lato='sinistra']", ''], [".sc[data-fianchi='due'] .sc-strumenti[data-lato='sinistra']", TELEFONO], [".sc .sc-strumenti[data-lato='destra']", TELEFONO]]) {
+    const r = di(sel, media);
+    assert.equal(valore(r, 'max-height'), undefined, `${sel} ${media}: una colonna accorciata nasconde «Rifai»`);
+    assert.equal(valore(r, 'overflow-y'), undefined, `${sel} ${media}: niente colonna che scorre`);
+    assert.equal(valore(r, 'scrollbar-width'), undefined, `${sel} ${media}: niente barra nascosta`);
+  }
 });

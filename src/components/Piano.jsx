@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
 import { FATTORI, PASSI, commutaFattore, commutaPasso } from '../engine/ricette.js';
-import { postoDelPiu, mostraMascotte } from '../servizi/pelle.js';
+import { postoDelPiu, mostraMascotte, cerchiPerLato } from '../servizi/pelle.js';
 import Icon from './Icon.jsx';
 
 /**
@@ -101,6 +101,10 @@ export default function Piano({
      i ternari di questo JSX, cioè dove nessun test poteva vederle. */
   const posto = postoDelPiu(servizio.id, { quanti, tetto: servizio.accetta.quanti });
 
+  /* Quanti cerchi per fianco: il palco li conta per farsi alto quanto la
+     sua colonna più lunga (`min-height` di `.sc` in styles.css). */
+  const cerchi = cerchiPerLato(strumenti);
+
   return (
     <div
       className="sc"
@@ -121,6 +125,7 @@ export default function Piano({
         onFiles([...e.dataTransfer.files]);
       }}
       data-sopra={sopra || undefined}
+      style={{ '--colonna-sinistra': cerchi.sinistra, '--colonna-destra': cerchi.destra }}
       /* Le colonne degli strumenti sono sovrapposte, non affiancate: senza
          dirlo alla tela, su 390 px coprirebbero 44 px di lavoro per lato.
          Contratto § 7.2: «la tela resta grande — 390 − 44 − 44 = 302». */
