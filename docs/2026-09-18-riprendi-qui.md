@@ -258,3 +258,78 @@ raggiungibilità nel browser. I minori rimandati, numerati da 1 a 28, stanno nel
 ledger `.superpowers/sdd/2026-09-15-la-pelle/progress.md`, e c'è un cancello
 duro prima di accendere il muro: a `VITE_MURO=1` Immagine deve mostrare il
 prezzo, non «Entra per usare lo studio».
+
+---
+
+## ▶️ 2026-09-26 — LA FASE 2 È SPEZZATA IN TRE FETTE: 2a, 2b, 2c
+
+La fase 1 era della grandezza giusta ma è costata molte volte la stima (1,5 g ≈
+15 M), e si è bloccata sui limiti delle 5 ore più di cinque volte. Da qui in
+avanti vale **una sessione = una fetta**.
+
+### Le regole di ogni fetta
+
+1. **Al massimo 4-5 compiti**, dentro una finestra di 5 ore.
+2. **Finisce fusa e pubblicata** (salvo 2b, che aspetta la `ultra` del
+   committente). Niente rami che restano aperti fra una sessione e l'altra.
+3. **Un giro di correzione per compito**, poi decido io; i minori vanno in lista.
+   I criteri meccanici (prove, build, lo script di 2a) li controllo io con Bash,
+   senza ri-revisioni col modello capace.
+4. **Dopo ogni compito**: commit + una riga in questo file. Un blocco deve
+   costare al massimo un compito.
+5. **Sessione nuova per ogni fetta.** Una sessione lunga rilegge tutta la sua
+   storia a ogni turno: è lì che se ne vanno i token.
+6. Le fasi successive della [scaletta](2026-09-15-scaletta.md) si tagliano allo
+   stesso modo quando ci si arriva (le più lunghe: 5 Brain, 6 Voce).
+
+### 2a — La prova di raggiungibilità nel browser  ← **si comincia da qui**
+
+È la regola §3.1, finalmente fatta. Uno script solo, nel browser vero, che per
+ogni comando visibile, a **390 / 800 / 1280 px** (più 760/761), dice:
+
+1. `document.elementFromPoint` al centro del comando restituisce **quel** comando;
+2. il rettangolo del comando sta dentro la finestra;
+3. il testo contro lo sfondo davvero dipinto supera **4,5:1**.
+
+- **Stati di partenza dichiarati**: localStorage vuoto; a muro spento e a muro
+  acceso (`VITE_MURO=1`); saldo zero e saldo carico.
+- **Prova che morde**: si rompe apposta una porta già chiusa nella fase 1 (per
+  esempio la testata della libreria fuori schermo) e lo script deve diventare
+  rosso.
+- **Il cancello duro**: a `VITE_MURO=1` Immagine deve mostrare il prezzo, non
+  «Entra per usare lo studio». Lo script lo verifica.
+- Niente jsdom: il divieto resta. Lo script gira nel browser, non in `npm test`.
+- **Taglia**: piccola, 2-3 compiti, niente soldi. Spec breve + piano nella
+  stessa sessione.
+
+### 2b — I soldi: comprare senza account
+
+Il gettone minimo da **1 €**, il pagamento da ospite (senza email), il **prezzo
+accanto al tasto prima di premere**, il credito che sopravvive nel browser con
+l'avviso onesto.
+
+- Parte **solo dopo 2a**: lo script deve già esistere (il Critical di B2 era un
+  tasto per pagare che spariva a saldo zero).
+- **Spec e piano col modello capace** — è il passo costoso: circa mezza sessione
+  prima del codice. Probabilmente spec in una sessione, esecuzione nella
+  successiva.
+- Ogni prova parte da uno stato dichiarato; il costo si misura prima di scrivere
+  il prezzo (lezioni B2 n.2 e n.3).
+- **Prima di fondere: `/code-review ultra` la lancia il committente.** Io non
+  posso.
+- Aperto per il committente: l'IVA, da chiarire col commercialista.
+- Le regole di sicurezza del §5 valgono per intero: niente chiavi, niente
+  cruscotti Stripe, i subagent non si collegano a niente.
+
+### 2c — La home del desktop che lavora
+
+Tre corsie, il prompt, i riferimenti a pallini. Non tocca i soldi e può andare
+anche prima di 2b se serve. Punto di partenza: la spec già scritta
+[`superpowers/specs/2026-08-27-home-che-lavora-design.md`](superpowers/specs/2026-08-27-home-che-lavora-design.md)
+— da rileggere contro la pianta nuova della fase 1 prima di pianificare.
+
+### Frase da incollare in una sessione nuova
+
+```
+Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 2a.
+```
