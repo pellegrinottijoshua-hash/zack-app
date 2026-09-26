@@ -367,3 +367,11 @@ Chrome headless via DevTools Protocol. Si lancia con i due server di
   `/app/`). Ora, se la pagina non è lo studio, lo script si ferma con un errore.
 
 **Prossima sessione:** «Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 2b».
+
+## ▶️ 2026-09-26 — 2b: spec e piano scritti, codice FERMO su una decisione
+
+[`superpowers/specs/2026-09-26-comprare-senza-account-design.md`](superpowers/specs/2026-09-26-comprare-senza-account-design.md).
+**Il gettone da 1 € perde ~14 centesimi** (Stripe 0,25 € + 1,5% su un margine
+del 12%; il pareggio è a ~2,31 €). E se l'IVA al 22% si applica, **ogni**
+generazione è in perdita (margine 14% < IVA). Servono dal committente:
+strada del gettone (§2.2), IVA, anonimi accesi su Supabase (§4). Poi i 4 compiti.
