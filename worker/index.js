@@ -31,6 +31,9 @@ import { generaConGoogle, immagineValida } from './fornitori/google.js';
 
 const GIORNO = 86400000;
 
+/** Dove si torna da una ricarica. Nomi, mai indirizzi (fetta 2c). */
+const RITORNI = { studio: '/app/', home: '/' };
+
 /*
  * Niente intestazioni CORS: il Worker e' lo STESSO che serve il sito, quindi
  * lo studio e `/me` stanno alla stessa origine e non c'e' nessun confine da
@@ -198,7 +201,7 @@ async function ricarica(req, env) {
   if (!chi) return json({ errore: 'non-collegato' }, 401);
   if (!env.STRIPE_SECRET_KEY) return json({ errore: 'non-configurato' }, 503);
 
-  const { pacchetto } = await req.json().catch(() => ({}));
+  const { pacchetto, ritorno } = await req.json().catch(() => ({}));
   const scelto = PACCHETTI[pacchetto];
   // ⚠️ Il prezzo viene dall'ID, non dal corpo. Un client che dichiara «25 €»
   // pagandone 5 non deve poter esistere.
@@ -217,6 +220,17 @@ async function ricarica(req, env) {
   if (!conto) return json({ errore: 'archivio' }, 500);
 
   const sito = new URL(req.url).origin;
+  /*
+   * Dove torna il cliente (fetta 2c): una chiave CHIUSA, come il pacchetto.
+   * Chi paga dalla home deve tornare sulla home, al suo prompt, non finire
+   * nello studio. Ma un indirizzo scritto dal client e' un rimando aperto
+   * verso qualunque sito: qui si accetta un nome, non un URL, e tutto cio'
+   * che non si conosce torna nello studio.
+   */
+  // `Object.hasOwn` e non `RITORNI[ritorno] ||`: «constructor» o «toString»
+  // si troverebbero nel prototipo, e l'indirizzo diventerebbe il testo di
+  // una funzione (lo stesso inciampo dei ruoli, piu' sotto in `genera`).
+  const dove = Object.hasOwn(RITORNI, ritorno) ? RITORNI[ritorno] : RITORNI.studio;
   const corpo = new URLSearchParams({
     mode: 'payment',
     'line_items[0][price_data][currency]': 'eur',
@@ -225,8 +239,8 @@ async function ricarica(req, env) {
     'line_items[0][quantity]': '1',
     'metadata[utente]': chi.id,
     'metadata[millesimi]': String(scelto.millesimi),
-    success_url: `${sito}/app/?ricaricato=1`,
-    cancel_url: `${sito}/app/`,
+    success_url: `${sito}${dove}?ricaricato=1`,
+    cancel_url: `${sito}${dove}`,
   });
   /*
    * L'email si passa solo se c'e'. Un ospite (fetta 2b) non ne ha, e

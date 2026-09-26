@@ -270,6 +270,9 @@ export async function vaiAlPagamento() {
  * una cifra da leggere.
  */
 export async function vaiAllaRicarica(pacchetto, {
+  // Dove tornare dopo Stripe: 'studio' (di serie) o 'home'. Un nome, mai un
+  // indirizzo: il Worker conosce solo quei due (fetta 2c).
+  ritorno = 'studio',
   otteniSessione = sessione,
   ospite = entraComeOspite,
   vai = (url) => { location.href = url; },
@@ -289,7 +292,7 @@ export async function vaiAllaRicarica(pacchetto, {
   const res = await fetch(`${BASE}/ricarica`, {
     method: 'POST',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
-    body: JSON.stringify({ pacchetto }),
+    body: JSON.stringify({ pacchetto, ritorno }),
   });
   if (!res.ok) throw new Error('ricarica');
   const { url } = await res.json();

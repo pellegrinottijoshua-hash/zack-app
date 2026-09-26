@@ -201,8 +201,9 @@ test('vaiAllaRicarica manda al Worker SOLO l’id del pacchetto', () => {
   const corpo = conto.slice(inizio, fine);
   assert.match(
     corpo,
-    /body:\s*JSON\.stringify\(\{\s*pacchetto\s*\}\)/,
-    'il corpo della richiesta non manda SOLO il pacchetto',
+    // Dalla fetta 2c viaggia anche `ritorno`: un NOME fra due, non una cifra.
+    /body:\s*JSON\.stringify\(\{\s*pacchetto,\s*ritorno\s*\}\)/,
+    'il corpo della richiesta non manda SOLO il pacchetto (e il ritorno)',
   );
   assert.doesNotMatch(
     corpo,

@@ -588,3 +588,26 @@ test('/me dice all’ospite che è un ospite, e a chi ha un’email no', async (
     assert.equal((await res.json()).ospite, atteso);
   }
 });
+
+/* Fetta 2c — dove si torna da Stripe. Nomi chiusi, mai indirizzi. */
+for (const [ritorno, atteso, perche] of [
+  ['home', 'https%3A%2F%2Fzack-app.com%2F%3Fricaricato%3D1', 'chi paga dalla home torna sulla home'],
+  [undefined, 'https%3A%2F%2Fzack-app.com%2Fapp%2F%3Fricaricato%3D1', 'di serie si torna nello studio'],
+  ['https://ladro.example', 'https%3A%2F%2Fzack-app.com%2Fapp%2F%3Fricaricato%3D1', '⚠️ un indirizzo dal client non diventa un rimando aperto'],
+  ['constructor', 'https%3A%2F%2Fzack-app.com%2Fapp%2F%3Fricaricato%3D1', '⚠️ un nome del prototipo non diventa un indirizzo'],
+]) {
+  test(`ritorno ${String(ritorno)}: ${perche}`, async () => {
+    const chiamate = reteOspite({ id: 'u-40', email: 'c@e.it' });
+    const res = await worker.fetch(
+      new Request('https://zack-app.com/ricarica', {
+        method: 'POST',
+        headers: { authorization: 'Bearer x', 'content-type': 'application/json' },
+        body: JSON.stringify({ pacchetto: 'p2', ritorno }),
+      }),
+      AMBIENTE,
+    );
+    assert.equal(res.status, 200);
+    const inviato = String(chiamate.find((c) => c.url.includes('api.stripe.com')).corpo);
+    assert.match(inviato, new RegExp(`success_url=${atteso.replace(/[.?]/g, '\\$&')}(&|$)`));
+  });
+}
