@@ -391,3 +391,12 @@ pubblica. Anonimi su Supabase: **accesi** (2026-09-26).
 Minori nuovi: lo script non apre il pannello della ricarica (i suoi comandi
 non li misura); su telefono il tasto Brain si sovrappone al titolo di
 Immagine (testo, non comando: lo script non lo vede).
+
+La query RLS (editor SQL di Supabase). Ci si aspetta `rowsecurity = true` su
+tutte e tre, e nessuna policy che dia `insert`/`update` ad `authenticated`:
+
+```sql
+select tablename, rowsecurity from pg_tables
+ where schemaname = 'public' and tablename in ('conti','movimenti','lavori');
+select tablename, policyname, roles, cmd from pg_policies where schemaname = 'public';
+```
