@@ -69,7 +69,12 @@ async function chiEsegue(req, env) {
     });
     if (!res.ok) return null;
     const u = await res.json();
-    return u?.id ? { id: u.id, email: u.email } : null;
+    /*
+     * L'ospite (fetta 2b) e' un utente ANONIMO di Supabase: un id e un token
+     * veri, nessuna email. Tutto il resto del Worker lavora sull'id e non
+     * cambia; cambia solo chi riceve la prova e cosa si dice a Stripe.
+     */
+    return u?.id ? { id: u.id, email: u.email || null, anonimo: u.is_anonymous === true } : null;
   } catch {
     return null;
   }
@@ -105,11 +110,17 @@ async function contoDi(id, env) {
  * meglio garantire la riga qui, prima di aprire il pagamento, che sperare che
  * `/me` sia gia' passato di la'.
  */
-async function contoOCrealo(id, env) {
+async function contoOCrealo(id, env, { anonimo = false } = {}) {
   const esistente = await contoDi(id, env);
   if (esistente) return esistente;
 
-  const prova = new Date(Date.now() + PROVA_GIORNI * GIORNO).toISOString();
+  /*
+   * ⚠️ All'ospite niente prova (fetta 2b). Un ospite nasce con un clic e
+   * rinasce svuotando il browser: se portasse con se' quattordici giorni,
+   * la prova non finirebbe mai. La prova resta di chi entra con un nome
+   * (email o Google). Il credito che l'ospite compra, quello si', e' suo.
+   */
+  const prova = anonimo ? null : new Date(Date.now() + PROVA_GIORNI * GIORNO).toISOString();
   const scritta = await fetch(`${SUPABASE_URL}/rest/v1/conti`, {
     method: 'POST',
     headers: conServizio(env),
@@ -137,7 +148,6 @@ async function checkout(req, env) {
     mode: 'subscription',
     'line_items[0][price]': env.STRIPE_PREZZO,
     'line_items[0][quantity]': '1',
-    customer_email: chi.email,
     // Chi ha pagato lo dice Stripe rimandandoci indietro QUESTO: senza, il
     // webhook arriverebbe senza sapere a chi accreditarlo.
     'metadata[utente]': chi.id,
@@ -156,6 +166,13 @@ async function checkout(req, env) {
     success_url: `${sito}/app/?pagato=1`,
     cancel_url: `${sito}/app/`,
   });
+  /*
+   * L'email si passa solo se c'e'. Un ospite (fetta 2b) non ne ha, e
+   * `URLSearchParams` scriverebbe la parola «null»: Stripe la chiede da se'
+   * per la ricevuta, e noi non la usiamo per riconoscere nessuno — chi ha
+   * pagato lo dice `metadata[utente]`.
+   */
+  if (chi.email) corpo.set('customer_email', chi.email);
 
   const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
     method: 'POST',
@@ -196,7 +213,7 @@ async function ricarica(req, env) {
    * dopo tre giorni. Qui e' il momento buono: sappiamo gia' chi e' e che sta
    * per pagare, e non serve sperare che `/me` sia gia' passato di la' prima.
    */
-  const conto = await contoOCrealo(chi.id, env);
+  const conto = await contoOCrealo(chi.id, env, chi);
   if (!conto) return json({ errore: 'archivio' }, 500);
 
   const sito = new URL(req.url).origin;
@@ -206,12 +223,18 @@ async function ricarica(req, env) {
     'line_items[0][price_data][unit_amount]': String(scelto.centesimi),
     'line_items[0][price_data][product_data][name]': `Crediti Zack — ${scelto.centesimi / 100} €`,
     'line_items[0][quantity]': '1',
-    customer_email: chi.email,
     'metadata[utente]': chi.id,
     'metadata[millesimi]': String(scelto.millesimi),
     success_url: `${sito}/app/?ricaricato=1`,
     cancel_url: `${sito}/app/`,
   });
+  /*
+   * L'email si passa solo se c'e'. Un ospite (fetta 2b) non ne ha, e
+   * `URLSearchParams` scriverebbe la parola «null»: Stripe la chiede da se'
+   * per la ricevuta, e noi non la usiamo per riconoscere nessuno — chi ha
+   * pagato lo dice `metadata[utente]`.
+   */
+  if (chi.email) corpo.set('customer_email', chi.email);
 
   const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
     method: 'POST',
@@ -597,7 +620,7 @@ export default {
        * «non lo so» e tiene buona l'ultima risposta salvata (§ 3.4), e
        * l'errore diventa rumoroso invece che invisibile.
        */
-      const conto = await contoOCrealo(chi.id, env);
+      const conto = await contoOCrealo(chi.id, env, chi);
       if (!conto) return json({ errore: 'archivio' }, 500);
 
       return json({

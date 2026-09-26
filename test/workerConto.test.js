@@ -501,3 +501,72 @@ test('⚠️ se la prova non si riesce a SCRIVERE, non si regala lo stesso', asy
   assert.equal(corpo.provaFino, undefined, 'ha detto al browser una prova che non esiste');
   assert.ok(chiamate.some((c) => c.metodo === 'POST'), 'non ha nemmeno provato a scrivere');
 });
+
+/* ---------------------------------------------------------------- *
+ * Fetta 2b — l'ospite: un utente anonimo di Supabase, senza email.
+ * Ogni prova parte da uno stato dichiarato: nessuna riga di conti.
+ * ---------------------------------------------------------------- */
+
+/** Supabase risponde con `utente`; `conti` e' vuota; Stripe apre. */
+function reteOspite(utente) {
+  return rete((url, o) => {
+    if (url.includes('/auth/v1/user')) return new Response(JSON.stringify(utente), { status: 200 });
+    if (url.includes('/rest/v1/conti?')) return new Response('[]', { status: 200 });
+    if (url.includes('/rest/v1/conti') && o.method === 'POST') return new Response('{}', { status: 201 });
+    if (url.includes('api.stripe.com')) {
+      return new Response(JSON.stringify({ url: 'https://checkout.stripe.com/x' }), { status: 200 });
+    }
+    return null;
+  });
+}
+
+const ricaricaDi = (pacchetto) =>
+  worker.fetch(
+    new Request('https://zack-app.com/ricarica', {
+      method: 'POST',
+      headers: { authorization: 'Bearer ospite', 'content-type': 'application/json' },
+      body: JSON.stringify({ pacchetto }),
+    }),
+    AMBIENTE,
+  );
+
+test('⚠️ l’ospite paga senza email: a Stripe non arriva «customer_email=null»', async () => {
+  /*
+   * Rompere apposta: rimetti `customer_email: chi.email` dentro il
+   * URLSearchParams di `ricarica` → Stripe riceve la parola «null» come
+   * email, e rifiuta la sessione o la manda a nessuno.
+   */
+  const chiamate = reteOspite({ id: 'anon-1', email: '', is_anonymous: true });
+  const res = await ricaricaDi('p5');
+  assert.equal(res.status, 200);
+  const inviato = String(chiamate.find((c) => c.url.includes('api.stripe.com')).corpo);
+  assert.doesNotMatch(inviato, /customer_email/, 'all’ospite si e’ mandata un’email che non ha');
+  assert.match(inviato, /metadata%5Butente%5D=anon-1/, 'senza l’id il webhook non sa a chi accreditare');
+});
+
+test('chi ha un’email la manda ancora a Stripe', async () => {
+  const chiamate = reteOspite({ id: 'u-30', email: 'c@e.it' });
+  await ricaricaDi('p5');
+  const inviato = String(chiamate.find((c) => c.url.includes('api.stripe.com')).corpo);
+  assert.match(inviato, /customer_email=c%40e.it/);
+});
+
+test('⚠️ l’ospite non riceve la prova: svuotare il browser non la rinnova', async () => {
+  /*
+   * Rompere apposta: togli `anonimo ? null :` in `contoOCrealo` → la riga
+   * dell'ospite nasce con quattordici giorni, e un nuovo ospite ogni volta
+   * vuol dire prova infinita.
+   */
+  const chiamate = reteOspite({ id: 'anon-2', email: '', is_anonymous: true });
+  await ricaricaDi('p5');
+  const crea = chiamate.find((c) => c.metodo === 'POST' && c.url.includes('/rest/v1/conti'));
+  assert.ok(crea, 'la riga di conti non e’ nata prima del pagamento');
+  assert.equal(JSON.parse(crea.corpo).prova_fino, null, 'all’ospite e’ nata una prova');
+});
+
+test('chi entra con un nome la prova la riceve ancora', async () => {
+  const chiamate = reteOspite({ id: 'u-31', email: 'c@e.it', is_anonymous: false });
+  await ricaricaDi('p5');
+  const crea = chiamate.find((c) => c.metodo === 'POST' && c.url.includes('/rest/v1/conti'));
+  assert.ok(JSON.parse(crea.corpo).prova_fino, 'la prova e’ sparita anche a chi ha un’email');
+});
