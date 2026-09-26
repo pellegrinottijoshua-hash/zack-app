@@ -111,37 +111,28 @@ test('il muro non e’ piu’ uno solo per tutto lo studio', () => {
   assert.match(APP, /servizioAperto\(/, 'App.jsx decide ancora il muro per tutto lo studio');
 });
 
-test('chi e’ abbonato e ha solo il saldo corto vede la RICARICA, non il muro dell’abbonamento', () => {
+test('un servizio a saldo non si mura mai: si vede lo strumento col prezzo', () => {
   /*
-   * Important del giro di correzioni: `chiuso` da solo non dice PERCHÉ. Con
-   * `VITE_MURO=1` un account `aperto`/`prova` con crediti insufficienti per
-   * un servizio a saldo faceva scattare `chiuso = true` (vedi
-   * `test/servizi.test.js`, «senza crediti la generazione e’ chiusa anche a
-   * chi e’ abbonato»), ma `<Muro>` non ha una FRASE per 'aperto'/'prova' e
-   * ricadeva su FRASE['mai-entrato']: «Entra per usare lo studio», con un
-   * tasto che apre un SECONDO abbonamento Stripe a un cliente che paga già.
+   * Fetta 2b (2026-09-26). Il muro davanti alla generazione diceva «Entra per
+   * usare lo studio» a chi aveva saldo zero — la porta sui soldi chiusa
+   * davanti a chi doveva pagare, ed era il cancello duro dello script di
+   * raggiungibilità. Ora `chiuso` esclude i servizi a saldo PRIMA di
+   * chiedere `servizioAperto`: il saldo corto lo dice `Preventivo`, e il
+   * muro resta dell'abbonamento.
    *
-   * Qui si distinguono i due casi a livello di sorgente: il ramo
-   * `chiusoPerSaldo` (abbonato senza crediti) deve portare a `<Ricarica>` e
-   * MAI a `<Muro>`; il ramo alternativo (chi l’abbonamento non ce l’ha)
-   * deve continuare a mostrare `<Muro>`.
+   * Rompere apposta: togli `DESCRITTORI[tool]?.serve !== 'saldo' &&` dalla
+   * riga di `chiuso` → questa prova diventa rossa.
    */
-  const i = APP.indexOf('const chiusoPerSaldo = chiuso &&');
-  assert.notEqual(i, -1, '«chiusoPerSaldo» non e’ definito: chi mostra il muro non sa piu’ perche’ e’ chiuso');
+  const i = APP.indexOf('const chiuso = muroAcceso &&');
+  assert.notEqual(i, -1, '«chiuso» non e’ definito dove il test se lo aspetta');
   const definizione = APP.slice(i, APP.indexOf(';', i) + 1);
-  assert.match(definizione, /serve === 'saldo'/, 'non guarda se il servizio chiede il saldo (e non l’abbonamento)');
-  assert.match(definizione, /puoiLavorare\(statoConto\)/, 'non guarda se l’abbonamento e’ gia’ a posto');
-
-  const j = APP.indexOf('chiusoPerSaldo ? (');
-  assert.notEqual(j, -1, 'il ramo del saldo non e’ cablato nel JSX di App.jsx');
-  const k = APP.indexOf(') : (', j);
-  assert.notEqual(k, -1, 'manca il ramo alternativo (il muro dell’abbonamento)');
-  const ramoSaldo = APP.slice(j, k);
-  const ramoAbbonamento = APP.slice(k, k + 600);
-
-  assert.match(ramoSaldo, /<Ricarica\b/, 'abbonato senza crediti: non mostra la ricarica');
-  assert.doesNotMatch(ramoSaldo, /<Muro\b/, 'abbonato senza crediti: mostra ANCORA il muro dell’abbonamento');
-  assert.match(ramoAbbonamento, /<Muro\b/, 'chi non e’ abbonato non vede piu’ il muro');
+  assert.match(
+    definizione,
+    /DESCRITTORI\[tool\]\?\.serve !== 'saldo' &&/,
+    'la generazione e’ di nuovo dietro il muro: chi ha saldo zero non vede il prezzo',
+  );
+  assert.match(definizione, /servizioAperto\(/, 'il muro dell’abbonamento non passa piu’ dal descrittore');
+  assert.doesNotMatch(APP, /chiusoPerSaldo/, 'il rattoppo del muro sbagliato e’ tornato');
 });
 
 test('la guardia sul descrittore non torna a smurare le viste fuori dall’impianto', () => {

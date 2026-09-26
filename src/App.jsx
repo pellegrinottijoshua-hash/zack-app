@@ -124,8 +124,6 @@ const px = (d) => (d ? `${d.w}×${d.h}` : '—');
  */
 const FACCIA = new Set(['brain', 'scontorna', 'vettorializza', 'vocale']);
 
-/** Quale voce di listino paga quale strumento. Vuoto per i locali. */
-const LISTINO_DI = { immagine: 'immagine-nbp' };
 
 /**
  * I servizi che non lavorano su un file del piano.
@@ -288,32 +286,20 @@ export default function App() {
    */
   const crediti = licenza?.crediti ?? 0;
   /*
-   * `prezzoDi(voce).total` SENZA riferimenti, cioè il prezzo base: il muro
-   * chiede «hai abbastanza per COMINCIARE», non «per questa esatta
-   * richiesta». I riferimenti si scelgono DOPO aver superato il muro — chi ne
-   * ha messi troppi può sempre toglierne — il preventivo del Task 7 mostrerà
-   * la cifra vera coi riferimenti inclusi, e il Worker resta il giudice
-   * ultimo di quanto si spende davvero.
-   */
-  const prezzoQui = DESCRITTORI[tool]?.serve === 'saldo' ? prezzoDi(LISTINO_DI[tool]).total : 0;
-  const chiuso = muroAcceso &&
-    !servizioAperto(DESCRITTORI[tool], { stato: statoConto, crediti, prezzo: prezzoQui });
-
-  /**
-   * Important del giro di correzioni: `chiuso` da solo non dice PERCHÉ.
-   * `<Muro>` guarda `statoConto` e ricade su `FRASE['mai-entrato']` per
-   * qualunque stato che non conosce — e non conosce 'aperto'/'prova', perché
-   * prima che ogni servizio potesse chiudersi da solo sul saldo quegli stati
-   * non chiudevano mai nessuno. Risultato: un abbonato con saldo insufficiente
-   * vedeva «Entra per usare lo studio» e un tasto che apre un SECONDO
-   * abbonamento Stripe — a chi ne ha già uno.
+   * ⚠️ Un servizio a saldo non si mura MAI (fetta 2b, 2026-09-26).
    *
-   * Chi mostra il muro deve sapere perché è chiuso, non solo che lo è: se il
-   * descrittore chiede il saldo e l'abbonamento è a posto (`puoiLavorare`
-   * vero), il problema sono i crediti, e si mostra la ricarica. Il muro
-   * dell'abbonamento resta per chi l'abbonamento non ce l'ha.
+   * Il muro davanti alla generazione diceva «Entra per usare lo studio» a chi
+   * aveva saldo zero: la porta sui soldi chiusa proprio davanti a chi doveva
+   * pagare. Chi genera deve vedere lo strumento e il prezzo accanto al tasto;
+   * se il saldo non basta lo dice `Preventivo` («Non hai abbastanza
+   * credito»), che apre la ricarica — anche da ospite, senza email. Il
+   * giudice ultimo di quanto si spende resta il Worker, che addebita prima di
+   * chiamare il fornitore. Per questo `servizioAperto` qui non si chiede per
+   * il saldo: il muro è dell'abbonamento, e basta.
    */
-  const chiusoPerSaldo = chiuso && DESCRITTORI[tool]?.serve === 'saldo' && puoiLavorare(statoConto);
+  const chiuso = muroAcceso && DESCRITTORI[tool]?.serve !== 'saldo' &&
+    !servizioAperto(DESCRITTORI[tool], { stato: statoConto, crediti });
+
 
   /**
    * La STESSA lettura che decide il muro, non una seconda (H1-bis,
@@ -2553,23 +2539,6 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               e due risposte alla stessa domanda divergono al primo servizio
               nuovo. */}
           {chiuso ? (
-            chiusoPerSaldo ? (
-              /*
-               * Important del giro di correzioni: chi arriva qui e' abbonato
-               * (`puoiLavorare(statoConto)` vero) e non ha credito. Il muro
-               * dell'abbonamento non ha una FRASE per 'aperto'/'prova' — non
-               * chiudevano nessuno prima che ogni servizio potesse chiudersi
-               * da solo sul saldo — e ricadrebbe su FRASE['mai-entrato']:
-               * «Entra per usare lo studio», con un tasto che apre un
-               * SECONDO abbonamento Stripe a chi ne ha gia' uno. Qui non si
-               * monta il muro: si monta il pannello della ricarica, che e'
-               * cio' che manca davvero.
-               */
-              <div className="sc-pannello">
-                <p className="muro-corpo">{t('muro.abbonatoSenzaSaldo')}</p>
-                <Ricarica saldo={crediti} onErrore={setNotice} onChiudi={() => setSopraLaTela(null)} />
-              </div>
-            ) : (
               <>
                 {/*
                  * Il muro sta DENTRO `.stage`, non intorno a `.shell`: fuori
@@ -2611,7 +2580,6 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   </div>
                 )}
               </>
-            )
           ) : DESCRITTORI[tool] ? (
             <Piano
               servizio={getDescrittore(tool)}

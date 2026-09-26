@@ -1,7 +1,6 @@
 {
   "_leggimi": "Difetti già presenti su main il 2026-09-26, quando la prova è nata. Ognuno ha il suo perché e il suo posto per essere chiuso. Una voce nuova qui si aggiunge solo con un motivo scritto: altrimenti la lista diventa un tappeto sotto cui spazzare.",
-  "cancello": "rosso-noto",
-  "_cancello": "A muro acceso e saldo zero Immagine mostra «Entra per usare lo studio», non il prezzo. È il cancello duro prima di accendere VITE_MURO in produzione: si chiude nella fetta 2b (comprare senza account). Chiuso il cancello, togliere \"rosso-noto\".",
+  "cancello": "",
   "difetti": [
     {
       "chiave": "contrasto|button.tool-item «Video»",
