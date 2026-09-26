@@ -1,5 +1,5 @@
 /**
- * I tre pacchetti di crediti: cosa può comprare il cliente.
+ * I pacchetti di crediti: cosa può comprare il cliente.
  *
  * Sta a parte da `listino.js` di proposito: quel file dice «cosa costa un
  * servizio», questo dice «cosa si compra». Due domande diverse — mescolarle
@@ -21,6 +21,16 @@
  * lega le due colonne, non solo i nomi.
  */
 export const PACCHETTI = {
+  /*
+   * Il gettone minimo (fetta 2b, decisione del committente 2026-09-26): 2 €,
+   * non 1. Misurato: Stripe prende ~0,25 € + 1,5% a pagamento, e il margine
+   * del listino è il 12% del prezzo; a 1 € ogni gettone speso tutto perdeva
+   * ~14 centesimi. A 2 € ne perde ~3 se speso fino all'ultimo millesimo, e
+   * il pareggio è a ~2,31 € — scelta consapevole, scritta nella spec
+   * `docs/superpowers/specs/2026-09-26-comprare-senza-account-design.md` §2.
+   * Il primo della lista: l'ordine delle chiavi è l'ordine dei tasti.
+   */
+  p2: { millesimi: 2000, centesimi: 200 },
   p5: { millesimi: 5000, centesimi: 500 },
   p10: { millesimi: 10000, centesimi: 1000 },
   p25: { millesimi: 25000, centesimi: 2500 },

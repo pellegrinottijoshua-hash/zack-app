@@ -86,6 +86,24 @@ export async function entraConEmail(email) {
   if (error) throw new Error(error.message);
 }
 
+/**
+ * Entra come ospite: un utente anonimo di Supabase, senza email.
+ *
+ * Torna il token, o `null` se non si è potuto (anonimi spenti nel progetto,
+ * rete giù). Il credito che l'ospite compra vive nella sessione di QUESTO
+ * browser: lo dice l'avviso accanto al saldo, apposta.
+ */
+export async function entraComeOspite() {
+  try {
+    const sb = await cliente();
+    const { data, error } = await sb.auth.signInAnonymously();
+    if (error) return null;
+    return data?.session?.access_token || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function entraConGoogle() {
   const sb = await cliente();
   const { error } = await sb.auth.signInWithOAuth({
@@ -247,8 +265,22 @@ export async function vaiAlPagamento() {
  * difeso lato Worker (`test/workerConto.test.js`): qui basta non dargli mai
  * una cifra da leggere.
  */
-export async function vaiAllaRicarica(pacchetto) {
-  const token = await sessione();
+export async function vaiAllaRicarica(pacchetto, {
+  otteniSessione = sessione,
+  ospite = entraComeOspite,
+  vai = (url) => { location.href = url; },
+} = {}) {
+  /*
+   * ⚠️ Senza sessione si entra come OSPITE, non ci si ferma (fetta 2b).
+   *
+   * Prima qui si sollevava «non-collegato», e l'unico modo di collegarsi era
+   * l'email — rotta. La porta sui soldi era chiusa proprio a chi voleva
+   * pagare. Ora il primo clic su un pacchetto crea un utente anonimo di
+   * Supabase: si paga e si genera senza ricevere nessuna email. Nasce QUI,
+   * al clic, e mai all'apertura: chi non paga non crea niente.
+   */
+  let token = await otteniSessione();
+  if (!token) token = await ospite();
   if (!token) throw new Error('non-collegato');
   const res = await fetch(`${BASE}/ricarica`, {
     method: 'POST',
@@ -258,5 +290,5 @@ export async function vaiAllaRicarica(pacchetto) {
   if (!res.ok) throw new Error('ricarica');
   const { url } = await res.json();
   if (!url) throw new Error('ricarica');
-  location.href = url;
+  vai(url);
 }

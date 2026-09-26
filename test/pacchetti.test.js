@@ -23,11 +23,12 @@ test('il Worker rilegge lo STESSO oggetto del browser, non una copia', () => {
   assert.equal(DA_WORKER, PACCHETTI, 'worker/eventi.js definisce una seconda copia di PACCHETTI');
 });
 
-test('i tre pacchetti, e le due unità che li legano', () => {
+test('i pacchetti, e le due unità che li legano', () => {
   // Ripete la forma già difesa in `test/eventiStripe.test.js` (che guarda
   // `worker/eventi.js`): qui è il file che DICHIARA la forma, non solo chi la
   // usa, e deve valere anche letto da solo.
-  assert.deepEqual(Object.keys(PACCHETTI).sort(), ['p10', 'p25', 'p5']);
+  assert.deepEqual(Object.keys(PACCHETTI).sort(), ['p10', 'p2', 'p25', 'p5']);
+  assert.deepEqual(PACCHETTI.p2, { millesimi: 2000, centesimi: 200 });
   assert.deepEqual(PACCHETTI.p5, { millesimi: 5000, centesimi: 500 });
   assert.deepEqual(PACCHETTI.p10, { millesimi: 10000, centesimi: 1000 });
   assert.deepEqual(PACCHETTI.p25, { millesimi: 25000, centesimi: 2500 });

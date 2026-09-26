@@ -176,8 +176,9 @@ test('una ricarica senza importo, o con un importo storto, non accredita', () =>
   }
 });
 
-test('i tre pacchetti sono quelli decisi, e nessun altro', () => {
-  assert.deepEqual(Object.keys(PACCHETTI).sort(), ['p10', 'p25', 'p5']);
+test('i pacchetti sono quelli decisi, e nessun altro', () => {
+  assert.deepEqual(Object.keys(PACCHETTI).sort(), ['p10', 'p2', 'p25', 'p5']);
+  assert.deepEqual(PACCHETTI.p2, { millesimi: 2000, centesimi: 200 });
   assert.deepEqual(PACCHETTI.p5,  { millesimi: 5000,  centesimi: 500  });
   assert.deepEqual(PACCHETTI.p10, { millesimi: 10000, centesimi: 1000 });
   assert.deepEqual(PACCHETTI.p25, { millesimi: 25000, centesimi: 2500 });

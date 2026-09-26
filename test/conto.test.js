@@ -181,18 +181,9 @@ test('⚠️ Giro di correzioni 1 — il messaggio del rimborso parte dal ramo P
  * metà del comportamento che il guasto reale non lascia raggiungere.
  * ---------------------------------------------------------------- */
 
-test('vaiAllaRicarica senza sessione non apre nessun pagamento', async () => {
-  // Deve fermarsi PRIMA di chiamare /ricarica, non dopo una risposta che non
-  // capirebbe: un «non lo so» che diventasse una chiamata di rete sarebbe lo
-  // stesso guasto che il resto del file difende per `chiediLicenza`.
-  let chiamato = false;
-  globalThis.fetch = async () => {
-    chiamato = true;
-    return risposta({ url: 'https://checkout.stripe.com/x' });
-  };
-  await assert.rejects(() => vaiAllaRicarica('p10'), /non-collegato/);
-  assert.equal(chiamato, false, 'ha chiamato /ricarica senza una sessione');
-});
+// «Senza sessione non apre nessun pagamento» era la regola fino alla fetta
+// 2b: ora senza sessione si entra come ospite. Il caso in cui ci si ferma
+// davvero (nemmeno l'ospite nasce) e' difeso in fondo al file.
 
 test('vaiAllaRicarica manda al Worker SOLO l’id del pacchetto', () => {
   /*
@@ -204,7 +195,9 @@ test('vaiAllaRicarica manda al Worker SOLO l’id del pacchetto', () => {
   const conto = readFileSync(new URL('../src/lib/conto.js', import.meta.url), 'utf8');
   const inizio = conto.indexOf('export async function vaiAllaRicarica');
   assert.notEqual(inizio, -1, 'vaiAllaRicarica non esiste più in conto.js');
-  const fine = conto.indexOf('\n}', inizio);
+  // `\n}\n` e non `\n}`: dalla fetta 2b la firma ha le opzioni su piu'
+  // righe, e il primo `\n}` e' la loro chiusura, non quella della funzione.
+  const fine = conto.indexOf('\n}\n', inizio);
   const corpo = conto.slice(inizio, fine);
   assert.match(
     corpo,
@@ -252,4 +245,69 @@ test('la sessione di Supabase non sta sulla strada del primo disegno', () => {
     'supabase e’ importato in cima: finisce nel pezzo principale',
   );
   assert.match(conto, /await import\('@supabase\/supabase-js'\)/);
+});
+
+/* ---------------------------------------------------------------- *
+ * Fetta 2b — la ricarica da ospite. Stato dichiarato: NESSUNA sessione.
+ * ---------------------------------------------------------------- */
+
+test('⚠️ senza sessione la ricarica entra come ospite e paga, invece di fermarsi', async () => {
+  /*
+   * Rompere apposta: togli `if (!token) token = await ospite();` da
+   * `vaiAllaRicarica` → senza email non si paga, cioè la porta sui soldi
+   * torna chiusa a chi non riceve il link.
+   */
+  const fetchVero = globalThis.fetch;
+  const viste = [];
+  globalThis.fetch = async (u, o) => {
+    viste.push({ u: String(u), auth: o.headers.authorization, corpo: o.body });
+    return new Response(JSON.stringify({ url: 'https://checkout.stripe.com/x' }), { status: 200 });
+  };
+  let andato = null;
+  let ospiti = 0;
+  try {
+    await vaiAllaRicarica('p2', {
+      otteniSessione: async () => null,
+      ospite: async () => { ospiti++; return 'tok-ospite'; },
+      vai: (url) => { andato = url; },
+    });
+  } finally {
+    globalThis.fetch = fetchVero;
+  }
+  assert.equal(ospiti, 1, 'non e’ entrato come ospite');
+  assert.equal(viste.length, 1);
+  assert.equal(viste[0].auth, 'Bearer tok-ospite', 'la ricarica non porta il token dell’ospite');
+  assert.equal(JSON.parse(viste[0].corpo).pacchetto, 'p2');
+  assert.equal(andato, 'https://checkout.stripe.com/x');
+});
+
+test('chi ha gia’ una sessione non diventa un ospite nuovo', async () => {
+  const fetchVero = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({ url: 'https://x' }), { status: 200 });
+  let ospiti = 0;
+  try {
+    await vaiAllaRicarica('p5', {
+      otteniSessione: async () => 'tok-vero',
+      ospite: async () => { ospiti++; return 'tok-ospite'; },
+      vai: () => {},
+    });
+  } finally {
+    globalThis.fetch = fetchVero;
+  }
+  assert.equal(ospiti, 0, 'ha buttato la sessione di chi era gia’ entrato');
+});
+
+test('se nemmeno l’ospite si riesce a creare, lo dice e non chiama il Worker', async () => {
+  const fetchVero = globalThis.fetch;
+  let chiamate = 0;
+  globalThis.fetch = async () => { chiamate++; return new Response('{}'); };
+  try {
+    await assert.rejects(
+      vaiAllaRicarica('p2', { otteniSessione: async () => null, ospite: async () => null, vai: () => {} }),
+      /non-collegato/,
+    );
+  } finally {
+    globalThis.fetch = fetchVero;
+  }
+  assert.equal(chiamate, 0);
 });
