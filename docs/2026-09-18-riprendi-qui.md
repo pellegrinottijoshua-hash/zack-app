@@ -333,3 +333,37 @@ anche prima di 2b se serve. Punto di partenza: la spec già scritta
 ```
 Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 2a.
 ```
+
+---
+
+## ✅ 2026-09-26 — FETTA 2a CHIUSA
+
+`scripts/raggiungibilita.mjs` esiste. Node puro, senza dipendenze nuove: comanda
+Chrome headless via DevTools Protocol. Si lancia con i due server di
+`.claude/launch.json` accesi (5173 muro spento, 5174 muro acceso):
+
+    node scripts/raggiungibilita.mjs                     # completo, ~5 min
+    node scripts/raggiungibilita.mjs --rapido            # 390/800/1280, libreria chiusa
+    node scripts/raggiungibilita.mjs --finestra 844x390  # una misura sola
+
+- **Matrice**: muro spento/acceso × saldo zero/carico × libreria chiusa/aperta ×
+  390, 760, 761, 800, 1280 e **844×390** (aggiunta: senza uno schermo basso la
+  porta della fase 1 non si vede) × i 6 servizi, più il benvenuto al primo
+  ingresso. Oggi: 300 pagine, 4.068 comandi, **verde**.
+- **Stato dichiarato**: localStorage svuotato a ogni pagina; benvenuto e file
+  di prova segnati come visti (il file di prova arriva a tempo variabile e
+  rendeva la prova instabile).
+- **Lo sfondo si legge dal pixel** (`elementsFromPoint`), non dal DOM: una
+  etichetta assoluta fuori dal suo bottone misurava 1:1 contro il colore
+  sbagliato.
+- **Morde**: rimesso `overflow: hidden` su `.shell` (il guasto della fase 1),
+  a 844×390 → 20 difetti nuovi, uscita 1. Ripristinato.
+- **Cancello duro: ROSSO, noto.** A muro acceso e saldo zero Immagine dice
+  «Entra per usare lo studio». Si chiude in **2b**.
+- **Tre minori già su `main`**, a verbale in `scripts/raggiungibilita-noti.json`:
+  nome «Video» a 3,24:1; chip della libreria a 3,02:1; «Ho capito, cominciamo»
+  che sborda di 16 px a 844×390.
+- ⚠️ Una prima versione era **verde perché misurava la landing** (`/` e non
+  `/app/`). Ora, se la pagina non è lo studio, lo script si ferma con un errore.
+
+**Prossima sessione:** «Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 2b».

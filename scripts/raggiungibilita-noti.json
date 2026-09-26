@@ -1,0 +1,19 @@
+{
+  "_leggimi": "Difetti già presenti su main il 2026-09-26, quando la prova è nata. Ognuno ha il suo perché e il suo posto per essere chiuso. Una voce nuova qui si aggiunge solo con un motivo scritto: altrimenti la lista diventa un tappeto sotto cui spazzare.",
+  "cancello": "rosso-noto",
+  "_cancello": "A muro acceso e saldo zero Immagine mostra «Entra per usare lo studio», non il prezzo. È il cancello duro prima di accendere VITE_MURO in produzione: si chiude nella fetta 2b (comprare senza account). Chiuso il cancello, togliere \"rosso-noto\".",
+  "difetti": [
+    {
+      "chiave": "contrasto|button.tool-item «Video»",
+      "perché": "Video non è ancora pronto (ready:false) e il nome è schiarito a 3,24:1, ma il bottone è attivo e cliccabile. O si scurisce il nome, o il bottone diventa disabled davvero. Minore, da fase 3 (Video)."
+    },
+    {
+      "chiave": "contrasto|button.chip «Clicca per vedere solo gli asset di ques»",
+      "perché": "Il chip di filtro della libreria, spento, sta a 3,02:1. Minore, da fase 5 (Brain, la libreria)."
+    },
+    {
+      "chiave": "fuori|button.btn «Ho capito, cominciamo»",
+      "perché": "Telefono in orizzontale (844×390), primo ingresso: la card del benvenuto è più alta dello schermo e non scorre, il tasto sborda di 16px sotto (il centro resta cliccabile). Minore: la card deve scorrere o accorciarsi. Da chiudere quando si tocca l'onboarding."
+    }
+  ]
+}
