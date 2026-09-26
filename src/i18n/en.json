@@ -813,6 +813,7 @@
     "no": "I couldn’t open the payment page. Try again in a moment.",
     "dodici": "Every generation shows you its price before you click. And of every euro you spend, Zack puts about 12 cents back into its own brand.",
     "nonScadono": "Credits never expire, and they stay yours even if you cancel your subscription.",
-    "chiudi": "Done"
+    "chiudi": "Done",
+    "ospite": "You pay without an email: your credit lives in this browser. Clear its data, or switch browsers, and it's gone."
   }
 }

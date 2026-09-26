@@ -286,6 +286,12 @@ export default function App() {
    */
   const crediti = licenza?.crediti ?? 0;
   /*
+   * Chi pagherebbe (o ha pagato) da ospite: nessuna licenza ancora — il
+   * primo clic su un pacchetto lo fa entrare come ospite — o una licenza di
+   * ospite. A lui la ricarica dice dove vive il credito (fetta 2b).
+   */
+  const ospite = !licenza || licenza.ospite === true;
+  /*
    * ⚠️ Un servizio a saldo non si mura MAI (fetta 2b, 2026-09-26).
    *
    * Il muro davanti alla generazione diceva «Entra per usare lo studio» a chi
@@ -2576,7 +2582,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                  */}
                 {sopraLaTela === 'ricarica' && (
                   <div className="sc-pannello">
-                    <Ricarica saldo={crediti} onErrore={setNotice} onChiudi={() => setSopraLaTela(null)} />
+                    <Ricarica saldo={crediti} ospite={ospite} onErrore={setNotice} onChiudi={() => setSopraLaTela(null)} />
                   </div>
                 )}
               </>
@@ -2680,6 +2686,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 ) : sopraLaTela === 'ricarica' ? (
                   <Ricarica
                     saldo={crediti}
+                    ospite={ospite}
                     onErrore={setNotice}
                     onChiudi={() => setSopraLaTela(null)}
                   />

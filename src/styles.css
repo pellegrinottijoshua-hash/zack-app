@@ -5916,3 +5916,11 @@ body {
   line-height: 1.5;
   color: var(--inchiostro-3);
 }
+/* L'avviso dell'ospite (fetta 2b): un fatto sui suoi soldi, quindi un tono
+   più scuro delle due righe sopra — deve leggersi prima di pagare. */
+.ricarica-ospite {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--inchiostro-2);
+}

@@ -570,3 +570,21 @@ test('chi entra con un nome la prova la riceve ancora', async () => {
   const crea = chiamate.find((c) => c.metodo === 'POST' && c.url.includes('/rest/v1/conti'));
   assert.ok(JSON.parse(crea.corpo).prova_fino, 'la prova e’ sparita anche a chi ha un’email');
 });
+
+test('/me dice all’ospite che è un ospite, e a chi ha un’email no', async () => {
+  for (const [utente, atteso] of [
+    [{ id: 'anon-3', email: '', is_anonymous: true }, true],
+    [{ id: 'u-32', email: 'c@e.it' }, false],
+  ]) {
+    rete((url) => {
+      if (url.includes('/auth/v1/user')) return new Response(JSON.stringify(utente), { status: 200 });
+      if (url.includes('/rest/v1/conti?')) return new Response(JSON.stringify([{ crediti: 0 }]), { status: 200 });
+      return null;
+    });
+    const res = await worker.fetch(
+      new Request('https://zack-app.com/me', { headers: { authorization: 'Bearer x' } }),
+      AMBIENTE,
+    );
+    assert.equal((await res.json()).ospite, atteso);
+  }
+});

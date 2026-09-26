@@ -16,7 +16,7 @@ import { vaiAllaRicarica } from '../lib/conto.js';
  * al primo pacchetto nuovo, e il giorno che divergono si mostra un prezzo e
  * se ne addebita un altro — sulla schermata del pagamento.
  */
-export default function Ricarica({ saldo, onErrore, onChiudi }) {
+export default function Ricarica({ saldo, ospite = false, onErrore, onChiudi }) {
   const lang = getLang();
   const [inCorso, setInCorso] = useState(null);
 
@@ -52,6 +52,11 @@ export default function Ricarica({ saldo, onErrore, onChiudi }) {
           «circa», non un numero esatto scelto a occhio (Task 6 della revisione). */}
       <p className="ricarica-margine">{t('ricarica.dodici')}</p>
       <p className="ricarica-durata">{t('ricarica.nonScadono')}</p>
+      {/* L'avviso onesto (fetta 2b). Si paga senza email, e il prezzo di
+          questa comodita' va detto PRIMA di pagare, non scoperto dopo: il
+          credito vive nella sessione di questo browser. Non si chiude, perche'
+          non e' una notifica: e' un fatto, vero finche' si resta ospiti. */}
+      {ospite && <p className="ricarica-ospite">{t('ricarica.ospite')}</p>}
 
       <button className="btn ghost" onClick={onChiudi}>{t('ricarica.chiudi')}</button>
     </div>

@@ -311,3 +311,30 @@ test('se nemmeno l’ospite si riesce a creare, lo dice e non chiama il Worker',
   }
   assert.equal(chiamate, 0);
 });
+
+test('⚠️ l’avviso dell’ospite sta nella ricarica, cioè PRIMA di pagare, e arriva da /me', () => {
+  /*
+   * Fetta 2b. Rompere apposta: togli `ospite={ospite}` da uno dei due
+   * `<Ricarica` di App.jsx → chi paga senza email da quel pannello non sa che
+   * il credito vive solo in questo browser.
+   */
+  const RIC = readFileSync(new URL('../src/components/Ricarica.jsx', import.meta.url), 'utf8');
+  assert.match(RIC, /ospite && <p className="ricarica-ospite">\{t\('ricarica\.ospite'\)\}/);
+  const montaggi = APP.match(/<Ricarica\b[\s\S]*?\/>/g) || [];
+  assert.equal(montaggi.length, 2, 'i montaggi di <Ricarica> non sono piu’ due: rileggi questa prova');
+  for (const m of montaggi) assert.match(m, /ospite=\{ospite\}/, 'un <Ricarica> non sa se chi paga e’ un ospite');
+  const LIB = readFileSync(new URL('../src/lib/conto.js', import.meta.url), 'utf8');
+  assert.match(LIB, /ospite: d\.ospite === true/, 'la licenza non ricorda di essere di un ospite');
+});
+
+test('chiediLicenza ricorda se e’ un ospite, e un sì solo se il server dice true', async () => {
+  const fetchVero = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => new Response(JSON.stringify({ ospite: true, crediti: 2000 }), { status: 200 });
+    assert.equal((await chiediLicenza('t')).ospite, true);
+    globalThis.fetch = async () => new Response(JSON.stringify({ ospite: 'si', crediti: 0 }), { status: 200 });
+    assert.equal((await chiediLicenza('t')).ospite, false);
+  } finally {
+    globalThis.fetch = fetchVero;
+  }
+});

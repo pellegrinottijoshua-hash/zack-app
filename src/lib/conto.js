@@ -41,6 +41,10 @@ export async function chiediLicenza(token) {
       validoFino: d.validoFino,
       provaFino: d.provaFino,
       crediti: d.crediti ?? 0,
+      // Fetta 2b: un ospite anonimo, senza email. Il suo credito vive solo
+      // nella sessione di questo browser, e l'avviso accanto alla ricarica
+      // lo dice.
+      ospite: d.ospite === true,
       // La seconda data (spec § 7.1): la mette il browser, adesso, perché dice
       // «quando ho sentito il server», non «cosa ha detto».
       chiestoIl: new Date().toISOString(),

@@ -625,6 +625,9 @@ export default {
 
       return json({
         email: chi.email,
+        // Fetta 2b: il browser deve poter dire all'ospite dove vive il suo
+        // credito — in questa sessione, e basta.
+        ospite: chi.anonimo === true,
         abbonato: conto.abbonato === true,
         validoFino: conto.valido_fino || null,
         provaFino: conto.prova_fino || null,
