@@ -52,8 +52,10 @@ del commercialista **prima** di pubblicare qualunque prezzo nuovo. Il listino
 - **C. Si accetta la perdita** come costo per acquisire il cliente, con un
   tetto (un gettone per browser).
 
-Finché non si decide, il piano usa **A** dietro una sola costante
-(`PACCHETTI.p1`), che si cambia in una riga.
+**Decisione del committente (2026-09-26): gettone minimo da 2 €**, con 2 € di
+credito (`PACCHETTI.p2`). Sta ancora sotto il pareggio: speso fino all'ultimo
+millesimo perde circa 3 centesimi. Chi non lo finisce lo rende positivo.
+Scelta consapevole.
 
 ## 3. Il disegno
 

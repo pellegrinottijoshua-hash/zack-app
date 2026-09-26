@@ -375,3 +375,19 @@ Chrome headless via DevTools Protocol. Si lancia con i due server di
 del 12%; il pareggio è a ~2,31 €). E se l'IVA al 22% si applica, **ogni**
 generazione è in perdita (margine 14% < IVA). Servono dal committente:
 strada del gettone (§2.2), IVA, anonimi accesi su Supabase (§4). Poi i 4 compiti.
+
+## 🔶 2026-09-26 — 2b: i 4 compiti fatti, sul ramo `fetta-2b` (NON su main)
+
+- `fda2c06` 2b/1 — un servizio a saldo non si mura mai: **cancello duro verde**.
+- `cfb1a0b` 2b/2 — ospite nel Worker: niente `customer_email` se manca, niente prova agli anonimi.
+- `a63e0ec` 2b/3 — gettone **2 €** (decisione del committente) e ricarica da ospite (`signInAnonymously` al clic).
+- 2b/4 — l'avviso onesto nella ricarica, prima di pagare.
+- 792 prove verdi, build ok, script di 2a verde (300 pagine, 4.092 comandi).
+
+**Manca, e tocca al committente:** `/code-review ultra` sul ramo, la query
+RLS qui sotto sul progetto Supabase, l'IVA (spec §2.1). Poi si fonde e si
+pubblica. Anonimi su Supabase: **accesi** (2026-09-26).
+
+Minori nuovi: lo script non apre il pannello della ricarica (i suoi comandi
+non li misura); su telefono il tasto Brain si sovrappone al titolo di
+Immagine (testo, non comando: lo script non lo vede).
