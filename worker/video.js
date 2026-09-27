@@ -15,8 +15,15 @@
 
 import { SUPABASE_URL } from '../src/lib/supabase.js';
 import {
-  CANALI, VOCE_VIDEO, canaleConsentito, costoDaToken, prezzoVideo, richiestaVideoNonValida,
+  CANALI, VOCE_VIDEO, canaleConsentito, canalePer, costoDaToken, immaginiVideoStorte, prezzoVideo,
+  richiestaVideoNonValida,
 } from '../src/engine/listinoVideo.js';
+
+/** Un'immagine in base64, di un tipo che il fornitore legge. */
+const DATI_IMMAGINE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+/** Tetti per immagine e per richiesta: BytePlus accetta 64 MB, Cloudflare 100. */
+const MAX_IMMAGINE = 6 * 1024 * 1024;
+const MAX_IMMAGINI = 40 * 1024 * 1024;
 import { addebita, rimborsa, rimborsoRiuscito, apriLavoro, chiudiLavoro } from './conto.js';
 import { crea, leggi } from './fornitori/seedance.js';
 
@@ -63,13 +70,31 @@ async function rimborsaEChiudi(l, env) {
 
 /** POST /genera per il video. `chi` è già verificato dal chiamante. */
 export async function generaVideo(corpo, chi, env) {
-  const { prompt, durata, risoluzione, formato } = corpo;
+  const { prompt, durata, risoluzione, formato, immagini = [] } = corpo;
   if (typeof prompt !== 'string' || !prompt.trim()) return json({ errore: 'senza-prompt' }, 400);
   const storta = richiestaVideoNonValida({ durata, risoluzione, formato });
   if (storta) return json({ errore: storta }, 400);
 
-  const canale = canaleAcceso(env);
-  if (!CANALI.includes(canale)) return json({ errore: 'non-configurato' }, 503);
+  /*
+   * Le immagini (fetta 3d): ruoli e tetti con la regola del listino, poi il
+   * formato dei dati. Tutto PRIMA dell'addebito.
+   */
+  const imStorte = immaginiVideoStorte(immagini);
+  if (imStorte) return json({ errore: imStorte }, 400);
+  let peso = 0;
+  for (const im of immagini) {
+    if (typeof im.immagine !== 'string' || im.immagine.length > MAX_IMMAGINE || !DATI_IMMAGINE.test(im.immagine)) {
+      return json({ errore: 'immagine-illeggibile' }, 400);
+    }
+    peso += im.immagine.length;
+  }
+  if (peso > MAX_IMMAGINI) return json({ errore: 'immagini-troppo-grandi' }, 413);
+
+  // Un canale scritto male in configurazione è un errore, non un default.
+  if (!CANALI.includes(canaleAcceso(env))) return json({ errore: 'non-configurato' }, 503);
+  // Il canale acceso, se sa fare QUESTA richiesta; se no quello ufficiale.
+  const canale = canalePer({ acceso: canaleAcceso(env), risoluzione, immagini });
+  if (!canale) return json({ errore: 'non-configurato' }, 503);
   /*
    * La chiave del canale PRIMA dell'addebito: senza, il fornitore non si
    * chiama nemmeno, e addebitare per poi rimborsare subito è un giro di soldi
@@ -99,9 +124,14 @@ export async function generaVideo(corpo, chi, env) {
     lavoroAperto = await apriLavoro({ id: lavoro, utente: chi.id, servizio: VOCE_VIDEO, prezzo }, env);
     if (!lavoroAperto) throw Object.assign(new Error('archivio'), { code: 'archivio' });
 
-    const { rif } = await crea({ canale, prompt, durata, risoluzione, formato, utente: chi.id }, env);
+    const { rif } = await crea({ canale, prompt, durata, risoluzione, formato, utente: chi.id, immagini }, env);
 
-    const dati = { fornitore: canale, fornitore_rif: rif, richiesta: { durata, risoluzione, formato } };
+    // Le immagini NON si conservano: solo quante erano, per chi rilegge.
+    const dati = {
+      fornitore: canale,
+      fornitore_rif: rif,
+      richiesta: { durata, risoluzione, formato, immagini: immagini.length },
+    };
     if (!(await annotaTask(lavoro, dati, env)) && !(await annotaTask(lavoro, dati, env))) {
       // Il task gira ma il lavoro non lo sa: il giro orario rimborserà, e se
       // il video arriva lo paghiamo noi. Raro, e rumoroso apposta.
@@ -136,7 +166,7 @@ export async function statoLavoro(id, chi, env) {
   }
 
   if (r.stato === 'fatto') {
-    if (l.stato === 'in-corso') await chiudiLavoro(l.id, 'fatto', costoDaToken(r.token, l.fornitore), env);
+    if (l.stato === 'in-corso') await chiudiLavoro(l.id, 'fatto', costoDaToken(r.token, l.fornitore, l.richiesta?.risoluzione), env);
     return json({ stato: 'fatto', url: r.url });
   }
   if (r.stato === 'fallito') {
@@ -171,7 +201,7 @@ export async function sbloccaVideo(l, env, adesso = Date.now()) {
     return eta > 24 * 60 ? rimborsaEChiudi(l, env) : false;
   }
   if (r.stato === 'fatto') {
-    await chiudiLavoro(l.id, 'fatto', costoDaToken(r.token, l.fornitore), env);
+    await chiudiLavoro(l.id, 'fatto', costoDaToken(r.token, l.fornitore, l.richiesta?.risoluzione), env);
     return false;
   }
   if (r.stato === 'fallito' || eta > VIDEO_ABBANDONATO_MINUTI) return rimborsaEChiudi(l, env);

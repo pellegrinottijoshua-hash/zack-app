@@ -55,7 +55,8 @@ test('⚠️ il cancello: Higgsfield a listino costa più del prezzo, e non pass
     for (const durata of DURATE) {
       assert.equal(canaleConsentito({ canale: 'byteplus', durata, risoluzione }), true);
       assert.equal(canaleConsentito({ canale: 'higgsfield', durata, risoluzione }), false);
-      assert.equal(canaleConsentito({ canale: 'higgsfield', durata, risoluzione, accettaPerdita: true }), true);
+      // Il 1080p Higgsfield non lo ha: nemmeno il sì esplicito lo fa esistere.
+      assert.equal(canaleConsentito({ canale: 'higgsfield', durata, risoluzione, accettaPerdita: true }), risoluzione !== '1080p');
     }
   }
   assert.equal(canaleConsentito({ canale: 'inventato', durata: 5, risoluzione: '720p', accettaPerdita: true }), false);
@@ -64,8 +65,53 @@ test('⚠️ il cancello: Higgsfield a listino costa più del prezzo, e non pass
 test('durata, risoluzione e formato sono liste chiuse', () => {
   assert.equal(richiestaVideoNonValida({ durata: 5, risoluzione: '720p', formato: '16:9' }), null);
   assert.equal(richiestaVideoNonValida({ durata: 7, risoluzione: '720p', formato: '16:9' }), 'durata');
-  assert.equal(richiestaVideoNonValida({ durata: 5, risoluzione: '1080p', formato: '16:9' }), 'risoluzione');
+  assert.equal(richiestaVideoNonValida({ durata: 5, risoluzione: '4K', formato: '16:9' }), 'risoluzione');
   assert.equal(richiestaVideoNonValida({ durata: 5, risoluzione: '720p', formato: '2:1' }), 'formato');
   assert.throws(() => prezzoVideo({ durata: '5', risoluzione: '720p' }), /durata/);
   assert.ok(FORMATI.includes('9:16'));
+});
+
+/* ── fetta 3d: 1080p, immagini, e da quale canale ─────────────────── */
+
+import { canalePer, immaginiVideoStorte, costoDaToken as costoToken } from '../src/engine/listinoVideo.js';
+
+test('1080p esiste solo sul canale ufficiale, a 11,70 $/M token, e costa più del 720p', () => {
+  const p1080 = prezzoVideo({ durata: 5, risoluzione: '1080p' });
+  assert.ok(p1080.total > prezzoVideo({ durata: 5, risoluzione: '720p' }).total * 2);
+  assert.throws(() => costoVideo({ durata: 5, risoluzione: '1080p', canale: 'higgsfield' }), /canale-sconosciuto/);
+  // 1920×1080 vero, stima sopra
+  const vero = Math.ceil(Math.ceil((1920 * 1080 * 5 * 24) / 1024) * (11.7 / 1e6) * CAMBIO_USD_EUR * 1000);
+  assert.ok(costoVideo({ durata: 5, risoluzione: '1080p' }) >= vero);
+});
+
+test('⚠️ il canale per la richiesta: Higgsfield solo col testo e fino a 720p; il resto va all’ufficiale', () => {
+  /*
+   * Rompere apposta: fai tornare sempre `acceso` a `canalePer` → una
+   * richiesta a 1080p o con immagini andrebbe a Higgsfield, che non la sa
+   * fare (400, o peggio le immagini ignorate e il video addebitato).
+   */
+  assert.equal(canalePer({ acceso: 'higgsfield', risoluzione: '720p' }), 'higgsfield');
+  assert.equal(canalePer({ acceso: 'higgsfield', risoluzione: '1080p' }), 'byteplus');
+  assert.equal(canalePer({ acceso: 'higgsfield', risoluzione: '720p', immagini: [{ ruolo: 'primo' }] }), 'byteplus');
+  assert.equal(canalePer({ acceso: 'byteplus', risoluzione: '1080p', immagini: [{ ruolo: 'riferimento' }] }), 'byteplus');
+  assert.equal(canalePer({ acceso: 'boh', risoluzione: '720p' }), 'byteplus');
+});
+
+test('⚠️ le immagini del video: ruoli chiusi, tetti, e fotogrammi e riferimenti non si mescolano', () => {
+  const im = (ruolo) => ({ ruolo, immagine: 'data:image/jpeg;base64,AA' });
+  assert.equal(immaginiVideoStorte([]), null);
+  assert.equal(immaginiVideoStorte([im('primo')]), null);
+  assert.equal(immaginiVideoStorte([im('primo'), im('ultimo')]), null);
+  assert.equal(immaginiVideoStorte(Array.from({ length: 9 }, () => im('riferimento'))), null);
+  assert.equal(immaginiVideoStorte(Array.from({ length: 10 }, () => im('riferimento'))), 'troppe-immagini');
+  assert.equal(immaginiVideoStorte([im('ultimo')]), 'ultimo-senza-primo');
+  assert.equal(immaginiVideoStorte([im('primo'), im('primo')]), 'troppi-primo');
+  assert.equal(immaginiVideoStorte([im('primo'), im('riferimento')]), 'fotogrammi-e-riferimenti');
+  assert.equal(immaginiVideoStorte([im('toString')]), 'ruolo-sconosciuto');
+  assert.equal(immaginiVideoStorte('no'), 'immagini');
+});
+
+test('il costo vero dai token segue la risoluzione (il 1080p ha la sua tariffa)', () => {
+  assert.ok(costoToken(100000, 'byteplus', '1080p') > costoToken(100000, 'byteplus', '720p'));
+  assert.equal(costoToken(100000, 'higgsfield', '1080p'), null);
 });

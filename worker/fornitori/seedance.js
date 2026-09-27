@@ -52,17 +52,34 @@ async function jsonOErrore(res, code) {
 }
 
 /** Crea il task. `utente` va a BytePlus come identificativo per la moderazione. */
-export async function crea({ canale, prompt, durata, risoluzione, formato, utente }, env) {
+/** I ruoli delle nostre immagini, nella lingua di BytePlus. */
+const RUOLI_BYTEPLUS = { primo: 'first_frame', ultimo: 'last_frame', riferimento: 'reference_image' };
+
+export async function crea({ canale, prompt, durata, risoluzione, formato, utente, immagini = [] }, env) {
   const authorization = chiave(canale, env);
   if (canale === 'byteplus') {
+    /*
+     * Le immagini viaggiano in base64 (`data:image/...`), un formato che
+     * BytePlus accetta: non pubblichiamo le immagini dei clienti su un URL.
+     * Col primo fotogramma il formato lo decide l'immagine: BytePlus accetta
+     * solo `adaptive` (tutorial Seedance 2.5).
+     */
+    const primo = immagini.some((im) => im.ruolo === 'primo');
     const res = await fetch(BYTEPLUS, {
       method: 'POST',
       headers: { authorization, 'content-type': 'application/json' },
       body: JSON.stringify({
         model: MODELLO_BYTEPLUS,
-        content: [{ type: 'text', text: prompt }],
+        content: [
+          { type: 'text', text: prompt },
+          ...immagini.map((im) => ({
+            type: 'image_url',
+            image_url: { url: im.immagine },
+            role: RUOLI_BYTEPLUS[im.ruolo],
+          })),
+        ],
         resolution: risoluzione,
-        ratio: formato,
+        ratio: primo ? 'adaptive' : formato,
         duration: durata,
         generate_audio: true,
         watermark: false,
@@ -75,6 +92,10 @@ export async function crea({ canale, prompt, durata, risoluzione, formato, utent
     return { rif: d.id };
   }
   if (canale === 'higgsfield') {
+    // Le immagini da Higgsfield vorrebbero un URL pubblico: non ne diamo.
+    // `canalePer` non ci manda mai qui con delle immagini; se succedesse,
+    // si rifiuta PRIMA di generare un video diverso da quello chiesto.
+    if (immagini.length) throw errore('canale-senza-immagini');
     const res = await fetch(`${HIGGSFIELD}/${MODELLO_HIGGSFIELD}`, {
       method: 'POST',
       headers: { authorization, 'content-type': 'application/json' },

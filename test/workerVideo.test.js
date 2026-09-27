@@ -77,7 +77,7 @@ test('⚠️ l’ordine: addebita, apre il lavoro, crea il task, lo annota — e
   const annota = i((x) => x.metodo === 'PATCH');
   assert.ok(addebito < apre && apre < task && task < annota, `ordine ${[addebito, apre, task, annota]}`);
   assert.equal(c[annota].corpo.fornitore_rif, 'cgt-9');
-  assert.deepEqual(c[annota].corpo.richiesta, { durata: 5, risoluzione: '720p', formato: '16:9' });
+  assert.deepEqual(c[annota].corpo.richiesta, { durata: 5, risoluzione: '720p', formato: '16:9', immagini: 0 });
 });
 
 test('saldo corto: 402 col prezzo, e il fornitore non viene nemmeno chiamato', async () => {
@@ -123,7 +123,7 @@ test('⚠️ il fornitore rifiuta il task: il cliente è rimborsato, e il lavoro
 });
 
 test('durata, risoluzione e formato fuori lista: 400, niente addebito', async () => {
-  for (const storto of [{ durata: 7 }, { risoluzione: '1080p' }, { formato: '2:1' }, { prompt: '  ' }]) {
+  for (const storto of [{ durata: 7 }, { risoluzione: '4K' }, { formato: '2:1' }, { prompt: '  ' }]) {
     const c = mondo();
     const res = await genera({ ...VIDEO, ...storto });
     assert.equal(res.status, 400, JSON.stringify(storto));
@@ -233,4 +233,46 @@ test('⚠️ senza la chiave del canale: 503 PRIMA dell’addebito, non addebito
   assert.equal(res.status, 503);
   assert.equal((await res.json()).errore, 'non-configurato');
   assert.equal(c.filter((x) => x.url.includes('/rpc/addebita')).length, 0);
+});
+
+/* ── fetta 3d: immagini e 1080p ──────────────────────────────────── */
+
+const IMG = 'data:image/jpeg;base64,/9j/AAAA';
+
+test('⚠️ con le immagini il video va al canale ufficiale anche se è acceso Higgsfield, e le immagini arrivano coi ruoli giusti', async () => {
+  const c = mondo({ fornitore: { id: 'cgt-im' } });
+  const res = await genera(
+    { ...VIDEO, immagini: [{ ruolo: 'primo', immagine: IMG }, { ruolo: 'ultimo', immagine: IMG }] },
+    { ...AMBIENTE, VIDEO_FORNITORE: 'higgsfield', VIDEO_ACCETTA_PERDITA: '1' },
+  );
+  assert.equal(res.status, 202);
+  const task = c.find((x) => x.url.includes('bytepluses.com'));
+  assert.ok(task, 'le immagini sono andate a un canale che non le sa leggere');
+  assert.deepEqual(task.corpo.content.map((x) => x.role || x.type), ['text', 'first_frame', 'last_frame']);
+  assert.equal(task.corpo.ratio, 'adaptive', 'col primo fotogramma BytePlus vuole «adaptive»');
+  assert.equal(c.filter((x) => x.url.includes('higgsfield.ai')).length, 0);
+  // Le immagini non si conservano nel lavoro: solo quante erano.
+  assert.equal(c.find((x) => x.metodo === 'PATCH').corpo.richiesta.immagini, 2);
+});
+
+test('1080p va al canale ufficiale e si paga al suo prezzo', async () => {
+  const c = mondo({ fornitore: { id: 'cgt-1080' } });
+  const res = await genera({ ...VIDEO, risoluzione: '1080p' }, { ...AMBIENTE, VIDEO_FORNITORE: 'higgsfield', VIDEO_ACCETTA_PERDITA: '1' });
+  assert.equal(res.status, 202);
+  assert.equal((await res.json()).prezzo, prezzoVideo({ durata: 5, risoluzione: '1080p' }).total);
+  assert.equal(c.find((x) => x.url.includes('bytepluses.com')).corpo.resolution, '1080p');
+});
+
+test('⚠️ immagini storte o illeggibili: 400 prima dell’addebito', async () => {
+  for (const immagini of [
+    [{ ruolo: 'primo', immagine: IMG }, { ruolo: 'riferimento', immagine: IMG }],
+    [{ ruolo: 'riferimento', immagine: 'https://sito-di-qualcun-altro/x.jpg' }],
+    [{ ruolo: 'riferimento', immagine: 'data:text/html;base64,PHNjcmlwdD4=' }],
+    [{ ruolo: 'riferimento', immagine: `data:image/png;base64,${'A'.repeat(7 * 1024 * 1024)}` }],
+  ]) {
+    const c = mondo();
+    const res = await genera({ ...VIDEO, immagini });
+    assert.ok(res.status === 400 || res.status === 413, `stato ${res.status}`);
+    assert.equal(c.filter((x) => x.url.includes('/rpc/addebita')).length, 0, 'addebitato su immagini storte');
+  }
 });
