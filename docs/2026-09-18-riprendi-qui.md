@@ -400,3 +400,23 @@ select tablename, rowsecurity from pg_tables
  where schemaname = 'public' and tablename in ('conti','movimenti','lavori');
 select tablename, policyname, roles, cmd from pg_policies where schemaname = 'public';
 ```
+
+## 🔶 2026-09-27 — 2c: fatta, sul ramo `fetta-2c` (impilato su `fetta-2b`)
+
+Spec: [`superpowers/specs/2026-09-27-home-tre-corsie-design.md`](superpowers/specs/2026-09-27-home-tre-corsie-design.md).
+La spec del 2026-08-27 era superata; la 2c viene dal quaderno §D.
+
+- `f8fba73` 2c/1 — `/ricarica` torna sulla home (`ritorno`, chiave chiusa).
+- `2624e5e` 2c/2 — `CorsiaImmagine`: prompt, pallini, prezzo accanto al tasto, ricarica da ospite con bozza salvata.
+- `8197728` 2c/3+4 — il banco a tre corsie; lo script di 2a misura anche `/` (324 pagine, verde; morde).
+- 803 prove verdi, build ok.
+
+**Si fonde così:** prima 2b, poi 2c, con **una** `ultra` sul ramo `fetta-2c`
+(contiene tutte e due). Restano le cose del committente elencate per 2b.
+
+Minori nuovi: la mascotte al centro è un'immagine, non un video (la clip del
+racconto va con lo scorrimento e da ferma ha il fondo: serve una clip in loop
+con l'alfa); nella corsia di sinistra resta il vuoto della mascotte di
+Ritaglio nascosta; nessuna generazione vera provata dalla home (costa soldi
+veri: va fatta dal committente, una volta, prima di fondere); il sovrapprezzo
+dell'ospite del quaderno (D-h: 18 cent invece di 15) non è stato fatto.
