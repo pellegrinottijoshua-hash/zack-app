@@ -28,7 +28,7 @@ import { cosaFare, ricaricaDa, PACCHETTI } from './eventi.js';
 import { LISTINO, prezzoDi, limitiDi } from '../src/engine/listino.js';
 import { addebita, rimborsa, rimborsoRiuscito, apriLavoro, chiudiLavoro } from './conto.js';
 import { generaConGoogle, immagineValida } from './fornitori/google.js';
-import { generaVideo, statoLavoro, sbloccaVideo } from './video.js';
+import { generaVideo, statoLavoro, sbloccaVideo, scaricaVideo } from './video.js';
 import { VOCE_VIDEO } from '../src/engine/listinoVideo.js';
 
 const GIORNO = 86400000;
@@ -669,6 +669,11 @@ export default {
       const chi = await chiEsegue(req, env);
       if (!chi) return json({ errore: 'non-collegato' }, 401);
       return statoLavoro(url.searchParams.get('id'), chi, env);
+    }
+    if (url.pathname === '/lavoro/video' && req.method === 'GET') {
+      const chi = await chiEsegue(req, env);
+      if (!chi) return json({ errore: 'non-collegato' }, 401);
+      return scaricaVideo(url.searchParams.get('id'), chi, env);
     }
 
     /*

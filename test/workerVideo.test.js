@@ -201,3 +201,22 @@ test('⚠️ il giro orario chiede al fornitore prima di rimborsare un video', a
   await sbloccaVideo({ ...LAVORO, creato_il: new Date(Date.now() - 180 * 60000).toISOString() }, AMBIENTE);
   assert.equal(c.filter((x) => x.url.includes('/rpc/accredita')).length, 1);
 });
+
+test('/lavoro/video passa i byte del video al padrone, e a nessun altro', async () => {
+  const fatto = { ...LAVORO, stato: 'fatto' };
+  globalThis.fetch = async (u, o = {}) => {
+    const url = String(u);
+    if (url.includes('/auth/v1/user')) return new Response(JSON.stringify({ id: 'u-1' }));
+    if (url.includes('/rest/v1/lavori?')) return new Response(JSON.stringify(url.includes('id=eq.l-1') ? [fatto] : []));
+    if (url.includes('bytepluses.com')) return new Response(JSON.stringify({ status: 'succeeded', content: { video_url: 'https://cdn.finto/v.mp4' } }));
+    if (url === 'https://cdn.finto/v.mp4') return new Response('BYTE-DEL-VIDEO', { headers: { 'content-type': 'video/mp4' } });
+    return new Response('{}');
+  };
+  const scarica = (id) =>
+    worker.fetch(new Request(`https://zack-app.com/lavoro/video?id=${id}`, { headers: { authorization: 'Bearer t' } }), AMBIENTE);
+  const ok = await scarica('l-1');
+  assert.equal(ok.status, 200);
+  assert.equal(ok.headers.get('content-type'), 'video/mp4');
+  assert.equal(await ok.text(), 'BYTE-DEL-VIDEO');
+  assert.equal((await scarica('l-altrui')).status, 404);
+});

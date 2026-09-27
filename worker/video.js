@@ -168,3 +168,32 @@ export async function sbloccaVideo(l, env, adesso = Date.now()) {
   if (r.stato === 'fallito' || eta > VIDEO_ABBANDONATO_MINUTI) return rimborsaEChiudi(l, env);
   return false;
 }
+
+/**
+ * GET /lavoro/video?id=… — i byte del video, dalla stessa origine.
+ *
+ * L'URL del fornitore sta su un altro dominio: il browser lo può MOSTRARE, ma
+ * non può leggerlo in un blob per salvarlo nella libreria (CORS). Il Worker
+ * lo passa, e solo al padrone del lavoro. Non lo conserva: lo attraversa.
+ */
+export async function scaricaVideo(id, chi, env) {
+  if (!id) return json({ errore: 'senza-id' }, 400);
+  const l = await lavoroDi(id, chi.id, env);
+  if (!l) return json({ errore: 'lavoro-sconosciuto' }, 404);
+  if (l.stato !== 'fatto' || !l.fornitore_rif) return json({ errore: 'non-pronto' }, 409);
+  let r;
+  try {
+    r = await leggi({ canale: l.fornitore, rif: l.fornitore_rif, ...(l.richiesta || {}) }, env);
+  } catch {
+    return json({ errore: 'fornitore' }, 502);
+  }
+  if (r.stato !== 'fatto' || !r.url) return json({ errore: 'scaduto' }, 410);
+  const video = await fetch(r.url).catch(() => null);
+  if (!video?.ok) return json({ errore: 'scaduto' }, 410);
+  return new Response(video.body, {
+    headers: {
+      'content-type': video.headers.get('content-type') || 'video/mp4',
+      'cache-control': 'private, no-store',
+    },
+  });
+}
