@@ -61,6 +61,8 @@ const COSA_CE = {
    * righello del 2026-09-04: un pezzo dichiarato che non fa niente.
    */
   immagine: () => ({ contenuto: true, inCorso: false }),
+  // Il video è un prompt, come Immagine: il piano non è mai «vuoto».
+  video: () => ({ contenuto: true, inCorso: false }),
 };
 
 /** Quanti oggetti conta il piano, per il `+` piccolo e per la croce. */
@@ -87,6 +89,8 @@ QUANTI.vettorializza = QUANTI.scontorna;
  * — la stessa domanda a cui risponde QUANTI per tutti gli altri servizi.
  */
 QUANTI.immagine = (s) => s.riferimenti ?? 0;
+// Niente riferimenti per il video, per ora: il `+` non ha niente da contare.
+QUANTI.video = () => 0;
 
 /**
  * Cosa c'è sul piano. Un servizio sconosciuto risponde «niente e niente»:

@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { DESCRITTORI } from '../src/servizi/index.js';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { ordineDellaFila, SERVICES, getService } from '../src/services.js';
@@ -80,8 +81,10 @@ test('non si dichiara un cerchio per un servizio che non esiste', () => {
   for (const s of ordineDellaFila()) assert.ok(s?.id, 'la fila nomina un servizio che non esiste');
 });
 
-test('video dice che arriva, e non finge', () => {
-  assert.equal(getService('video').ready, false);
+test('video è acceso dalla fase 3, e ha un descrittore che lo fa pagare col saldo', () => {
+  // Era «video dice che arriva, e non finge» (ready: false) fino alla fase 3.
+  assert.equal(getService('video').ready, true);
+  assert.equal(DESCRITTORI.video.serve, 'saldo');
 });
 
 // Prova DI SORGENTE (come in `muro.test.js`): App.jsx non si monta in prova

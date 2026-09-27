@@ -54,7 +54,11 @@ import {
   entraConGoogle,
   vaiAlPagamento,
   generaImmagine,
+  generaVideo,
+  chiediLavoro,
+  scaricaVideo,
 } from './lib/conto.js';
+import { prezzoVideo } from './engine/listinoVideo.js';
 import Muro from './components/Muro.jsx';
 import { nuovaNota, nuovoAsset, nuovoCerchio, prossimoPosto } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
@@ -123,6 +127,11 @@ const px = (d) => (d ? `${d.w}×${d.h}` : '—');
  * fa già per i servizi a pagamento.
  */
 const FACCIA = new Set(['brain', 'scontorna', 'vettorializza', 'vocale']);
+
+/** Dove si ricorda il video in attesa (fase 3). */
+const LAVORO_VIDEO = 'jayl.video.lavoro';
+/** Ogni quanto si chiede come va: un video impiega minuti, non secondi. */
+const OGNI_MS_VIDEO = 6000;
 
 
 /**
@@ -502,6 +511,23 @@ export default function App() {
   const [misuraImmagine, setMisuraImmagine] = useState(predefinitaDi('immagine', 'misura'));
   /** La forma scelta nel punto oro. Costa uguale, come la misura. */
   const [formatoImmagine, setFormatoImmagine] = useState(predefinitaDi('immagine', 'formato'));
+  /* Video (fase 3): il prompt e le tre scelte del punto oro. */
+  const [promptVideo, setPromptVideo] = useState('');
+  const [durataVideo, setDurataVideo] = useState(predefinitaDi('video', 'durata'));
+  const [risoluzioneVideo, setRisoluzioneVideo] = useState(predefinitaDi('video', 'risoluzione'));
+  const [formatoVideo, setFormatoVideo] = useState(predefinitaDi('video', 'formato'));
+  /**
+   * Il video che si sta aspettando, o `null`. Un video impiega minuti: il
+   * lavoro si ricorda in `localStorage`, così chiudere la scheda non perde un
+   * video già pagato — riaprendo, l'attesa riprende da dove era.
+   */
+  const [lavoroVideo, setLavoroVideo] = useState(() => {
+    try {
+      return localStorage.getItem(LAVORO_VIDEO) || null;
+    } catch {
+      return null;
+    }
+  });
   const [brushOpen, setBrushOpen] = useState(false);
   const [batchFiles, setBatchFiles] = useState([]);
   /** Con quale strumento si e' aperto il pennello, per accendere il cerchio. */
@@ -1693,6 +1719,125 @@ export default function App() {
     }
   }
 
+  /** Il prezzo del video di ADESSO, dallo stesso modulo che addebita. */
+  const prezzoVideoQui = prezzoVideo({
+    durata: Number(durataVideo),
+    risoluzione: risoluzioneVideo,
+    formato: formatoVideo,
+  }).total;
+
+  function ricordaLavoroVideo(id) {
+    setLavoroVideo(id);
+    try {
+      if (id) localStorage.setItem(LAVORO_VIDEO, id);
+      else localStorage.removeItem(LAVORO_VIDEO);
+    } catch {
+      /* archivio negato: l'attesa vale finché la scheda resta aperta */
+    }
+  }
+
+  /**
+   * Il tasto Zack di Video: chiede il video e basta. Il Worker addebita e
+   * risponde subito col lavoro; l'attesa la fa l'effetto qui sotto.
+   *
+   * ⚠️ Il tasto si spegne SUBITO, come per Immagine: il doppio clic è un
+   * doppio addebito. Poi resta spento finché c'è un lavoro in attesa.
+   */
+  async function runVideo() {
+    setError(null);
+    setNotice(null);
+    if (!promptVideo.trim()) {
+      setNotice(t('video.vuoto'));
+      return;
+    }
+    if (crediti < prezzoVideoQui) {
+      setNotice(t('video.saldoCorto'));
+      return;
+    }
+    setBusy(t('video.attendi'));
+    try {
+      const d = await generaVideo({
+        prompt: promptVideo,
+        durata: Number(durataVideo),
+        risoluzione: risoluzioneVideo,
+        formato: formatoVideo,
+      });
+      aggiornaSaldo(d.saldo);
+      ricordaLavoroVideo(d.lavoro);
+    } catch (e) {
+      console.error(e);
+      aggiornaSaldo(e.saldo);
+      // Il ramo PRUDENTE prima, come per Immagine: «ti è tornato» solo se il
+      // Worker ha detto `rimborsato: true`.
+      setError(
+        e.code === 'saldo'
+          ? t('video.saldoCorto')
+          : e.rimborsato === true
+            ? t('video.rimborsato')
+            : t('video.errore'),
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /*
+   * L'attesa del video. Chiede ogni sei secondi finché il lavoro non è finito
+   * o rimborsato. «Non lo so» (rete giù) è «in corso»: non si conclude mai
+   * niente su un errore di rete — lo garantisce `chiediLavoro`.
+   */
+  useEffect(() => {
+    if (!lavoroVideo) return undefined;
+    let vivo = true;
+    let timer = null;
+    const giro = async () => {
+      const r = await chiediLavoro(lavoroVideo);
+      if (!vivo) return;
+      if (r.stato === 'fatto') {
+        try {
+          const blob = await scaricaVideo(lavoroVideo);
+          if (!vivo) return;
+          pushResult({ url: own(blob), blob, kind: 'mp4', meta: { strategy: 'video' } });
+          ricordaLavoroVideo(null);
+        } catch {
+          // Il lavoro resta ricordato: alla prossima apertura si riprova.
+          // Il link del fornitore vale 24 ore.
+          if (vivo) setError(t('video.scaduto'));
+        }
+        return;
+      }
+      if (r.stato === 'rimborsato') {
+        setError(t('video.rimborsato'));
+        ricordaLavoroVideo(null);
+        aggiornaLicenza();
+        return;
+      }
+      if (r.stato === 'sconosciuto') {
+        ricordaLavoroVideo(null);
+        return;
+      }
+      timer = setTimeout(giro, OGNI_MS_VIDEO);
+    };
+    giro();
+    return () => {
+      vivo = false;
+      clearTimeout(timer);
+    };
+    // Una sola attesa per lavoro: le funzioni qui dentro cambiano a ogni
+    // disegno, e ripartire a ogni disegno moltiplicherebbe le domande.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lavoroVideo]);
+
+  async function salvaVideoGenerato() {
+    if (!result?.blob) return;
+    await library.save(result.blob, {
+      name: `video-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}`,
+      kind: 'mp4',
+      meta: { op: 'video', prompt: promptVideo },
+    });
+    setNotice(t('video.salvato'));
+  }
+
   /** Salva il risultato generato: lo stesso gesto di `salvaEffetto`/`salvaVoce`. */
   async function salvaImmagineGenerata() {
     if (!result?.blob) return;
@@ -1751,6 +1896,11 @@ export default function App() {
     immagine: {
       misura: { valore: misuraImmagine, cambia: setMisuraImmagine },
       formato: { valore: formatoImmagine, cambia: setFormatoImmagine },
+    },
+    video: {
+      durata: { valore: durataVideo, cambia: setDurataVideo },
+      risoluzione: { valore: risoluzioneVideo, cambia: setRisoluzioneVideo },
+      formato: { valore: formatoVideo, cambia: setFormatoVideo },
     },
   };
 
@@ -2290,6 +2440,29 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 <img className="immagine-risultato" src={result.url} alt="" />
               )}
             </div>
+          ) : tool === 'video' ? (
+            /* Video (fase 3): il gemello di Immagine. Il prezzo cambia con
+               durata e risoluzione, e si legge qui PRIMA del tasto. */
+            <div className="immagine-lab video-lab">
+              <p className="sc-claim">{t(getDescrittore('video').claim)}</p>
+              <textarea
+                className="immagine-prompt"
+                value={promptVideo}
+                onChange={(e) => setPromptVideo(e.target.value)}
+                placeholder={t('video.claim')}
+                aria-label={t('video.claim')}
+                disabled={Boolean(busy) || Boolean(lavoroVideo)}
+              />
+              <Preventivo
+                servizio={getDescrittore('video').listino}
+                totale={prezzoVideoQui}
+                saldo={crediti}
+                onRicarica={() => setSopraLaTela('ricarica')}
+              />
+              {result?.kind === 'mp4' && (
+                <video className="immagine-risultato" src={result.url} controls playsInline />
+              )}
+            </div>
           ) : isEditor ? (
             <SvgEditor
               ref={editorRef}
@@ -2623,9 +2796,13 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                      */
                     tool === 'immagine' && busy
                     ? { testo: busy }
-                    : null
+                    : tool === 'video' && (busy || lavoroVideo)
+                      ? { testo: busy || t('video.attendi') }
+                      : null
               }
-              busy={Boolean(busy)}
+              /* Su Video il tasto resta spento anche mentre si aspetta un
+                 lavoro già pagato: premere di nuovo sarebbe un secondo video. */
+              busy={Boolean(busy) || (tool === 'video' && Boolean(lavoroVideo))}
               models={engine.models}
               modello={s.model}
               onModello={(id) => set({ model: id })}
@@ -2737,6 +2914,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   runImmagine();
                   return;
                 }
+                if (tool === 'video') {
+                  runVideo();
+                  return;
+                }
                 if (tool === 'effetti') {
                   // Il tasto SUONA: e' cio' che si vuole da un effetto, e
                   // premerlo di nuovo lo risuona senza cambiarlo — lo stesso
@@ -2825,7 +3006,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   apriEditor: sendToEditor,
                   avanzati: () => setSopraLaTela((v) => (v === 'avanzati' ? null : 'avanzati')),
                   riferimenti: () => setSopraLaTela((v) => (v === 'riferimenti' ? null : 'riferimenti')),
-                  salva: salvaImmagineGenerata,
+                  salva: tool === 'video' ? salvaVideoGenerato : salvaImmagineGenerata,
                   centra: () => brainRef.current?.centra(),
                   tutorial: () => setSopraLaTela((v) => (v === 'tutorial' ? null : 'tutorial')),
                   /*
@@ -2897,7 +3078,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 // senza questo ramo «salva» non comparirebbe MAI dopo una
                 // generazione riuscita, perche' `result.kind` sarebbe 'jpg' e
                 // non 'png'.
-                const uscita = tool === 'vettorializza' ? 'svg' : tool === 'immagine' ? 'jpg' : 'png';
+                // Video (fase 3): un mp4. Senza, «salva» non comparirebbe mai
+                // dopo un video riuscito — la stessa trappola di Immagine.
+                const uscita =
+                  tool === 'vettorializza' ? 'svg' : tool === 'immagine' ? 'jpg' : tool === 'video' ? 'mp4' : 'png';
                 return strumentiVisibili(getDescrittore(tool), {
                   file: pieno,
                   risultato: result?.kind === uscita,

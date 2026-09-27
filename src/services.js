@@ -105,13 +105,9 @@ export const SERVICES = [
     group: GROUP_PAID,
     key: 'tool.video',
     icon: 'film',
-    ready: false,
-    // `price` letterale, e resta: `video` non ha ANCORA una voce di listino
-    // (nessun fornitore costruito, arriva con B3), quindi non c'è nessun
-    // `prezzoDi` da cui leggere un numero vero. E' una stima per un tasto che
-    // non si può premere, non una seconda fonte per uno che si preme — la
-    // barra lo scrive col trattino «~» apposta per dirlo.
-    price: 0.21,
+    ready: true,
+    // Fase 3: Seedance 2.5. Niente `price` scritto a mano: la barra legge il
+    // «da» da `listinoVideo.js`, lo stesso modulo che addebita.
   },
 ];
 

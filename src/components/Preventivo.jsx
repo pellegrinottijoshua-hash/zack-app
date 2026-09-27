@@ -13,10 +13,12 @@ import { getLang, t } from '../i18n/index.js';
  * seconda fonte del prezzo, e il giorno che il listino cambia mostreresti un
  * numero addebitandone un altro.
  */
-export default function Preventivo({ servizio, saldo, riferimenti = 0, onRicarica }) {
+export default function Preventivo({ servizio, saldo, riferimenti = 0, onRicarica, totale }) {
   // Il prezzo sale coi riferimenti, e qui si sanno gia': e' il motivo per cui
   // «prima che tu prema» resta letterale invece che approssimativo.
-  const { total } = prezzoDi(servizio, { riferimenti });
+  // `totale` lo passa chi non si prezza col listino delle immagini (il video,
+  // a secondi, fase 3): sempre dallo stesso modulo che addebita.
+  const total = totale ?? prezzoDi(servizio, { riferimenti }).total;
   const lang = getLang();
   const basta = saldo >= total;
 

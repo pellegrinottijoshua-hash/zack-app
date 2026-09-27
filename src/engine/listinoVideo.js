@@ -99,3 +99,8 @@ export function costoDaToken(token, canale) {
   if (!Number.isFinite(token) || !DOLLARI_PER_TOKEN[canale]) return null;
   return Math.ceil(token * DOLLARI_PER_TOKEN[canale] * CAMBIO_USD_EUR * 1000);
 }
+
+/** Il «da» della barra: il video più piccolo che si può chiedere. */
+export function prezzoMinimoVideo() {
+  return prezzoVideo({ durata: DURATE[0], risoluzione: RISOLUZIONI[0] });
+}

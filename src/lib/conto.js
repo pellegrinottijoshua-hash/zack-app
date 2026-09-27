@@ -299,3 +299,67 @@ export async function vaiAllaRicarica(pacchetto, {
   if (!url) throw new Error('ricarica');
   vai(url);
 }
+
+/* ------------------------------------------------------------------ *
+ * Il video (fase 3). Tre passi, perché un video impiega minuti:
+ * chiedere (202 + lavoro), aspettare (/lavoro), scaricare (/lavoro/video).
+ * ------------------------------------------------------------------ */
+
+const erroreConto = (corpo, fallback) =>
+  Object.assign(new Error(corpo.errore || fallback), {
+    code: corpo.errore || fallback,
+    saldo: corpo.saldo,
+    prezzo: corpo.prezzo,
+    rimborsato: corpo.rimborsato,
+  });
+
+/** Chiede un video. Torna `{ lavoro, prezzo, saldo }`: il video non c'è ancora. */
+export async function generaVideo({ prompt, durata, risoluzione, formato, otteniSessione = sessione }) {
+  const token = await otteniSessione();
+  if (!token) throw Object.assign(new Error('non-collegato'), { code: 'non-collegato' });
+  const res = await fetch(`${BASE}/genera`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ servizio: 'video-seedance25', prompt, durata, risoluzione, formato }),
+  });
+  const corpo = await res.json().catch(() => ({}));
+  if (res.status !== 202) throw erroreConto(corpo, 'genera');
+  return corpo;
+}
+
+/**
+ * Come va un lavoro: `{ stato: 'in-corso' | 'fatto' | 'rimborsato', url? }`.
+ *
+ * ⚠️ Un errore di rete NON è «fallito»: torna «in-corso», e si richiede. È
+ * la stessa regola di `chiediLicenza` — «non lo so» non è «non hai pagato»,
+ * e qui non è nemmeno «non è venuto».
+ */
+export async function chiediLavoro(lavoro, { otteniSessione = sessione } = {}) {
+  try {
+    const token = await otteniSessione();
+    if (!token) return { stato: 'in-corso' };
+    const res = await fetch(`${BASE}/lavoro?id=${encodeURIComponent(lavoro)}`, {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    if (res.status === 404) return { stato: 'sconosciuto' };
+    if (!res.ok) return { stato: 'in-corso' };
+    const d = await res.json();
+    return ['fatto', 'rimborsato', 'in-corso'].includes(d.stato) ? d : { stato: 'in-corso' };
+  } catch {
+    return { stato: 'in-corso' };
+  }
+}
+
+/** I byte del video finito, dalla stessa origine (il CDN del fornitore non si legge in un blob). */
+export async function scaricaVideo(lavoro, { otteniSessione = sessione } = {}) {
+  const token = await otteniSessione();
+  if (!token) throw Object.assign(new Error('non-collegato'), { code: 'non-collegato' });
+  const res = await fetch(`${BASE}/lavoro/video?id=${encodeURIComponent(lavoro)}`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const corpo = await res.json().catch(() => ({}));
+    throw erroreConto(corpo, 'scarica');
+  }
+  return res.blob();
+}

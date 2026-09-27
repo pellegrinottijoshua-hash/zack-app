@@ -11,7 +11,7 @@
  */
 
 /** I servizi che mostrano il saldo: quelli che lo spendono, e basta. */
-const SPENDONO = new Set(['immagine']);
+const SPENDONO = new Set(['immagine', 'video']);
 
 /**
  * I servizi che hanno uno «stato vuoto» con la mascotte dentro.

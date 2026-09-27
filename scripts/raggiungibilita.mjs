@@ -57,7 +57,7 @@ const TUTTE = RAPIDO
   : [[390, 844], [760, 900], [761, 900], [800, 700], [1280, 800], [844, 390]];
 const FINESTRE = SOLA ? [SOLA.split('x').map(Number)] : TUTTE;
 
-const SERVIZI = ['brain', 'vettorializza', 'scontorna', 'vocale', 'effetti', 'immagine'];
+const SERVIZI = ['brain', 'vettorializza', 'scontorna', 'vocale', 'effetti', 'immagine', 'video'];
 
 /** Ogni prova parte da uno stato dichiarato: mai da un saldo già carico per caso. */
 function statoIniziale({ saldo, libreria, primo = false }) {

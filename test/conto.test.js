@@ -354,3 +354,53 @@ test('⚠️ chi è entrato con un nome e aspetta ancora /me non legge «paghi s
   assert.equal(eOspite({ licenza: { ospite: true }, sessione: true }), true);
   assert.equal(eOspite({ licenza: { ospite: false }, sessione: false }), false, 'la licenza vince sulla sessione');
 });
+
+/* ── fase 3: il video, lato browser ─────────────────────────────── */
+
+test('generaVideo manda al Worker solo la richiesta, mai una cifra, e vuole un 202', async () => {
+  const { generaVideo } = await import('../src/lib/conto.js');
+  const fetchVero = globalThis.fetch;
+  let corpo;
+  globalThis.fetch = async (u, o) => {
+    corpo = JSON.parse(o.body);
+    return new Response(JSON.stringify({ lavoro: 'l-1', prezzo: 1260, saldo: 740 }), { status: 202 });
+  };
+  try {
+    const d = await generaVideo({ prompt: 'x', durata: 5, risoluzione: '720p', formato: '16:9', otteniSessione: async () => 't' });
+    assert.equal(d.lavoro, 'l-1');
+  } finally {
+    globalThis.fetch = fetchVero;
+  }
+  assert.deepEqual(Object.keys(corpo).sort(), ['durata', 'formato', 'prompt', 'risoluzione', 'servizio']);
+});
+
+test('generaVideo: un 402 diventa l’errore «saldo» col prezzo, non un successo', async () => {
+  const { generaVideo } = await import('../src/lib/conto.js');
+  const fetchVero = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({ errore: 'saldo', prezzo: 1260 }), { status: 402 });
+  try {
+    await assert.rejects(
+      generaVideo({ prompt: 'x', durata: 5, risoluzione: '720p', formato: '16:9', otteniSessione: async () => 't' }),
+      (e) => e.code === 'saldo' && e.prezzo === 1260,
+    );
+  } finally {
+    globalThis.fetch = fetchVero;
+  }
+});
+
+test('⚠️ chiediLavoro: la rete giù è «in corso», mai «fallito» né «fatto»', async () => {
+  const { chiediLavoro } = await import('../src/lib/conto.js');
+  const fetchVero = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => { throw new TypeError('offline'); };
+    assert.deepEqual(await chiediLavoro('l-1', { otteniSessione: async () => 't' }), { stato: 'in-corso' });
+    globalThis.fetch = async () => new Response('{}', { status: 503 });
+    assert.deepEqual(await chiediLavoro('l-1', { otteniSessione: async () => 't' }), { stato: 'in-corso' });
+    globalThis.fetch = async () => new Response(JSON.stringify({ stato: 'inventato' }));
+    assert.deepEqual(await chiediLavoro('l-1', { otteniSessione: async () => 't' }), { stato: 'in-corso' });
+    globalThis.fetch = async () => new Response(JSON.stringify({ stato: 'fatto', url: 'https://v' }));
+    assert.equal((await chiediLavoro('l-1', { otteniSessione: async () => 't' })).stato, 'fatto');
+  } finally {
+    globalThis.fetch = fetchVero;
+  }
+});

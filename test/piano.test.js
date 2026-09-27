@@ -43,7 +43,8 @@ test('senza niente sopra e senza niente in corso, il piano e’ vuoto', () => {
   // Il vettoriale e Immagine sono le eccezioni DICHIARATE: la loro «tela» e'
   // un foglio da disegno o un prompt da scrivere, e vuoto e' il punto di
   // partenza, non «niente» — la stessa ragione, due servizi.
-  const ECCEZIONI = new Set(['vettorializza', 'immagine']);
+  // Video (fase 3) è un prompt come Immagine: la stessa eccezione.
+  const ECCEZIONI = new Set(['vettorializza', 'immagine', 'video']);
   for (const tool of Object.keys(DESCRITTORI)) {
     if (ECCEZIONI.has(tool)) continue;
     assert.equal(pianoVuoto(tool, {}), true, `${tool}: il piano appena aperto non risulta vuoto`);

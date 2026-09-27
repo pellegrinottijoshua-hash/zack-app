@@ -4,6 +4,7 @@ import vocale from './vocale.js';
 import effetti from './effetti.js';
 import vettorializza from './vettorializza.js';
 import immagine from './immagine.js';
+import video from './video.js';
 import { puoiLavorare } from '../engine/licenza.js';
 
 /**
@@ -26,7 +27,7 @@ import { puoiLavorare } from '../engine/licenza.js';
  * `suono`) entra qui insieme ai suoi gesti, non prima. «Immagine» (Task 7)
  * entra allo stesso modo: descrittore, componenti e gesti in un commit solo.
  */
-export const DESCRITTORI = { scontorna, brain, vocale, effetti, vettorializza, immagine };
+export const DESCRITTORI = { scontorna, brain, vocale, effetti, vettorializza, immagine, video };
 
 /**
  * Gli stati in cui uno strumento può comparire. **Lista chiusa.**

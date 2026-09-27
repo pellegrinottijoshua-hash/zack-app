@@ -120,7 +120,7 @@ test('«il piano è vuoto» e «il + sta in centro» sono due domande diverse �
     const tetto = DESCRITTORI[id].accetta.quanti;
     const posto = postoDelPiu(id, { quanti, tetto });
 
-    if (id === 'immagine' || id === 'vettorializza') {
+    if (id === 'immagine' || id === 'vettorializza' || id === 'video') {
       // La tela c'è sempre: il piano non è mai vuoto...
       assert.equal(vuoto, false, `${id}: il suo piano è la tela — non deve mai risultare vuoto`);
       // ...eppure, a zero file/riferimenti, il + sta comunque in centro.
@@ -317,4 +317,17 @@ test('cerchiPerLato: il Vettoriale ha otto cerchi a sinistra (quelli che spariva
   const { strumentiVisibili, getDescrittore } = await import('../src/servizi/index.js');
   const d = getDescrittore('vettorializza');
   assert.deepEqual(cerchiPerLato(strumentiVisibili(d, { file: true, risultato: false })).sinistra, 8);
+});
+
+test('⚠️ Video: «salva» compare dopo un video riuscito (l’uscita è mp4, non png)', () => {
+  /*
+   * Fase 3. Trovato a schermo: il video arrivava e il cerchio «salva» non
+   * compariva, perché `uscita` conosceva solo svg/jpg/png. Rompere apposta:
+   * togli il ramo `tool === 'video' ? 'mp4'` → questa prova diventa rossa.
+   */
+  const i = APP.indexOf('const uscita =');
+  assert.notEqual(i, -1, 'la regola dell’uscita non sta più dove la prova la cerca');
+  const riga = APP.slice(i, APP.indexOf(';', i));
+  assert.match(riga, /tool === 'video' \? 'mp4'/);
+  assert.match(APP, /pushResult\(\{ url: own\(blob\), blob, kind: 'mp4'/, 'il video non entra come mp4');
 });

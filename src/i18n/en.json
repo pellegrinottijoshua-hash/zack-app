@@ -815,5 +815,36 @@
     "nonScadono": "Credits never expire, and they stay yours even if you cancel your subscription.",
     "chiudi": "Done",
     "ospite": "You pay without an email: your credit lives in this browser. Clear its data, or switch browsers, and it's gone."
+  },
+  "video": {
+    "claim": "Write the scene. Zack shoots it with Seedance 2.5.",
+    "durata": {
+      "title": "Length",
+      "5": "5 s",
+      "10": "10 s",
+      "15": "15 s"
+    },
+    "risoluzione": {
+      "title": "Resolution",
+      "480p": "480p",
+      "720p": "720p"
+    },
+    "formato": {
+      "title": "Format",
+      "16_9": "16:9",
+      "9_16": "9:16",
+      "1_1": "1:1",
+      "4_3": "4:3",
+      "3_4": "3:4",
+      "21_9": "21:9"
+    },
+    "salva": "Save to library",
+    "vuoto": "Write what you want to see first.",
+    "saldoCorto": "You don't have enough credit for this video.",
+    "attendi": "Zack is shooting the video. It takes a few minutes: stay here or come back later.",
+    "rimborsato": "The video didn't come out. Your credit is already back.",
+    "errore": "I couldn't start the video. Try again in a moment.",
+    "scaduto": "The video is ready but I couldn't download it. Try again: the provider's link lasts 24 hours.",
+    "salvato": "Video saved to the library."
   }
 }

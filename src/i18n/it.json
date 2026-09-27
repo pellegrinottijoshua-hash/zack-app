@@ -815,5 +815,36 @@
     "nonScadono": "I crediti non scadono, e restano tuoi anche se disdici l’abbonamento.",
     "chiudi": "Va bene così",
     "ospite": "Paghi senza email: il credito vive in questo browser. Se ne cancelli i dati, o cambi browser, lo perdi."
+  },
+  "video": {
+    "claim": "Scrivi la scena. Zack la gira con Seedance 2.5.",
+    "durata": {
+      "title": "Durata",
+      "5": "5 s",
+      "10": "10 s",
+      "15": "15 s"
+    },
+    "risoluzione": {
+      "title": "Risoluzione",
+      "480p": "480p",
+      "720p": "720p"
+    },
+    "formato": {
+      "title": "Formato",
+      "16_9": "16:9",
+      "9_16": "9:16",
+      "1_1": "1:1",
+      "4_3": "4:3",
+      "3_4": "3:4",
+      "21_9": "21:9"
+    },
+    "salva": "Salva nella libreria",
+    "vuoto": "Scrivi prima cosa vuoi vedere.",
+    "saldoCorto": "Non hai abbastanza credito per questo video.",
+    "attendi": "Zack sta girando il video. Ci vuole qualche minuto: puoi restare qui o tornare dopo.",
+    "rimborsato": "Il video non è venuto. Il credito ti è già tornato.",
+    "errore": "Non sono riuscito a far partire il video. Riprova fra un momento.",
+    "scaduto": "Il video è pronto ma non sono riuscito a scaricarlo. Riprova: il link del fornitore vale 24 ore.",
+    "salvato": "Video salvato nella libreria."
   }
 }

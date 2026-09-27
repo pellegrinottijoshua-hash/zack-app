@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { VOCE_VIDEO, prezzoMinimoVideo } from '../engine/listinoVideo.js';
 import { getLang, t } from '../i18n/index.js';
 import { ordineDellaFila, servizioDelloStrumento } from '../services.js';
 import { DESCRITTORI } from '../servizi/index.js';
@@ -56,7 +57,11 @@ function Item({ service, active, collapsed, lampo, onPick }) {
    * `rail.da`, non come il numero nudo di prima.
    */
   const listino = DESCRITTORI[service.id]?.listino;
-  const prezzoAcceso = listino ? formatEuro(prezzoDi(listino).total, getLang()) : null;
+  // Il video si prezza a secondi (fase 3): in barra il suo «da» è il video
+  // più piccolo, dallo stesso listino che addebita.
+  const prezzoAcceso = listino
+    ? formatEuro(listino === VOCE_VIDEO ? prezzoMinimoVideo().total : prezzoDi(listino).total, getLang())
+    : null;
   return (
     <button
       className="tool-item"
