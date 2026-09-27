@@ -453,3 +453,19 @@ li contiene tutti.
 Minori: niente riferimenti per il video (image-to-video) né 1080p; su
 Higgsfield un task che finisse dopo il rimborso delle 2 ore lo pagheremmo noi;
 il cambio dollaro→euro è una fotografia (0,95) da riguardare.
+
+## ✅ 2026-09-27 — TUTTO FUSO E PUBBLICATO: 2b, 2c, 3 e 3d su `main`
+
+`f41f2ba`, Workers Builds → success. Il committente ha scelto di fondere
+**senza** la `/code-review ultra`. Lo SQL della fase 3 è stato lanciato
+(tre colonne su `lavori`, verificate).
+
+- **3d** (spec §7): 1080p e immagini (primo/ultimo fotogramma, fino a 9
+  riferimenti) dal canale ufficiale; `canalePer` manda all'ufficiale ciò che
+  il canale acceso non sa fare. 844 prove, script di 2a verde (420 pagine).
+- In produzione **il video non parte finché mancano le chiavi**: il Worker
+  risponde 503 PRIMA di addebitare.
+
+**Resta al committente:** `npx wrangler secret put ARK_API_KEY` (e
+`HF_CREDENTIALS` per l'opzione), un video vero di prova, l'IVA, la query RLS
+della 2b.
