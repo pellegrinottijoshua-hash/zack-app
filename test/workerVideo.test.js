@@ -220,3 +220,17 @@ test('/lavoro/video passa i byte del video al padrone, e a nessun altro', async 
   assert.equal(await ok.text(), 'BYTE-DEL-VIDEO');
   assert.equal((await scarica('l-altrui')).status, 404);
 });
+
+test('⚠️ senza la chiave del canale: 503 PRIMA dell’addebito, non addebito + rimborso', async () => {
+  /*
+   * Rompere apposta: togli il controllo della chiave in `generaVideo` → in
+   * produzione, prima di `wrangler secret put ARK_API_KEY`, ogni video
+   * addebita e rimborsa per niente.
+   */
+  const c = mondo();
+  const { ARK_API_KEY, ...senza } = AMBIENTE;
+  const res = await genera(VIDEO, senza);
+  assert.equal(res.status, 503);
+  assert.equal((await res.json()).errore, 'non-configurato');
+  assert.equal(c.filter((x) => x.url.includes('/rpc/addebita')).length, 0);
+});

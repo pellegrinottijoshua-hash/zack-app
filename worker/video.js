@@ -71,6 +71,15 @@ export async function generaVideo(corpo, chi, env) {
   const canale = canaleAcceso(env);
   if (!CANALI.includes(canale)) return json({ errore: 'non-configurato' }, 503);
   /*
+   * La chiave del canale PRIMA dell'addebito: senza, il fornitore non si
+   * chiama nemmeno, e addebitare per poi rimborsare subito è un giro di soldi
+   * che il cliente vede per niente (il Worker in produzione prima che il
+   * committente metta la chiave).
+   */
+  if (!(canale === 'byteplus' ? env.ARK_API_KEY : env.HF_CREDENTIALS)) {
+    return json({ errore: 'non-configurato' }, 503);
+  }
+  /*
    * ⚠️ Il cancello del canale, PRIMA dell'addebito: un canale che costa più
    * del prezzo (Higgsfield a listino) non genera, a meno che il committente
    * non l'abbia deciso con VIDEO_ACCETTA_PERDITA=1.
