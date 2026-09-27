@@ -64,3 +64,15 @@ test('⚠️ le corsie della home usano la regola dello studio per l’avviso de
     assert.doesNotMatch(src, /useState\(true\)/, `${f}: un «ospite» vero di partenza è tornato`);
   }
 });
+
+test('⚠️ la corsia Video della home decide cosa si può aggiungere con la regola del Worker', async () => {
+  /*
+   * Fetta 3d. Rompere apposta: fai tornare `true` a `puo` → la home lascia
+   * mescolare primo fotogramma e riferimenti, e il Worker risponde 400 dopo
+   * che il cliente ha già scelto tutto.
+   */
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('../src/landing/CorsiaVideo.jsx', import.meta.url), 'utf8');
+  assert.match(src, /const puo = \(ruolo\) => immaginiVideoStorte\(\[\.\.\.immagini, \{ ruolo \}\]\) === null;/);
+  assert.match(src, /immagini: immagini\.map\(\(\{ ruolo, immagine \}\) => \(\{ ruolo, immagine \}\)\)/, 'le immagini non partono verso il Worker');
+});

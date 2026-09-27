@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { formatEuro } from '../engine/ledger.js';
-import { DURATE, RISOLUZIONI, prezzoVideo } from '../engine/listinoVideo.js';
+import { DURATE, RISOLUZIONI, LIMITI_IMMAGINI, immaginiVideoStorte, prezzoVideo } from '../engine/listinoVideo.js';
 import { eOspite } from '../engine/licenza.js';
-import { chiediLavoro, chiediLicenza, generaVideo, scaricaVideo, sessione } from '../lib/conto.js';
+import { chiediLavoro, chiediLicenza, generaVideo, riduciPerVideo, scaricaVideo, sessione } from '../lib/conto.js';
 import { statoTasto } from './corsia.js';
 import RicaricaCorsia from './RicaricaCorsia.jsx';
 
@@ -55,6 +55,26 @@ export default function CorsiaVideo({ c, lang }) {
   const [lavoro, setLavoro] = useState(() => leggi(LAVORO));
   const [risultato, setRisultato] = useState(null);
   const [ricarica, setRicarica] = useState(false);
+  /** Le immagini (fetta 3d): `{ id, ruolo, immagine }`, già ridotte in `data:`. */
+  const [immagini, setImmagini] = useState([]);
+  const [ruoloNuovo, setRuoloNuovo] = useState('riferimento');
+  const input = useRef(null);
+
+  /** Si può aggiungere un'immagine con questo ruolo? La regola del Worker. */
+  const puo = (ruolo) => immaginiVideoStorte([...immagini, { ruolo }]) === null;
+
+  async function aggiungi(files) {
+    const nuove = [];
+    for (const f of [...files].filter((x) => x.type.startsWith('image/'))) {
+      if (immaginiVideoStorte([...immagini, ...nuove, { ruolo: ruoloNuovo }]) !== null) break;
+      try {
+        nuove.push({ id: `${Date.now()}-${nuove.length}`, ruolo: ruoloNuovo, immagine: await riduciPerVideo(f) });
+      } catch {
+        /* illeggibile: non entra */
+      }
+    }
+    setImmagini((prima) => [...prima, ...nuove]);
+  }
 
   function ricordaLavoro(id) {
     setLavoro(id);
@@ -70,6 +90,7 @@ export default function CorsiaVideo({ c, lang }) {
         if (DURATE.includes(b.durata)) setDurata(b.durata);
         if (RISOLUZIONI.includes(b.risoluzione)) setRisoluzione(b.risoluzione);
         if (FORMATI_HOME.includes(b.formato)) setFormato(b.formato);
+        if (Array.isArray(b.immagini) && immaginiVideoStorte(b.immagini) === null) setImmagini(b.immagini);
         sessionStorage.removeItem(BOZZA);
       }
     } catch {
@@ -131,7 +152,13 @@ export default function CorsiaVideo({ c, lang }) {
     setAvviso(null);
     setRisultato(null);
     try {
-      const d = await generaVideo({ prompt, durata, risoluzione, formato });
+      const d = await generaVideo({
+        prompt,
+        durata,
+        risoluzione,
+        formato,
+        immagini: immagini.map(({ ruolo, immagine }) => ({ ruolo, immagine })),
+      });
       if (typeof d.saldo === 'number') setSaldo(d.saldo);
       ricordaLavoro(d.lavoro);
     } catch (e) {
@@ -176,7 +203,51 @@ export default function CorsiaVideo({ c, lang }) {
 
       {pastiglie(DURATE, durata, setDurata, t.durata)}
       {pastiglie(RISOLUZIONI, risoluzione, setRisoluzione, t.risoluzione)}
-      {pastiglie(FORMATI_HOME, formato, setFormato, t.formato)}
+      {/* Col primo fotogramma la forma la decide l'immagine: le pastiglie
+          del formato non avrebbero effetto, quindi non si mostrano. */}
+      {!immagini.some((im) => im.ruolo === 'primo') && pastiglie(FORMATI_HOME, formato, setFormato, t.formato)}
+
+      <div className="corsia-pallini">
+        {immagini.map((im) => (
+          <span key={im.id} className="corsia-pallino" data-ruolo={im.ruolo} title={t.ruoli[im.ruolo]}>
+            <img src={im.immagine} alt="" />
+            <button
+              type="button"
+              aria-label={`${t.togli} — ${t.ruoli[im.ruolo]}`}
+              disabled={Boolean(lavoro)}
+              onClick={() => setImmagini((p) => p.filter((x) => x.id !== im.id))}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        {['primo', 'ultimo', 'riferimento'].filter(puo).map((ruolo) => (
+          <button
+            key={ruolo}
+            type="button"
+            className="corsia-piu-ruolo"
+            disabled={Boolean(lavoro)}
+            onClick={() => {
+              setRuoloNuovo(ruolo);
+              input.current?.click();
+            }}
+          >
+            + {t.ruoli[ruolo]}
+          </button>
+        ))}
+        <input
+          ref={input}
+          type="file"
+          accept="image/*"
+          multiple={ruoloNuovo === 'riferimento'}
+          hidden
+          onChange={(e) => {
+            aggiungi(e.target.files);
+            e.target.value = '';
+          }}
+        />
+      </div>
+      {immagini.length >= LIMITI_IMMAGINI.totale && <p className="corsia-nota">{scrivi(t.fuori, { n: LIMITI_IMMAGINI.totale })}</p>}
 
       <div className="corsia-zack">
         <p className="corsia-prezzo">
@@ -202,7 +273,14 @@ export default function CorsiaVideo({ c, lang }) {
           t={t}
           lang={lang}
           ospite={ospite}
-          salvaBozza={() => sessionStorage.setItem(BOZZA, JSON.stringify({ prompt, durata, risoluzione, formato }))}
+          salvaBozza={() => {
+            // Con le immagini la bozza può non starci: allora si salva il resto.
+            try {
+              sessionStorage.setItem(BOZZA, JSON.stringify({ prompt, durata, risoluzione, formato, immagini }));
+            } catch {
+              sessionStorage.setItem(BOZZA, JSON.stringify({ prompt, durata, risoluzione, formato }));
+            }
+          }}
           onChiudi={() => setRicarica(false)}
           onErrore={setAvviso}
         />

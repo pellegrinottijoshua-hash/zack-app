@@ -89,8 +89,8 @@ QUANTI.vettorializza = QUANTI.scontorna;
  * — la stessa domanda a cui risponde QUANTI per tutti gli altri servizi.
  */
 QUANTI.immagine = (s) => s.riferimenti ?? 0;
-// Niente riferimenti per il video, per ora: il `+` non ha niente da contare.
-QUANTI.video = () => 0;
+// Le immagini del video (fetta 3d): primo/ultimo fotogramma o riferimenti.
+QUANTI.video = (s) => s.riferimentiVideo ?? 0;
 
 /**
  * Cosa c'è sul piano. Un servizio sconosciuto risponde «niente e niente»:

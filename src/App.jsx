@@ -57,8 +57,9 @@ import {
   generaVideo,
   chiediLavoro,
   scaricaVideo,
+  riduciPerVideo,
 } from './lib/conto.js';
-import { prezzoVideo } from './engine/listinoVideo.js';
+import { prezzoVideo, LIMITI_IMMAGINI, RUOLI_VIDEO, immaginiVideoStorte } from './engine/listinoVideo.js';
 import Muro from './components/Muro.jsx';
 import { nuovaNota, nuovoAsset, nuovoCerchio, prossimoPosto } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
@@ -516,6 +517,10 @@ export default function App() {
   const [durataVideo, setDurataVideo] = useState(predefinitaDi('video', 'durata'));
   const [risoluzioneVideo, setRisoluzioneVideo] = useState(predefinitaDi('video', 'risoluzione'));
   const [formatoVideo, setFormatoVideo] = useState(predefinitaDi('video', 'formato'));
+  /** Le immagini del video (fetta 3d): `{ ruolo, assetId, nome }`, dalla libreria. */
+  const [immaginiVideo, setImmaginiVideo] = useState([]);
+  /** Con quale ruolo si apre il pannello, dal `+` di Video. */
+  const [ruoloVideo, setRuoloVideo] = useState('primo');
   /**
    * Il video che si sta aspettando, o `null`. Un video impiega minuti: il
    * lavoro si ricorda in `localStorage`, così chiudere la scheda non perde un
@@ -1756,11 +1761,28 @@ export default function App() {
     }
     setBusy(t('video.attendi'));
     try {
+      /*
+       * Le immagini si leggono dalla libreria e si riducono QUI, prima di
+       * chiedere. Una che non si legge più FERMA tutto (come per Immagine):
+       * scartarla in silenzio genererebbe un video diverso da quello chiesto.
+       */
+      const immagini = [];
+      for (const im of immaginiVideo) {
+        let f = null;
+        try {
+          ({ file: f } = await library.read(im.assetId));
+        } catch {
+          f = null;
+        }
+        if (!f) throw Object.assign(new Error('asset-mancante'), { code: 'asset-mancante' });
+        immagini.push({ ruolo: im.ruolo, immagine: await riduciPerVideo(f) });
+      }
       const d = await generaVideo({
         prompt: promptVideo,
         durata: Number(durataVideo),
         risoluzione: risoluzioneVideo,
         formato: formatoVideo,
+        immagini,
       });
       aggiornaSaldo(d.saldo);
       ricordaLavoroVideo(d.lavoro);
@@ -1772,7 +1794,9 @@ export default function App() {
       setError(
         e.code === 'saldo'
           ? t('video.saldoCorto')
-          : e.rimborsato === true
+          : e.code === 'asset-mancante' || e.code === 'immagine-illeggibile'
+            ? t('video.immagineIllegibile')
+            : e.rimborsato === true
             ? t('video.rimborsato')
             : t('video.errore'),
       );
@@ -1923,6 +1947,7 @@ export default function App() {
     inColonna: batchFiles.length,
     risultati: batch.results.length,
     riferimenti: references.length,
+    riferimentiVideo: immaginiVideo.length,
   };
 
   /** La ricetta della voce: quella scelta nel punto oro più i filtri del tasto. */
@@ -2453,6 +2478,16 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 aria-label={t('video.claim')}
                 disabled={Boolean(busy) || Boolean(lavoroVideo)}
               />
+              {immaginiVideo.length > 0 && (
+                <ul className="riferimenti-scelti">
+                  {immaginiVideo.map((r, i) => (
+                    <li key={`${r.assetId}-${i}`}>
+                      {t(`video.ruolo.${r.ruolo}`)}: {r.nome}
+                    </li>
+                  ))}
+                  {immaginiVideo.some((r) => r.ruolo === 'primo') && <li>{t('video.immaginiNota')}</li>}
+                </ul>
+              )}
               <Preventivo
                 servizio={getDescrittore('video').listino}
                 totale={prezzoVideoQui}
@@ -2827,6 +2862,12 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 // ramo di default qui sotto scriverebbe una nota nella tela
                 // di Brain, che per questo servizio non c'entra niente.
                 if (tool === 'immagine') return menuImmagine(quale);
+                // Video: il `+` apre il pannello delle immagini sul ruolo scelto.
+                if (tool === 'video') {
+                  setMenuPiu(false);
+                  setRuoloVideo(quale);
+                  return setSopraLaTela('riferimenti');
+                }
                 setMenuPiu(false);
                 // Dal computer: entra in libreria e finisce sulla tela.
                 if (quale === 'computer') return portaFileInBrain();
@@ -2855,14 +2896,30 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 ) : sopraLaTela === 'tutorial' ? (
                   <Tutorial onChiudi={() => setSopraLaTela(null)} />
                 ) : sopraLaTela === 'riferimenti' ? (
-                  <Riferimenti
-                    servizio={getDescrittore('immagine').listino}
-                    scelti={references}
-                    onCambia={setReferences}
-                    assets={library.assets}
-                    onChiudi={() => setSopraLaTela(null)}
-                    ruoloIniziale={ruoloMenu}
-                  />
+                  tool === 'video' ? (
+                    <Riferimenti
+                      servizio={getDescrittore('video').listino}
+                      scelti={immaginiVideo}
+                      onCambia={setImmaginiVideo}
+                      // Solo immagini: un audio come primo fotogramma non esiste.
+                      assets={library.assets.filter((a) => ['png', 'jpg'].includes(a.kind))}
+                      onChiudi={() => setSopraLaTela(null)}
+                      ruoloIniziale={ruoloVideo}
+                      ruoli={RUOLI_VIDEO}
+                      limiti={LIMITI_IMMAGINI}
+                      prefisso="video.ruolo"
+                      puoAggiungere={(ruolo, scelti) => immaginiVideoStorte([...scelti, { ruolo }]) === null}
+                    />
+                  ) : (
+                    <Riferimenti
+                      servizio={getDescrittore('immagine').listino}
+                      scelti={references}
+                      onCambia={setReferences}
+                      assets={library.assets}
+                      onChiudi={() => setSopraLaTela(null)}
+                      ruoloIniziale={ruoloMenu}
+                    />
+                  )
                 ) : sopraLaTela === 'ricarica' ? (
                   <Ricarica
                     saldo={crediti}

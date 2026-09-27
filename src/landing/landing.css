@@ -2261,3 +2261,19 @@ body {
   border-radius: 18px;
   background: var(--nero);
 }
+
+/* Fetta 3d: i «+» della corsia Video dicono il ruolo dell'immagine. */
+.corsia-piu-ruolo {
+  min-height: 40px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1.5px dashed var(--nero);
+  background: transparent;
+  color: var(--nero);
+  font: 600 13px var(--display);
+  cursor: pointer;
+}
+.corsia-pallino[data-ruolo='primo'] img,
+.corsia-pallino[data-ruolo='ultimo'] img {
+  border-radius: 10px;
+}

@@ -49,7 +49,10 @@
     "libreria": "Dalla libreria",
     "personaggio": "Personaggio",
     "oggetto": "Oggetto",
-    "stile": "Stile"
+    "stile": "Stile",
+    "primo": "Primo fotogramma",
+    "ultimo": "Ultimo fotogramma",
+    "riferimento": "Riferimento"
   },
   "drop": {
     "title": "Trascina qui un'immagine",
@@ -827,7 +830,8 @@
     "risoluzione": {
       "title": "Risoluzione",
       "480p": "480p",
-      "720p": "720p"
+      "720p": "720p",
+      "1080p": "1080p"
     },
     "formato": {
       "title": "Formato",
@@ -845,6 +849,14 @@
     "rimborsato": "Il video non è venuto. Il credito ti è già tornato.",
     "errore": "Non sono riuscito a far partire il video. Riprova fra un momento.",
     "scaduto": "Il video è pronto ma non sono riuscito a scaricarlo. Riprova: il link del fornitore vale 24 ore.",
-    "salvato": "Video salvato nella libreria."
+    "salvato": "Video salvato nella libreria.",
+    "ruolo": {
+      "primo": "Primo fotogramma",
+      "ultimo": "Ultimo fotogramma",
+      "riferimento": "Riferimento"
+    },
+    "riferimenti": "Immagini",
+    "immaginiNota": "Con un primo fotogramma la forma la decide l’immagine.",
+    "immagineIllegibile": "Un’immagine scelta non si legge più. Toglila e riprova."
   }
 }

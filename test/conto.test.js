@@ -371,7 +371,7 @@ test('generaVideo manda al Worker solo la richiesta, mai una cifra, e vuole un 2
   } finally {
     globalThis.fetch = fetchVero;
   }
-  assert.deepEqual(Object.keys(corpo).sort(), ['durata', 'formato', 'prompt', 'risoluzione', 'servizio']);
+  assert.deepEqual(Object.keys(corpo).sort(), ['durata', 'formato', 'immagini', 'prompt', 'risoluzione', 'servizio']);
 });
 
 test('generaVideo: un 402 diventa l’errore «saldo» col prezzo, non un successo', async () => {

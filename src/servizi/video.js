@@ -8,7 +8,8 @@
  * Le liste di durata, risoluzione e formato sono quelle di
  * `engine/listinoVideo.js`: una prova le confronta, perché un'opzione qui
  * che il listino non conosce sarebbe un tasto che il Worker rifiuta (400).
- * Niente riferimenti per ora (image-to-video arriva dopo la 3c).
+ * Le immagini (fetta 3d): primo/ultimo fotogramma, oppure fino a 9
+ * riferimenti — le regole in `listinoVideo.js`, le stesse del Worker.
  */
 export default {
   id: 'video',
@@ -18,9 +19,8 @@ export default {
 
   listino: 'video-seedance25',
 
-  // `quanti` ≥ 1 lo chiede l'impianto; il menu vuoto dice che i riferimenti
-  // non ci sono ancora.
-  accetta: { menu: [], quanti: 1 },
+  // Il `+` apre il menu dei tre ruoli, come su Immagine.
+  accetta: { menu: ['primo', 'ultimo', 'riferimento'], quanti: 9 },
 
   tasto: {
     azione: 'generaVideo',
@@ -44,6 +44,7 @@ export default {
         opzioni: [
           { id: '480p', label: 'video.risoluzione.480p' },
           { id: '720p', label: 'video.risoluzione.720p' },
+          { id: '1080p', label: 'video.risoluzione.1080p' },
         ],
       },
       {
@@ -63,6 +64,7 @@ export default {
   },
 
   strumenti: [
+    { id: 'riferimenti', icon: 'image', label: 'video.riferimenti', quando: 'sempre' },
     { id: 'salva', icon: 'stella', label: 'video.salva', quando: 'con-risultato' },
   ],
 };

@@ -121,6 +121,7 @@ export const COPY = {
       prezzoVideo: '{p} questo video',
       girando: 'Zack sta girando il video: ci vuole qualche minuto. Puoi chiudere, lo ritrovi qui.',
       videoScaduto: 'Il video è pronto ma non sono riuscito a scaricarlo. Riapri la pagina per riprovare.',
+      ruoli: { primo: 'Primo fotogramma', ultimo: 'Ultimo fotogramma', riferimento: 'Riferimento' },
     },
 
     hero: {
@@ -299,6 +300,7 @@ export const COPY = {
       prezzoVideo: '{p} this video',
       girando: 'Zack is shooting the video: it takes a few minutes. You can close this page and find it here.',
       videoScaduto: "The video is ready but I couldn't download it. Reopen the page to try again.",
+      ruoli: { primo: 'First frame', ultimo: 'Last frame', riferimento: 'Reference' },
     },
 
     hero: {

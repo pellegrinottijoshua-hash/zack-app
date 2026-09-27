@@ -154,14 +154,14 @@ const LATO_RIFERIMENTO = 768;
  * nove secondi che restano fra i 21 di Google e i 30 del limite, e il costo
  * diventa prevedibile invece che scommesso.
  */
-export async function riduci(blob) {
+export async function riduci(blob, { lato = LATO_RIFERIMENTO, tipo = 'image/png', qualita } = {}) {
   const bitmap = await createImageBitmap(blob);
-  const scala = Math.min(1, LATO_RIFERIMENTO / Math.max(bitmap.width, bitmap.height));
+  const scala = Math.min(1, lato / Math.max(bitmap.width, bitmap.height));
   const tela = new OffscreenCanvas(Math.round(bitmap.width * scala), Math.round(bitmap.height * scala));
   tela.getContext('2d').drawImage(bitmap, 0, 0, tela.width, tela.height);
   bitmap.close();
 
-  const ridotto = await tela.convertToBlob({ type: 'image/png' });
+  const ridotto = await tela.convertToBlob({ type: tipo, quality: qualita });
   return await new Promise((risolvi) => {
     const lettore = new FileReader();
     lettore.onload = () => risolvi(lettore.result);
@@ -313,14 +313,25 @@ const erroreConto = (corpo, fallback) =>
     rimborsato: corpo.rimborsato,
   });
 
-/** Chiede un video. Torna `{ lavoro, prezzo, saldo }`: il video non c'è ancora. */
-export async function generaVideo({ prompt, durata, risoluzione, formato, otteniSessione = sessione }) {
+/**
+ * Le immagini di un video (fetta 3d) si riducono a 1920 px e JPEG al 90%:
+ * un primo fotogramma deve reggere il 1080p, e nove riferimenti devono stare
+ * in una richiesta sola (il Worker accetta fino a 40 MB, 6 per immagine).
+ */
+export const riduciPerVideo = (blob) => riduci(blob, { lato: 1920, tipo: 'image/jpeg', qualita: 0.9 });
+
+/**
+ * Chiede un video. Torna `{ lavoro, prezzo, saldo }`: il video non c'è ancora.
+ * `immagini` sono `{ ruolo, immagine }` con `immagine` già in `data:` (vedi
+ * `riduciPerVideo`).
+ */
+export async function generaVideo({ prompt, durata, risoluzione, formato, immagini = [], otteniSessione = sessione }) {
   const token = await otteniSessione();
   if (!token) throw Object.assign(new Error('non-collegato'), { code: 'non-collegato' });
   const res = await fetch(`${BASE}/genera`, {
     method: 'POST',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
-    body: JSON.stringify({ servizio: 'video-seedance25', prompt, durata, risoluzione, formato }),
+    body: JSON.stringify({ servizio: 'video-seedance25', prompt, durata, risoluzione, formato, immagini }),
   });
   const corpo = await res.json().catch(() => ({}));
   if (res.status !== 202) throw erroreConto(corpo, 'genera');

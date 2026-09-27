@@ -15,25 +15,43 @@ const RUOLI = ['personaggio', 'oggetto', 'stile'];
  * che lo fa, ed è per forza: generare vuol dire mandare a un fornitore. Si
  * dice qui, accanto al gesto, non in una pagina di aiuto.
  */
-export default function Riferimenti({ servizio, scelti, onCambia, assets, onChiudi, ruoloIniziale = 'personaggio' }) {
-  const limiti = limitiDi(servizio);
+export default function Riferimenti({
+  servizio,
+  scelti,
+  onCambia,
+  assets,
+  onChiudi,
+  ruoloIniziale = 'personaggio',
+  /*
+   * Video (fetta 3d) usa lo stesso pannello con i suoi ruoli (primo/ultimo
+   * fotogramma, riferimento), i suoi tetti e una regola in più — i
+   * fotogrammi e i riferimenti non si mescolano — che gli passa `puoAggiungere`
+   * dallo stesso modulo che il Worker usa per giudicare.
+   */
+  ruoli = RUOLI,
+  limiti: limitiDati,
+  prefisso = 'immagine.ruolo',
+  puoAggiungere = () => true,
+}) {
+  const limiti = limitiDati || limitiDi(servizio);
   // La scheda con cui il pannello si apre: il ruolo scelto nel `+` di
   // Immagine, non sempre «personaggio» — altrimenti i tre tasti del `+`
   // promettono una scheda e ne aprono sempre un'altra.
   const [ruolo, setRuolo] = useState(ruoloIniziale);
   const quanti = (r) => scelti.filter((s) => s.ruolo === r).length;
-  const pieno = quanti(ruolo) >= limiti[ruolo] || scelti.length >= limiti.totale;
+  const pieno =
+    quanti(ruolo) >= limiti[ruolo] || scelti.length >= limiti.totale || !puoAggiungere(ruolo, scelti);
 
   return (
     <div className="riferimenti">
       <div className="riferimenti-ruoli">
-        {RUOLI.map((r) => (
+        {ruoli.map((r) => (
           <button
             key={r}
             className={`btn ghost${r === ruolo ? ' on' : ''}`}
             onClick={() => setRuolo(r)}
           >
-            {t(`immagine.ruolo.${r}`)} {quanti(r)}/{limiti[r]}
+            {t(`${prefisso}.${r}`)} {quanti(r)}/{limiti[r]}
           </button>
         ))}
       </div>
@@ -56,7 +74,7 @@ export default function Riferimenti({ servizio, scelti, onCambia, assets, onChiu
         <ul className="riferimenti-scelti">
           {scelti.map((s, i) => (
             <li key={`${s.assetId}-${i}`}>
-              {t(`immagine.ruolo.${s.ruolo}`)}: {s.nome}
+              {t(`${prefisso}.${s.ruolo}`)}: {s.nome}
               <button
                 className="btn ghost"
                 onClick={() => onCambia(scelti.filter((_, j) => j !== i))}

@@ -92,3 +92,25 @@ l'attesa con la domanda a `/lavoro`, il video scaricato nella libreria.
 - Higgsfield non ha una scadenza del task: un video che finisse dopo il
   rimborso delle 2 ore lo pagheremmo noi. Raro; si chiude con la loro
   `cancel` quando l'adattatore la userà.
+
+## 7. Fetta 3d — 1080p e immagini (2026-09-27)
+
+Il limite di §6 è superato, dal canale ufficiale:
+
+- **1080p**: BytePlus lo fa (10 bit, HEVC) a **11,70 $ / milione di token**;
+  Higgsfield nella sua API no. 5 s a 1080p: 3,12 € al cliente.
+- **Immagini**: primo fotogramma, primo + ultimo, oppure fino a **9
+  riferimenti** (BytePlus ne accetta 30; qui 9 perché viaggiano in base64 in
+  una richiesta sola). Fotogrammi e riferimenti non si mescolano. Le immagini
+  non contano come «video in input»: **il prezzo non cambia**. Col primo
+  fotogramma il formato lo decide l'immagine (`ratio: adaptive`).
+- **Da quale canale**: `canalePer` — il canale acceso se sa fare la
+  richiesta, altrimenti l'ufficiale. Higgsfield vorrebbe le immagini come URL
+  pubblici, e noi non pubblichiamo le immagini dei clienti: da Higgsfield solo
+  testo, fino a 720p.
+- Le immagini si riducono a 1920 px JPEG 90% nel browser; il Worker accetta
+  solo `data:image/(jpeg|png|webp);base64`, 6 MB l'una, 40 MB in tutto, e
+  **non le conserva** (nel lavoro resta solo quante erano).
+
+Minori: il 1080p è HEVC 10 bit, che Firefox non riproduce (il file si scarica
+comunque); il formato base64 dei `data:` va confermato alla prima chiamata vera.
