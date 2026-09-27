@@ -93,3 +93,9 @@ export function canaleConsentito({ canale, durata, risoluzione, accettaPerdita =
   if (accettaPerdita) return true;
   return costoVideo({ durata, risoluzione, canale }) <= prezzoVideo({ durata, risoluzione }).total;
 }
+
+/** Il costo VERO, dai token che il fornitore ha contato (o stimato per eccesso). */
+export function costoDaToken(token, canale) {
+  if (!Number.isFinite(token) || !DOLLARI_PER_TOKEN[canale]) return null;
+  return Math.ceil(token * DOLLARI_PER_TOKEN[canale] * CAMBIO_USD_EUR * 1000);
+}

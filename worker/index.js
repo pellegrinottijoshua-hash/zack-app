@@ -28,6 +28,8 @@ import { cosaFare, ricaricaDa, PACCHETTI } from './eventi.js';
 import { LISTINO, prezzoDi, limitiDi } from '../src/engine/listino.js';
 import { addebita, rimborsa, rimborsoRiuscito, apriLavoro, chiudiLavoro } from './conto.js';
 import { generaConGoogle, immagineValida } from './fornitori/google.js';
+import { generaVideo, statoLavoro, sbloccaVideo } from './video.js';
+import { VOCE_VIDEO } from '../src/engine/listinoVideo.js';
 
 const GIORNO = 86400000;
 
@@ -359,7 +361,10 @@ async function genera(req, env) {
   // ⚠️ `'grande'` (2K) e non `'rapida'` (1K): costano uguale — stessi 1120
   // token d'immagine, misurato — e il 2K dà quattro volte i pixel per tre
   // secondi in più. Non c'è ragione di offrire di meno per default.
-  const { servizio, prompt, riferimenti = [], misura = 'grande', formato = '1:1' } = await req.json().catch(() => ({}));
+  const corpo = await req.json().catch(() => ({}));
+  // Il video ha la sua forma (a secondi, e con l'attesa): va per la sua strada.
+  if (corpo.servizio === VOCE_VIDEO) return generaVideo(corpo, chi, env);
+  const { servizio, prompt, riferimenti = [], misura = 'grande', formato = '1:1' } = corpo;
 
   const voce = LISTINO[servizio];
   if (!voce) return json({ errore: 'servizio-sconosciuto' }, 400);
@@ -596,6 +601,11 @@ async function sbloccaAppesi(env) {
   );
   if (!res.ok) return;
   for (const l of await res.json()) {
+    // Un video appeso si chiede PRIMA al fornitore: potrebbe star girando.
+    if (l.servizio === VOCE_VIDEO) {
+      await sbloccaVideo(l, env);
+      continue;
+    }
     const esito = await rimborsa(l.utente, l.prezzo, l.id, env);
     if (await rimborsoRiuscito(esito)) {
       await chiudiLavoro(l.id, 'rimborsato', null, env);
@@ -655,6 +665,11 @@ export default {
     if (url.pathname === '/checkout' && req.method === 'POST') return checkout(req, env);
     if (url.pathname === '/ricarica' && req.method === 'POST') return ricarica(req, env);
     if (url.pathname === '/genera' && req.method === 'POST') return genera(req, env);
+    if (url.pathname === '/lavoro' && req.method === 'GET') {
+      const chi = await chiEsegue(req, env);
+      if (!chi) return json({ errore: 'non-collegato' }, 401);
+      return statoLavoro(url.searchParams.get('id'), chi, env);
+    }
 
     /*
      * Il webhook NON ha l'intestazione CORS e non ne ha bisogno: non lo chiama
