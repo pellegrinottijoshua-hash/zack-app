@@ -420,3 +420,36 @@ con l'alfa); nella corsia di sinistra resta il vuoto della mascotte di
 Ritaglio nascosta; nessuna generazione vera provata dalla home (costa soldi
 veri: va fatta dal committente, una volta, prima di fondere); il sovrapprezzo
 dell'ospite del quaderno (D-h: 18 cent invece di 15) non è stato fatto.
+
+## 🔶 2026-09-27 — correzioni 2a/2b/2c e FASE 3 (video) fatte, sul ramo `fetta-3-video`
+
+I rami sono impilati: `fetta-2b` ← `fetta-2c` ← `fetta-3-video`. Si fondono
+**in quest'ordine**, con **una** `/code-review ultra` su `fetta-3-video`, che
+li contiene tutti.
+
+- **Correzioni** (`ed9eadd`, su `fetta-2c`): l'avviso dell'ospite
+  (`eOspite`), tre contrasti, la card del benvenuto che scorre, Brain sopra il
+  claim, il vuoto della corsia sinistra. Lo script apre anche la ricarica.
+  **Lista dei difetti noti: vuota.**
+- **Fase 3** — spec [`superpowers/specs/2026-09-27-video-seedance-design.md`](superpowers/specs/2026-09-27-video-seedance-design.md):
+  Seedance 2.5 dal canale ufficiale **BytePlus** (default) e da **Higgsfield**
+  in opzione (`VIDEO_FORNITORE`), col cancello che blocca un canale in
+  perdita salvo `VIDEO_ACCETTA_PERDITA=1`. Motore nel Worker (`/genera` 202,
+  `/lavoro`, `/lavoro/video`, giro orario che chiede al fornitore prima di
+  rimborsare), il servizio nello studio, la corsia nella home.
+- 835 prove verdi, build ok, script di 2a verde (420 pagine, 5.520 comandi).
+- `scripts/higgsfield-seedance.mjs` + `npm run seedance:prova`: la prova
+  dell'SDK ufficiale. **Non ancora eseguita**: manca la chiave in `.env.local`.
+
+**Tocca al committente, prima di fondere:**
+1. Revocare la chiave Higgsfield incollata in chat il 2026-09-27 e crearne una nuova.
+2. SQL: `docs/2026-09-27-schema-video.sql` (tre colonne su `lavori`) + la query RLS della 2b.
+3. Chiavi, dal terminale: `npx wrangler secret put ARK_API_KEY` (BytePlus,
+   attivare Seedance 2.5 su ModelArk) e, per l'opzione, `npx wrangler secret put HF_CREDENTIALS`.
+4. Un video vero, una volta, prima di fondere (costa ~1,10 € al canale ufficiale).
+5. L'IVA (margine 14% < 22%: vale anche per il video).
+6. `/code-review ultra` sul ramo `fetta-3-video`.
+
+Minori: niente riferimenti per il video (image-to-video) né 1080p; su
+Higgsfield un task che finisse dopo il rimborso delle 2 ore lo pagheremmo noi;
+il cambio dollaro→euro è una fotografia (0,95) da riguardare.
