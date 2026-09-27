@@ -114,7 +114,13 @@ export const COPY = {
       ospite: 'Paghi senza email: il credito vive in questo browser. Se ne cancelli i dati, o cambi browser, lo perdi.',
       pagamentoNo: 'Non sono riuscito ad aprire il pagamento. Riprova fra un momento.',
       video: 'Video',
-      presto: 'Presto',
+      videoClaim: 'Seedance 2.5. Scrivi la scena, scegli quanto dura.',
+      durata: 'Durata',
+      risoluzione: 'Risoluzione',
+      formato: 'Formato',
+      prezzoVideo: '{p} questo video',
+      girando: 'Zack sta girando il video: ci vuole qualche minuto. Puoi chiudere, lo ritrovi qui.',
+      videoScaduto: 'Il video è pronto ma non sono riuscito a scaricarlo. Riapri la pagina per riprovare.',
     },
 
     hero: {
@@ -286,7 +292,13 @@ export const COPY = {
       ospite: "You pay without an email: your credit lives in this browser. Clear its data, or switch browsers, and it's gone.",
       pagamentoNo: "I couldn't open the payment page. Try again in a moment.",
       video: 'Video',
-      presto: 'Soon',
+      videoClaim: 'Seedance 2.5. Write the scene, pick how long it runs.',
+      durata: 'Length',
+      risoluzione: 'Resolution',
+      formato: 'Format',
+      prezzoVideo: '{p} this video',
+      girando: 'Zack is shooting the video: it takes a few minutes. You can close this page and find it here.',
+      videoScaduto: "The video is ready but I couldn't download it. Reopen the page to try again.",
     },
 
     hero: {

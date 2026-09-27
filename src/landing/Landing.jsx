@@ -3,6 +3,7 @@ import { COPY } from './copy.js';
 import HomeVideo from './HomeVideo.jsx';
 import Ritaglio from './Ritaglio.jsx';
 import CorsiaImmagine from './CorsiaImmagine.jsx';
+import CorsiaVideo from './CorsiaVideo.jsx';
 
 const APP_URL = '/app/';
 
@@ -287,10 +288,7 @@ export default function Landing() {
         </div>
         <div className="banco-destra">
           <CorsiaImmagine c={c} lang={lang} />
-          <section className="corsia corsia-video" aria-labelledby="corsia-video-t">
-            <h2 id="corsia-video-t" className="corsia-titolo">{c.corsie.video}</h2>
-            <p className="corsia-presto">{c.corsie.presto}</p>
-          </section>
+          <CorsiaVideo c={c} lang={lang} />
         </div>
       </section>
 

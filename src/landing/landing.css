@@ -2233,16 +2233,31 @@ body {
   width: 100%;
   border-radius: 18px;
 }
-.corsia-video {
-  opacity: 1;
+.corsia-scelte {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
-.corsia-presto {
-  margin: 0;
-  align-self: flex-start;
-  font-family: var(--display);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--grigio-scuro);
+.corsia-scelte button {
+  min-height: 36px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(17, 17, 17, 0.25);
+  background: transparent;
+  color: var(--nero);
+  font: 600 13px var(--display);
+  cursor: pointer;
+}
+.corsia-scelte button[aria-pressed='true'] {
+  background: var(--nero);
+  color: var(--panna);
+  border-color: var(--nero);
+}
+.corsia-scelte button:disabled {
+  cursor: not-allowed;
+}
+.corsia-risultato video {
+  width: 100%;
+  border-radius: 18px;
+  background: var(--nero);
 }

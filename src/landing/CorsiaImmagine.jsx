@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { formatEuro } from '../engine/ledger.js';
-import { PACCHETTI } from '../engine/pacchetti.js';
-import { chiediLicenza, generaImmagine, riduci, sessione, vaiAllaRicarica } from '../lib/conto.js';
+import { eOspite } from '../engine/licenza.js';
+import { chiediLicenza, generaImmagine, riduci, sessione } from '../lib/conto.js';
+import RicaricaCorsia from './RicaricaCorsia.jsx';
 import { aggiungiRiferimenti, prezzoCorsia, statoTasto, RUOLO_HOME, TETTO } from './corsia.js';
 
 /**
@@ -26,11 +27,17 @@ export default function CorsiaImmagine({ c, lang }) {
   const [riferimenti, setRiferimenti] = useState([]); // [{ id, url }] — url `data:` già ridotto
   const [avviso, setAvviso] = useState(null);
   const [saldo, setSaldo] = useState(0);
-  const [ospite, setOspite] = useState(true);
+  /*
+   * Chi pagherebbe da ospite: la stessa regola dello studio (`eOspite`).
+   * Nel dubbio si tace — con una sessione aperta e `/me` muto, dire «paghi
+   * senza email» a chi è entrato con Google sarebbe falso.
+   */
+  const [licenza, setLicenza] = useState(null);
+  const [haSessione, setHaSessione] = useState(null);
+  const ospite = eOspite({ licenza, sessione: haSessione });
   const [inCorso, setInCorso] = useState(false);
   const [risultato, setRisultato] = useState(null);
   const [ricarica, setRicarica] = useState(false);
-  const [pagando, setPagando] = useState(null);
   const input = useRef(null);
 
   /*
@@ -50,11 +57,12 @@ export default function CorsiaImmagine({ c, lang }) {
     }
     (async () => {
       const token = await sessione();
+      setHaSessione(Boolean(token));
       if (!token) return;
       const l = await chiediLicenza(token);
       if (!l) return;
       setSaldo(l.crediti ?? 0);
-      setOspite(l.ospite === true);
+      setLicenza(l);
     })();
   }, []);
 
@@ -102,21 +110,6 @@ export default function CorsiaImmagine({ c, lang }) {
       if (typeof e.saldo === 'number') setSaldo(e.saldo);
     } finally {
       setInCorso(false);
-    }
-  }
-
-  async function paga(id) {
-    setPagando(id);
-    try {
-      sessionStorage.setItem(BOZZA, JSON.stringify({ prompt, riferimenti }));
-    } catch {
-      /* troppo grande o negato: si paga lo stesso, il prompt si riscrive */
-    }
-    try {
-      await vaiAllaRicarica(id, { ritorno: 'home' });
-    } catch {
-      setPagando(null);
-      setAvviso(t.pagamentoNo);
     }
   }
 
@@ -187,19 +180,14 @@ export default function CorsiaImmagine({ c, lang }) {
       {avviso && <p className="corsia-nota" role="status">{avviso}</p>}
 
       {ricarica && (
-        <div className="corsia-ricarica">
-          <div className="corsia-pacchetti">
-            {Object.entries(PACCHETTI).map(([id, p]) => (
-              <button key={id} type="button" className="lp-cta small" disabled={pagando !== null} onClick={() => paga(id)}>
-                {formatEuro(p.millesimi, lang)}
-              </button>
-            ))}
-          </div>
-          {ospite && <p className="corsia-ospite">{t.ospite}</p>}
-          <button type="button" className="comelink" onClick={() => setRicarica(false)}>
-            {t.chiudi}
-          </button>
-        </div>
+        <RicaricaCorsia
+          t={t}
+          lang={lang}
+          ospite={ospite}
+          salvaBozza={() => sessionStorage.setItem(BOZZA, JSON.stringify({ prompt, riferimenti }))}
+          onChiudi={() => setRicarica(false)}
+          onErrore={setAvviso}
+        />
       )}
 
       {risultato && (

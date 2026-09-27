@@ -50,3 +50,17 @@ test('col saldo giusto si genera; al millesimo sotto no', () => {
 test('un lavoro in corso spegne il tasto: due clic non fanno due addebiti', () => {
   assert.equal(statoTasto({ prompt: 'un gatto', saldo: 99999, prezzo: 146, inCorso: true }), 'spento');
 });
+
+test('⚠️ le corsie della home usano la regola dello studio per l’avviso dell’ospite', async () => {
+  /*
+   * Trovato a schermo nella 3c: con una sessione aperta e `/me` muto, le
+   * corsie della home dicevano «paghi senza email» a chi era entrato con un
+   * nome — il difetto della code-review della 2b, rimasto nella home.
+   */
+  const { readFileSync } = await import('node:fs');
+  for (const f of ['CorsiaImmagine.jsx', 'CorsiaVideo.jsx']) {
+    const src = readFileSync(new URL(`../src/landing/${f}`, import.meta.url), 'utf8');
+    assert.match(src, /const ospite = eOspite\(\{ licenza, sessione: haSessione \}\)/, `${f}: l’avviso non passa da eOspite`);
+    assert.doesNotMatch(src, /useState\(true\)/, `${f}: un «ospite» vero di partenza è tornato`);
+  }
+});
