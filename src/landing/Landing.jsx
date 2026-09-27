@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { COPY } from './copy.js';
 import HomeVideo from './HomeVideo.jsx';
 import Ritaglio from './Ritaglio.jsx';
+import CorsiaImmagine from './CorsiaImmagine.jsx';
 
 const APP_URL = '/app/';
 
@@ -259,8 +260,38 @@ export default function Landing() {
           Quasi vuoto, e non per gusto: il tasto è grosso perché intorno non
           c'è nient'altro. Chi arriva trascina un file prima di aver letto una
           riga; il racconto sta sotto, per chi ha già capito. */}
-      <section className="lp-primo">
-        <Ritaglio c={c} ricetta={ricetta} onRicetta={commuta} />
+      {/* ─── il banco: tre corsie (fetta 2c) ───────────────────────────
+          A sinistra lo scontorno gratis, al centro la mascotte, a destra
+          Immagine e Video. La cosa gratis e quella a pagamento sullo STESSO
+          schermo: chi arriva non deve credere a una promessa, la prova. Sul
+          telefono è una colonna sola — scontorna, poi immagine, poi video. */}
+      <section className="lp-primo banco">
+        <div className="banco-sinistra">
+          <p className="corsia-free">{c.corsie.free}</p>
+          <Ritaglio c={c} ricetta={ricetta} onRicetta={commuta} />
+        </div>
+        <div className="banco-centro" aria-hidden="true">
+          {/* La mascotte scontornata di Ritaglio, non la clip del racconto:
+              quella avanza con lo scorrimento e, ferma, mostra il poster
+              col fondo. La mascotte in video è un minore (serve una clip
+              in loop con l'alfa). */}
+          <img
+            className="banco-mascotte"
+            src="/zack/zack-disegna.webp"
+            srcSet="/zack/zack-disegna-360.webp 360w, /zack/zack-disegna.webp 720w"
+            sizes="360px"
+            alt=""
+            width="720"
+            height="720"
+          />
+        </div>
+        <div className="banco-destra">
+          <CorsiaImmagine c={c} lang={lang} />
+          <section className="corsia corsia-video" aria-labelledby="corsia-video-t">
+            <h2 id="corsia-video-t" className="corsia-titolo">{c.corsie.video}</h2>
+            <p className="corsia-presto">{c.corsie.presto}</p>
+          </section>
+        </div>
       </section>
 
       {/* ─── apertura ────────────────────────────────────────────────── */}

@@ -255,6 +255,7 @@ function sonda(solo) {
   const corpo = document.body.innerText;
   return {
     studio: Boolean(document.querySelector('.shell')),
+    home: Boolean(document.querySelector('.banco')),
     contati,
     difetti,
     muroEntra: corpo.includes('Entra per usare lo studio'),
@@ -385,16 +386,22 @@ async function main() {
             const giri = SERVIZI.map((servizio) => ({ servizio, primo: false, solo: null }));
             // Il primo ingresso: si misura il benvenuto, che sta sopra tutto.
             if (saldo === 'zero' && !libreria) giri.push({ servizio: 'scontorna', primo: true, solo: '.onboarding' });
+            // La home (fetta 2c): il banco a tre corsie. La libreria lì non
+            // esiste, quindi si misura una volta sola per stato.
+            if (!libreria) giri.push({ servizio: 'home', primo: false, solo: null });
             for (const { servizio, primo, solo } of giri) {
+              const indirizzo = servizio === 'home' ? `${base}/` : `${base}/app/?servizio=${servizio}`;
               // Stato dichiarato: memoria vuota, poi solo ciò che la matrice dice.
-              await carica(cdp, eventi, `${base}/app/?servizio=${servizio}`);
+              await carica(cdp, eventi, indirizzo);
               const s = JSON.stringify(statoIniziale({ saldo, libreria, primo }));
               await valuta(cdp, `localStorage.clear(); sessionStorage.clear();
                 for (const [k, v] of Object.entries(${s})) localStorage.setItem(k, v);`);
-              await carica(cdp, eventi, `${base}/app/?servizio=${servizio}`);
+              await carica(cdp, eventi, indirizzo);
               await assesta(cdp);
               const r = await valuta(cdp, `(${sonda})(${JSON.stringify(solo)})`);
-              if (!r.studio) throw new Error(`Non è lo studio (manca .shell): ${base}/app/?servizio=${servizio}`);
+              if (servizio === 'home' ? !r.home : !r.studio) {
+                throw new Error(`Non è la pagina attesa (manca ${servizio === 'home' ? '.banco' : '.shell'}): ${indirizzo}`);
+              }
               pagine++;
               comandi += r.contati;
               const dove = `muro ${muro} · saldo ${saldo} · libreria ${libreria ? 'aperta' : 'chiusa'} · ${w}×${h} · ${servizio}${primo ? ' · primo ingresso' : ''}`;
