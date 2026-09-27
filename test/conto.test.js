@@ -339,3 +339,18 @@ test('chiediLicenza ricorda se e’ un ospite, e un sì solo se il server dice t
     globalThis.fetch = fetchVero;
   }
 });
+
+test('⚠️ chi è entrato con un nome e aspetta ancora /me non legge «paghi senza email»', async () => {
+  /*
+   * Correzione della code-review della 2b. Era `!licenza || licenza.ospite`:
+   * senza licenza salvata, anche chi aveva appena fatto l'ingresso con
+   * Google leggeva di essere un ospite. Rompere apposta: rimetti
+   * `return true;` al posto di `return sessione === false;` in `eOspite`.
+   */
+  const { eOspite } = await import('../src/engine/licenza.js');
+  assert.equal(eOspite({ licenza: null, sessione: true }), false, 'un utente con nome trattato da ospite');
+  assert.equal(eOspite({ licenza: null, sessione: null }), false, 'nel dubbio l’avviso deve tacere');
+  assert.equal(eOspite({ licenza: null, sessione: false }), true, 'chi non è nessuno pagherà da ospite');
+  assert.equal(eOspite({ licenza: { ospite: true }, sessione: true }), true);
+  assert.equal(eOspite({ licenza: { ospite: false }, sessione: false }), false, 'la licenza vince sulla sessione');
+});

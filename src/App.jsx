@@ -43,7 +43,7 @@ import { aPng, applicaAlfa, pixelDaFile, ritaglioIstantaneo } from './engine/rit
 import { DESCRITTORI, getDescrittore, strumentiVisibili, servizioAperto } from './servizi/index.js';
 import { mostraCrediti, mostraInFila } from './servizi/pelle.js';
 import { pianoVuoto, quantiSulPiano, statoDelPiano } from './servizi/piano.js';
-import { statoLicenza, giorniAllaProva, puoiLavorare } from './engine/licenza.js';
+import { statoLicenza, giorniAllaProva, puoiLavorare, eOspite } from './engine/licenza.js';
 import { prezzoDi } from './engine/listino.js';
 import { formatEuro } from './engine/ledger.js';
 import { leggiLicenza, salvaLicenza } from './store/licenza.js';
@@ -250,6 +250,8 @@ export default function App() {
    * muro netto.
    */
   const [licenza, setLicenza] = useState(() => leggiLicenza());
+  /** C'è una sessione Supabase? `null` finché non si sa (serve a `eOspite`). */
+  const [haSessione, setHaSessione] = useState(null);
   const statoConto = statoLicenza(licenza);
 
   /**
@@ -290,7 +292,7 @@ export default function App() {
    * primo clic su un pacchetto lo fa entrare come ospite — o una licenza di
    * ospite. A lui la ricarica dice dove vive il credito (fetta 2b).
    */
-  const ospite = !licenza || licenza.ospite === true;
+  const ospite = eOspite({ licenza, sessione: haSessione });
   /*
    * ⚠️ Un servizio a saldo non si mura MAI (fetta 2b, 2026-09-26).
    *
@@ -326,6 +328,7 @@ export default function App() {
    */
   const aggiornaLicenza = useCallback(async () => {
     const token = await sessione();
+    setHaSessione(Boolean(token));
     if (!token) return;
     const fresca = await chiediLicenza(token);
     if (!fresca) return;

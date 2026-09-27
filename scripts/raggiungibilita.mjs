@@ -389,7 +389,10 @@ async function main() {
             // La home (fetta 2c): il banco a tre corsie. La libreria lì non
             // esiste, quindi si misura una volta sola per stato.
             if (!libreria) giri.push({ servizio: 'home', primo: false, solo: null });
-            for (const { servizio, primo, solo } of giri) {
+            // Il pannello della ricarica: la porta sui soldi. Si apre col tasto
+            // del saldo (come farebbe il cliente) e si misurano i SUOI comandi.
+            giri.push({ servizio: 'immagine', primo: false, solo: '.ricarica', apri: '.saldo' });
+            for (const { servizio, primo, solo, apri } of giri) {
               const indirizzo = servizio === 'home' ? `${base}/` : `${base}/app/?servizio=${servizio}`;
               // Stato dichiarato: memoria vuota, poi solo ciò che la matrice dice.
               await carica(cdp, eventi, indirizzo);
@@ -398,13 +401,25 @@ async function main() {
                 for (const [k, v] of Object.entries(${s})) localStorage.setItem(k, v);`);
               await carica(cdp, eventi, indirizzo);
               await assesta(cdp);
+              if (apri) {
+                const aperto = await valuta(cdp, `(() => {
+                  const b = document.querySelector(${JSON.stringify(apri)});
+                  if (!b) return false;
+                  b.click();
+                  return true;
+                })()`);
+                if (!aperto) throw new Error(`Manca ${apri} per aprire ${solo}: ${indirizzo}`);
+                await assesta(cdp);
+                const c = await valuta(cdp, `Boolean(document.querySelector(${JSON.stringify(solo)}))`);
+                if (!c) throw new Error(`${apri} non ha aperto ${solo}: ${indirizzo}`);
+              }
               const r = await valuta(cdp, `(${sonda})(${JSON.stringify(solo)})`);
               if (servizio === 'home' ? !r.home : !r.studio) {
                 throw new Error(`Non è la pagina attesa (manca ${servizio === 'home' ? '.banco' : '.shell'}): ${indirizzo}`);
               }
               pagine++;
               comandi += r.contati;
-              const dove = `muro ${muro} · saldo ${saldo} · libreria ${libreria ? 'aperta' : 'chiusa'} · ${w}×${h} · ${servizio}${primo ? ' · primo ingresso' : ''}`;
+              const dove = `muro ${muro} · saldo ${saldo} · libreria ${libreria ? 'aperta' : 'chiusa'} · ${w}×${h} · ${servizio}${primo ? ' · primo ingresso' : ''}${apri ? ` · ${solo} aperto` : ''}`;
 
               for (const d of r.difetti) {
                 const chiave = `${d.regola}|${d.comando}`;
@@ -412,7 +427,7 @@ async function main() {
                 nuovi.push({ dove, chiave, ...d });
               }
 
-              if (muro === 'acceso' && servizio === 'immagine' && saldo === 'zero' && !primo) {
+              if (muro === 'acceso' && servizio === 'immagine' && saldo === 'zero' && !primo && !apri) {
                 if (r.muroEntra || !r.prezzo) {
                   cancello.push(`${dove}: ${r.muroEntra ? '«Entra per usare lo studio»' : 'nessun prezzo a schermo'}`);
                 }

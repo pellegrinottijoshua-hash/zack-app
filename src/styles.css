@@ -1112,6 +1112,12 @@ body {
 
 .onboarding-card {
   max-width: 460px;
+  /* Correzione 2026-09-27: a 844×390 (telefono in orizzontale) la card era
+     più alta dello schermo e non scorreva — «Ho capito, cominciamo»
+     sbordava di 16 px. Ora non supera lo schermo, e scorre lei. */
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  box-sizing: border-box;
   padding: 28px 30px 26px;
   border: 1px solid var(--linea-viva);
   background: var(--fondo-2);
@@ -1331,7 +1337,9 @@ body {
   padding: 4px 9px;
   background: transparent;
   border: 1px solid var(--linea);
-  color: var(--inchiostro-3);
+  /* --inchiostro-2 e non -3 (correzione 2026-09-27): -3 sul panna sta a ~3:1,
+     lo script di raggiungibilità l'ha misurato. Questo è testo che si legge. */
+  color: var(--inchiostro-2);
   font: inherit;
   font-size: 10px;
   cursor: pointer;
@@ -1352,7 +1360,7 @@ body {
 
 .chip b {
   margin-left: 4px;
-  color: var(--inchiostro-3);
+  color: var(--inchiostro-2);
   font-weight: 500;
 }
 
@@ -1562,7 +1570,7 @@ body {
 .tool-price {
   margin-left: auto;
   font-size: 9px;
-  color: var(--inchiostro-3);
+  color: var(--inchiostro-2);
   white-space: nowrap;
 }
 
@@ -1573,7 +1581,7 @@ body {
   font-size: 8px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--inchiostro-3);
+  color: var(--inchiostro-2);
 }
 
 .tool-item[aria-pressed='true'] .tool-price {
@@ -5923,4 +5931,16 @@ body {
   font-size: 11.5px;
   line-height: 1.5;
   color: var(--inchiostro-2);
+}
+
+/* Correzione 2026-09-27: sul telefono il tasto Brain (assoluto, 8–54 px da
+   sinistra) stava SOPRA la prima riga del claim di Immagine, che parte a
+   12 px. Il claim si stringe della larghezza del tasto da tutti e due i lati,
+   così resta centrato e non passa più sotto il cerchio. */
+@media (max-width: 760px) {
+  .sc-claim {
+    padding-inline: 52px;
+    box-sizing: border-box;
+    max-width: min(100%, calc(30ch + 104px));
+  }
 }

@@ -2070,8 +2070,23 @@ body {
   /* L'ovale di Ritaglio si misura sulla FINESTRA (57vw): pensato per un
      primo schermo tutto suo. In una corsia di un terzo usciva di 135 px a
      sinistra. Qui si misura sulla corsia. */
+  /* Una misura FISSA e non `min(100%, …)`: il tasto sta in un contenitore
+     assoluto largo quanto il suo contenuto, e la percentuale girava in
+     tondo (misurato: 206 px invece di 380). 320 px ci stanno nella colonna
+     più stretta del banco (~360 px a 1100). */
   .banco .banco-sinistra .zack-oval {
-    width: min(100%, 380px);
+    width: 320px;
+  }
+  /* Correzione 2026-09-27: Ritaglio riservava sotto il tasto lo spazio
+     dell'ovale GRANDE (padding-top ~410 px, misurato sulla finestra) e un
+     minimo di 560 px: nel banco l'ovale è alto ~210 px, e restava un buco
+     di 200 px fra il tasto e il `+`. La riserva ora segue l'ovale vero
+     (320 px × 0,56 del disegno, più il respiro). */
+  .banco .banco-sinistra .rit {
+    min-height: 0;
+  }
+  .banco .banco-sinistra .rit-sotto {
+    padding-top: calc(320px * 0.56 + 28px);
   }
   .banco-mascotte {
     max-width: 360px;

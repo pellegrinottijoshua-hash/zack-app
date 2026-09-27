@@ -89,3 +89,21 @@ export function giorniAllaProva(licenza, { adesso = new Date() } = {}) {
   if (fine === null) return 0;
   return Math.max(0, Math.ceil((fine - adesso.getTime()) / GIORNO));
 }
+
+/**
+ * Chi paga, pagherebbe da ospite? (fetta 2b, correzione della code-review.)
+ *
+ * - una licenza c'è: lo dice lei (`ospite`, messo da `/me`);
+ * - nessuna licenza ma una SESSIONE sì: è qualcuno entrato con email o Google
+ *   il cui primo `/me` non è ancora arrivato (o è fallito) — non è un ospite,
+ *   e dirgli «paghi senza email» sarebbe falso;
+ * - né licenza né sessione: il primo clic su un pacchetto lo farà entrare
+ *   come ospite, quindi l'avviso gli spetta.
+ *
+ * `sessione` è `true`/`false`, o `null` finché non si sa: nel dubbio si
+ * tace — l'avviso arriva un attimo dopo, un avviso falso resterebbe.
+ */
+export function eOspite({ licenza, sessione }) {
+  if (licenza && typeof licenza === 'object') return licenza.ospite === true;
+  return sessione === false;
+}
