@@ -7,3 +7,7 @@ public/ort/
 py/.venv/
 py/uv.lock
 tmp/
+
+# Chiavi locali: mai in git (Higgsfield, ecc.)
+.env.local
+.env.*.local
