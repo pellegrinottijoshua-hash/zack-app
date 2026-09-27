@@ -154,7 +154,7 @@ const LATO_RIFERIMENTO = 768;
  * nove secondi che restano fra i 21 di Google e i 30 del limite, e il costo
  * diventa prevedibile invece che scommesso.
  */
-async function riduci(blob) {
+export async function riduci(blob) {
   const bitmap = await createImageBitmap(blob);
   const scala = Math.min(1, LATO_RIFERIMENTO / Math.max(bitmap.width, bitmap.height));
   const tela = new OffscreenCanvas(Math.round(bitmap.width * scala), Math.round(bitmap.height * scala));
