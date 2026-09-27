@@ -469,3 +469,20 @@ il cambio dollaro→euro è una fotografia (0,95) da riguardare.
 **Resta al committente:** `npx wrangler secret put ARK_API_KEY` (e
 `HF_CREDENTIALS` per l'opzione), un video vero di prova, l'IVA, la query RLS
 della 2b.
+
+## ▶️ PROSSIMA SESSIONE — fase 4, l'icona output e il pocket
+
+Stato al 2026-09-27: `main` = tutto pubblicato (2b, 2c, 3, 3d). Il video in
+produzione aspetta solo il **resource pack di Seedance 2.5** su BytePlus (il
+committente lo compra: attivazione a consumo puro non disponibile per il 2.5;
+il Savings Plan da 30 € è per 2.0 Mini/Fast e NON va comprato). Poi un video
+vero di prova.
+
+Spec pronta: [`superpowers/specs/2026-09-27-output-pocket-design.md`](superpowers/specs/2026-09-27-output-pocket-design.md).
+Si comincia chiedendo le **4 decisioni del §3**, poi la fetta **4a**.
+
+Frase da incollare in una sessione nuova:
+
+```
+Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 4a.
+```
