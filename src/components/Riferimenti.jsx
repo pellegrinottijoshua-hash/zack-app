@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { limitiDi } from '../engine/listino.js';
+import { dividiPerPocket } from '../engine/pocket.js';
 import { t } from '../i18n/index.js';
 
 const RUOLI = ['personaggio', 'oggetto', 'stile'];
@@ -32,6 +33,12 @@ export default function Riferimenti({
   limiti: limitiDati,
   prefisso = 'immagine.ruolo',
   puoAggiungere = () => true,
+  /*
+   * Il pocket (fase 4b, A7): i suoi file stanno in cima, perché il pocket è
+   * proprio ciò che si tiene a portata di mano. La divisione la fa
+   * `dividiPerPocket` sugli `assets` già filtrati, quindi vale lo stesso filtro.
+   */
+  pocket = null,
 }) {
   const limiti = limitiDati || limitiDi(servizio);
   // La scheda con cui il pannello si apre: il ruolo scelto nel `+` di
@@ -41,6 +48,18 @@ export default function Riferimenti({
   const quanti = (r) => scelti.filter((s) => s.ruolo === r).length;
   const pieno =
     quanti(ruolo) >= limiti[ruolo] || scelti.length >= limiti.totale || !puoAggiungere(ruolo, scelti);
+  const { dalPocket, resto } = pocket ? dividiPerPocket(pocket, assets) : { dalPocket: [], resto: assets };
+  const chip = (a) => (
+    <button
+      key={a.id}
+      className="brain-chip"
+      disabled={pieno}
+      title={a.name}
+      onClick={() => onCambia([...scelti, { ruolo, assetId: a.id, nome: a.name }])}
+    >
+      {a.name}
+    </button>
+  );
 
   return (
     <div className="riferimenti">
@@ -56,18 +75,15 @@ export default function Riferimenti({
         ))}
       </div>
 
+      {dalPocket.length > 0 && (
+        <>
+          <p className="riferimenti-sezione">{t('immagine.dalPocket')}</p>
+          <div className="riferimenti-griglia riferimenti-pocket">{dalPocket.map(chip)}</div>
+          <p className="riferimenti-sezione">{t('immagine.dallaLibreria')}</p>
+        </>
+      )}
       <div className="riferimenti-griglia">
-        {assets.map((a) => (
-          <button
-            key={a.id}
-            className="brain-chip"
-            disabled={pieno}
-            title={a.name}
-            onClick={() => onCambia([...scelti, { ruolo, assetId: a.id, nome: a.name }])}
-          >
-            {a.name}
-          </button>
-        ))}
+        {resto.map(chip)}
       </div>
 
       {scelti.length > 0 && (

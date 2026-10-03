@@ -263,6 +263,7 @@ export default function Piano({
               <button
                 key={s.id}
                 className="sc-strumento"
+                data-strumento={s.id}
                 aria-pressed={s.active || undefined}
                 aria-label={s.label}
                 title={s.label}

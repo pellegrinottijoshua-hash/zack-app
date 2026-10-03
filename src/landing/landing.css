@@ -2277,3 +2277,67 @@ body {
 .corsia-pallino[data-ruolo='ultimo'] img {
   border-radius: 10px;
 }
+
+/* ══ Il pocket sulla home (fase 4a) ══════════════════════════════════════
+   Lo stesso componente dello studio, nei colori della barra nera. Sta in
+   fila nella barra (non assoluto): in alto a destra, dopo il tasto. */
+.lp-pocket {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.lp-pocket .pocket-tasto,
+.lp-pocket .pocket-file,
+.lp-pocket .pocket-gira {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--linea-viva);
+  border-radius: 50%;
+  background: var(--nero);
+  color: var(--panna);
+  cursor: pointer;
+}
+.lp-pocket .pocket-tasto svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+.lp-pocket .pocket-tasto[aria-pressed='true'] { border-color: var(--oro); color: var(--oro); }
+.lp-pocket .pocket-conta {
+  position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 4px;
+  border-radius: 9px; background: var(--oro); color: #111; font-size: 10px; line-height: 18px; text-align: center;
+}
+.lp-pocket .pocket-nome { display: none; }
+.lp-pocket .pocket-vassoio {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  display: flex;
+  gap: 8px;
+  max-width: calc(100vw - 32px);
+  padding: 8px;
+  border: 1px solid var(--linea-viva);
+  border-radius: 32px;
+  background: var(--nero);
+}
+.lp-pocket .pocket-file img,
+.lp-pocket .pocket-file video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.lp-pocket .pocket-segno { font-size: 11px; }
+.lp-pocket .pocket-gira { font-size: 22px; }
+.lp-pocket .pocket-vuoto { margin: 0; width: max-content; max-width: min(240px, calc(100vw - 64px)); padding: 4px 8px; font-size: 12px; color: var(--panna); }
+.lp-pocket-ovale.destinazioni {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 60;
+  width: max-content; max-width: calc(100vw - 32px); max-height: calc(100dvh - 32px); overflow: auto;
+  padding: 16px 20px; border: 1px solid var(--linea-viva); border-radius: 40px;
+  background: var(--nero-2); color: var(--panna);
+}
+.lp-pocket-ovale .destinazioni-titolo { margin: 0 0 10px; font-size: 13px; text-align: center; }
+.lp-pocket-ovale .destinazioni-voci { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 520px; }
+.lp-pocket-ovale .destinazione {
+  display: inline-flex; align-items: center; min-height: 40px; padding: 8px 14px;
+  border: 1px solid var(--linea-viva); border-radius: 20px; background: var(--nero);
+  color: var(--panna); font: inherit; font-size: 13px; text-decoration: none; cursor: pointer;
+}
+.lp-pocket-ovale .destinazione.chiudi { color: var(--grigio); }

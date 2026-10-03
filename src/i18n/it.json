@@ -4,6 +4,29 @@
     "payoff": "Art finds a way.",
     "tagline": "Prepara i tuoi asset. Sul tuo computer, senza mandare niente in giro."
   },
+  "pocket": {
+    "label": "Pocket",
+    "help": "I file a portata di mano. Si svuota a mezzanotte: i file restano in Brain.",
+    "vuoto": "Il pocket è vuoto. Tocca il cerchio accanto a un risultato per metterlo qui.",
+    "altri": "Altri file nel pocket",
+    "chiudi": "Chiudi",
+    "togli": "Togli dal pocket",
+    "messo": "Nel pocket: {nome}",
+    "uscito": "Nel pocket: {nome}. È uscito il più vecchio, {vecchio} (resta in Brain).",
+    "salvatoInBrain": "Salvato in Brain",
+    "uscita": "Il risultato: toccalo per mandarlo altrove",
+    "dove": "Dove va {nome}?",
+    "dest": {
+      "pocket": "Nel pocket",
+      "scontorna": "Scontorna",
+      "vettorializza": "Vettoriale",
+      "immagine": "Immagine, come riferimento",
+      "video-primo": "Video, primo fotogramma",
+      "video-riferimento": "Video, come riferimento",
+      "brain": "Brain"
+    },
+    "videoNo": "Video non lo accetta: primo fotogramma e riferimenti non si mescolano, o sono già troppi."
+  },
   "tool": {
     "cutout": {
       "label": "Scontorna",
@@ -798,6 +821,8 @@
     "prezzoNota": "questa generazione, prezzo pieno",
     "saldoCorto": "Non hai abbastanza credito.",
     "escono": "I riferimenti che scegli vengono mandati al fornitore: è l’unica cosa che esce dal tuo computer, e senza mandarla non si può generare.",
+    "dalPocket": "Dal pocket",
+    "dallaLibreria": "Dalla libreria",
     "salva": "Salva in libreria",
     "salvato": "Salvata in libreria.",
     "togli": "Togli",

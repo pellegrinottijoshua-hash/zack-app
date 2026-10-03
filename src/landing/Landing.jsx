@@ -4,6 +4,9 @@ import HomeVideo from './HomeVideo.jsx';
 import Ritaglio from './Ritaglio.jsx';
 import CorsiaImmagine from './CorsiaImmagine.jsx';
 import CorsiaVideo from './CorsiaVideo.jsx';
+import Pocket from '../components/Pocket.jsx';
+import { usePocket } from '../hooks/usePocket.js';
+import { setLang as setLangStudio } from '../i18n/index.js';
 
 const APP_URL = '/app/';
 
@@ -188,6 +191,34 @@ export default function Landing() {
   const [ricetta, setRicetta] = useState([]);
   const sezioni = useRef([]);
   const c = COPY[lang];
+  const pocketStato = usePocket();
+  const [assetsPocket, setAssetsPocket] = useState([]);
+  // Le parole del pocket vengono dal dizionario dello studio: è lo stesso
+  // componente, e deve parlare la lingua della home.
+  setLangStudio(lang);
+
+  /*
+   * La libreria si apre SOLO se il pocket ha qualcosa: la home non deve
+   * caricare l'archivio di chi arriva la prima volta. Import dinamico: il
+   * modulo non entra nel pacchetto della pagina che deve aprirsi subito.
+   */
+  const libreria = useRef(null);
+  useEffect(() => {
+    if (pocketStato.pocket.ids.length === 0) return;
+    let vivo = true;
+    import('../store/library.js')
+      .then(async (lib) => {
+        libreria.current = lib;
+        if (!(await lib.isSupported())) return;
+        const { assets } = await lib.snapshot();
+        if (vivo) setAssetsPocket(assets);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [pocketStato.pocket.ids.length]);
+  const leggiAsset = useCallback((id) => libreria.current.readAsset(id), []);
 
   useEffect(() => {
     const nav = (navigator.languages || []).map((l) => l.slice(0, 2));
@@ -255,6 +286,17 @@ export default function Landing() {
         <a className="lp-cta small" href={APP_URL}>
           {c.nav.app}
         </a>
+        {/* Il pocket anche sulla home (committente, 2026-09-27): ogni
+            destinazione è un collegamento allo studio, che esegue il gesto. */}
+        <Pocket
+          className="lp-pocket"
+          pocket={pocketStato.pocket}
+          assets={assetsPocket}
+          leggi={leggiAsset}
+          onTogli={pocketStato.togli}
+          onScegli={() => {}}
+          hrefDi={(d, a) => `${APP_URL}?asset=${encodeURIComponent(a.id)}&dest=${encodeURIComponent(d)}`}
+        />
       </header>
 
       {/* ─── il primo schermo: lo strumento, non il racconto ──────────────

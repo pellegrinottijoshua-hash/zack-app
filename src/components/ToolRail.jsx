@@ -69,6 +69,9 @@ function Item({ service, active, collapsed, lampo, onPick }) {
          mezzo, e cercarlo per l'etichetta si sarebbe rotto al primo cambio
          di lingua. */
       data-servizio={service.id}
+      /* Il cerchio su cui si posa un file trascinato (4b): si accende solo
+         se il servizio lo accetta (`bersagliAccesi`), gli altri si spengono. */
+      data-bersaglio={service.id}
       aria-pressed={active}
       aria-label={label}
       title={collapsed ? `${label} — ${t(`${service.key}.help`)}` : t(`${service.key}.help`)}
