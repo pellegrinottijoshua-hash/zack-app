@@ -95,3 +95,28 @@ export function senzaFile(items, ids) {
   for (const o of items) if (o.t === 'asset' && ids.has(o.assetId)) next = togli(next, o.id);
   return next;
 }
+
+/**
+ * Un peso come si scrive a un umano (lo stesso passo della libreria). Coi GB:
+ * la quota di un browser sul desktop è di centinaia di GB, e «314091.5 MB»
+ * non si legge.
+ */
+export function pesoLeggibile(n) {
+  const b = Number(n) || 0;
+  if (b >= 1073741824) return `${(b / 1073741824).toFixed(1)} GB`;
+  if (b >= 1048576) return `${(b / 1048576).toFixed(1)} MB`;
+  if (b >= 1024) return `${Math.round(b / 1024)} KB`;
+  return `${b} B`;
+}
+
+/**
+ * Gli oggetti della tela da NON disegnare: i file nel cestino e le frecce che
+ * li toccano. Si nascondono nel disegno e non si tolgono dai dati — Brain
+ * riscrive la tela intera a ogni mossa, e togliendoli il salvataggio
+ * successivo li perderebbe: «rimetti» non li riporterebbe più al loro posto.
+ */
+export function oggettiNascosti(items, cestinati) {
+  const via = new Set(items.filter((o) => o.t === 'asset' && cestinati.has(o.assetId)).map((o) => o.id));
+  for (const o of items) if (o.t === 'freccia' && (via.has(o.da) || via.has(o.a))) via.add(o.id);
+  return via;
+}

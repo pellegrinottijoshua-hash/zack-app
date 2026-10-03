@@ -3350,7 +3350,7 @@ html[data-trascina] [data-bersaglio]:not([data-acceso]) {
 
 
 /* Due colonne, non tre: il cassetto dei file a sinistra se n'e' andato il
-   2026-09-09 ed e' diventato un momento (`ScegliAsset`), aperto dal `+`. La
+   2026-09-09 ed e' diventato un momento (`ScegliAsset`, dal 2026-10-03 la `Pool`), aperto dal `+`. La
    terza (`auto`) e' il pannello dell'oggetto scelto, che compare solo quando
    ne scegli uno. */
 .brain-corpo {
@@ -5856,6 +5856,60 @@ html[data-trascina] [data-bersaglio]:not([data-acceso]) {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--inchiostro-3);
+}
+
+/* La pool e il cestino di Brain (fase 5a): lo stesso momento di prima, con la
+   ricerca e lo spazio. Il cestino è un elenco con «rimetti» a destra: il
+   nome si taglia, il tasto mai. */
+.pool-cerca {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--linea-viva);
+  border-radius: 20px;
+  background: var(--fondo);
+  color: var(--inchiostro);
+  font: inherit;
+  font-size: 13px;
+}
+.pool-spazio,
+.cestino-spazio {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--inchiostro-2);
+}
+.pool-spazio,
+.cestino-spazio:not([data-livello='ok']) {
+  padding: 8px 10px;
+  border-left: 3px solid var(--oro);
+  color: var(--inchiostro);
+}
+.cestino-elenco {
+  display: grid;
+  gap: 6px;
+  max-height: 260px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.cestino-elenco li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cestino-nome {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--inchiostro);
+}
+.cestino-elenco .btn {
+  flex: none;
 }
 
 /* Il tutorial del vettoriale: quattro schermate, non un video.

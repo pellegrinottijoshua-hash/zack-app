@@ -711,6 +711,28 @@
     "center": "Centra tutto",
     "drawer": "Da mettere sulla tela",
     "drawerEmpty": "Tutti gli asset sono già sulla tela.",
+    "pool": {
+      "label": "Pool",
+      "title": "La pool — dal più recente",
+      "cerca": "Cerca per nome, nota o tag",
+      "niente": "Niente con questo nome, nota o tag.",
+      "altri": "Altri {n}"
+    },
+    "cestino": {
+      "label": "Cestino",
+      "title": "Il cestino",
+      "vuoto": "Il cestino è vuoto. Quello che butti resta qui finché non lo svuoti.",
+      "rimetti": "Rimetti",
+      "svuota": "Svuota il cestino ({n} · {peso})",
+      "conferma": "Cancello per sempre {n} file e libero {peso}? È l'unico gesto che non si può annullare.",
+      "svuotato": "Cestino svuotato: {n} file, liberati {peso}."
+    },
+    "spazio": {
+      "misura": "Spazio del browser: {usato} su {quota}.",
+      "attento": "Lo spazio del browser si sta riempiendo: {usato} su {quota}. Il cestino è il posto da cui liberarlo.",
+      "pieno": "Lo spazio del browser è quasi finito: {usato} su {quota}. Quando finisce non si salva più niente.",
+      "proponi": "Svuotando il cestino liberi {peso}."
+    },
     "notePlaceholder": "Scrivi qui",
     "groupPlaceholder": "Come si chiama questo gruppo",
     "remove": "Togli dalla tela",

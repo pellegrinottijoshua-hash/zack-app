@@ -191,6 +191,10 @@ export const ICONS = {
 
   // ---- cartelle della libreria ------------------------------------------
   cartella: ['M3.5 5.5h6l2 2h9v11h-17z'],
+  // La pool: un vassoio della posta in arrivo (T4 — è la posta di Brain).
+  pool: ['M4 13l2.5-7.5h11L20 13', 'M4 13v6h16v-6', 'M4 13h4.5l1.5 2.5h4l1.5-2.5H20'],
+  // Il cestino: restituisce, quindi ha il coperchio e non è un buco.
+  cestino: ['M4.5 6.5h15', 'M9.5 6.5v-2h5v2', 'M6.5 6.5l1 13h9l1-13', 'M10.5 10v6M13.5 10v6'],
   maglietta: ['M8.5 4.5l-5 3 2 3.2 2-1.2v10h9v-10l2 1.2 2-3.2-5-3-2 1.8h-3z'],
   personaggio: [cerchio(12, 7.8, 3.4), 'M5 20a7 7 0 0 1 14 0'],
   occhio: ['M3 12s3.8-5.5 9-5.5 9 5.5 9 5.5-3.8 5.5-9 5.5S3 12 3 12z', cerchio(12, 12, 2.4)],

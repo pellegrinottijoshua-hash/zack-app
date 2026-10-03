@@ -12,6 +12,7 @@ import {
   COLORI,
   CATEGORIE,
 } from '../engine/brain.js';
+import { oggettiNascosti } from '../engine/archivio.js';
 import Icon from './Icon.jsx';
 // Con l'alias: `muovi` qui e' gia' quello di `engine/brain.js` (sposta un
 // oggetto), e `muove` accanto a lui si confonderebbe a ogni lettura.
@@ -198,6 +199,8 @@ function Documento({ asset, leggi, onSalva, onScarica, onChiudi }) {
   );
 }
 
+const NESSUNO = new Set();
+
 function Brain({
   items,
   assets,
@@ -215,6 +218,12 @@ function Brain({
    */
   collega,
   onCollega,
+  /*
+   * Gli id dei file nel cestino (fase 5a). I loro oggetti non si disegnano,
+   * ma restano in `items`: la tela si riscrive intera a ogni mossa, e
+   * «rimetti» deve ritrovarli al loro posto.
+   */
+  cestinati = NESSUNO,
 }, ref) {
   const [scelto, setScelto] = useState(null);
   /* Il documento aperto a tutto schermo sopra la tela. Non è un secondo
@@ -235,6 +244,7 @@ function Brain({
   const pizzico = useRef(null);
 
   const perId = useMemo(() => new Map(assets.map((a) => [a.id, a])), [assets]);
+  const nascosti = useMemo(() => oggettiNascosti(items, cestinati), [items, cestinati]);
 
   /** Un oggetto nuovo entra dove c'è posto, non sopra gli altri. */
   // Trascinamento. I puntatori si catturano: senza, uscire dalla finestra
@@ -291,7 +301,7 @@ function Brain({
     const p = pizzico.current;
     if (!p) return;
     const { left: l, top: t } = p;
-    const cont = riquadro(items);
+    const cont = riquadro(items.filter((o) => !nascosti.has(o.id)));
     const el = piano.current;
     setVista(
       ancora(
@@ -323,7 +333,7 @@ function Brain({
 
   /** Rimette tutto in vista: è il gesto che salva chi si è perso. */
   function centra() {
-    const r = riquadro(items);
+    const r = riquadro(items.filter((o) => !nascosti.has(o.id)));
     if (!r || !piano.current) return;
     const { clientWidth: w, clientHeight: h } = piano.current;
     const z = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.min(w / (r.w + 120), h / (r.h + 120))));
@@ -399,7 +409,7 @@ function Brain({
           >
             <svg className="brain-frecce">
               {items
-                .filter((o) => o.t === 'freccia')
+                .filter((o) => o.t === 'freccia' && !nascosti.has(o.id))
                 .map((f) => {
                   const a = items.find((o) => o.id === f.da);
                   const b = items.find((o) => o.id === f.a);
@@ -428,7 +438,7 @@ function Brain({
             </svg>
 
             {items
-              .filter((o) => o.t !== 'freccia')
+              .filter((o) => o.t !== 'freccia' && !nascosti.has(o.id))
               .map((o) => (
                 <div
                   key={o.id}

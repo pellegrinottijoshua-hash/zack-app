@@ -711,6 +711,28 @@
     "center": "Centre all",
     "drawer": "Not on the canvas yet",
     "drawerEmpty": "Every asset is already on the canvas.",
+    "pool": {
+      "label": "Pool",
+      "title": "The pool — newest first",
+      "cerca": "Search by name, note or tag",
+      "niente": "Nothing with that name, note or tag.",
+      "altri": "{n} more"
+    },
+    "cestino": {
+      "label": "Trash",
+      "title": "The trash",
+      "vuoto": "The trash is empty. What you throw away stays here until you empty it.",
+      "rimetti": "Put back",
+      "svuota": "Empty the trash ({n} · {peso})",
+      "conferma": "Delete {n} files forever and free {peso}? It's the only thing that can't be undone.",
+      "svuotato": "Trash emptied: {n} files, {peso} freed."
+    },
+    "spazio": {
+      "misura": "Browser storage: {usato} of {quota}.",
+      "attento": "Browser storage is filling up: {usato} of {quota}. The trash is where you free it.",
+      "pieno": "Browser storage is almost full: {usato} of {quota}. When it runs out nothing else can be saved.",
+      "proponi": "Emptying the trash frees {peso}."
+    },
     "notePlaceholder": "Write here",
     "groupPlaceholder": "What is this group called",
     "remove": "Take off the canvas",

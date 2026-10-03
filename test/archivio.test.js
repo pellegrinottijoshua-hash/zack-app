@@ -11,6 +11,8 @@ import {
   POOL_VISIBILI,
   ritrovato,
   senzaFile,
+  pesoLeggibile,
+  oggettiNascosti,
 } from '../src/engine/archivio.js';
 
 // Ogni prova dichiara l'archivio da cui parte: mai uno stato ereditato.
@@ -103,4 +105,26 @@ test('svuotare toglie dalla tela i file andati e le frecce che li toccavano', ()
   assert.deepEqual(senzaFile(tela, new Set(['via'])).map((o) => o.id), ['o2', 'n1']);
   // Niente da togliere: la STESSA lista, così chi chiama non risalva.
   assert.equal(senzaFile(tela, new Set(['altro'])), tela);
+});
+
+test('il peso per un umano', () => {
+  assert.equal(pesoLeggibile(0), '0 B');
+  assert.equal(pesoLeggibile(2048), '2 KB');
+  assert.equal(pesoLeggibile(5 * 1048576), '5.0 MB');
+  assert.equal(pesoLeggibile(undefined), '0 B');
+  assert.equal(pesoLeggibile(314091.5 * 1048576), '306.7 GB');
+});
+
+test('sulla tela un file cestinato si nasconde con le sue frecce, e i dati restano', () => {
+  const tela = [
+    { id: 'o1', t: 'asset', assetId: 'buttato' },
+    { id: 'o2', t: 'asset', assetId: 'vivo' },
+    { id: 'f1', t: 'freccia', da: 'o2', a: 'o1' },
+    { id: 'f2', t: 'freccia', da: 'o2', a: 'n1' },
+    { id: 'n1', t: 'nota' },
+  ];
+  const copia = structuredClone(tela);
+  assert.deepEqual([...oggettiNascosti(tela, new Set(['buttato']))].sort(), ['f1', 'o1']);
+  assert.deepEqual(oggettiNascosti(tela, new Set()).size, 0);
+  assert.deepEqual(tela, copia); // niente si toglie dai dati
 });
