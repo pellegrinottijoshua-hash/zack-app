@@ -96,3 +96,45 @@ export const DESTINAZIONI = Object.freeze({
 export function destinazioniDi(kind) {
   return Object.hasOwn(DESTINAZIONI, kind) ? DESTINAZIONI[kind] : ['pocket', 'brain'];
 }
+
+/**
+ * Il trascinamento (4b): i cerchi su cui si posa un file e le destinazioni
+ * che ognuno vuol dire. Video ne ha due — posarci sopra chiede quale, con le
+ * sole due voci (§2.4). Nessuna destinazione nuova: la tabella resta
+ * `DESTINAZIONI`, qui c'è solo dove stanno sullo schermo.
+ */
+export const BERSAGLI = Object.freeze({
+  pocket: ['pocket'],
+  brain: ['brain'],
+  scontorna: ['scontorna'],
+  vettorializza: ['vettorializza'],
+  immagine: ['immagine'],
+  video: ['video-primo', 'video-riferimento'],
+});
+
+/** Le destinazioni di un bersaglio possibili per quel tipo: vuoto = spento. */
+export function destinazioniSu(bersaglio, kind) {
+  const possibili = destinazioniDi(kind);
+  return (Object.hasOwn(BERSAGLI, bersaglio) ? BERSAGLI[bersaglio] : []).filter((d) =>
+    possibili.includes(d),
+  );
+}
+
+/**
+ * I bersagli che si accendono trascinando un file di quel tipo. `da` è il
+ * bersaglio da cui il file parte: un file del pocket non si posa nel pocket.
+ */
+export function bersagliAccesi(kind, da = null) {
+  return Object.keys(BERSAGLI).filter((b) => b !== da && destinazioniSu(b, kind).length > 0);
+}
+
+/**
+ * Quanti pixel prima che un tocco diventi un trascinamento. Sotto la soglia
+ * resta un tocco e apre l'ovale: un dito non sta mai fermo del tutto, e il
+ * tocco è la strada che sul telefono non deve fallire.
+ */
+export const SOGLIA = 8;
+
+export function eTrascinamento(dx, dy) {
+  return Math.hypot(dx, dy) >= SOGLIA;
+}

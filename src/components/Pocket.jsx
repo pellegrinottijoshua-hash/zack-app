@@ -3,13 +3,15 @@ import { createPortal } from 'react-dom';
 import Icon from './Icon.jsx';
 import { t } from '../i18n/index.js';
 import { destinazioniDi, finestra, vivi, VISIBILI } from '../engine/pocket.js';
+import { useTrascina } from '../hooks/useTrascina.js';
 
 /**
- * Il pocket, l'icona output e l'ovale delle destinazioni (fase 4a, §T2-T3).
+ * Il pocket, l'icona output e l'ovale delle destinazioni (fase 4, §T2-T3).
  *
- * Tutto il gesto è il TOCCO: si tocca un file e si sceglie dove va. Il
- * trascinamento arriverà in 4b e accenderà le stesse destinazioni, perché
- * la lista viene da una tabella sola (`destinazioniDi`).
+ * Due gesti sullo stesso file: il TOCCO apre l'ovale e si sceglie dove va;
+ * il TRASCINAMENTO (4b, solo dove c'è `onPosa`) accende le stesse
+ * destinazioni sui cerchi, perché la lista viene da una tabella sola
+ * (`destinazioniDi`, e `bersagliAccesi` che la legge).
  */
 
 /** L'immagine di un file della libreria, letta quando serve. */
@@ -37,7 +39,26 @@ function Anteprima({ url, kind }) {
   if (!url) return <span className="pocket-segno" aria-hidden="true">{kind}</span>;
   if (kind === 'mp4') return <video src={url} muted playsInline preload="metadata" aria-hidden="true" />;
   if (kind === 'wav') return <span className="pocket-segno" aria-hidden="true">♪</span>;
-  return <img src={url} alt="" aria-hidden="true" />;
+  return <img src={url} alt="" draggable="false" aria-hidden="true" />;
+}
+
+/**
+ * Il file che segue il dito durante il trascinamento. Nel `body` e senza
+ * puntatore: sotto di lui si cerca il bersaglio, e non deve fare ombra.
+ */
+function Fantasma({ fantasma, leggi }) {
+  if (!fantasma) return null;
+  const { x, y, carico } = fantasma;
+  return createPortal(
+    <div className="fantasma" aria-hidden="true" style={{ left: x, top: y }}>
+      {carico.asset ? (
+        <Miniatura asset={carico.asset} leggi={leggi} />
+      ) : (
+        <Anteprima url={carico.url} kind={carico.kind} />
+      )}
+    </div>,
+    document.body,
+  );
 }
 
 /**
@@ -81,8 +102,9 @@ export function Destinazioni({ nome, voci, onScegli, hrefDi, onChiudi, className
  * Toccata, apre l'ovale; la scelta la esegue chi la monta (`onScegli`), che
  * sa anche salvare in Brain un risultato che non c'è ancora (§2.2).
  */
-export function IconaOutput({ url, kind, nome, onScegli }) {
+export function IconaOutput({ url, kind, nome, onScegli, onPosa }) {
   const [aperto, setAperto] = useState(false);
+  const { gestori, fantasma, taci } = useTrascina(onPosa);
   return (
     <>
       <button
@@ -90,10 +112,12 @@ export function IconaOutput({ url, kind, nome, onScegli }) {
         aria-label={t('pocket.uscita')}
         title={t('pocket.uscita')}
         aria-expanded={aperto}
-        onClick={() => setAperto((v) => !v)}
+        {...gestori({ kind, url })}
+        onClick={() => !taci() && setAperto((v) => !v)}
       >
         <Anteprima url={url} kind={kind} />
       </button>
+      <Fantasma fantasma={fantasma} />
       {aperto && (
         <Destinazioni
           nome={nome}
@@ -114,10 +138,11 @@ export function IconaOutput({ url, kind, nome, onScegli }) {
  * 4 file; gli altri scorrono al tocco del «›». Toccare un file apre le sue
  * destinazioni, più «togli dal pocket».
  */
-export default function Pocket({ pocket, assets, leggi, onScegli, onTogli, hrefDi, className = '' }) {
+export default function Pocket({ pocket, assets, leggi, onScegli, onTogli, onPosa, hrefDi, className = '' }) {
   const [aperto, setAperto] = useState(false);
   const [inizio, setInizio] = useState(0);
   const [scelto, setScelto] = useState(null);
+  const { gestori, fantasma, taci } = useTrascina(onPosa);
   const lista = vivi(pocket, assets);
   const visti = finestra(lista, inizio);
 
@@ -125,6 +150,7 @@ export default function Pocket({ pocket, assets, leggi, onScegli, onTogli, hrefD
     <div className={`pocket ${className}`}>
       <button
         className="pocket-tasto"
+        data-bersaglio="pocket"
         aria-pressed={aperto}
         aria-label={t('pocket.label')}
         title={t('pocket.help')}
@@ -147,11 +173,13 @@ export default function Pocket({ pocket, assets, leggi, onScegli, onTogli, hrefD
                   className="pocket-file"
                   title={a.name}
                   aria-label={a.name}
-                  onClick={() => setScelto(a)}
+                  {...gestori({ kind: a.kind, asset: a, da: 'pocket' })}
+                  onClick={() => !taci() && setScelto(a)}
                 >
                   <Miniatura asset={a} leggi={leggi} />
                 </button>
               ))}
+              <Fantasma fantasma={fantasma} leggi={leggi} />
               {lista.length > VISIBILI && (
                 <button
                   className="pocket-gira"

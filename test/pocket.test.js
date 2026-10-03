@@ -8,6 +8,10 @@ import {
   vivi,
   finestra,
   destinazioniDi,
+  destinazioniSu,
+  bersagliAccesi,
+  eTrascinamento,
+  SOGLIA,
   TETTO,
   VISIBILI,
 } from '../src/engine/pocket.js';
@@ -80,4 +84,40 @@ test('destinazioni: per tipo, pocket e Brain sempre', () => {
   for (const k of ['png', 'jpg', 'svg', 'mp4', 'wav', 'boh']) {
     assert.ok(destinazioniDi(k).includes('pocket') && destinazioniDi(k).includes('brain'));
   }
+});
+
+// ── 4b: il trascinamento ────────────────────────────────────────────────
+
+test('trascinare accende ESATTAMENTE le destinazioni dell\'ovale, per ogni tipo', () => {
+  // La regola del §2.3: «le destinazioni accese sono esattamente quelle
+  // dell'ovale». Se un giorno una destinazione entra nella tabella e nessun
+  // cerchio la porta, o un cerchio si accende per un tipo che l'ovale non
+  // offre, questa prova lo dice.
+  for (const k of ['png', 'jpg', 'svg', 'mp4', 'wav', 'boh']) {
+    const accese = bersagliAccesi(k).flatMap((b) => destinazioniSu(b, k));
+    assert.deepEqual([...accese].sort(), [...destinazioniDi(k)].sort(), k);
+  }
+});
+
+test('trascinare: Video chiede quale ruolo, gli altri cerchi vanno dritti', () => {
+  assert.deepEqual(destinazioniSu('video', 'png'), ['video-primo', 'video-riferimento']);
+  assert.deepEqual(destinazioniSu('scontorna', 'png'), ['scontorna']);
+  // Un video posato su Scontorna: spento, non un errore.
+  assert.deepEqual(destinazioniSu('scontorna', 'mp4'), []);
+  assert.deepEqual(destinazioniSu('vocale', 'wav'), []);
+  assert.deepEqual(destinazioniSu('toString', 'png'), []);
+});
+
+test('trascinare: un file del pocket non si accende sul pocket', () => {
+  assert.ok(bersagliAccesi('png').includes('pocket'));
+  assert.ok(!bersagliAccesi('png', 'pocket').includes('pocket'));
+  assert.deepEqual(bersagliAccesi('mp4', 'pocket'), ['brain']);
+});
+
+test('trascinare: sotto la soglia resta un tocco', () => {
+  assert.equal(eTrascinamento(0, 0), false);
+  assert.equal(eTrascinamento(SOGLIA - 1, 0), false);
+  assert.equal(eTrascinamento(5, 6), false); // ~7,8 px: un dito che trema
+  assert.equal(eTrascinamento(SOGLIA, 0), true);
+  assert.equal(eTrascinamento(-6, -6), true);
 });

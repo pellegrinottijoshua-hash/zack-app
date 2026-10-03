@@ -26,8 +26,9 @@ import Advanced from './components/Advanced.jsx';
 import ScegliAsset from './components/ScegliAsset.jsx';
 import Tutorial from './components/Tutorial.jsx';
 import Brain from './components/Brain.jsx';
-import Pocket, { IconaOutput } from './components/Pocket.jsx';
+import Pocket, { IconaOutput, Destinazioni } from './components/Pocket.jsx';
 import { usePocket } from './hooks/usePocket.js';
+import { destinazioniSu } from './engine/pocket.js';
 import { impronta } from './store/library.js';
 import BatchGrid from './components/BatchGrid.jsx';
 import Preventivo from './components/Preventivo.jsx';
@@ -460,6 +461,9 @@ export default function App() {
 
   const library = useLibrary();
   const pocketStato = usePocket();
+  // Un file posato su Video (4b): primo fotogramma o riferimento? L'ovale
+  // con le sole due voci, finché non si sceglie.
+  const [domandaPosa, setDomandaPosa] = useState(null);
   // La striscia dei lavori parte chiusa: mangia un quinto dello schermo, e
   // chi apre l'app vuole lavorare su un file, non sfogliare l'archivio.
   const [libOpen, setLibOpen] = useState(() => {
@@ -2152,6 +2156,20 @@ export default function App() {
     }
   }
 
+  /**
+   * Posare un file trascinato su un cerchio (4b, §2.4): è la stessa cosa che
+   * sceglierlo nell'ovale. `prendi` dà l'asset solo adesso — l'icona output
+   * salva il risultato in Brain solo se il file viene davvero posato.
+   */
+  async function posa(bersaglio, kind, prendi) {
+    const voci = destinazioniSu(bersaglio, kind);
+    if (voci.length === 0) return;
+    const asset = await prendi();
+    if (!asset) return;
+    if (voci.length === 1) return vaiA(voci[0], asset);
+    setDomandaPosa({ asset, voci });
+  }
+
   async function assetAction(kind, item) {
     setError(null);
     setNotice(null);
@@ -2775,6 +2793,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
          */}
         <button
           className="brain-tasto"
+          data-bersaglio="brain"
           aria-pressed={tool === 'brain'}
           aria-label={t('tool.brain.label')}
           title={t('tool.brain.help')}
@@ -2796,6 +2815,9 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
           assets={library.assets}
           leggi={library.read}
           onScegli={(dest, asset) => vaiA(dest, asset).catch(() => setError(t('engine.error.body')))}
+          onPosa={(bersaglio, { asset }) =>
+            posa(bersaglio, asset.kind, async () => asset).catch(() => setError(t('engine.error.body')))
+          }
           onTogli={pocketStato.togli}
         />
         {/* L'icona output (fase 4a, §T2): il risultato, da prendere in mano.
@@ -2814,6 +2836,24 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 setError(t('engine.error.body'));
               }
             }}
+            onPosa={(bersaglio) =>
+              posa(bersaglio, result.kind, prendiRisultato).catch((e) => {
+                console.error(e);
+                setError(t('engine.error.body'));
+              })
+            }
+          />
+        )}
+        {domandaPosa && (
+          <Destinazioni
+            nome={domandaPosa.asset.name}
+            voci={domandaPosa.voci}
+            onScegli={(dest) => {
+              const { asset } = domandaPosa;
+              setDomandaPosa(null);
+              vaiA(dest, asset).catch(() => setError(t('engine.error.body')));
+            }}
+            onChiudi={() => setDomandaPosa(null)}
           />
         )}
 
