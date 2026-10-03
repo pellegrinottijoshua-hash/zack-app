@@ -555,8 +555,38 @@ lasciava aperte sono nel **§3 della spec**, da ribaltare se non vanno.
   ricaricando). Provato con un `for(;;)` iniettato: «↻» e avanti.
 - 872 prove verdi, build ok, script di 2a **verde**: 876 pagine, 15.460 comandi (un blocco di Chrome recuperato da solo).
 
-**Prossima sessione: la 5b.**
+**5a pubblicata** (`a2b639f` su `main`).
+
+## ▶️ 2026-10-03 — 5b FATTA: la tela di soli file
+
+- `2472f6b` 5b/1 — puro: `ICONA` (112), le tele vecchie si normalizzano
+  tenendo il centro; `daNota`/`noteInFile`.
+- `3881a1f` 5b/2 — aprendo una tela le note diventano `.md` al loro posto
+  (frecce attaccate); «nota» nel `+` crea un `.md` e lo apre.
+- `76e7082` 5b/3 — ogni file è un cerchio con la faccia, titolo e nota sotto;
+  il tocco apre la scheda (file, nome, nota, icona). Via il menu del file e
+  la mascotte della tela vuota (B1).
+- `dd99411` 5b/4 — un file della tela si prende e si posa: su un servizio o
+  sul pocket fa quello che fa l'ovale, sulla pool esce dalla tela.
+- `9a761e3` 5b/5 — il tasto Zack esce da Brain; il riordino negli avanzati.
+- `b06a54c` lo spazio del tasto torna alla tela (438 → 553 px a 390×844).
+- 875 prove verdi, build ok, script di 2a **verde**: 924 pagine, 17.220 comandi.
+
+Decisioni prese da me: §3 della spec, punti 8–10.
+
+⚠️ **Trappola nuova**: un nodo che React **sposta** nel DOM (riordino della
+lista, come `davanti`) perde la cattura del puntatore. Il trascinamento
+dentro la tela funzionava lo stesso, perché i movimenti arrivavano alla tela
+per bolla; fuori dalla tela il rilascio non arrivava mai. La cattura va su un
+elemento che non si muove.
+
+Minori: l'onda dell'audio è il segno, non la forma vera del file; il
+riordino «compatta» non conosce l'altezza di titolo e nota sotto l'icona;
+sul telefono la scheda sta fra le due colonne di cerchi ed è stretta; il `+`
+di Brain non è in alto a sinistra a tela vuota (B1).
+
+**Prossima sessione: la 5c** (cartelle e riordino).
 
 ```
-Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 5b.
+Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 5c.
 ```
