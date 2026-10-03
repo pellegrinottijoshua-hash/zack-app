@@ -37,13 +37,16 @@ test('un documento nasce con la sua icona, e la porta con sé', () => {
 test('un documento senza icona ne ha comunque una', () => {
   // Un buco nel disegno è peggio di una scelta banale: la scheda resterebbe
   // vuota nel punto in cui l'occhio cerca il tipo.
+  // Dal 2026-10-03 (5b) è la nota, non la cartella: con le cartelle sulla
+  // tela un documento-cartella direbbe il contrario di quello che è.
   const a = makeAsset({ name: 'bibbia.md', kind: 'md', bytes: 10 });
-  assert.equal(iconaDocumento(a), ICONE_DOCUMENTO[0]);
+  assert.equal(iconaDocumento(a), 'nota');
+  assert.ok(ICONE_DOCUMENTO.includes('nota'), 'il ripiego deve potersi anche scegliere');
 });
 
 test('unicona inventata non passa: si torna a quella di partenza', () => {
   const a = makeAsset({ name: 'x.md', kind: 'md', bytes: 1, meta: { icona: 'drago' } });
-  assert.equal(iconaDocumento(a), ICONE_DOCUMENTO[0]);
+  assert.equal(iconaDocumento(a), 'nota');
 });
 
 test("l'anteprima si ferma, invece di trascinare in scheda un documento intero", () => {

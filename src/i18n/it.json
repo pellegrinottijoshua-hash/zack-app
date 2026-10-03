@@ -711,6 +711,13 @@
     "center": "Centra tutto",
     "drawer": "Da mettere sulla tela",
     "drawerEmpty": "Tutti gli asset sono già sulla tela.",
+    "scheda": {
+      "title": "Il file",
+      "nome": "Nome",
+      "nota": "Nota",
+      "notaVuota": "Scrivi qui cosa è, a cosa serve…"
+    },
+    "notaFile": "Nota",
     "pool": {
       "label": "Pool",
       "title": "La pool — dal più recente",

@@ -13,6 +13,9 @@ import {
   CATEGORIE,
 } from '../engine/brain.js';
 import { oggettiNascosti } from '../engine/archivio.js';
+import { eTrascinamento, bersagliAccesi } from '../engine/pocket.js';
+import { accendi, spegni, sotto } from '../hooks/useTrascina.js';
+import { createPortal } from 'react-dom';
 import Icon from './Icon.jsx';
 // Con l'alias: `muovi` qui e' gia' quello di `engine/brain.js` (sposta un
 // oggetto), e `muove` accanto a lui si confonderebbe a ogni lettura.
@@ -71,6 +74,43 @@ function Contenuto({ item, asset, leggi }) {
   if (KIND_VIDEO.includes(asset.kind)) return <video src={url} controls preload="metadata" />;
   if (KIND_TESTO.includes(asset.kind)) return <SchedaDocumento asset={asset} leggi={leggi} />;
   return <img src={url} alt={asset.name} draggable={false} />;
+}
+
+/**
+ * La faccia di un file sulla tela (fase 5b, B2 / B-g): dentro il cerchio.
+ * Un'immagine si vede, un video mostra il primo fotogramma, un audio l'onda,
+ * un documento la sua icona; e un'icona scelta a mano vale per tutti. È un
+ * segno per riconoscerlo fra venti, non una lettura: per guardarlo davvero
+ * lo si tocca, e si apre la scheda.
+ */
+function Faccia({ asset, leggi }) {
+  const [url, setUrl] = useState(null);
+  const mostraFile =
+    asset && !asset.meta?.icona && !KIND_AUDIO.includes(asset.kind) && !KIND_TESTO.includes(asset.kind);
+
+  useEffect(() => {
+    if (!mostraFile) return undefined;
+    let vivo = true;
+    let creato = null;
+    leggi(asset.id).then(({ file }) => {
+      if (!vivo) return;
+      creato = URL.createObjectURL(file);
+      setUrl(creato);
+    });
+    return () => {
+      vivo = false;
+      if (creato) URL.revokeObjectURL(creato);
+    };
+  }, [asset, leggi, mostraFile]);
+
+  if (!asset) return <span className="brain-perso">{t('brain.lost')}</span>;
+  if (!mostraFile) {
+    return <Icon name={asset.meta?.icona ? iconaDocumento(asset) : KIND_AUDIO.includes(asset.kind) ? 'wave' : iconaDocumento(asset)} />;
+  }
+  if (!url) return <span className="brain-attesa" />;
+  // `#t=0.1`: senza, Safari su iPhone non disegna il primo fotogramma.
+  if (KIND_VIDEO.includes(asset.kind)) return <video src={`${url}#t=0.1`} muted playsInline preload="metadata" />;
+  return <img src={url} alt="" draggable={false} />;
 }
 
 /**
@@ -199,6 +239,83 @@ function Documento({ asset, leggi, onSalva, onScarica, onChiudi }) {
   );
 }
 
+/**
+ * La scheda di un file (fase 5b, B-b): si apre col tocco. Qui un file si
+ * GUARDA — l'immagine grande, il video e l'audio che partono — e si scrivono
+ * il suo nome e la sua nota, che stanno sull'icona e viaggiano col file.
+ *
+ * Il menu di prima (scontorna, vettorializza, riprendi, togli dalla tela) se
+ * n'è andato (B1): un file si manda a un servizio trascinandolo sul suo
+ * cerchio, e si toglie dalla tela posandolo sulla pool.
+ */
+function Scheda({ asset, item, leggi, onRinomina, onNota, onIcona, onApri, onChiudi }) {
+  const [nome, setNome] = useState(asset.name);
+  const [nota, setNota] = useState(asset.note || '');
+  useEffect(() => {
+    setNome(asset.name);
+    setNota(asset.note || '');
+  }, [asset.id, asset.name, asset.note]);
+
+  const salvaNome = () => {
+    const pulito = nome.trim();
+    if (pulito && pulito !== asset.name) onRinomina(asset.id, pulito);
+    else setNome(asset.name);
+  };
+
+  return (
+    <aside className="brain-scelto brain-scheda" aria-label={asset.name}>
+      <div className="scegli-testa">
+        <h3>{t('brain.scheda.title')}</h3>
+        <button className="btn ghost small" onClick={onChiudi} aria-label={t('bar.clear')}>
+          ×
+        </button>
+      </div>
+      <div className="brain-scheda-file">
+        <Contenuto item={item} asset={asset} leggi={leggi} />
+      </div>
+      <label className="brain-scheda-campo">
+        {t('brain.scheda.nome')}
+        <input
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          onBlur={salvaNome}
+          onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+        />
+      </label>
+      <label className="brain-scheda-campo">
+        {t('brain.scheda.nota')}
+        <textarea
+          value={nota}
+          rows={3}
+          placeholder={t('brain.scheda.notaVuota')}
+          onChange={(e) => setNota(e.target.value)}
+          onBlur={() => nota !== (asset.note || '') && onNota(asset.id, nota)}
+        />
+      </label>
+      {KIND_TESTO.includes(asset.kind) && (
+        <button className="btn" onClick={() => onApri(asset)}>
+          {t('brain.doc.open')}
+        </button>
+      )}
+      {/* L'icona del file: su una tela con venti file è l'unica cosa che si
+          legge senza avvicinarsi (richiesta del 2026-09-04). */}
+      <div className="brain-icone">
+        {ICONE_DOCUMENTO.map((n) => (
+          <button
+            key={n}
+            className="brain-icona"
+            aria-pressed={asset.meta?.icona === n}
+            aria-label={n}
+            onClick={() => onIcona(asset.id, n)}
+          >
+            <Icon name={n} />
+          </button>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
 const NESSUNO = new Set();
 
 function Brain({
@@ -206,10 +323,14 @@ function Brain({
   assets,
   leggi,
   onChange,
-  onUse,
   onSalvaDoc,
   onIcona,
   onScarica,
+  onRinomina,
+  onNota,
+  /* Un file posato su un servizio o sul pocket (5b, B5): lo esegue App, con
+     la stessa `posa` dell'icona output. */
+  onPosa,
   /*
    * La freccia in corso arriva da FUORI: il comando ora e' un cerchio
    * dell'impianto, come i tre gesti di FilmLab. Tenerne anche uno qui dentro
@@ -226,6 +347,13 @@ function Brain({
   cestinati = NESSUNO,
 }, ref) {
   const [scelto, setScelto] = useState(null);
+  /* La scheda aperta col tocco (5b): l'id dell'OGGETTO, non dell'asset —
+     lo stesso file può stare due volte sulla tela. */
+  const [scheda, setScheda] = useState(null);
+  // Vero se il puntatore si è mosso oltre la soglia: allora non era un tocco.
+  const mosso = useRef(false);
+  // Il file che segue il dito FUORI dalla tela (sulla tela si muove lui).
+  const [fantasma, setFantasma] = useState(null);
   /* Il documento aperto a tutto schermo sopra la tela. Non è un secondo
      stato del prodotto: è una lettura, e si chiude con Esc come ogni altro
      pannello che copre il lavoro. */
@@ -253,23 +381,87 @@ function Brain({
     // Il secondo dito non prende niente: sta cominciando un pizzico.
     if (dueDita(gesto.current)) return;
     if (e.target.closest('input, textarea, audio, video, button')) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    preso.current = { id, x: e.clientX, y: e.clientY };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* puntatore non riconosciuto: si trascina lo stesso finché resta sopra */
+    }
+    const o = items.find((x) => x.id === id);
+    preso.current = { id, x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, ox: o?.x, oy: o?.y };
+    mosso.current = false;
     setScelto(id);
     onChange(davanti(items, id));
   }
 
   function trascina(e) {
     if (!preso.current) return;
-    const { id, x, y } = preso.current;
+    const { id, x, y, x0, y0 } = preso.current;
+    // Sotto la soglia è ancora un tocco: l'oggetto non si muove, e al
+    // rilascio si apre la scheda. Un dito non sta mai fermo del tutto.
+    if (!mosso.current && !eTrascinamento(e.clientX - x0, e.clientY - y0)) return;
+    if (!mosso.current) {
+      mosso.current = true;
+      // La cattura passa alla TELA: quella sull'oggetto si perde appena
+      // `davanti` lo sposta in cima (React ne sposta il nodo, e un nodo tolto
+      // dal documento perde la cattura). Senza, il rilascio fuori dalla tela
+      // — su un servizio, sulla pool — non arrivava mai, e i cerchi restavano
+      // accesi. Solo qui e non al tocco: un tocco deve restare un `click`
+      // sull'oggetto, e la scheda si apre da lì.
+      try {
+        piano.current.setPointerCapture(e.pointerId);
+      } catch {
+        /* puntatore già rilasciato: il gesto finisce dentro la tela */
+      }
+      // Prendere in mano un FILE (B5): si accendono i posti dove può andare
+      // — gli stessi dell'ovale — più la pool, che lo toglie dalla tela.
+      const o = items.find((x) => x.id === id);
+      const a = o?.t === 'asset' ? perId.get(o.assetId) : null;
+      if (a && onPosa) {
+        accendi([...bersagliAccesi(a.kind, 'brain'), 'pool']);
+        preso.current.file = a;
+      }
+    }
     const dx = (e.clientX - x) / vista.z;
     const dy = (e.clientY - y) / vista.z;
-    preso.current = { id, x: e.clientX, y: e.clientY };
+    preso.current = { ...preso.current, x: e.clientX, y: e.clientY };
     onChange(muovi(items, id, dx, dy));
+    if (preso.current.file) {
+      const b = sotto(e.clientX, e.clientY);
+      if (b !== preso.current.sopra) {
+        preso.current.sopra?.removeAttribute('data-sopra');
+        b?.setAttribute('data-sopra', '');
+        preso.current.sopra = b;
+      }
+      // Fuori dalla tela l'oggetto non si vede più (la tela taglia): lo
+      // segue il suo fantasma, come l'icona output.
+      const r = piano.current?.getBoundingClientRect();
+      const fuori = r && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom);
+      setFantasma(fuori ? { x: e.clientX, y: e.clientY, file: preso.current.file } : null);
+    }
   }
 
-  const molla = () => {
+  // Brain che sparisce a metà gesto (cambio servizio) non lascia accesi i
+  // cerchi del resto dell'app.
+  useEffect(() => () => preso.current?.file && spegni(), []);
+
+  const molla = (e) => {
+    const p = preso.current;
     preso.current = null;
+    if (!p?.file) return;
+    const b = e ? sotto(e.clientX, e.clientY) : null;
+    spegni();
+    setFantasma(null);
+    if (!b) return;
+    // Posato fuori: l'oggetto torna dov'era, e il file va dove l'hai posato.
+    const o = items.find((x) => x.id === p.id);
+    const tornato = o ? muovi(items, p.id, p.ox - o.x, p.oy - o.y) : items;
+    if (b.dataset.bersaglio === 'pool') {
+      onChange(togli(tornato, p.id));
+      setScelto(null);
+      return;
+    }
+    onChange(tornato);
+    onPosa(b.dataset.bersaglio, p.file);
   };
 
   /**
@@ -288,6 +480,9 @@ function Brain({
     // cominciare — altrimenti l'oggetto vola via seguendo il centro delle due
     // dita. `prendi` (che gira dopo, sull'oggetto) non lo riprende.
     preso.current = null;
+    // ...e se era un file preso in mano, i cerchi che aveva acceso si spengono.
+    spegni();
+    setFantasma(null);
     const r = piano.current.getBoundingClientRect();
     pizzico.current = { inizio: { ...vista }, left: r.left, top: r.top };
   }
@@ -320,7 +515,7 @@ function Brain({
   function ditoAlzato(e) {
     ditoSu(gesto.current, e.pointerId);
     if (!dueDita(gesto.current)) pizzico.current = null;
-    molla();
+    molla(e);
   }
 
   function rotella(e) {
@@ -345,9 +540,12 @@ function Brain({
       if (e.key === 'Escape') {
         onCollega(null);
         setScelto(null);
+        setScheda(null);
       }
       if ((e.key === 'Backspace' || e.key === 'Delete') && scelto) {
-        if (document.activeElement?.closest('.brain-oggetto textarea, .brain-oggetto input')) return;
+        // Mentre si scrive — sulla tela o nella scheda — Backspace cancella
+        // lettere, non oggetti.
+        if (document.activeElement?.closest('input, textarea, [contenteditable]')) return;
         onChange(togli(items, scelto));
         setScelto(null);
       }
@@ -361,10 +559,12 @@ function Brain({
    * dell'impianto, ma la vista (dove si sta guardando, e quanto) e' roba di
    * qui. Stessa forma che l'editor SVG usa gia' con `editorRef`.
    */
-  useImperativeHandle(ref, () => ({ centra }), [items]);
+  // `apri`: «nota» nel `+` crea un `.md` e lo apre subito per scriverci (5b).
+  useImperativeHandle(ref, () => ({ centra, apri: setAperto }), [items]);
 
   const oggetto = items.find((o) => o.id === scelto) || null;
-  const assetScelto = oggetto?.t === 'asset' ? perId.get(oggetto.assetId) : null;
+  const oggettoScheda = items.find((o) => o.id === scheda && !nascosti.has(o.id)) || null;
+  const fileScheda = oggettoScheda?.t === 'asset' ? perId.get(oggettoScheda.assetId) : null;
 
   return (
     <div className="brain">
@@ -387,6 +587,7 @@ function Brain({
             if (dueDita(gesto.current)) return;
             if (e.target === e.currentTarget || e.target.classList.contains('brain-tela')) {
               setScelto(null);
+              setScheda(null);
               onCollega(null);
             }
           }}
@@ -395,12 +596,6 @@ function Brain({
             <p className="brain-istruzione">
               {collega.da ? t('brain.arrowTo') : t('brain.arrowFrom')}
             </p>
-          )}
-
-          {/* Tela vuota: Zack seduto fra le sue cose (E-BRAIN). Sparisce al
-              primo oggetto — un fondale che resta sotto il lavoro è rumore. */}
-          {items.length === 0 && (
-            <img className="brain-vuota" src="/zack/sfere.webp" alt="" />
           )}
 
           <div
@@ -453,10 +648,15 @@ function Brain({
                     height: o.h,
                     '--tinta': o.colore || undefined,
                   }}
+                  onClick={() => {
+                    // Il tocco APRE (B-b): la scheda col nome, la nota e il file
+                    // da guardare. Un trascinamento finito sull'oggetto non è un
+                    // tocco, e non apre niente.
+                    if (o.t !== 'asset' || mosso.current) return;
+                    setScheda(o.id);
+                  }}
                   onDoubleClick={() => {
-                    // Il doppio clic apre il documento. Sugli altri oggetti non
-                    // fa niente: un'immagine si guarda già, e aprirla a tutto
-                    // schermo sarebbe una lente, non una lettura.
+                    // Il doppio clic apre il documento per scriverci.
                     const a = o.t === 'asset' ? perId.get(o.assetId) : null;
                     if (a && KIND_TESTO.includes(a.kind)) setAperto(a);
                   }}
@@ -481,7 +681,17 @@ function Brain({
                   }}
                 >
                   {o.t === 'asset' && (
-                    <Contenuto item={o} asset={perId.get(o.assetId)} leggi={leggi} />
+                    <>
+                      <span className="brain-faccia">
+                        <Faccia asset={perId.get(o.assetId)} leggi={leggi} />
+                      </span>
+                      {/* Titolo e nota SULL'icona (B4): sono del file, e
+                          viaggiano con lui — non con la tela. */}
+                      <span className="brain-titolo">{perId.get(o.assetId)?.name}</span>
+                      {perId.get(o.assetId)?.note && (
+                        <span className="brain-nota-icona">{perId.get(o.assetId).note}</span>
+                      )}
+                    </>
                   )}
 
                   {o.t === 'nota' && (
@@ -513,33 +723,22 @@ function Brain({
           </div>
         </div>
 
-        {/* Cosa si può fare con ciò che si è scelto. Vuoto quando non c'è
-            niente di scelto: un pannello di comandi spenti è rumore. */}
-        {oggetto && (
-          <aside className="brain-scelto">
-            <h3>{assetScelto ? assetScelto.name : t(`brain.kind.${oggetto.t}`)}</h3>
-
-            {/* Per una nota si sceglie il SENSO, non la tinta: cinque tinte
-                del marchio non si distinguono a colpo d'occhio, e soprattutto
-                non significano niente. Una nota «Da fare» invece si conta, si
-                cerca e si estrae. */}
-            {oggetto.t === 'nota' && (
-              <div className="brain-categorie">
-                {CATEGORIE.map((c) => (
-                  <button
-                    key={c.id}
-                    className="brain-categoria"
-                    aria-pressed={(oggetto.cat || CATEGORIE[0].id) === c.id}
-                    onClick={() => onChange(aggiorna(items, oggetto.id, { cat: c.id }))}
-                  >
-                    <i style={{ background: c.colore }} />
-                    {t(`brain.cat.${c.id}`)}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {oggetto.t === 'cerchio' && (
+        {/* La scheda del file toccato; per un gruppo il colore e «togli». */}
+        {fileScheda ? (
+          <Scheda
+            asset={fileScheda}
+            item={oggettoScheda}
+            leggi={leggi}
+            onRinomina={onRinomina}
+            onNota={onNota}
+            onIcona={onIcona}
+            onApri={setAperto}
+            onChiudi={() => setScheda(null)}
+          />
+        ) : (
+          oggetto?.t === 'cerchio' && (
+            <aside className="brain-scelto">
+              <h3>{t('brain.kind.cerchio')}</h3>
               <div className="brain-colori">
                 {COLORI.map((c) => (
                   <button
@@ -552,70 +751,27 @@ function Brain({
                   />
                 ))}
               </div>
-            )}
-
-            {/* L'icona di un file. Su una tela con venti file è l'unica cosa
-                che si legge senza avvicinarsi — il nome no, è troppo piccolo.
-
-                Era riservata ai `.md`, dietro `KIND_TESTO.includes(kind)`.
-                Richiesta del committente del 2026-09-04: «deve essere
-                possibile aggiungere anche un file e dargli un'icona». Era
-                costruito e chiuso a chiave — `iconaDocumento` leggeva
-                `meta.icona` per QUALUNQUE asset, il selettore esisteva, e
-                mancava solo il permesso. */}
-            {assetScelto && (
-              <div className="brain-icone">
-                {ICONE_DOCUMENTO.map((nome) => (
-                  <button
-                    key={nome}
-                    className="brain-icona"
-                    aria-pressed={iconaDocumento(assetScelto) === nome}
-                    aria-label={nome}
-                    onClick={() => onIcona(assetScelto.id, nome)}
-                  >
-                    <Icon name={nome} />
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {assetScelto && (
-              <div className="brain-usa">
-                {/* Il ponte verso gli strumenti: da qui il lavoro finisce
-                    sul piano senza passare dalla libreria.
-
-                    Su un documento questi tre non esistono: scontornare un
-                    .md non significa niente, e «Riprendi» lo aprirebbe in
-                    silenzio su una tela che non lo sa disegnare. Al loro
-                    posto c'è ciò che di un documento si fa davvero: aprirlo,
-                    e riportarselo fuori. */}
-                {KIND_TESTO.includes(assetScelto.kind) ? (
-                  <>
-                    <button onClick={() => setAperto(assetScelto)}>{t('brain.doc.open')}</button>
-                    <button onClick={() => onScarica(assetScelto)}>{t('library.download')}</button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={() => onUse('cutout', assetScelto)}>{t('actions.cutout')}</button>
-                    <button onClick={() => onUse('vector', assetScelto)}>{t('actions.vector')}</button>
-                    <button onClick={() => onUse('open', assetScelto)}>{t('library.resume')}</button>
-                  </>
-                )}
-              </div>
-            )}
-
-            <button
-              className="brain-togli"
-              onClick={() => {
-                onChange(togli(items, oggetto.id));
-                setScelto(null);
-              }}
-            >
-              {t('brain.remove')}
-            </button>
-          </aside>
+              <button
+                className="brain-togli"
+                onClick={() => {
+                  onChange(togli(items, oggetto.id));
+                  setScelto(null);
+                }}
+              >
+                {t('brain.remove')}
+              </button>
+            </aside>
+          )
         )}
       </div>
+
+      {fantasma &&
+        createPortal(
+          <div className="fantasma" aria-hidden="true" style={{ left: fantasma.x, top: fantasma.y }}>
+            <Faccia asset={fantasma.file} leggi={leggi} />
+          </div>,
+          document.body,
+        )}
 
       {aperto && (
         <Documento

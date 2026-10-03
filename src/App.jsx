@@ -37,7 +37,7 @@ import BatchGrid from './components/BatchGrid.jsx';
 import Preventivo from './components/Preventivo.jsx';
 import Riferimenti from './components/Riferimenti.jsx';
 import Ricarica from './components/Ricarica.jsx';
-import { kindFromFile, nomeConSuffisso } from './store/model.js';
+import { kindFromFile, nomeConSuffisso, safeName } from './store/model.js';
 import { impacchetta, spacchetta, fotografaTela } from './store/brainBundle.js';
 import StageBar from './components/StageBar.jsx';
 import { useSound } from './hooks/useSound.js';
@@ -68,7 +68,7 @@ import {
 } from './lib/conto.js';
 import { prezzoVideo, LIMITI_IMMAGINI, RUOLI_VIDEO, immaginiVideoStorte } from './engine/listinoVideo.js';
 import Muro from './components/Muro.jsx';
-import { nuovaNota, nuovoAsset, nuovoCerchio, prossimoPosto } from './engine/brain.js';
+import { nuovoAsset, nuovoCerchio, prossimoPosto, daNota, noteInFile } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
 import { leggiDescrizione } from './engine/dizionarioVoce.js';
 import { NEUTRA, fondiRicetta, getRecipe } from './engine/sound.js';
@@ -1466,7 +1466,7 @@ export default function App() {
       const prima = library.moodboards[0] || (await library.createMoodboard(t('brain.board')));
       if (!vivo || !prima) return;
       setTelaId(prima.id);
-      setTela(await library.readBrain(prima.id));
+      setTela(await leggiTela(prima.id));
     })();
     return () => {
       vivo = false;
@@ -2075,6 +2075,47 @@ export default function App() {
     await cambiaTela([...tela, nuovoAsset({ assetId: asset.id, ...prossimoPosto(tela) })]);
   }
 
+  /**
+   * Legge una tela e, se ha ancora delle note, le fa diventare file (fase 5b,
+   * B4): in Brain ci sono solo file, ma quello che uno ha scritto su una
+   * scheda non si butta. Ogni nota diventa un `.md` al suo posto, una volta
+   * sola — la tela salvata non ne ha più. Una nota che non si salva resta, e
+   * si riprova alla prossima apertura.
+   */
+  async function leggiTela(id) {
+    const items = await library.readBrain(id);
+    const note = items.filter((o) => o.t === 'nota');
+    if (note.length === 0) return items;
+    const fatti = new Map();
+    for (const n of note) {
+      try {
+        const { nome, testo } = daNota(n);
+        const blob = new Blob([testo], { type: 'text/markdown' });
+        const a = await library.save(blob, { name: nome, kind: 'md', meta: { daNota: n.id } });
+        fatti.set(n.id, a.id);
+      } catch {
+        // Resta nota: la prossima apertura ci riprova.
+      }
+    }
+    const nuova = noteInFile(items, fatti);
+    await library.saveBrain(id, nuova);
+    return nuova;
+  }
+
+  /**
+   * «Nota» nel `+` (fase 5b): un file `.md` nuovo, sulla tela, aperto per
+   * scriverci. Il nome porta l'ora — due note vuote con lo stesso nome
+   * sarebbero lo stesso file per la libreria, che riconosce i doppioni.
+   */
+  async function nuovaNotaFile() {
+    const ora = new Date();
+    const due = (n) => String(n).padStart(2, '0');
+    const nome = `${t('brain.notaFile')} ${due(ora.getHours())}.${due(ora.getMinutes())}.${due(ora.getSeconds())}`;
+    const asset = await library.save(new Blob([''], { type: 'text/markdown' }), { name: nome, kind: 'md' });
+    await cambiaTela([...tela, nuovoAsset({ assetId: asset.id, ...prossimoPosto(tela) })]);
+    brainRef.current?.apri(asset);
+  }
+
   /** Torna alla tela di prima. Una mossa sola: vedi `telaDiPrima`. */
   async function annullaTela() {
     if (!telaDiPrima) return;
@@ -2159,7 +2200,7 @@ export default function App() {
       // Lasciarlo all'effetto d'ingresso in Brain (più sotto) vorrebbe dire
       // una lettura che arriva dopo e lo cancella.
       const prima = library.moodboards[0] || (await library.createMoodboard(t('brain.board')));
-      const letta = await library.readBrain(prima.id);
+      const letta = await leggiTela(prima.id);
       const conFile = letta.some((o) => o.assetId === asset.id)
         ? letta
         : [...letta, nuovoAsset({ assetId: asset.id, ...prossimoPosto(letta) })];
@@ -2374,6 +2415,24 @@ export default function App() {
    */
   const avanzatiBrain = (
     <Advanced id="brain">
+      {/* Il riordino (fase 5b): era il tasto Zack di Brain, che è uscito
+          (B1). Le regole sono quelle del descrittore — una lista sola — e
+          deterministiche: ripremere non muove più niente. */}
+      <div className="field brain-riordino">
+        <span>{t('brain.riordina.title')}</span>
+        <div>
+          {getDescrittore('brain').tasto.gruppi[0].opzioni.map((r) => (
+            <button
+              key={r.id}
+              className="btn ghost"
+              disabled={tela.filter((o) => o.t !== 'freccia').length < 2}
+              onClick={() => cambiaTela(riordina(tela, r.id))}
+            >
+              {t(r.label)}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="field">
         <button className="btn ghost" disabled={tela.length === 0} onClick={faiPacco}>
           {t('brain.pacco')}
@@ -2538,8 +2597,14 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               cestinati={cestinatiIds}
               leggi={library.read}
               onChange={cambiaTela}
-              onUse={assetAction}
               onSalvaDoc={salvaDocumento}
+              onRinomina={(id, nome) =>
+                library.update(id, { name: safeName(nome) }).catch(() => setError(t('engine.error.body')))
+              }
+              onNota={(id, nota) => library.setNote(id, nota).catch(() => setError(t('engine.error.body')))}
+              onPosa={(bersaglio, asset) =>
+                posa(bersaglio, asset.kind, async () => asset).catch(() => setError(t('engine.error.body')))
+              }
               onIcona={iconaDocumentoScelta}
               onScarica={scaricaAsset}
               /* Il gesto aperto arriva da fuori: il cerchio della freccia sta
@@ -3068,13 +3133,14 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 // chiude. Era un cassetto FISSO a sinistra della tela — e la
                 // tela di Brain dev'essere vuota.
                 if (quale === 'libreria') return setSopraLaTela('pool');
-                // `prossimoPosto` sa dove c'è spazio: due note nate insieme
-                // non devono nascere una sopra l'altra.
-                const dove = prossimoPosto(tela);
-                return cambiaTela([
-                  ...tela,
-                  quale === 'gruppo' ? nuovoCerchio({ ...dove }) : nuovaNota({ ...dove }),
-                ]);
+                // Una nota è un file `.md` (fase 5b, B4): nasce sulla tela e
+                // si apre per scriverci.
+                if (quale === 'nota') {
+                  return nuovaNotaFile().catch(() => setError(t('engine.error.body')));
+                }
+                // `prossimoPosto` sa dove c'è spazio: due gruppi nati insieme
+                // non devono nascere uno sopra l'altro.
+                return cambiaTela([...tela, nuovoCerchio({ ...prossimoPosto(tela) })]);
               }}
               /* Gli avanzati, quando il cerchio li apre. Lo stesso contenuto
                  della colonna: non una seconda copia, la stessa. */
@@ -3097,7 +3163,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                         const { andati, byte } = await library.svuotaCestino();
                         setNotice(t('brain.cestino.svuotato', { n: andati, peso: pesoLeggibile(byte) }));
                         // Le tele ripulite dallo svuotamento: quella aperta si rilegge.
-                        if (telaId) setTela(await library.readBrain(telaId));
+                        if (telaId) setTela(await leggiTela(telaId));
                       } catch {
                         setError(t('engine.error.body'));
                       }

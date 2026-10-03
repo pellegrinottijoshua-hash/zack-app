@@ -4,14 +4,14 @@ import { bersagliAccesi, eTrascinamento } from '../engine/pocket.js';
 /** I cerchi su cui si posa: `data-bersaglio` sull'elemento (servizi, Brain, pocket). */
 const BERSAGLIO = '[data-bersaglio]';
 
-function accendi(accesi) {
+export function accendi(accesi) {
   document.documentElement.setAttribute('data-trascina', '');
   for (const el of document.querySelectorAll(BERSAGLIO)) {
     if (accesi.includes(el.dataset.bersaglio)) el.setAttribute('data-acceso', '');
   }
 }
 
-function spegni() {
+export function spegni() {
   document.documentElement.removeAttribute('data-trascina');
   for (const el of document.querySelectorAll('[data-acceso], [data-sopra]')) {
     el.removeAttribute('data-acceso');
@@ -20,7 +20,7 @@ function spegni() {
 }
 
 /** Il bersaglio ACCESO sotto il dito, attraverso il fantasma e ciò che lo copre. */
-function sotto(x, y) {
+export function sotto(x, y) {
   for (const el of document.elementsFromPoint(x, y)) {
     const b = el.closest(`${BERSAGLIO}[data-acceso]`);
     if (b) return b;

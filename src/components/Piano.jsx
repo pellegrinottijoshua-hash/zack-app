@@ -125,6 +125,9 @@ export default function Piano({
         onFiles([...e.dataTransfer.files]);
       }}
       data-sopra={sopra || undefined}
+      /* Senza tasto (Brain, 5b) lo spazio che `.sc` gli riservava in fondo
+         torna alla tela. */
+      data-senza-tasto={servizio.tasto.nascosto || undefined}
       style={{ '--colonna-sinistra': cerchi.sinistra, '--colonna-destra': cerchi.destra }}
       /* Le colonne degli strumenti sono sovrapposte, non affiancate: senza
          dirlo alla tela, su 390 px coprirebbero 44 px di lavoro per lato.
@@ -264,6 +267,9 @@ export default function Piano({
                 key={s.id}
                 className="sc-strumento"
                 data-strumento={s.id}
+                /* La pool di Brain è anche un bersaglio (5b): un file della
+                   tela posato lì torna nell'archivio, cioè esce dalla tela. */
+                data-bersaglio={s.id === 'pool' ? 'pool' : undefined}
                 aria-pressed={s.active || undefined}
                 aria-label={s.label}
                 title={s.label}
@@ -306,142 +312,147 @@ export default function Piano({
         />
       )}
 
-      <div className="sc-tasto" ref={box}>
-        <button
-          className="zack-oval"
-          aria-label={t('zack.label')}
-          title={servizio.tasto.azione === 'catena' && vuota ? t('zack.empty') : t('zack.title')}
-          /* Col piano vuoto il tasto NON e' spento: e' il secondo modo di
-             cominciare, insieme al `+`. Si spegne solo quando c'e' un file e
-             la catena e' vuota — li' non c'e' niente da fare. */
-          /* La catena vuota spegne il tasto solo di chi HA una catena: su
-             Brain `piano` e' sempre nullo — non c'e' un'immagine da
-             misurare — e questa riga l'avrebbe spento per sempre. */
-          /* Spento anche mentre qualcosa e' in corso: durante una
-             registrazione l'unica cosa da fare e' fermarla, e un tasto Zack
-             premibile li' e' un secondo comando che compete con l'unico. */
-          /*
-             `quanti > 0` e non `!vuoto`: erano la stessa cosa finche' «piano
-             non vuoto» voleva dire «c'e' un file». Sul vettoriale non lo vuol
-             piu' dire — la sua tela e' sempre li' — e la regola spegneva il
-             tasto all'apertura, con niente da tracciare e niente da fare.
-             La regola vera e': c'e' UN file, e la catena e' vuota. */
-          disabled={
-            busy ||
-            inCorso ||
-            (servizio.tasto.azione === 'catena' && quanti > 0 && quanti <= 1 && vuota)
-          }
-          /* Col piano ancora vuoto il tasto e' il secondo modo di cominciare,
-             insieme al `+`: porta dentro un file invece di lavorare a vuoto. */
-          onClick={quanti === 0 && servizio.accetta.file ? onPick : onZack}
-        >
-          <img
-            src="/zack/tasto-zack.webp"
-            srcSet="/zack/tasto-zack-600.webp 600w, /zack/tasto-zack.webp 1200w"
-            sizes="300px"
-            alt=""
-            width="1200"
-            height="670"
-          />
-        </button>
+      {/* Brain non ha il tasto Zack (B1, fase 5b): lì non si genera niente,
+          si organizza. Il gesto che fa partire il lavoro è trascinare un file
+          su un servizio. */}
+      {!servizio.tasto.nascosto && (
+        <div className="sc-tasto" ref={box}>
+          <button
+            className="zack-oval"
+            aria-label={t('zack.label')}
+            title={servizio.tasto.azione === 'catena' && vuota ? t('zack.empty') : t('zack.title')}
+            /* Col piano vuoto il tasto NON e' spento: e' il secondo modo di
+               cominciare, insieme al `+`. Si spegne solo quando c'e' un file e
+               la catena e' vuota — li' non c'e' niente da fare. */
+            /* La catena vuota spegne il tasto solo di chi HA una catena: su
+               Brain `piano` e' sempre nullo — non c'e' un'immagine da
+               misurare — e questa riga l'avrebbe spento per sempre. */
+            /* Spento anche mentre qualcosa e' in corso: durante una
+               registrazione l'unica cosa da fare e' fermarla, e un tasto Zack
+               premibile li' e' un secondo comando che compete con l'unico. */
+            /*
+               `quanti > 0` e non `!vuoto`: erano la stessa cosa finche' «piano
+               non vuoto» voleva dire «c'e' un file». Sul vettoriale non lo vuol
+               piu' dire — la sua tela e' sempre li' — e la regola spegneva il
+               tasto all'apertura, con niente da tracciare e niente da fare.
+               La regola vera e': c'e' UN file, e la catena e' vuota. */
+            disabled={
+              busy ||
+              inCorso ||
+              (servizio.tasto.azione === 'catena' && quanti > 0 && quanti <= 1 && vuota)
+            }
+            /* Col piano ancora vuoto il tasto e' il secondo modo di cominciare,
+               insieme al `+`: porta dentro un file invece di lavorare a vuoto. */
+            onClick={quanti === 0 && servizio.accetta.file ? onPick : onZack}
+          >
+            <img
+              src="/zack/tasto-zack.webp"
+              srcSet="/zack/tasto-zack-600.webp 600w, /zack/tasto-zack.webp 1200w"
+              sizes="300px"
+              alt=""
+              width="1200"
+              height="670"
+            />
+          </button>
 
-        {/* Il punto oro: alla destra dell'ovale e in alto, senza toccarlo —
-            la stessa posizione della home, misurata sull'immagine. */}
-        <button
-          className="punto-oro"
-          aria-expanded={aperto}
-          aria-label={t('zack.what')}
-          onClick={() => setAperto((v) => !v)}
-        >
-          <i />
-        </button>
+          {/* Il punto oro: alla destra dell'ovale e in alto, senza toccarlo —
+              la stessa posizione della home, misurata sull'immagine. */}
+          <button
+            className="punto-oro"
+            aria-expanded={aperto}
+            aria-label={t('zack.what')}
+            onClick={() => setAperto((v) => !v)}
+          >
+            <i />
+          </button>
 
-        {aperto && (
-          <div className="sc-tuo">
-            <p>{t('zack.title')}</p>
+          {aperto && (
+            <div className="sc-tuo">
+              <p>{t('zack.title')}</p>
 
-            {/* Un servizio che non offre modelli non deve mostrare il
-                riquadro vuoto dove starebbero: un gruppo senza pastiglie e'
-                un comando che non si puo' premere. */}
-            {offerti.length > 0 && (
-              <div className="sc-modelli" role="group" aria-label={t('control.quality.label')}>
-                {offerti.map((m) => (
-                  <button
-                    key={m.id}
-                    className="pastiglia"
-                    aria-pressed={modello === m.id}
-                    title={m.id}
-                    onClick={() => onModello(m.id)}
-                  >
-                    {t(m.labelKey)}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* I quattro fattori, gli stessi della home. Stanno fra i modelli
-                e la catena perche' rispondono alla seconda domanda del tasto:
-                con quale modello, quanto grande, e poi cosa fare. Un filmato
-                non si ingrandisce col modello, quindi li' non ci sono. */}
-            {servizio.tasto.fattori && (
-              <div className="sc-fattori" role="group" aria-label={t('zack.resize')}>
-                {Object.keys(FATTORI).map((chiave) => (
-                  <button
-                    key={chiave}
-                    className="pastiglia"
-                    aria-pressed={ricetta.includes(`ridimensiona:${chiave}`)}
-                    title={t(`zack.stepHelp.ridimensiona:${chiave}`)}
-                    onClick={() => onRicetta(commutaFattore(ricetta, chiave))}
-                  >
-                    {SIMBOLO[chiave]}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* La catena e' dello scontorno e di chi gli somiglia. Su Brain
-                «Scontorna · Ingrandisci · Vettorializza» sarebbero tre
-                pastiglie che non toccano niente: il tasto li' riordina. */}
-            {servizio.tasto.azione === 'catena' && (
-              <div className="sc-catena">
-                {(servizio.tasto.passi || PASSI).map((passo) => {
-                  const acceso = ricetta.includes(passo);
-                  return (
+              {/* Un servizio che non offre modelli non deve mostrare il
+                  riquadro vuoto dove starebbero: un gruppo senza pastiglie e'
+                  un comando che non si puo' premere. */}
+              {offerti.length > 0 && (
+                <div className="sc-modelli" role="group" aria-label={t('control.quality.label')}>
+                  {offerti.map((m) => (
                     <button
-                      key={passo}
+                      key={m.id}
                       className="pastiglia"
-                      aria-pressed={acceso}
-                      title={t(`zack.stepHelp.${passo}`)}
-                      onClick={() => onRicetta(commutaPasso(ricetta, passo))}
+                      aria-pressed={modello === m.id}
+                      title={m.id}
+                      onClick={() => onModello(m.id)}
                     >
-                      {t(`zack.step.${passo}`)}
+                      {t(m.labelKey)}
                     </button>
-                  );
-                })}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
 
-            {/* Le scelte del tasto, un gruppo per domanda: su Brain la regola
-                di riordino, su Immagine la misura e il formato. Rispondono
-                tutte alla stessa domanda del punto oro — «cosa farà quando lo
-                premo» — quindi stanno dove sta già quella risposta. */}
-            {(servizio.tasto.gruppi || []).map((g) => (
-              <div className="sc-fattori" role="group" aria-label={t(g.label)} key={g.id}>
-                {g.opzioni.map((o) => (
-                  <button
-                    key={o.id}
-                    className="pastiglia"
-                    aria-pressed={(scelte?.[g.id] ?? g.predefinita) === o.id}
-                    onClick={() => onScelta(g.id, o.id)}
-                  >
-                    {t(o.label)}
-                  </button>
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              {/* I quattro fattori, gli stessi della home. Stanno fra i modelli
+                  e la catena perche' rispondono alla seconda domanda del tasto:
+                  con quale modello, quanto grande, e poi cosa fare. Un filmato
+                  non si ingrandisce col modello, quindi li' non ci sono. */}
+              {servizio.tasto.fattori && (
+                <div className="sc-fattori" role="group" aria-label={t('zack.resize')}>
+                  {Object.keys(FATTORI).map((chiave) => (
+                    <button
+                      key={chiave}
+                      className="pastiglia"
+                      aria-pressed={ricetta.includes(`ridimensiona:${chiave}`)}
+                      title={t(`zack.stepHelp.ridimensiona:${chiave}`)}
+                      onClick={() => onRicetta(commutaFattore(ricetta, chiave))}
+                    >
+                      {SIMBOLO[chiave]}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* La catena e' dello scontorno e di chi gli somiglia. Su Brain
+                  «Scontorna · Ingrandisci · Vettorializza» sarebbero tre
+                  pastiglie che non toccano niente: il tasto li' riordina. */}
+              {servizio.tasto.azione === 'catena' && (
+                <div className="sc-catena">
+                  {(servizio.tasto.passi || PASSI).map((passo) => {
+                    const acceso = ricetta.includes(passo);
+                    return (
+                      <button
+                        key={passo}
+                        className="pastiglia"
+                        aria-pressed={acceso}
+                        title={t(`zack.stepHelp.${passo}`)}
+                        onClick={() => onRicetta(commutaPasso(ricetta, passo))}
+                      >
+                        {t(`zack.step.${passo}`)}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Le scelte del tasto, un gruppo per domanda: su Brain la regola
+                  di riordino, su Immagine la misura e il formato. Rispondono
+                  tutte alla stessa domanda del punto oro — «cosa farà quando lo
+                  premo» — quindi stanno dove sta già quella risposta. */}
+              {(servizio.tasto.gruppi || []).map((g) => (
+                <div className="sc-fattori" role="group" aria-label={t(g.label)} key={g.id}>
+                  {g.opzioni.map((o) => (
+                    <button
+                      key={o.id}
+                      className="pastiglia"
+                      aria-pressed={(scelte?.[g.id] ?? g.predefinita) === o.id}
+                      onClick={() => onScelta(g.id, o.id)}
+                    >
+                      {t(o.label)}
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

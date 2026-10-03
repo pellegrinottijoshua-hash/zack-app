@@ -86,6 +86,18 @@ sfratto, §5 di RIPRENDI-QUI).
 7. **Il tasto Zack esce da Brain** (B1) in 5b, e con lui il punto oro del
    riordino: le quattro regole di `riordina.js` passano nelle tre lineette.
 
+### Prese in 5b (stesso giorno)
+
+8. **Prendere in mano = premere e muovere**, senza timer: sulla tela un dito
+   che trascina sposta già il file; se il rilascio cade su un cerchio acceso
+   (servizio, pocket, pool) il file va lì e l'oggetto torna al suo posto.
+   Il tocco fermo apre la scheda.
+9. **La scheda non ha azioni sui servizi** (B1): un file si manda a un
+   servizio trascinandolo sul suo cerchio. La scheda è per guardare il file
+   e scriverne nome e nota.
+10. **Il ripiego di un `.md` è il segno della nota**, non la cartella: dalla
+    5c la cartella vorrà dire cartella.
+
 ## 4. Le fette
 
 **5a — l'archivio e il cestino** (questa sessione, 4 compiti):

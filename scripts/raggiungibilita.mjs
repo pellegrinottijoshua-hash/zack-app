@@ -433,6 +433,9 @@ async function main() {
             // uno di loro nel cestino, così «rimetti» e «svuota» ci sono.
             giri.push({ servizio: 'brain', primo: false, solo: '.pool', apri: ['.sc-strumento[data-strumento="pool"]'], pocket: true });
             giri.push({ servizio: 'brain', primo: false, solo: '.cestino', apri: ['.sc-strumento[data-strumento="cestino"]'], pocket: true, cestino: true });
+            // La scheda di un file sulla tela (fetta 5b): il file arriva su
+            // Brain dal pocket (`dest: 'brain'`), e il tocco la apre.
+            giri.push({ servizio: 'brain', primo: false, solo: '.brain-scheda', apri: ['.brain-oggetto[data-t="asset"]'], pocket: true, dest: 'brain', aspetta: '.brain-oggetto[data-t="asset"]' });
             // Ogni pagina ha un secondo tentativo, ma SOLO per un blocco
             // (tempo scaduto): un difetto o un errore vero non si ritenta.
             const conRitentativo = async (giro) => {
