@@ -23,12 +23,15 @@ import SoundLab from './components/SoundLab.jsx';
 import VoceLab from './components/VoceLab.jsx';
 import FinishPanel from './components/FinishPanel.jsx';
 import Advanced from './components/Advanced.jsx';
-import ScegliAsset from './components/ScegliAsset.jsx';
+import Pool from './components/Pool.jsx';
+import Cestino from './components/Cestino.jsx';
+import { chiediSpazioPersistente } from './engine/modelloCache.js';
 import Tutorial from './components/Tutorial.jsx';
 import Brain from './components/Brain.jsx';
 import Pocket, { IconaOutput, Destinazioni } from './components/Pocket.jsx';
 import { usePocket } from './hooks/usePocket.js';
 import { destinazioniSu } from './engine/pocket.js';
+import { pesoLeggibile } from './engine/archivio.js';
 import { impronta } from './store/library.js';
 import BatchGrid from './components/BatchGrid.jsx';
 import Preventivo from './components/Preventivo.jsx';
@@ -250,7 +253,7 @@ export default function App() {
   const [modoDisegno, setModoDisegno] = useState('select');
 
   /**
-   * Cosa è aperto SOPRA la tela: `null`, `'avanzati'` o `'libreria'`.
+   * Cosa è aperto SOPRA la tela: `null`, `'avanzati'`, `'pool'`, `'cestino'`…
    *
    * Uno stato solo e non due booleani: due booleani possono essere veri
    * insieme, e infatti lo sono stati — aperta la libreria e poi gli avanzati,
@@ -461,6 +464,7 @@ export default function App() {
 
   const library = useLibrary();
   const pocketStato = usePocket();
+  const cestinatiIds = useMemo(() => new Set(library.cestino.map((a) => a.id)), [library.cestino]);
   // Un file posato su Video (4b): primo fotogramma o riferimento? L'ovale
   // con le sole due voci, finché non si sceglie.
   const [domandaPosa, setDomandaPosa] = useState(null);
@@ -1443,6 +1447,16 @@ export default function App() {
     if (asset && dest) vaiA(dest, asset).catch(() => setError(t('engine.error.body')));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [library.ready]);
+  // Brain è dove vivono i file (T6): entrandoci si chiede una volta al
+  // browser di non sfrattare OPFS. È ciò che `persist()` protegge davvero
+  // (§5 di RIPRENDI-QUI); se dice di no si lavora lo stesso.
+  const persistenzaChiesta = useRef(false);
+  useEffect(() => {
+    if (tool !== 'brain' || persistenzaChiesta.current) return;
+    persistenzaChiesta.current = true;
+    chiediSpazioPersistente();
+  }, [tool]);
+
   // Entrando in Brain si apre l'ultima tela, o se ne crea una: una schermata
   // che chiede di creare qualcosa prima di mostrare com'è fatta si abbandona.
   useEffect(() => {
@@ -2521,6 +2535,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               ref={brainRef}
               items={tela}
               assets={library.assets}
+              cestinati={cestinatiIds}
               leggi={library.read}
               onChange={cambiaTela}
               onUse={assetAction}
@@ -3052,7 +3067,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 // Dalla libreria: un pannello che si apre, si sceglie, si
                 // chiude. Era un cassetto FISSO a sinistra della tela — e la
                 // tela di Brain dev'essere vuota.
-                if (quale === 'libreria') return setSopraLaTela('libreria');
+                if (quale === 'libreria') return setSopraLaTela('pool');
                 // `prossimoPosto` sa dove c'è spazio: due note nate insieme
                 // non devono nascere una sopra l'altra.
                 const dove = prossimoPosto(tela);
@@ -3064,11 +3079,29 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               /* Gli avanzati, quando il cerchio li apre. Lo stesso contenuto
                  della colonna: non una seconda copia, la stessa. */
               pannello={
-                sopraLaTela === 'libreria' ? (
-                  <ScegliAsset
+                sopraLaTela === 'pool' ? (
+                  <Pool
                     assets={library.assets.filter((a) => !tela.some((o) => o.assetId === a.id))}
                     tuttiSulPiano={library.assets.length > 0}
+                    usage={library.usage}
                     onScegli={metiSullaTela}
+                    onChiudi={() => setSopraLaTela(null)}
+                  />
+                ) : sopraLaTela === 'cestino' ? (
+                  <Cestino
+                    cestino={library.cestino}
+                    usage={library.usage}
+                    onRimetti={(id) => library.rimetti(id).catch(() => setError(t('engine.error.body')))}
+                    onSvuota={async () => {
+                      try {
+                        const { andati, byte } = await library.svuotaCestino();
+                        setNotice(t('brain.cestino.svuotato', { n: andati, peso: pesoLeggibile(byte) }));
+                        // Le tele ripulite dallo svuotamento: quella aperta si rilegge.
+                        if (telaId) setTela(await library.readBrain(telaId));
+                      } catch {
+                        setError(t('engine.error.body'));
+                      }
+                    }}
                     onChiudi={() => setSopraLaTela(null)}
                   />
                 ) : sopraLaTela === 'tutorial' ? (
@@ -3245,6 +3278,8 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   riferimenti: () => setSopraLaTela((v) => (v === 'riferimenti' ? null : 'riferimenti')),
                   salva: tool === 'video' ? salvaVideoGenerato : salvaImmagineGenerata,
                   centra: () => brainRef.current?.centra(),
+                  pool: () => setSopraLaTela((v) => (v === 'pool' ? null : 'pool')),
+                  cestino: () => setSopraLaTela((v) => (v === 'cestino' ? null : 'cestino')),
                   tutorial: () => setSopraLaTela((v) => (v === 'tutorial' ? null : 'tutorial')),
                   /*
                    * Gli otto strumenti di disegno: il cerchio accende il modo,
@@ -3278,6 +3313,8 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   pulisci: s.clean,
                   avanzati: sopraLaTela === 'avanzati',
                   riferimenti: sopraLaTela === 'riferimenti',
+                  pool: sopraLaTela === 'pool',
+                  cestino: sopraLaTela === 'cestino',
                 };
                 /*
                  * Cosa vuol dire «c'e' qualcosa sul piano» cambia col

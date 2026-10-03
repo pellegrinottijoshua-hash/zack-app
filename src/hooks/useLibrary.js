@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as lib from '../store/library.js';
+import { dividi } from '../engine/archivio.js';
 import {
   queryAssets,
   allTags,
@@ -22,7 +23,10 @@ import {
 export function useLibrary() {
   const [ready, setReady] = useState(false);
   const [supported, setSupported] = useState(true);
-  const [assets, setAssets] = useState([]);
+  // Tutti, cestinati compresi: chi legge vede solo i vivi (`assets`) o solo
+  // il cestino (`cestino`), mai il miscuglio.
+  const [tutti, setTutti] = useState([]);
+  const { vivi: assets, cestino } = useMemo(() => dividi(tutti), [tutti]);
   const [folders, setFolders] = useState([]);
   const [moodboards, setMoodboards] = useState([]);
   const [usage, setUsage] = useState({ used: null, quota: null });
@@ -32,7 +36,7 @@ export function useLibrary() {
   const refresh = useCallback(async () => {
     try {
       const snap = await lib.snapshot();
-      setAssets(snap.assets);
+      setTutti(snap.assets);
       setFolders(snap.folders);
       setMoodboards(snap.moodboards);
       setUsage(snap.usage);
@@ -84,6 +88,7 @@ export function useLibrary() {
     ready,
     supported,
     assets,
+    cestino,
     visible: shown,
     collections,
     folders,
@@ -96,9 +101,13 @@ export function useLibrary() {
     save,
     pathOf: (id) => folderPath(folders, id),
     read: lib.readAsset,
-    remove: act(lib.deleteAsset),
+    // «Butta» porta nel cestino (fase 5a): dal 2026-10-03 nessun gesto della
+    // libreria cancella per davvero, tranne svuotare il cestino.
+    remove: act(lib.cestinaAsset),
+    rimetti: act(lib.rimettiAsset),
+    svuotaCestino: act(lib.svuotaCestino),
     /**
-     * Cancella molti lavori con un solo ricarico della libreria.
+     * Cestina molti lavori con un solo ricarico della libreria.
      *
      * Passare cento volte da `remove` significherebbe cento istantanee
      * dell'archivio: la potatura è il gesto che tocca più lavori insieme, ed è
@@ -110,7 +119,7 @@ export function useLibrary() {
       async (ids) => {
         for (const id of ids) {
           try {
-            await lib.deleteAsset(id);
+            await lib.cestinaAsset(id);
           } catch {
             // Già sparito, o file irraggiungibile: si va avanti.
           }

@@ -530,9 +530,33 @@ tela» ha una sola eccezione dichiarata; l'avviso dopo «Video, primo
 fotogramma» dice «Aggiunto ai riferimenti»; sulla home il pocket è solo a
 tocco (lì non ci sono cerchi di servizio su cui posare).
 
-**Prossima fase: la 5, Brain** (la più lunga: 2 g ≈ 20 M nella scaletta) — da
-tagliare in fette prima di cominciare, come la 2.
+**Fase 4 pubblicata** (`8edaf7f` su `main`).
+
+## ▶️ 2026-10-03 — FASE 5 (Brain, la libreria): tagliata, 5a FATTA
+
+Spec: [`superpowers/specs/2026-10-03-brain-libreria-design.md`](superpowers/specs/2026-10-03-brain-libreria-design.md).
+Quattro fette: **5a** archivio e cestino · **5b** la tela di soli file ·
+**5c** cartelle e riordino · **5d** i prompt e la vista libreria.
+Il committente ha detto «parti da solo»: le decisioni che il quaderno
+lasciava aperte sono nel **§3 della spec**, da ribaltare se non vanno.
+
+- `57354bf` 5a/1 — `engine/archivio.js` puro: il cestino è un campo
+  (`cestinatoIl`), la pool è una lente, lo spazio senza misura è `ignoto`.
+- `5349d2b` 5a/2 — `useLibrary().assets` = solo i vivi; «butta» e la potatura
+  cestinano; `svuotaCestino` è l'unica cancellazione vera; risalvare un file
+  cestinato lo rimette (era la trappola: tornava invisibile).
+- `46bb073` 5a/3 — in Brain il cerchio della **pool** (al posto di
+  `ScegliAsset`: dal più recente, 20 + «altri», ricerca) e il **cestino**
+  (rimetti, svuota con conferma, lo spazio); il file cestinato si nasconde
+  dalla tela ma resta nei dati; `persist()` all'ingresso in Brain.
+- `f107b06` 5a/4 — lo script apre pool e cestino (con un file cestinato).
+- `e7eb157` lo script: anche la navigazione ha un tetto, e al secondo
+  tentativo **Chrome si riapre** (un renderer bloccato non si riprende
+  ricaricando). Provato con un `for(;;)` iniettato: «↻» e avanti.
+- 872 prove verdi, build ok, script di 2a **verde**: 876 pagine, 15.460 comandi (un blocco di Chrome recuperato da solo).
+
+**Prossima sessione: la 5b.**
 
 ```
-Leggi docs/2026-09-18-riprendi-qui.md e taglia la fase 5 in fette.
+Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 5b.
 ```

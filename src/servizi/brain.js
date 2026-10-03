@@ -70,5 +70,13 @@ export default {
     { id: 'annulla', icon: 'undo', label: 'bar.undo', quando: 'con-file' },
     { id: 'centra', icon: 'centra', label: 'brain.center', quando: 'con-file', lato: 'sinistra' },
     { id: 'avanzati', icon: 'tag', label: 'advanced.title', quando: 'con-file' },
+    /*
+     * La pool e il cestino (fase 5a, B3): ci sono SEMPRE, anche a tela vuota
+     * — è proprio a tela vuota che si cerca da dove prendere un file, e il
+     * cestino restituisce anche quando sulla tela non c'è niente. Il cestino
+     * è l'ultimo: «in basso a destra, l'ultima icona».
+     */
+    { id: 'pool', icon: 'pool', label: 'brain.pool.label', quando: 'sempre' },
+    { id: 'cestino', icon: 'cestino', label: 'brain.cestino.label', quando: 'sempre' },
   ],
 };

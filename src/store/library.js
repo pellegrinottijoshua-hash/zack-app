@@ -1,5 +1,6 @@
 import * as db from './db.js';
 import { normalizzaTela } from '../engine/brain.js';
+import { cestina, rimetti, inCestino, ritrovato, senzaFile } from '../engine/archivio.js';
 import * as files from './files.js';
 import {
   makeAsset,
@@ -88,7 +89,12 @@ export async function saveAsset(blob, { name, kind, meta = {}, folderId = null }
 
   const hash = await impronta(blob);
   const gia = giaInLibreria(existing, { name, hash });
-  if (gia) return { ...gia, riusato: true };
+  if (gia) {
+    // Se stava nel cestino torna vivo (`ritrovato`, engine/archivio.js).
+    const { asset, daScrivere } = ritrovato(gia);
+    if (daScrivere) await db.put('assets', asset);
+    return { ...asset, riusato: true };
+  }
 
   const asset = makeAsset({ name, kind, bytes: blob.size, meta, folderId });
   asset.hash = hash;
@@ -116,6 +122,57 @@ export async function deleteAsset(id) {
   if (!asset) return;
   await db.remove('assets', id);
   await files.deleteFile(asset.file);
+}
+
+/**
+ * Il cestino (fase 5a). Cestinare non tocca il file né il suo posto: scrive
+ * solo la data, e chi lo rimette lo ritrova sulla tela, nel pocket, nella
+ * cartella. Svuotare è l'unica cancellazione vera.
+ */
+export async function cestinaAsset(id) {
+  const asset = await db.get('assets', id);
+  if (!asset || inCestino(asset)) return asset ?? null;
+  const next = cestina(asset);
+  await db.put('assets', next);
+  return next;
+}
+
+export async function rimettiAsset(id) {
+  const asset = await db.get('assets', id);
+  if (!asset) throw new Error(`Nessun asset con id ${id}`);
+  const next = rimetti(asset);
+  await db.put('assets', next);
+  return next;
+}
+
+/**
+ * Svuota il cestino: record e file, per davvero. Toglie anche i richiami
+ * dalle tele di Brain — un oggetto che punta al nulla è una tela che mente —
+ * con le frecce che li toccavano. Un file che non si cancella non ferma gli
+ * altri. Restituisce quanti sono andati e quanti byte si sono liberati.
+ */
+export async function svuotaCestino() {
+  const tutti = await db.all('assets');
+  const via = tutti.filter(inCestino);
+  const andati = new Set();
+  let byte = 0;
+  for (const a of via) {
+    try {
+      await deleteAsset(a.id);
+      andati.add(a.id);
+      byte += Number(a.bytes) || 0;
+    } catch {
+      // File già sparito o irraggiungibile: si va avanti.
+    }
+  }
+  if (andati.size) {
+    for (const m of await db.all('moodboards')) {
+      const items = await readBrain(m.id);
+      const next = senzaFile(items, andati);
+      if (next !== items) await saveBrain(m.id, next);
+    }
+  }
+  return { andati: andati.size, byte };
 }
 
 /**

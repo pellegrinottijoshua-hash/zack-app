@@ -169,8 +169,8 @@
       "help": "Mette tutti i tuoi asset in un unico file zip da salvare."
     },
     "delete": {
-      "label": "Elimina",
-      "help": "Cancella questo asset. Non si può annullare."
+      "label": "Nel cestino",
+      "help": "Lo sposta nel cestino di Brain: da lì lo rimetti finché non lo svuoti."
     },
     "open": {
       "label": "Apri",
@@ -223,8 +223,8 @@
     "duplicates": "Scegli i doppioni",
     "none": "Deseleziona",
     "selected": "{n} scelti · {peso}",
-    "delete": "Elimina {n}",
-    "confirm": "Elimino {n} asset e libero {peso}? Non si può annullare.",
+    "delete": "Nel cestino {n}",
+    "confirm": "Sposto {n} asset nel cestino? Li rimetti da lì finché non lo svuoti; svuotandolo liberi {peso}.",
     "help": "Scegli più asset insieme e buttali. «Scegli i doppioni» propone gli scarti — la stessa operazione rifatta sullo stesso file — e non tocca mai preferiti, note, tag, riferimenti e asset da cui ne sono nati altri."
   },
   "onboarding": {
@@ -711,6 +711,28 @@
     "center": "Centra tutto",
     "drawer": "Da mettere sulla tela",
     "drawerEmpty": "Tutti gli asset sono già sulla tela.",
+    "pool": {
+      "label": "Pool",
+      "title": "La pool — dal più recente",
+      "cerca": "Cerca per nome, nota o tag",
+      "niente": "Niente con questo nome, nota o tag.",
+      "altri": "Altri {n}"
+    },
+    "cestino": {
+      "label": "Cestino",
+      "title": "Il cestino",
+      "vuoto": "Il cestino è vuoto. Quello che butti resta qui finché non lo svuoti.",
+      "rimetti": "Rimetti",
+      "svuota": "Svuota il cestino ({n} · {peso})",
+      "conferma": "Cancello per sempre {n} file e libero {peso}? È l'unico gesto che non si può annullare.",
+      "svuotato": "Cestino svuotato: {n} file, liberati {peso}."
+    },
+    "spazio": {
+      "misura": "Spazio del browser: {usato} su {quota}.",
+      "attento": "Lo spazio del browser si sta riempiendo: {usato} su {quota}. Il cestino è il posto da cui liberarlo.",
+      "pieno": "Lo spazio del browser è quasi finito: {usato} su {quota}. Quando finisce non si salva più niente.",
+      "proponi": "Svuotando il cestino liberi {peso}."
+    },
     "notePlaceholder": "Scrivi qui",
     "groupPlaceholder": "Come si chiama questo gruppo",
     "remove": "Togli dalla tela",

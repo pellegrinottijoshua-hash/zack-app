@@ -211,7 +211,8 @@ export default function Landing() {
         libreria.current = lib;
         if (!(await lib.isSupported())) return;
         const { assets } = await lib.snapshot();
-        if (vivo) setAssetsPocket(assets);
+        // Solo i vivi: un file nel cestino non si offre dal pocket (fase 5a).
+        if (vivo) setAssetsPocket(assets.filter((a) => !a.cestinatoIl));
       })
       .catch(() => {});
     return () => {
