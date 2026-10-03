@@ -2584,6 +2584,9 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 library.update(id, { name: safeName(nome) }).catch(() => setError(t('engine.error.body')))
               }
               onNota={(id, nota) => library.setNote(id, nota).catch(() => setError(t('engine.error.body')))}
+              onPosa={(bersaglio, asset) =>
+                posa(bersaglio, asset.kind, async () => asset).catch(() => setError(t('engine.error.body')))
+              }
               onIcona={iconaDocumentoScelta}
               onScarica={scaricaAsset}
               /* Il gesto aperto arriva da fuori: il cerchio della freccia sta

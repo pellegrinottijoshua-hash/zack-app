@@ -13,7 +13,9 @@ import {
   CATEGORIE,
 } from '../engine/brain.js';
 import { oggettiNascosti } from '../engine/archivio.js';
-import { eTrascinamento } from '../engine/pocket.js';
+import { eTrascinamento, bersagliAccesi } from '../engine/pocket.js';
+import { accendi, spegni, sotto } from '../hooks/useTrascina.js';
+import { createPortal } from 'react-dom';
 import Icon from './Icon.jsx';
 // Con l'alias: `muovi` qui e' gia' quello di `engine/brain.js` (sposta un
 // oggetto), e `muove` accanto a lui si confonderebbe a ogni lettura.
@@ -326,6 +328,9 @@ function Brain({
   onScarica,
   onRinomina,
   onNota,
+  /* Un file posato su un servizio o sul pocket (5b, B5): lo esegue App, con
+     la stessa `posa` dell'icona output. */
+  onPosa,
   /*
    * La freccia in corso arriva da FUORI: il comando ora e' un cerchio
    * dell'impianto, come i tre gesti di FilmLab. Tenerne anche uno qui dentro
@@ -347,6 +352,8 @@ function Brain({
   const [scheda, setScheda] = useState(null);
   // Vero se il puntatore si è mosso oltre la soglia: allora non era un tocco.
   const mosso = useRef(false);
+  // Il file che segue il dito FUORI dalla tela (sulla tela si muove lui).
+  const [fantasma, setFantasma] = useState(null);
   /* Il documento aperto a tutto schermo sopra la tela. Non è un secondo
      stato del prodotto: è una lettura, e si chiude con Esc come ogni altro
      pannello che copre il lavoro. */
@@ -379,7 +386,8 @@ function Brain({
     } catch {
       /* puntatore non riconosciuto: si trascina lo stesso finché resta sopra */
     }
-    preso.current = { id, x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY };
+    const o = items.find((x) => x.id === id);
+    preso.current = { id, x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, ox: o?.x, oy: o?.y };
     mosso.current = false;
     setScelto(id);
     onChange(davanti(items, id));
@@ -391,15 +399,69 @@ function Brain({
     // Sotto la soglia è ancora un tocco: l'oggetto non si muove, e al
     // rilascio si apre la scheda. Un dito non sta mai fermo del tutto.
     if (!mosso.current && !eTrascinamento(e.clientX - x0, e.clientY - y0)) return;
-    mosso.current = true;
+    if (!mosso.current) {
+      mosso.current = true;
+      // La cattura passa alla TELA: quella sull'oggetto si perde appena
+      // `davanti` lo sposta in cima (React ne sposta il nodo, e un nodo tolto
+      // dal documento perde la cattura). Senza, il rilascio fuori dalla tela
+      // — su un servizio, sulla pool — non arrivava mai, e i cerchi restavano
+      // accesi. Solo qui e non al tocco: un tocco deve restare un `click`
+      // sull'oggetto, e la scheda si apre da lì.
+      try {
+        piano.current.setPointerCapture(e.pointerId);
+      } catch {
+        /* puntatore già rilasciato: il gesto finisce dentro la tela */
+      }
+      // Prendere in mano un FILE (B5): si accendono i posti dove può andare
+      // — gli stessi dell'ovale — più la pool, che lo toglie dalla tela.
+      const o = items.find((x) => x.id === id);
+      const a = o?.t === 'asset' ? perId.get(o.assetId) : null;
+      if (a && onPosa) {
+        accendi([...bersagliAccesi(a.kind, 'brain'), 'pool']);
+        preso.current.file = a;
+      }
+    }
     const dx = (e.clientX - x) / vista.z;
     const dy = (e.clientY - y) / vista.z;
     preso.current = { ...preso.current, x: e.clientX, y: e.clientY };
     onChange(muovi(items, id, dx, dy));
+    if (preso.current.file) {
+      const b = sotto(e.clientX, e.clientY);
+      if (b !== preso.current.sopra) {
+        preso.current.sopra?.removeAttribute('data-sopra');
+        b?.setAttribute('data-sopra', '');
+        preso.current.sopra = b;
+      }
+      // Fuori dalla tela l'oggetto non si vede più (la tela taglia): lo
+      // segue il suo fantasma, come l'icona output.
+      const r = piano.current?.getBoundingClientRect();
+      const fuori = r && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom);
+      setFantasma(fuori ? { x: e.clientX, y: e.clientY, file: preso.current.file } : null);
+    }
   }
 
-  const molla = () => {
+  // Brain che sparisce a metà gesto (cambio servizio) non lascia accesi i
+  // cerchi del resto dell'app.
+  useEffect(() => () => preso.current?.file && spegni(), []);
+
+  const molla = (e) => {
+    const p = preso.current;
     preso.current = null;
+    if (!p?.file) return;
+    const b = e ? sotto(e.clientX, e.clientY) : null;
+    spegni();
+    setFantasma(null);
+    if (!b) return;
+    // Posato fuori: l'oggetto torna dov'era, e il file va dove l'hai posato.
+    const o = items.find((x) => x.id === p.id);
+    const tornato = o ? muovi(items, p.id, p.ox - o.x, p.oy - o.y) : items;
+    if (b.dataset.bersaglio === 'pool') {
+      onChange(togli(tornato, p.id));
+      setScelto(null);
+      return;
+    }
+    onChange(tornato);
+    onPosa(b.dataset.bersaglio, p.file);
   };
 
   /**
@@ -418,6 +480,9 @@ function Brain({
     // cominciare — altrimenti l'oggetto vola via seguendo il centro delle due
     // dita. `prendi` (che gira dopo, sull'oggetto) non lo riprende.
     preso.current = null;
+    // ...e se era un file preso in mano, i cerchi che aveva acceso si spengono.
+    spegni();
+    setFantasma(null);
     const r = piano.current.getBoundingClientRect();
     pizzico.current = { inizio: { ...vista }, left: r.left, top: r.top };
   }
@@ -450,7 +515,7 @@ function Brain({
   function ditoAlzato(e) {
     ditoSu(gesto.current, e.pointerId);
     if (!dueDita(gesto.current)) pizzico.current = null;
-    molla();
+    molla(e);
   }
 
   function rotella(e) {
@@ -699,6 +764,14 @@ function Brain({
           )
         )}
       </div>
+
+      {fantasma &&
+        createPortal(
+          <div className="fantasma" aria-hidden="true" style={{ left: fantasma.x, top: fantasma.y }}>
+            <Faccia asset={fantasma.file} leggi={leggi} />
+          </div>,
+          document.body,
+        )}
 
       {aperto && (
         <Documento

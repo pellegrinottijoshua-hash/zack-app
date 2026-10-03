@@ -264,6 +264,9 @@ export default function Piano({
                 key={s.id}
                 className="sc-strumento"
                 data-strumento={s.id}
+                /* La pool di Brain è anche un bersaglio (5b): un file della
+                   tela posato lì torna nell'archivio, cioè esce dalla tela. */
+                data-bersaglio={s.id === 'pool' ? 'pool' : undefined}
                 aria-pressed={s.active || undefined}
                 aria-label={s.label}
                 title={s.label}

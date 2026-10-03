@@ -1820,6 +1820,10 @@ html[data-trascina] [data-bersaglio]:not([data-acceso]) {
   height: 100%;
   object-fit: cover;
 }
+.fantasma > svg {
+  width: 42%;
+  height: 42%;
+}
 
 /* ══ La pianta dello studio (committente, 2026-09-15) ═══════════════════
    Quattro bordi, quattro mestieri, nessuna sovrapposizione:
