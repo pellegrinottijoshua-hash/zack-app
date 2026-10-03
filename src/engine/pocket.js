@@ -138,3 +138,15 @@ export const SOGLIA = 8;
 export function eTrascinamento(dx, dy) {
   return Math.hypot(dx, dy) >= SOGLIA;
 }
+
+/**
+ * I riferimenti di Immagine e Video si pescano anche dal pocket (A7): i suoi
+ * file vengono prima, dal più recente, e sotto non si ripetono. `assets` è
+ * già filtrato per ciò che il servizio accetta, quindi un video nel pocket
+ * non compare fra le immagini di Video.
+ */
+export function dividiPerPocket(pocket, assets) {
+  const dalPocket = vivi(pocket, assets);
+  const dentro = new Set(dalPocket.map((a) => a.id));
+  return { dalPocket, resto: assets.filter((a) => !dentro.has(a.id)) };
+}

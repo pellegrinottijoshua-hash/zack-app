@@ -6115,6 +6115,17 @@ html[data-trascina] [data-bersaglio]:not([data-acceso]) {
   max-height: 220px;
   overflow-y: auto;
 }
+/* «Dal pocket» / «Dalla libreria» (4b): due titoletti, non due pannelli. */
+.riferimenti-sezione {
+  margin: 0 0 -6px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--inchiostro-2);
+}
+.riferimenti-pocket {
+  max-height: none;
+}
 .riferimenti-scelti {
   display: flex;
   flex-direction: column;

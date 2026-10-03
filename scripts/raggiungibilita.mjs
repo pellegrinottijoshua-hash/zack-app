@@ -401,6 +401,11 @@ async function main() {
             if (!libreria) giri.push({ servizio: 'home', primo: false, solo: '.destinazioni', apri: ['.pocket-tasto', '.pocket-file'], pocket: true });
             giri.push({ servizio: 'scontorna', primo: false, solo: '.icona-output', apri: ['.sc-tasto button'], pocket: true, dest: 'scontorna', aspetta: '.icona-output' });
             giri.push({ servizio: 'scontorna', primo: false, solo: '.destinazioni', apri: ['.sc-tasto button', '.icona-output'], pocket: true, dest: 'scontorna', aspetta: '.icona-output' });
+            // I riferimenti dal pocket (fetta 4b): «Dal pocket» sopra la
+            // libreria, in Immagine e in Video. I suoi file sono comandi nuovi.
+            for (const servizio of ['immagine', 'video']) {
+              giri.push({ servizio, primo: false, solo: '.riferimenti', apri: ['.sc-strumento[data-strumento="riferimenti"]'], pocket: true });
+            }
             for (const { servizio, primo, solo, apri: apriUno, pocket, dest, aspetta } of giri) {
               const apri = apriUno && [].concat(apriUno);
               let indirizzo = servizio === 'home' ? `${base}/` : `${base}/app/?servizio=${servizio}`;

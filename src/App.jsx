@@ -3081,6 +3081,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                       onCambia={setImmaginiVideo}
                       // Solo immagini: un audio come primo fotogramma non esiste.
                       assets={library.assets.filter((a) => ['png', 'jpg'].includes(a.kind))}
+                      pocket={pocketStato.pocket}
                       onChiudi={() => setSopraLaTela(null)}
                       ruoloIniziale={ruoloVideo}
                       ruoli={RUOLI_VIDEO}
@@ -3094,6 +3095,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                       scelti={references}
                       onCambia={setReferences}
                       assets={library.assets}
+                      pocket={pocketStato.pocket}
                       onChiudi={() => setSopraLaTela(null)}
                       ruoloIniziale={ruoloMenu}
                     />

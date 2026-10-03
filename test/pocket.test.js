@@ -12,6 +12,7 @@ import {
   bersagliAccesi,
   eTrascinamento,
   SOGLIA,
+  dividiPerPocket,
   TETTO,
   VISIBILI,
 } from '../src/engine/pocket.js';
@@ -120,4 +121,26 @@ test('trascinare: sotto la soglia resta un tocco', () => {
   assert.equal(eTrascinamento(5, 6), false); // ~7,8 px: un dito che trema
   assert.equal(eTrascinamento(SOGLIA, 0), true);
   assert.equal(eTrascinamento(-6, -6), true);
+});
+
+// ── 4b: i riferimenti dal pocket (A7) ───────────────────────────────────
+
+test('riferimenti: quelli del pocket prima, dal più recente, e sotto non si ripetono', () => {
+  const assets = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }];
+  const { dalPocket, resto } = dividiPerPocket({ giorno: 'g', ids: ['c', 'x', 'a'] }, assets);
+  assert.deepEqual(dalPocket.map((a) => a.id), ['a', 'c']); // 'x' non c'è più: saltato
+  assert.deepEqual(resto.map((a) => a.id), ['b', 'd']);
+});
+
+test('riferimenti: un file del pocket che il servizio non accetta non compare', () => {
+  // Video passa solo le immagini: il video nel pocket resta fuori da tutte e due le liste.
+  const immagini = [{ id: 'img', kind: 'png' }];
+  const { dalPocket, resto } = dividiPerPocket({ giorno: 'g', ids: ['img', 'clip'] }, immagini);
+  assert.deepEqual(dalPocket.map((a) => a.id), ['img']);
+  assert.deepEqual(resto, []);
+});
+
+test('riferimenti: pocket vuoto, la libreria intera', () => {
+  const assets = [{ id: 'a' }];
+  assert.deepEqual(dividiPerPocket({ giorno: 'g', ids: [] }, assets), { dalPocket: [], resto: assets });
 });

@@ -821,6 +821,8 @@
     "prezzoNota": "this generation, full price",
     "saldoCorto": "You don’t have enough credit.",
     "escono": "The references you pick are sent to the provider: it’s the only thing that leaves your computer, and there’s no generating without sending it.",
+    "dalPocket": "From the pocket",
+    "dallaLibreria": "From the library",
     "salva": "Save to library",
     "salvato": "Saved to library.",
     "togli": "Remove",
