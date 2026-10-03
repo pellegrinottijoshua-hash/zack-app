@@ -56,9 +56,16 @@ export const CATEGORIE = [
 
 export const categoria = (id) => CATEGORIE.find((c) => c.id === id) || CATEGORIE[0];
 
+/**
+ * Il diametro dell'icona di un file (fase 5b, B2): un cerchio con l'immagine
+ * centrata, la stessa forma dell'icona output. Uguale per tutti i file —
+ * l'icona è il segno del file, non la sua anteprima — e il titolo sta sotto.
+ */
+export const ICONA = 112;
+
 /** Misure di partenza. Si ridimensiona a mano: questi sono solo l'inizio. */
 export const MISURE = {
-  asset: { w: 180, h: 180 },
+  asset: { w: ICONA, h: ICONA },
   nota: { w: 200, h: 120 },
   cerchio: { w: 320, h: 240 },
 };
@@ -130,10 +137,53 @@ export function normalizzaTela(items) {
   );
   const esiste = new Set(puliti.map((o) => o.id));
 
-  return puliti.filter((o) => {
-    if (o.t === 'freccia') return esiste.has(o.da) && esiste.has(o.a);
-    if (o.t === 'asset') return Boolean(o.assetId);
-    return true;
+  return puliti
+    .filter((o) => {
+      if (o.t === 'freccia') return esiste.has(o.da) && esiste.has(o.a);
+      if (o.t === 'asset') return Boolean(o.assetId);
+      return true;
+    })
+    .map(aIcona);
+}
+
+/**
+ * Un file salvato col riquadro di prima (180×180, o ridimensionato a mano)
+ * diventa un'icona, con lo STESSO centro: le frecce partono dal centro, e una
+ * tela riaperta non deve vedere i suoi file scivolare in alto a sinistra.
+ */
+function aIcona(o) {
+  if (o.t !== 'asset' || (o.w === ICONA && o.h === ICONA)) return o;
+  const w = numero(o.w, ICONA);
+  const h = numero(o.h, ICONA);
+  return { ...o, x: numero(o.x) + (w - ICONA) / 2, y: numero(o.y) + (h - ICONA) / 2, w: ICONA, h: ICONA };
+}
+
+/**
+ * Le note diventano file (fase 5b, B4): in Brain ci sono solo file, e il
+ * titolo e la nota stanno sull'icona. Ma quello che uno ha scritto su una
+ * scheda non si butta: ogni nota diventa un `.md`, al suo posto.
+ *
+ * `daNota` dice quale file scrivere; il testo resta quello della nota, il
+ * nome è la sua prima riga (o la categoria, se è vuota).
+ */
+export function daNota(nota) {
+  const testo = String(nota.testo ?? '');
+  const prima = testo.split('\n').map((r) => r.replace(/^#+\s*/, '').trim()).find(Boolean);
+  const nome = (prima || nota.cat || 'nota').slice(0, 40);
+  return { nome, testo };
+}
+
+/**
+ * La tela con le note sostituite dai loro file. L'oggetto tiene il suo `id`
+ * — le frecce che toccavano la nota restano attaccate — e il suo centro.
+ * `fatti` è la mappa id-della-nota → id-dell'asset; una nota che non c'è
+ * nella mappa resta com'era (la si riprova la volta dopo).
+ */
+export function noteInFile(items, fatti) {
+  return items.map((o) => {
+    if (o.t !== 'nota' || !fatti.has(o.id)) return o;
+    const { testo, cat, colore, ...resto } = o;
+    return aIcona({ ...resto, t: 'asset', assetId: fatti.get(o.id) });
   });
 }
 
@@ -210,7 +260,7 @@ export function riquadro(items) {
  * lunga". Bastano dieci oggetti impilati nello stesso punto per rendere la
  * tela inservibile, e nessuno si mette a spostarli uno per uno.
  */
-export function prossimoPosto(items, { perFila = 5, passo = 210 } = {}) {
+export function prossimoPosto(items, { perFila = 5, passo = 170 } = {}) {
   const n = items.filter((o) => o.t !== 'freccia').length;
   return { x: (n % perFila) * passo, y: Math.floor(n / perFila) * passo };
 }

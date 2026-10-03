@@ -6,6 +6,9 @@ import {
   nuovoCerchio,
   nuovaFreccia,
   normalizzaTela,
+  ICONA,
+  daNota,
+  noteInFile,
   muovi,
   aggiorna,
   togli,
@@ -178,4 +181,45 @@ test('un tipo che non sappiamo tenere si dichiara, non si indovina', async () =>
   // dopo, quando il file non si apre più.
   const { kindFromFile } = await import('../src/store/model.js');
   assert.equal(kindFromFile('progetto.psd', 'image/vnd.adobe.photoshop'), null);
+});
+
+// ── 5b: la tela di soli file ────────────────────────────────────────────
+
+test('un file col riquadro di prima diventa un\'icona con lo STESSO centro', () => {
+  const [o] = normalizzaTela([{ id: 'a', t: 'asset', assetId: 'x', x: 0, y: 0, w: 180, h: 180 }]);
+  assert.equal(o.w, ICONA);
+  assert.equal(o.h, ICONA);
+  assert.equal(o.x + o.w / 2, 90); // il centro di prima: le frecce partono da lì
+  assert.equal(o.y + o.h / 2, 90);
+  // Già icona: la stessa identità, niente da rifare.
+  const gia = { id: 'b', t: 'asset', assetId: 'y', x: 5, y: 5, w: ICONA, h: ICONA };
+  assert.equal(normalizzaTela([gia])[0], gia);
+});
+
+test('una nota diventa un file: il testo resta, il nome è la prima riga', () => {
+  assert.deepEqual(daNota({ testo: '# Idee per il drop\nmagliette oro', cat: 'idea' }), {
+    nome: 'Idee per il drop',
+    testo: '# Idee per il drop\nmagliette oro',
+  });
+  assert.equal(daNota({ testo: '\n\n  seconda riga\n', cat: 'task' }).nome, 'seconda riga');
+  assert.equal(daNota({ testo: '', cat: 'domanda' }).nome, 'domanda'); // vuota: la categoria
+  assert.equal(daNota({}).nome, 'nota');
+  assert.equal(daNota({ testo: 'x'.repeat(90) }).nome.length, 40);
+});
+
+test('le note sostituite tengono id, centro e frecce; le altre restano', () => {
+  const tela = [
+    { id: 'n1', t: 'nota', testo: 'ciao', cat: 'idea', colore: '#C4A35A', x: 0, y: 0, w: 200, h: 120 },
+    { id: 'n2', t: 'nota', testo: 'non ancora', x: 300, y: 0, w: 200, h: 120 },
+    { id: 'f1', t: 'freccia', da: 'n1', a: 'n2' },
+  ];
+  const fatta = noteInFile(tela, new Map([['n1', 'asset-1']]));
+  const n1 = fatta.find((o) => o.id === 'n1');
+  assert.equal(n1.t, 'asset');
+  assert.equal(n1.assetId, 'asset-1');
+  assert.equal(n1.testo, undefined);
+  assert.equal(n1.x + n1.w / 2, 100);
+  assert.equal(n1.y + n1.h / 2, 60);
+  assert.equal(fatta.find((o) => o.id === 'n2').t, 'nota'); // non nella mappa: si riprova dopo
+  assert.deepEqual(normalizzaTela(fatta).map((o) => o.id), ['n1', 'n2', 'f1']); // la freccia regge
 });
