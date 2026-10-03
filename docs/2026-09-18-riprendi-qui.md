@@ -486,3 +486,53 @@ Frase da incollare in una sessione nuova:
 ```
 Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 4a.
 ```
+
+## ✅ 2026-10-03 — FASE 4 (icona output e pocket) FATTA: 4a e 4b
+
+Decisioni del committente (2026-09-27, §3 della spec): il pocket si svuota a
+**mezzanotte locale**; dei 10 se ne vedono **4** e gli altri scorrono **al
+tocco**; c'è **anche sulla home** (ogni destinazione è un collegamento allo
+studio con `?asset=&dest=`); l'uscita non salvata si salva da sola e lo dice.
+
+- `22f4672` 4a/1 — `engine/pocket.js` puro: giorno locale, tetto 10, id spariti.
+- `2a5c683` 4a/2+3 — il cerchio del pocket (studio e home), `IconaOutput`
+  accanto al risultato di Scontorna/Vettoriale/Immagine/Video, l'ovale delle
+  destinazioni da `destinazioniDi(kind)`.
+- `3b32f5a` 4b/1+2 — il trascinamento (`hooks/useTrascina.js`, Pointer
+  Events): sotto 8 px resta un tocco; i cerchi che accettano prendono un anello
+  oro, gli altri si spengono; posare = scegliere nell'ovale; su Video chiede
+  primo fotogramma o riferimento. Una prova tiene «accese = ovale» per ogni tipo.
+- `37e8bbb` 4b/3 — i riferimenti di Immagine e Video: «Dal pocket» in cima.
+- `0c54287` lo script: tetto di 60 s per espressione e un secondo tentativo
+  per pagina. La prima corsa si è **piantata alla pagina 415** di 780 (la
+  preparazione dei file di prova del pocket, una volta sola) e restava appesa
+  per sempre.
+- `d7c3612` correzioni trovate dallo script: il pannello sopra la tela usciva
+  dalla tela a 800×700 coi riferimenti più lunghi; tre contrasti della
+  libreria (oro su panna, «◈» grigio chiaro).
+- 861 prove verdi, build ok, script di 2a **verde**: 780 pagine, 16.018 comandi.
+
+⚠️ **Lezione dello script**: fino al 2026-10-03 misurava sempre una
+**libreria vuota**, quindi i tasti delle schede dei file non li aveva mai
+visti — tre contrasti sbagliati stavano su `main` da settimane. I file di
+prova del pocket li hanno fatti comparire. Uno stato dichiarato vuoto non
+misura i comandi che esistono solo quando c'è qualcosa.
+
+**Provato nel browser** (1280×800): scontorno → icona output → «Nel pocket»;
+trascinamento col topo vero dal pocket a Video → domanda → Video col file
+dentro; drop su Immagine → riferimento aggiunto, e il click di coda non
+riapre l'ovale. **Non provato col dito vero**: l'anteprima non genera tocchi.
+Va provato una volta sul telefono (`touch-action: none` sui file).
+
+Minori: il vassoio aperto copre l'icona output (sul desktop) e un angolo della
+tela — è un momento come l'ovale, ma la regola «gli strumenti non coprono la
+tela» ha una sola eccezione dichiarata; l'avviso dopo «Video, primo
+fotogramma» dice «Aggiunto ai riferimenti»; sulla home il pocket è solo a
+tocco (lì non ci sono cerchi di servizio su cui posare).
+
+**Prossima fase: la 5, Brain** (la più lunga: 2 g ≈ 20 M nella scaletta) — da
+tagliare in fette prima di cominciare, come la 2.
+
+```
+Leggi docs/2026-09-18-riprendi-qui.md e taglia la fase 5 in fette.
+```
