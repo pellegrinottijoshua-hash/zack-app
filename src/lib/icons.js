@@ -46,6 +46,12 @@ export const ICONS = {
     'M8.6 9.9l2.2 5.2',
     'M15.9 9.4l-2.5 5.7',
   ],
+  // Il pocket: una tasca cucita, con la sua impuntura. Speculare a Brain.
+  pocket: [
+    'M5 5h14v7a7 7 0 0 1-14 0z',
+    'M5 9h14',
+    'M9.5 13.5l2.5 2 2.5-2',
+  ],
   scissors: [
     'M6.5 4.5l9.5 12.2',
     'M17.5 4.5L8 16.7',

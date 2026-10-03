@@ -59,7 +59,7 @@ export async function snapshot() {
  * qualche copia di troppo resta usabile; una che unisce due file diversi
  * perché non sapeva distinguerli, no.
  */
-async function impronta(blob) {
+export async function impronta(blob) {
   if (!globalThis.crypto?.subtle) return null;
   try {
     const digest = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());

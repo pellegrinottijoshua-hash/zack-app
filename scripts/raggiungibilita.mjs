@@ -392,24 +392,64 @@ async function main() {
             // Il pannello della ricarica: la porta sui soldi. Si apre col tasto
             // del saldo (come farebbe il cliente) e si misurano i SUOI comandi.
             giri.push({ servizio: 'immagine', primo: false, solo: '.ricarica', apri: '.saldo' });
-            for (const { servizio, primo, solo, apri } of giri) {
-              const indirizzo = servizio === 'home' ? `${base}/` : `${base}/app/?servizio=${servizio}`;
+            // Il pocket (fetta 4a): vuoto e con 5 file (il carosello), l'ovale
+            // delle destinazioni nello studio e sulla home, e l'icona output
+            // dopo uno scontorno vero. Le destinazioni sono comandi nuovi.
+            giri.push({ servizio: 'scontorna', primo: false, solo: '.pocket', apri: ['.pocket-tasto'] });
+            giri.push({ servizio: 'scontorna', primo: false, solo: '.pocket', apri: ['.pocket-tasto'], pocket: true });
+            giri.push({ servizio: 'scontorna', primo: false, solo: '.destinazioni', apri: ['.pocket-tasto', '.pocket-file'], pocket: true });
+            if (!libreria) giri.push({ servizio: 'home', primo: false, solo: '.destinazioni', apri: ['.pocket-tasto', '.pocket-file'], pocket: true });
+            giri.push({ servizio: 'scontorna', primo: false, solo: '.icona-output', apri: ['.sc-tasto button'], pocket: true, dest: 'scontorna', aspetta: '.icona-output' });
+            giri.push({ servizio: 'scontorna', primo: false, solo: '.destinazioni', apri: ['.sc-tasto button', '.icona-output'], pocket: true, dest: 'scontorna', aspetta: '.icona-output' });
+            for (const { servizio, primo, solo, apri: apriUno, pocket, dest, aspetta } of giri) {
+              const apri = apriUno && [].concat(apriUno);
+              let indirizzo = servizio === 'home' ? `${base}/` : `${base}/app/?servizio=${servizio}`;
               // Stato dichiarato: memoria vuota, poi solo ciò che la matrice dice.
               await carica(cdp, eventi, indirizzo);
               const s = JSON.stringify(statoIniziale({ saldo, libreria, primo }));
               await valuta(cdp, `localStorage.clear(); sessionStorage.clear();
                 for (const [k, v] of Object.entries(${s})) localStorage.setItem(k, v);`);
+              if (pocket) {
+                // Cinque quadrati nella libreria (IndexedDB: la libreria non
+                // si svuota, un salvataggio uguale ritorna lo stesso asset) e
+                // i loro id nel pocket di oggi.
+                const ids = await valuta(cdp, `(async () => {
+                  const lib = await import('/src/store/library.js');
+                  const ids = [];
+                  for (const colore of ['#c33', '#3a3', '#33c', '#cc3', '#3cc']) {
+                    const c = document.createElement('canvas'); c.width = c.height = 64;
+                    const x = c.getContext('2d'); x.fillStyle = colore; x.fillRect(8, 8, 48, 48);
+                    const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
+                    ids.push((await lib.saveAsset(blob, { name: 'prova-pocket-' + colore.slice(1), kind: 'png' })).id);
+                  }
+                  const d = new Date(), z = (n) => String(n).padStart(2, '0');
+                  localStorage.setItem('jayl.pocket', JSON.stringify({ giorno: d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()), ids }));
+                  return ids;
+                })()`);
+                if (dest) indirizzo = `${base}/app/?asset=${ids[0]}&dest=${dest}`;
+              }
               await carica(cdp, eventi, indirizzo);
               await assesta(cdp);
-              if (apri) {
-                const aperto = await valuta(cdp, `(() => {
-                  const b = document.querySelector(${JSON.stringify(apri)});
+              for (const sel of apri || []) {
+                const aperto = await valuta(cdp, `(async () => {
+                  for (let i = 0; i < 40 && !document.querySelector(${JSON.stringify(sel)}); i++)
+                    await new Promise((r) => setTimeout(r, 250));
+                  const b = document.querySelector(${JSON.stringify(sel)});
                   if (!b) return false;
                   b.click();
                   return true;
                 })()`);
-                if (!aperto) throw new Error(`Manca ${apri} per aprire ${solo}: ${indirizzo}`);
+                if (!aperto) throw new Error(`Manca ${sel} per aprire ${solo}: ${indirizzo}`);
                 await assesta(cdp);
+              }
+              if (aspetta) {
+                await valuta(cdp, `(async () => {
+                  for (let i = 0; i < 60 && !document.querySelector(${JSON.stringify(aspetta)}); i++)
+                    await new Promise((r) => setTimeout(r, 250));
+                })()`);
+                await assesta(cdp);
+              }
+              if (apri) {
                 const c = await valuta(cdp, `Boolean(document.querySelector(${JSON.stringify(solo)}))`);
                 if (!c) throw new Error(`${apri} non ha aperto ${solo}: ${indirizzo}`);
               }
@@ -419,7 +459,7 @@ async function main() {
               }
               pagine++;
               comandi += r.contati;
-              const dove = `muro ${muro} · saldo ${saldo} · libreria ${libreria ? 'aperta' : 'chiusa'} · ${w}×${h} · ${servizio}${primo ? ' · primo ingresso' : ''}${apri ? ` · ${solo} aperto` : ''}`;
+              const dove = `muro ${muro} · saldo ${saldo} · libreria ${libreria ? 'aperta' : 'chiusa'} · ${w}×${h} · ${servizio}${primo ? ' · primo ingresso' : ''}${apri ? ` · ${solo} aperto` : ''}${pocket ? ' · pocket pieno' : ''}`;
 
               for (const d of r.difetti) {
                 const chiave = `${d.regola}|${d.comando}`;

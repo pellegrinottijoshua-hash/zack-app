@@ -1617,6 +1617,159 @@ body {
   display: none;
 }
 
+/* ══ Il pocket e l'icona output (fase 4a) ════════════════════════════════
+   Il pocket sta in alto a destra, speculare a Brain: stesso cerchio, stessa
+   distanza dal bordo di `.main`. Il vassoio scende sotto di lui e non esce
+   mai dalla finestra (`max-width` sul telefono). */
+.pocket {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 7;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.pocket-tasto {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid var(--linea-viva);
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--inchiostro);
+  cursor: pointer;
+}
+.pocket-tasto[aria-pressed='true'] {
+  background: var(--inchiostro);
+  color: var(--fondo);
+}
+.pocket-conta {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--oro);
+  color: #111;
+  font-size: 10px;
+  line-height: 18px;
+  text-align: center;
+}
+.pocket-nome { display: none; }
+.pocket-vassoio {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 32px);
+  padding: 8px;
+  border: 1px solid var(--linea-viva);
+  border-radius: 32px;
+  background: var(--fondo);
+}
+.pocket-file,
+.pocket-gira,
+.icona-output {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--linea-viva);
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--inchiostro);
+  cursor: pointer;
+}
+.pocket-file img,
+.pocket-file video,
+.icona-output img,
+.icona-output video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.pocket-segno {
+  font-size: 11px;
+  color: var(--inchiostro);
+}
+.pocket-gira { font-size: 22px; }
+.pocket-vuoto {
+  margin: 0;
+  max-width: 220px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--inchiostro);
+}
+/* L'icona output: sul telefono a sinistra del pocket, sulla sua riga — sotto
+   c'è la colonna degli strumenti; sul desktop sotto il pocket (§ pianta). */
+.icona-output {
+  position: absolute;
+  right: 62px;
+  top: 8px;
+  z-index: 6;
+  width: 46px;
+  height: 46px;
+  border: 2px solid var(--oro);
+}
+/* L'ovale delle destinazioni: sopra tutto, al centro, sempre dentro la
+   finestra — un ovale che sborda è una porta chiusa. */
+.destinazioni {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 60;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 16px 20px;
+  border: 1px solid var(--linea-viva);
+  border-radius: 40px;
+  background: var(--fondo);
+  color: var(--inchiostro);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+.destinazioni-titolo {
+  margin: 0 0 10px;
+  font-size: 13px;
+  text-align: center;
+}
+.destinazioni-voci {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 520px;
+}
+.destinazione {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--linea-viva);
+  border-radius: 20px;
+  background: var(--fondo);
+  color: var(--inchiostro);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.destinazione:hover { border-color: var(--oro); }
+.destinazione.chiudi { color: var(--inchiostro-2); }
+
 /* ══ La pianta dello studio (committente, 2026-09-15) ═══════════════════
    Quattro bordi, quattro mestieri, nessuna sovrapposizione:
    i SERVIZI in alto, BRAIN a sinistra, gli STRUMENTI a destra (dove sono
@@ -1750,6 +1903,31 @@ body {
     position: static;
     align-self: start;
     margin: 12px;
+  }
+  /* Il pocket, speculare: nella colonna di destra sotto la fila, come Brain
+     in quella di sinistra. Il vassoio è sospeso, quindi aprirlo non allarga
+     la colonna né stringe la tela. */
+  .pocket {
+    grid-area: pannello;
+    grid-row: 2;
+    position: relative;
+    top: auto;
+    right: auto;
+    align-self: start;
+    justify-self: end;
+    margin: 12px;
+  }
+  .icona-output {
+    grid-area: pannello;
+    grid-row: 2;
+    position: relative;
+    top: auto;
+    right: auto;
+    align-self: start;
+    justify-self: end;
+    width: 56px;
+    height: 56px;
+    margin: 78px 7px 0 0;
   }
   .stage { grid-area: tela; }
   .rail { grid-area: pannello; }
@@ -5257,6 +5435,22 @@ body {
      sotto il cerchio. Important 4 del giro di correzione 1 — Brain e' uscito
      da FILA (Task 8) e ha perso il nome che gli altri cerchi tengono sempre
      qui sotto per lo stesso motivo (`title` non compare mai su un touch). */
+  /* Il pocket, speculare: stesso nome sotto il cerchio, per la stessa ragione. */
+  .pocket-nome {
+    display: block;
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 68px;
+    white-space: nowrap;
+    font-size: 10px;
+    text-align: center;
+    color: var(--inchiostro);
+  }
+  .pocket-vassoio {
+    top: calc(100% + 20px);
+  }
   .brain-nome {
     display: block;
     position: absolute;

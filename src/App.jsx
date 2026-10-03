@@ -26,6 +26,9 @@ import Advanced from './components/Advanced.jsx';
 import ScegliAsset from './components/ScegliAsset.jsx';
 import Tutorial from './components/Tutorial.jsx';
 import Brain from './components/Brain.jsx';
+import Pocket, { IconaOutput } from './components/Pocket.jsx';
+import { usePocket } from './hooks/usePocket.js';
+import { impronta } from './store/library.js';
 import BatchGrid from './components/BatchGrid.jsx';
 import Preventivo from './components/Preventivo.jsx';
 import Riferimenti from './components/Riferimenti.jsx';
@@ -169,6 +172,9 @@ const secs = (ms) => (Number.isFinite(ms) ? `${(ms / 1000).toFixed(1)}s` : '—'
  */
 const predefinitaDi = (id, gruppo) =>
   getDescrittore(id).tasto.gruppi.find((g) => g.id === gruppo).predefinita;
+
+/** I servizi la cui uscita si prende in mano con l'icona output (4a). */
+const USCITE = new Set(['scontorna', 'vettorializza', 'immagine', 'video']);
 
 export default function App() {
   const [apiState, setApiState] = useState('offline');
@@ -453,6 +459,7 @@ export default function App() {
   const [notice, setNotice] = useState(null);
 
   const library = useLibrary();
+  const pocketStato = usePocket();
   // La striscia dei lavori parte chiusa: mangia un quinto dello schermo, e
   // chi apre l'app vuole lavorare su un file, non sfogliare l'archivio.
   const [libOpen, setLibOpen] = useState(() => {
@@ -1410,6 +1417,28 @@ export default function App() {
     }
   }
 
+
+  /*
+   * Dalla home: il pocket della home manda qui con `?asset=<id>&dest=<d>`
+   * (la home non ha lo studio: ogni sua destinazione è un collegamento).
+   * Si esegue una volta, a libreria pronta, e si toglie dall'indirizzo:
+   * ricaricare la pagina non deve rimandare il file una seconda volta.
+   */
+  const daHomeFatto = useRef(false);
+  useEffect(() => {
+    if (!library.ready || daHomeFatto.current) return;
+    daHomeFatto.current = true;
+    const q = new URLSearchParams(location.search);
+    const asset = library.assets.find((a) => a.id === q.get('asset'));
+    const dest = q.get('dest');
+    if (!q.has('asset')) return;
+    q.delete('asset');
+    q.delete('dest');
+    const resto = q.toString();
+    window.history.replaceState(null, '', `${location.pathname}${resto ? `?${resto}` : ''}`);
+    if (asset && dest) vaiA(dest, asset).catch(() => setError(t('engine.error.body')));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [library.ready]);
   // Entrando in Brain si apre l'ultima tela, o se ne crea una: una schermata
   // che chiede di creare qualcosa prima di mostrare com'è fatta si abbandona.
   useEffect(() => {
@@ -2041,6 +2070,88 @@ export default function App() {
    * si sta lavorando e lo strumento giusto si apre da solo. È la scorciatoia
    * che evita "scegli lo strumento, poi ritrova il file".
    */
+  /**
+   * Il risultato di adesso come asset di Brain (fase 4a, §2.2). Se c'è già
+   * (lo scontorno e il vettoriale si salvano da soli) lo si ritrova per
+   * impronta; se no — Immagine e Video salvano solo col cerchio — si salva
+   * adesso, e lo si dice: un'uscita nel pocket deve avere dove vivere (T6).
+   */
+  async function prendiRisultato() {
+    if (!result?.blob) return null;
+    const h = await impronta(result.blob);
+    const gia = h && library.assets.find((a) => a.hash === h);
+    if (gia) return gia;
+    const kind = result.kind;
+    const asset = await library.save(result.blob, {
+      name: `${kind === 'mp4' ? 'video' : tool}-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}`,
+      kind,
+      meta: { fromId: sourceAssetId, op: tool },
+    });
+    setNotice(t('pocket.salvatoInBrain'));
+    return asset;
+  }
+
+  /**
+   * Manda un asset in una destinazione dell'ovale. Le destinazioni vengono
+   * da `destinazioniDi` (engine/pocket.js): qui solo cosa vuol dire ognuna.
+   */
+  async function vaiA(dest, asset) {
+    if (!asset) return;
+    if (dest === 'pocket') {
+      const uscitoId = pocketStato.metti(asset.id);
+      const vecchio = uscitoId && library.assets.find((a) => a.id === uscitoId);
+      setNotice(
+        vecchio
+          ? t('pocket.uscito', { nome: asset.name, vecchio: vecchio.name })
+          : t('pocket.messo', { nome: asset.name }),
+      );
+      return;
+    }
+    if (dest === 'scontorna') return assetAction('cutout', asset);
+    if (dest === 'vettorializza') return assetAction('vector', asset);
+    if (dest === 'immagine') {
+      setReferences((prev) =>
+        prev.some((r) => r.assetId === asset.id)
+          ? prev
+          : [...prev, { ruolo: 'oggetto', assetId: asset.id, nome: asset.name }],
+      );
+      apriServizio('immagine');
+      setNotice(`${t('actions.added')}: ${asset.name}`);
+      return;
+    }
+    if (dest === 'video-primo' || dest === 'video-riferimento') {
+      const ruolo = dest === 'video-primo' ? 'primo' : 'riferimento';
+      const prossime = [...immaginiVideo, { ruolo, assetId: asset.id, nome: asset.name }];
+      apriServizio('video');
+      if (immaginiVideoStorte(prossime) !== null) {
+        setNotice(t('pocket.videoNo'));
+        return;
+      }
+      setImmaginiVideo(prossime);
+      setNotice(`${t('actions.added')}: ${asset.name}`);
+      return;
+    }
+    if (dest === 'brain') {
+      if (telaId) {
+        apriServizio('brain');
+        if (!tela.some((o) => o.assetId === asset.id)) await metiSullaTela(asset);
+        return;
+      }
+      // La tela non è ancora aperta: la si apre QUI, con il file già dentro.
+      // Lasciarlo all'effetto d'ingresso in Brain (più sotto) vorrebbe dire
+      // una lettura che arriva dopo e lo cancella.
+      const prima = library.moodboards[0] || (await library.createMoodboard(t('brain.board')));
+      const letta = await library.readBrain(prima.id);
+      const conFile = letta.some((o) => o.assetId === asset.id)
+        ? letta
+        : [...letta, nuovoAsset({ assetId: asset.id, ...prossimoPosto(letta) })];
+      await library.saveBrain(prima.id, conFile);
+      setTelaId(prima.id);
+      setTela(conFile);
+      apriServizio('brain');
+    }
+  }
+
   async function assetAction(kind, item) {
     setError(null);
     setNotice(null);
@@ -2678,6 +2789,33 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               persa; la riprende qui. */}
           <span className="brain-nome">{t('tool.brain.label')}</span>
         </button>
+
+        {/* Il pocket, in alto a destra: speculare a Brain (T3). */}
+        <Pocket
+          pocket={pocketStato.pocket}
+          assets={library.assets}
+          leggi={library.read}
+          onScegli={(dest, asset) => vaiA(dest, asset).catch(() => setError(t('engine.error.body')))}
+          onTogli={pocketStato.togli}
+        />
+        {/* L'icona output (fase 4a, §T2): il risultato, da prendere in mano.
+            Sta sotto il pocket e non a fianco della tela: lì c'è la colonna
+            degli strumenti, e l'uscita va verso la tasca. */}
+        {result?.blob && USCITE.has(tool) && !brushOpen && (
+          <IconaOutput
+            url={result.url}
+            kind={result.kind}
+            nome={t(`pocket.uscita`)}
+            onScegli={async (dest) => {
+              try {
+                await vaiA(dest, await prendiRisultato());
+              } catch (e) {
+                console.error(e);
+                setError(t('engine.error.body'));
+              }
+            }}
+          />
+        )}
 
         <section className="stage">
           {/* Lo scaricamento si vede SEMPRE: `bannerOpen` serve a chiudere
