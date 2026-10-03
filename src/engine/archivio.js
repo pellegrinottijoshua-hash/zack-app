@@ -10,6 +10,8 @@
  * ritrova lì. Svuotare il cestino è l'unica cancellazione vera del prodotto.
  */
 
+import { togli } from './brain.js';
+
 /** Quanti file mostra la pool prima di «altri». */
 export const POOL_VISIBILI = 20;
 
@@ -71,4 +73,25 @@ export function livelloSpazio({ used, quota } = {}) {
 /** Quanti byte libera svuotare il cestino. */
 export function pesoCestino(assets) {
   return assets.filter(inCestino).reduce((s, a) => s + (Number(a.bytes) || 0), 0);
+}
+
+/**
+ * Un file salvato di nuovo, identico a uno che c'è già (`saveAsset` è
+ * idempotente). Se quello di prima sta nel cestino lo si RIMETTE: chi rifà un
+ * file lo vuole, e restituirlo cestinato lo lascerebbe invisibile — il
+ * salvataggio sembrerebbe non essere successo.
+ */
+export function ritrovato(gia) {
+  return inCestino(gia) ? { asset: rimetti(gia), daScrivere: true } : { asset: gia, daScrivere: false };
+}
+
+/**
+ * Una tela senza i file cancellati per davvero (svuotando il cestino), e
+ * senza le frecce che li toccavano. Restituisce la STESSA lista se non c'era
+ * niente da togliere, così chi chiama sa se deve salvare.
+ */
+export function senzaFile(items, ids) {
+  let next = items;
+  for (const o of items) if (o.t === 'asset' && ids.has(o.assetId)) next = togli(next, o.id);
+  return next;
 }

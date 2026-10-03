@@ -169,8 +169,8 @@
       "help": "Puts all of your assets into a single zip file to save."
     },
     "delete": {
-      "label": "Delete",
-      "help": "Removes this asset. This cannot be undone."
+      "label": "Move to trash",
+      "help": "Moves it to the Brain trash: you can put it back until you empty it."
     },
     "open": {
       "label": "Open",
@@ -223,8 +223,8 @@
     "duplicates": "Select duplicates",
     "none": "Deselect",
     "selected": "{n} selected · {peso}",
-    "delete": "Delete {n}",
-    "confirm": "Delete {n} assets and free {peso}? This cannot be undone.",
+    "delete": "Trash {n}",
+    "confirm": "Move {n} assets to the trash? You can put them back until you empty it; emptying frees {peso}.",
     "help": "Pick several assets at once and throw them away. “Select duplicates” proposes the scraps — the same operation redone on the same file — and never touches favourites, notes, tags, references, or assets that others came from."
   },
   "onboarding": {

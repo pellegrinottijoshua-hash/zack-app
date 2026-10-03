@@ -9,6 +9,8 @@ import {
   livelloSpazio,
   pesoCestino,
   POOL_VISIBILI,
+  ritrovato,
+  senzaFile,
 } from '../src/engine/archivio.js';
 
 // Ogni prova dichiara l'archivio da cui parte: mai uno stato ereditato.
@@ -80,4 +82,25 @@ test('lo spazio: senza una misura non c\'è un avviso', () => {
 test('il peso del cestino conta solo i cestinati', () => {
   const assets = [file('a', '01', { bytes: 500 }), file('b', '02', { bytes: 300, cestinatoIl: '2026-10-01T00:00:00Z' })];
   assert.equal(pesoCestino(assets), 300);
+});
+
+test('risalvare un file identico a uno nel cestino lo rimette (se no resterebbe invisibile)', () => {
+  const buttato = file('a', '01', { cestinatoIl: '2026-10-01T00:00:00Z' });
+  const { asset, daScrivere } = ritrovato(buttato);
+  assert.equal(daScrivere, true);
+  assert.equal(inCestino(asset), false);
+  const vivo = file('b', '02');
+  assert.deepEqual(ritrovato(vivo), { asset: vivo, daScrivere: false });
+});
+
+test('svuotare toglie dalla tela i file andati e le frecce che li toccavano', () => {
+  const tela = [
+    { id: 'o1', t: 'asset', assetId: 'via' },
+    { id: 'o2', t: 'asset', assetId: 'resta' },
+    { id: 'f1', t: 'freccia', da: 'o1', a: 'o2' },
+    { id: 'n1', t: 'nota', testo: 'x' },
+  ];
+  assert.deepEqual(senzaFile(tela, new Set(['via'])).map((o) => o.id), ['o2', 'n1']);
+  // Niente da togliere: la STESSA lista, così chi chiama non risalva.
+  assert.equal(senzaFile(tela, new Set(['altro'])), tela);
 });
