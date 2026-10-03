@@ -2415,6 +2415,24 @@ export default function App() {
    */
   const avanzatiBrain = (
     <Advanced id="brain">
+      {/* Il riordino (fase 5b): era il tasto Zack di Brain, che è uscito
+          (B1). Le regole sono quelle del descrittore — una lista sola — e
+          deterministiche: ripremere non muove più niente. */}
+      <div className="field brain-riordino">
+        <span>{t('brain.riordina.title')}</span>
+        <div>
+          {getDescrittore('brain').tasto.gruppi[0].opzioni.map((r) => (
+            <button
+              key={r.id}
+              className="btn ghost"
+              disabled={tela.filter((o) => o.t !== 'freccia').length < 2}
+              onClick={() => cambiaTela(riordina(tela, r.id))}
+            >
+              {t(r.label)}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="field">
         <button className="btn ghost" disabled={tela.length === 0} onClick={faiPacco}>
           {t('brain.pacco')}

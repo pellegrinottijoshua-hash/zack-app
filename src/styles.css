@@ -6424,3 +6424,15 @@ html[data-trascina] [data-bersaglio]:not([data-acceso]) {
     box-shadow: 0 18px 50px rgba(17, 17, 17, 0.35);
   }
 }
+
+/* Il riordino negli avanzati di Brain (5b): quattro tasti in fila, che vanno
+   a capo invece di uscire dal pannello. */
+.brain-riordino {
+  display: grid;
+  gap: 8px;
+}
+.brain-riordino > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

@@ -30,6 +30,12 @@ export default {
   accetta: { menu: ['nota', 'gruppo', 'computer', 'libreria'], quanti: 99 },
 
   tasto: {
+    /*
+     * Il tasto Zack esce da Brain (B1, fase 5b): in Brain si organizza, non si
+     * genera. Le quattro regole del riordino restano, negli avanzati, finché
+     * la 5c non le mette nelle tre lineette (decisione 7 della spec).
+     */
+    nascosto: true,
     azione: 'riordina',
     modelli: [],
     fattori: false,
