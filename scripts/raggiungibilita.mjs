@@ -339,7 +339,11 @@ async function valuta(cdp, espr) {
 }
 
 async function carica(cdp, eventi, url) {
-  const fatto = new Promise((ok) => {
+  let timer;
+  const fatto = new Promise((ok, ko) => {
+    // Anche la navigazione ha un tetto: con un renderer bloccato (2026-10-03,
+    // pagina 281 di 876) `loadEventFired` non arriva mai.
+    timer = setTimeout(() => ko(Object.assign(new Error('caricamento scaduto'), { tempo: true })), TEMPO_MAX);
     const f = (m) => {
       if (m.method === 'Page.loadEventFired') {
         eventi.splice(eventi.indexOf(f), 1);
@@ -348,8 +352,10 @@ async function carica(cdp, eventi, url) {
     };
     eventi.push(f);
   });
-  await cdp('Page.navigate', { url });
-  await fatto;
+  // In gara col tetto: su un renderer bloccato anche la risposta di
+  // `Page.navigate` può non arrivare.
+  await Promise.race([cdp('Page.navigate', { url }), fatto]);
+  await fatto.finally(() => clearTimeout(timer));
 }
 
 /** Aspetta che React abbia disegnato e che il layout sia fermo. */
@@ -376,7 +382,9 @@ async function main() {
   const chiaviNote = new Set(noti.difetti.map((d) => d.chiave));
   const visteNote = new Set();
 
-  const { cdp, eventi, chiudi } = await apriChrome();
+  // `let`: un renderer bloccato non si riprende ricaricando la pagina, quindi
+  // al secondo tentativo Chrome si chiude e si riapre (vedi `conRitentativo`).
+  let { cdp, eventi, chiudi } = await apriChrome();
   await cdp('Page.enable');
   await cdp('Runtime.enable');
 
@@ -432,7 +440,17 @@ async function main() {
                 await unaPagina(giro);
               } catch (e) {
                 if (!e.tempo) throw e;
+                // Un blocco: Chrome nuovo, stessa finestra, e la pagina rifatta.
+                // Due volte di fila non è più un caso: allora l'errore sale.
                 process.stdout.write('↻');
+                await chiudi().catch(() => {});
+                ({ cdp, eventi, chiudi } = await apriChrome());
+                await cdp('Page.enable');
+                await cdp('Runtime.enable');
+                await cdp('Emulation.setDeviceMetricsOverride', {
+                  width: w, height: h, deviceScaleFactor: 1, mobile: w < 768,
+                });
+                await cdp('Emulation.setTouchEmulationEnabled', { enabled: w < 768 });
                 await unaPagina(giro);
               }
             };
