@@ -711,6 +711,12 @@
     "center": "Centre all",
     "drawer": "Not on the canvas yet",
     "drawerEmpty": "Every asset is already on the canvas.",
+    "scheda": {
+      "title": "The file",
+      "nome": "Name",
+      "nota": "Note",
+      "notaVuota": "Write what it is, what it's for…"
+    },
     "notaFile": "Note",
     "pool": {
       "label": "Pool",

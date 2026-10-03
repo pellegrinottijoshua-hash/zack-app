@@ -37,7 +37,7 @@ import BatchGrid from './components/BatchGrid.jsx';
 import Preventivo from './components/Preventivo.jsx';
 import Riferimenti from './components/Riferimenti.jsx';
 import Ricarica from './components/Ricarica.jsx';
-import { kindFromFile, nomeConSuffisso } from './store/model.js';
+import { kindFromFile, nomeConSuffisso, safeName } from './store/model.js';
 import { impacchetta, spacchetta, fotografaTela } from './store/brainBundle.js';
 import StageBar from './components/StageBar.jsx';
 import { useSound } from './hooks/useSound.js';
@@ -2579,8 +2579,11 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               cestinati={cestinatiIds}
               leggi={library.read}
               onChange={cambiaTela}
-              onUse={assetAction}
               onSalvaDoc={salvaDocumento}
+              onRinomina={(id, nome) =>
+                library.update(id, { name: safeName(nome) }).catch(() => setError(t('engine.error.body')))
+              }
+              onNota={(id, nota) => library.setNote(id, nota).catch(() => setError(t('engine.error.body')))}
               onIcona={iconaDocumentoScelta}
               onScarica={scaricaAsset}
               /* Il gesto aperto arriva da fuori: il cerchio della freccia sta

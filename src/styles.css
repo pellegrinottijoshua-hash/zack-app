@@ -6270,3 +6270,153 @@ html[data-trascina] [data-bersaglio]:not([data-acceso]) {
     max-width: min(100%, calc(30ch + 104px));
   }
 }
+
+/* ══ Brain, la tela di soli file (fase 5b) ══════════════════════════════
+   Un file è un CERCHIO con la sua faccia (B2), il titolo e la nota sotto
+   (B4). Sta in fondo al foglio perché deve vincere sulle regole dei
+   riquadri di prima (`.brain-oggetto img` ha la stessa specificità). */
+.brain-oggetto[data-t='asset'] {
+  display: block;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  resize: none;
+}
+.brain-oggetto[data-t='asset'][data-scelto],
+.brain-oggetto[data-t='asset'][data-collega] {
+  box-shadow: none;
+}
+.brain-faccia {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 2px solid var(--linea-viva);
+  border-radius: 50%;
+  background: var(--fondo-2);
+  color: var(--inchiostro);
+}
+.brain-oggetto[data-scelto] .brain-faccia,
+.brain-oggetto[data-collega] .brain-faccia {
+  border-color: var(--oro);
+  box-shadow: 0 0 0 2px var(--oro);
+}
+.brain-faccia img,
+.brain-faccia video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.brain-faccia > svg {
+  width: 42%;
+  height: 42%;
+}
+.brain-titolo,
+.brain-nota-icona {
+  position: absolute;
+  left: 50%;
+  width: 160px;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+}
+.brain-titolo {
+  top: calc(100% + 6px);
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--inchiostro);
+}
+.brain-nota-icona {
+  top: calc(100% + 24px);
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--inchiostro-2);
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* La scheda del file: si guarda il file e si scrivono nome e nota. Non è
+   mai più alta della tela: `contain: size` le fa ignorare la propria
+   altezza, così prende quella della riga (cioè della tela) e scorre dentro.
+   Senza, Brain cresceva da 375 a 535 px e spingeva giù tutto il piano
+   (misurato a 1280×800, 2026-10-03). */
+.brain-scheda {
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  contain: size;
+  overflow-y: auto;
+}
+/* `flex: none`: senza, l'anteprima (che ha `overflow: hidden`) perde la sua
+   altezza minima e si schiaccia per far posto agli altri (§5 di RIPRENDI). */
+.brain-scheda > * {
+  flex: none;
+}
+.brain-scheda-file {
+  display: grid;
+  place-items: center;
+  max-height: 220px;
+  overflow: hidden;
+  border: 1px solid var(--linea);
+  background: var(--fondo-2);
+}
+.brain-scheda-file img,
+.brain-scheda-file video {
+  max-width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+}
+.brain-scheda-file audio {
+  width: 100%;
+}
+.brain-scheda-campo {
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--inchiostro-2);
+}
+.brain-scheda-campo input,
+.brain-scheda-campo textarea {
+  padding: 8px 10px;
+  border: 1px solid var(--linea-viva);
+  border-radius: 12px;
+  background: var(--fondo);
+  color: var(--inchiostro);
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  resize: vertical;
+}
+/* Sul telefono una colonna da 240 px si mangerebbe metà tela: la scheda
+   compare SOPRA, in basso, ed è un momento — si chiude con × o toccando il
+   vuoto, come l'ovale del tasto Zack. */
+@media (max-width: 760px) {
+  .brain-corpo {
+    position: relative;
+  }
+  .brain-scheda {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    z-index: 9;
+    width: auto;
+    height: 62%;
+    contain: none;
+    border: 2px solid var(--oro);
+    border-radius: 22px;
+    background: var(--fondo);
+    box-shadow: 0 18px 50px rgba(17, 17, 17, 0.35);
+  }
+}

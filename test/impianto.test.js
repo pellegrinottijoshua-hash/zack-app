@@ -225,19 +225,22 @@ test('l’icona si sceglie per qualunque file, non solo per i .md', () => {
    * Richiesta del committente del 2026-09-04: era costruito e chiuso a chiave.
    */
   const BRAIN = readFileSync(new URL('../src/components/Brain.jsx', import.meta.url), 'utf8');
-  const i = BRAIN.indexOf('brain-icona');
+  /*
+   * Dal 2026-10-03 (fase 5b) il selettore sta nella SCHEDA del file, che si
+   * apre col tocco su qualunque file. Si controlla che il blocco che lo apre
+   * non sia il ramo di una condizione (`… && (`): il lucchetto di prima era
+   * esattamente quello, `KIND_TESTO.includes(kind) && (`.
+   */
+  const inizio = BRAIN.indexOf('function Scheda(');
+  assert.notEqual(inizio, -1, 'la scheda del file non esiste piu’');
+  const scheda = BRAIN.slice(inizio, BRAIN.indexOf('\n}\n', inizio));
+  const i = scheda.indexOf('className="brain-icone"');
   assert.notEqual(i, -1, 'il selettore delle icone non esiste piu’');
-  // La finestra risale fino alla condizione che apre il blocco. Larga, perche'
-  // il commento sopra racconta perche' il lucchetto c'era: troppo stretta, e
-  // il test boccerebbe la riga giusta (e' gia' successo, 2026-09-04).
-  const intorno = BRAIN.slice(Math.max(0, i - 900), i);
-  const ultimaCondizione = intorno.lastIndexOf('{assetScelto');
-  assert.notEqual(ultimaCondizione, -1, 'la condizione che apre il selettore non si trova');
-  assert.doesNotMatch(
-    intorno.slice(ultimaCondizione),
-    /KIND_TESTO\.includes\([^)]*\)\s*&&/,
-    'il selettore delle icone e’ ancora riservato ai .md',
-  );
+  const prima = scheda
+    .slice(0, scheda.lastIndexOf('<div', i))
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+    .trimEnd();
+  assert.doesNotMatch(prima, /&&\s*\($/, 'il selettore delle icone e’ dentro una condizione');
 });
 
 test('non restano liste di id: tutti i servizi passano dal descrittore', () => {

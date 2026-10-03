@@ -54,6 +54,9 @@ function iconaDelTipo(kind) {
   if (KIND_AUDIO.includes(kind)) return 'wave';
   if (KIND_VIDEO.includes(kind)) return 'film';
   if (KIND_IMMAGINE.includes(kind)) return 'image';
+  // Un documento è una nota (fase 5b): con le cartelle sulla tela (5c) la
+  // «cartella» di prima avrebbe detto il contrario di quello che è.
+  if (KIND_TESTO.includes(kind)) return 'nota';
   return ICONE_DOCUMENTO[0];
 }
 
@@ -300,6 +303,8 @@ export const FOLDER_ICONS = [
   'wave',
   'film',
   'image',
+  // Il ripiego dei documenti (5b): deve potersi anche scegliere a mano.
+  'nota',
 ];
 
 export function isFolderColor(c) {
