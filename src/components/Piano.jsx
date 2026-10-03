@@ -125,6 +125,9 @@ export default function Piano({
         onFiles([...e.dataTransfer.files]);
       }}
       data-sopra={sopra || undefined}
+      /* Senza tasto (Brain, 5b) lo spazio che `.sc` gli riservava in fondo
+         torna alla tela. */
+      data-senza-tasto={servizio.tasto.nascosto || undefined}
       style={{ '--colonna-sinistra': cerchi.sinistra, '--colonna-destra': cerchi.destra }}
       /* Le colonne degli strumenti sono sovrapposte, non affiancate: senza
          dirlo alla tela, su 390 px coprirebbero 44 px di lavoro per lato.

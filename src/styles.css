@@ -6381,6 +6381,14 @@ html[data-trascina] [data-bersaglio]:not([data-acceso]) {
 .brain-scheda-file audio {
   width: 100%;
 }
+@media (max-width: 760px) {
+  /* Sul telefono l'anteprima lascia posto al nome e alla nota. */
+  .brain-scheda-file,
+  .brain-scheda-file img,
+  .brain-scheda-file video {
+    max-height: 140px;
+  }
+}
 .brain-scheda-campo {
   display: grid;
   gap: 4px;
@@ -6416,7 +6424,7 @@ html[data-trascina] [data-bersaglio]:not([data-acceso]) {
     left: 8px;
     z-index: 9;
     width: auto;
-    height: 62%;
+    height: 78%;
     contain: none;
     border: 2px solid var(--oro);
     border-radius: 22px;
@@ -6435,4 +6443,10 @@ html[data-trascina] [data-bersaglio]:not([data-acceso]) {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* Brain non ha il tasto Zack (5b): i ~127 px che `.sc` riserva in fondo a
+   tasto e mascotte tornano alla tela (misurato a 390×844, 2026-10-03). */
+.sc[data-senza-tasto] {
+  padding-bottom: 12px;
 }
