@@ -421,6 +421,10 @@ async function main() {
             for (const servizio of ['immagine', 'video']) {
               giri.push({ servizio, primo: false, solo: '.riferimenti', apri: ['.sc-strumento[data-strumento="riferimenti"]'], pocket: true });
             }
+            // La pool e il cestino di Brain (fetta 5a): coi file di prova, e
+            // uno di loro nel cestino, così «rimetti» e «svuota» ci sono.
+            giri.push({ servizio: 'brain', primo: false, solo: '.pool', apri: ['.sc-strumento[data-strumento="pool"]'], pocket: true });
+            giri.push({ servizio: 'brain', primo: false, solo: '.cestino', apri: ['.sc-strumento[data-strumento="cestino"]'], pocket: true, cestino: true });
             // Ogni pagina ha un secondo tentativo, ma SOLO per un blocco
             // (tempo scaduto): un difetto o un errore vero non si ritenta.
             const conRitentativo = async (giro) => {
@@ -432,7 +436,7 @@ async function main() {
                 await unaPagina(giro);
               }
             };
-            const unaPagina = async ({ servizio, primo, solo, apri: apriUno, pocket, dest, aspetta }) => {
+            const unaPagina = async ({ servizio, primo, solo, apri: apriUno, pocket, dest, aspetta, cestino }) => {
               const apri = apriUno && [].concat(apriUno);
               let indirizzo = servizio === 'home' ? `${base}/` : `${base}/app/?servizio=${servizio}`;
               // Stato dichiarato: memoria vuota, poi solo ciò che la matrice dice.
@@ -455,6 +459,10 @@ async function main() {
                   }
                   const d = new Date(), z = (n) => String(n).padStart(2, '0');
                   localStorage.setItem('jayl.pocket', JSON.stringify({ giorno: d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()), ids }));
+                  // Il quinto nel cestino, per misurare «rimetti» e «svuota».
+                  // Alla pagina dopo torna vivo da solo: risalvare un file
+                  // identico a uno cestinato lo rimette (fase 5a).
+                  if (${Boolean(cestino)}) await lib.cestinaAsset(ids[4]);
                   return ids;
                 })()`);
                 if (dest) indirizzo = `${base}/app/?asset=${ids[0]}&dest=${dest}`;
@@ -490,7 +498,7 @@ async function main() {
               }
               pagine++;
               comandi += r.contati;
-              const dove = `muro ${muro} · saldo ${saldo} · libreria ${libreria ? 'aperta' : 'chiusa'} · ${w}×${h} · ${servizio}${primo ? ' · primo ingresso' : ''}${apri ? ` · ${solo} aperto` : ''}${pocket ? ' · pocket pieno' : ''}`;
+              const dove = `muro ${muro} · saldo ${saldo} · libreria ${libreria ? 'aperta' : 'chiusa'} · ${w}×${h} · ${servizio}${primo ? ' · primo ingresso' : ''}${apri ? ` · ${solo} aperto` : ''}${pocket ? ' · pocket pieno' : ''}${cestino ? ' · un file nel cestino' : ''}`;
 
               for (const d of r.difetti) {
                 const chiave = `${d.regola}|${d.comando}`;
