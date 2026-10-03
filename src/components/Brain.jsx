@@ -361,7 +361,8 @@ function Brain({
    * dell'impianto, ma la vista (dove si sta guardando, e quanto) e' roba di
    * qui. Stessa forma che l'editor SVG usa gia' con `editorRef`.
    */
-  useImperativeHandle(ref, () => ({ centra }), [items]);
+  // `apri`: «nota» nel `+` crea un `.md` e lo apre subito per scriverci (5b).
+  useImperativeHandle(ref, () => ({ centra, apri: setAperto }), [items]);
 
   const oggetto = items.find((o) => o.id === scelto) || null;
   const assetScelto = oggetto?.t === 'asset' ? perId.get(oggetto.assetId) : null;

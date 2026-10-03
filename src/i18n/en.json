@@ -711,6 +711,7 @@
     "center": "Centre all",
     "drawer": "Not on the canvas yet",
     "drawerEmpty": "Every asset is already on the canvas.",
+    "notaFile": "Note",
     "pool": {
       "label": "Pool",
       "title": "The pool — newest first",
