@@ -317,8 +317,23 @@ async function apriChrome() {
   return { cdp, eventi, chiudi };
 }
 
+/**
+ * Un'espressione che non torna entro questo tempo è un blocco, non una
+ * misura lenta: il 2026-10-03 la preparazione del pocket (cinque file in
+ * IndexedDB/OPFS) si è piantata una volta sola alla pagina 415 di ~800, e
+ * senza un tetto la corsa intera — 25 minuti — restava appesa per sempre.
+ */
+const TEMPO_MAX = 60000;
+
 async function valuta(cdp, espr) {
-  const r = await cdp('Runtime.evaluate', { expression: espr, returnByValue: true, awaitPromise: true });
+  let timer;
+  const scaduto = new Promise((_, ko) => {
+    timer = setTimeout(() => ko(Object.assign(new Error('tempo scaduto'), { tempo: true })), TEMPO_MAX);
+  });
+  const r = await Promise.race([
+    cdp('Runtime.evaluate', { expression: espr, returnByValue: true, awaitPromise: true }),
+    scaduto,
+  ]).finally(() => clearTimeout(timer));
   if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
   return r.result.value;
 }
@@ -406,7 +421,18 @@ async function main() {
             for (const servizio of ['immagine', 'video']) {
               giri.push({ servizio, primo: false, solo: '.riferimenti', apri: ['.sc-strumento[data-strumento="riferimenti"]'], pocket: true });
             }
-            for (const { servizio, primo, solo, apri: apriUno, pocket, dest, aspetta } of giri) {
+            // Ogni pagina ha un secondo tentativo, ma SOLO per un blocco
+            // (tempo scaduto): un difetto o un errore vero non si ritenta.
+            const conRitentativo = async (giro) => {
+              try {
+                await unaPagina(giro);
+              } catch (e) {
+                if (!e.tempo) throw e;
+                process.stdout.write('↻');
+                await unaPagina(giro);
+              }
+            };
+            const unaPagina = async ({ servizio, primo, solo, apri: apriUno, pocket, dest, aspetta }) => {
               const apri = apriUno && [].concat(apriUno);
               let indirizzo = servizio === 'home' ? `${base}/` : `${base}/app/?servizio=${servizio}`;
               // Stato dichiarato: memoria vuota, poi solo ciò che la matrice dice.
@@ -478,7 +504,8 @@ async function main() {
                 }
               }
               process.stdout.write('.');
-            }
+            };
+            for (const giro of giri) await conRitentativo(giro);
           }
         }
       }
