@@ -29,7 +29,12 @@
  */
 const COSA_CE = {
   brain: (s) => ({ contenuto: (s.tela ?? 0) > 0, inCorso: false }),
-  vocale: (s) => ({ contenuto: Boolean(s.clipVoce), inCorso: Boolean(s.registrandoVoce) }),
+  // Col tasto su «leggi» (6a) il piano è il testo da leggere, come Immagine:
+  // non è mai «vuoto».
+  vocale: (s) => ({
+    contenuto: Boolean(s.clipVoce) || Boolean(s.letturaVoce),
+    inCorso: Boolean(s.registrandoVoce),
+  }),
   effetti: (s) => ({
     contenuto: Boolean(s.effettoAperto) || Boolean(s.ritmo),
     inCorso: Boolean(s.registrandoRitmo),

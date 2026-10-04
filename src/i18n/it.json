@@ -77,7 +77,8 @@
     "stile": "Stile",
     "primo": "Primo fotogramma",
     "ultimo": "Ultimo fotogramma",
-    "riferimento": "Riferimento"
+    "riferimento": "Riferimento",
+    "scrivi": "Scrivi"
   },
   "drop": {
     "title": "Trascina qui un'immagine",
@@ -943,5 +944,33 @@
     "numero": "Prompt {n}: {nome}",
     "breve": "Prompt {n}",
     "salva": "Salva il prompt"
+  },
+  "voce": {
+    "gesto": {
+      "title": "Cosa fa il tasto",
+      "trasforma": "Trasforma",
+      "leggi": "Leggi"
+    },
+    "pronta": {
+      "title": "Chi legge",
+      "george": "George",
+      "sarah": "Sarah",
+      "adam": "Adam",
+      "charlotte": "Charlotte"
+    },
+    "leggi": {
+      "claim": "Scrivi un testo: una voce lo legge per te.",
+      "placeholder": "Il testo da leggere",
+      "caratteri": "{n} di {max} caratteri",
+      "nonMisurato": "Leggere a voce arriva presto: prima misuriamo quanto costa, poi il prezzo compare qui.",
+      "attendi": "Sto leggendo…",
+      "vuoto": "Scrivi prima il testo da leggere.",
+      "troppoLungo": "Il testo è troppo lungo: al massimo {max} caratteri.",
+      "saldoCorto": "Il saldo non basta per questa lettura.",
+      "rimborsato": "La lettura non è venuta. Il credito è tornato sul tuo saldo: non hai pagato niente.",
+      "rimborsoInCorso": "La lettura non è venuta. Il credito ti torna entro un paio d'ore — controlliamo noi, non devi fare niente.",
+      "errore": "La lettura non è venuta. Riprova fra poco.",
+      "ascolta": "La lettura"
+    }
   }
 }

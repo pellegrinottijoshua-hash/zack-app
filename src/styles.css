@@ -6135,6 +6135,18 @@ html[data-trascina] [data-bersaglio]:not([data-acceso]) {
   border: 1px solid var(--linea);
 }
 
+/* «Leggi questo» (6a): il gemello di Immagine. Il contatore dei caratteri
+   sta sotto il testo perché il prezzo cresce con lui. */
+.voce-caratteri {
+  align-self: flex-end;
+  margin: -8px 0 0;
+  font-size: 13px;
+  color: var(--inchiostro-2);
+}
+.voce-risultato {
+  width: 100%;
+}
+
 /* Il preventivo: *«ogni generazione ti dice quanto costa prima che tu
    prema»*. Il prezzo si legge PRIMA di tutto il resto della riga, quindi sta
    per primo e in grande — non e' un dettaglio a fianco del tasto. */
