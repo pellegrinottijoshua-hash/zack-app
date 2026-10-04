@@ -23,7 +23,9 @@
       "immagine": "Immagine, come riferimento",
       "video-primo": "Video, primo fotogramma",
       "video-riferimento": "Video, come riferimento",
-      "brain": "Brain"
+      "brain": "Brain",
+      "immagine-prompt": "Immagine, come prompt",
+      "video-prompt": "Video, come prompt"
     },
     "videoNo": "Video non lo accetta: primo fotogramma e riferimenti non si mescolano, o sono già troppi."
   },
