@@ -709,3 +709,55 @@ scelta del piano: la clonazione non si prova col fornitore finto e basta.
 ```
 Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 6b.
 ```
+
+## ▶️ 2026-10-05 — 6b e 6c FATTE (in sviluppo, spente fino alla misura)
+
+Il committente pensa al **piano gratuito**. ⚠️ Secondo le fonti del
+2026-10-04 il gratuito **non ha licenza commerciale e non clona**:
+- la clonazione (6b) non si accende;
+- nessun gesto si può rivendere a crediti.
+
+Va bene solo per le prove in sviluppo; per accendere serve almeno lo Starter.
+
+- `cdcae74` 6b/1 — puro:
+  - `engine/voci.js`: la voce è un file `kind: 'voce'`, `CONSENSO` col testo datato;
+  - listini di disegno, clonazione e cambio, tutti `null`;
+  - `durataWav`.
+- `76081bc` 6b/2 — Worker:
+  - disegna (a crediti) e `/voce/tieni`;
+  - clona: il consenso si scrive in `consensi` **prima** dell'addebito;
+  - `/voce/cancella`, solo voci del conto;
+  - tetto di 3 voci per conto;
+  - SQL in `docs/2026-10-04-schema-voce.sql`, **da lanciare a mano**.
+- `756ce97` 6b/3 — studio:
+  - lo strumento «una voce nuova» (descrivila · clonala);
+  - la voce diventa un file in Brain e sceglie chi legge, e le proprie compaiono nel punto oro;
+  - posata sul Vocale lo sceglie;
+  - svuotare il cestino la cancella presso ElevenLabs, o la trattiene.
+- `87e8622` 6c — cambia voce:
+  - WAV 16 kHz al Worker, che ne legge la durata e fa pagare quella;
+  - se la registrazione veniva da un video, la voce ci torna dentro **nel browser** (WebM, `engine/rimonta.js`);
+  - provato su un mp4 vero di 10 s: 640×360, audio nuovo a 880 Hz dentro, 10,1 s di lavoro.
+- 6c/2 — lo script apre «una voce nuova» (tutte e due le schede).
+  - 961 prove verdi, build ok;
+  - script `--rapido` verde a 390×844 e 1280×800: 102 pagine, 954 comandi.
+
+**Per accendere** (con un piano a pagamento):
+1. Lanciare `docs/2026-10-04-schema-voce.sql`.
+2. `npx wrangler secret put ELEVENLABS_API_KEY`.
+3. Misurare lettura, disegno, clonazione e cambio, e scrivere le quattro `MISURA_*` in `listinoVoce.js`.
+4. Riconfermare gli indirizzi dell'API e gli id delle voci pronte.
+
+Minori e rischi:
+- Le voci clonate stanno tutte nel conto ElevenLabs del committente, che ne tiene un numero limitato per piano (tetto 3 per cliente): con molti clienti finiscono gli slot.
+- Il testo del consenso è solo in italiano.
+- A muro acceso il Vocale resta dietro il muro.
+- La croce del piano copre l'angolo del video in «cambia».
+- Safari non rimonta il video: consegna la sola voce e lo dice.
+- Lo speech-to-speech cambia anche musica e rumori del video.
+
+**Prossima: la 6d** (doppiaggio e trascrivi).
+
+```
+Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 6d.
+```
