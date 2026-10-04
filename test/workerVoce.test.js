@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import worker from '../worker/index.js';
 import { generaVoce } from '../worker/voce.js';
 import { VOCE_LEGGI, VOCI_PRONTE, prezzoLettura, MODELLO_VOCE } from '../src/engine/listinoVoce.js';
+import { mondo, MP3 } from './helpers/mondoVoce.js';
 
 /*
  * «Leggi questo» attraverso il Worker (fetta 6a), con la rete finta.
@@ -24,31 +25,11 @@ const CHI = { id: 'u-1' };
 const VOCE = VOCI_PRONTE[0].id;
 const TESTO = 'Ciao, sono Zack.';
 const PREZZO = prezzoLettura(TESTO, MISURA).total;
-const MP3 = new Uint8Array([0x49, 0x44, 0x33, 1, 2, 3]);
 
 const fetchVero = globalThis.fetch;
 afterEach(() => {
   globalThis.fetch = fetchVero;
 });
-
-/** Supabase tiene il saldo; ElevenLabs risponde come gli si dice. Tutto si registra, in ordine. */
-function mondo({ saldo = 100000, fornitore = () => new Response(MP3, { headers: { 'x-character-count': '16' } }), accredita = () => new Response('1') } = {}) {
-  const chiamate = [];
-  globalThis.fetch = async (u, o = {}) => {
-    const url = String(u);
-    const corpo = o.body ? JSON.parse(o.body) : null;
-    chiamate.push({ url, metodo: o.method || 'GET', corpo, intestazioni: o.headers || {} });
-    if (url.includes('/auth/v1/user')) return new Response(JSON.stringify({ id: 'u-1', email: 'c@e.it' }));
-    if (url.includes('/rpc/addebita')) {
-      return new Response(JSON.stringify(saldo >= corpo.p_prezzo ? saldo - corpo.p_prezzo : null));
-    }
-    if (url.includes('/rpc/accredita')) return accredita();
-    if (url.includes('/rest/v1/lavori')) return new Response('{}', { status: o.method === 'POST' ? 201 : 200 });
-    if (url.includes('api.elevenlabs.io')) return fornitore(url, o);
-    return new Response('{}');
-  };
-  return chiamate;
-}
 
 const leggi = (corpo, env = AMBIENTE) => generaVoce({ servizio: VOCE_LEGGI, ...corpo }, CHI, env, { misura: MISURA });
 const tocca = (c, pezzo) => c.some((x) => x.url.includes(pezzo));
@@ -82,7 +63,6 @@ test('le richieste storte si rifiutano con 400, senza toccare i soldi', async ()
   for (const [corpo, errore] of [
     [{ testo: '', voce: VOCE }, 'senza-testo'],
     [{ testo: 'a'.repeat(5000), voce: VOCE }, 'testo-troppo-lungo'],
-    [{ testo: TESTO, voce: 'voce-di-un-altro' }, 'voce-sconosciuta'],
   ]) {
     const c = mondo();
     const res = await leggi(corpo);
@@ -167,4 +147,34 @@ test('l’errore del fornitore non cita il testo del cliente', async () => {
   mondo({ fornitore: () => new Response(`errore su: ${TESTO}`, { status: 400 }) });
   const res = await leggi({ testo: TESTO, voce: VOCE });
   assert.ok(!(await res.text()).includes('Zack'));
+});
+
+test('⚠️ una voce che non è del conto (6b): 400, guardato l’archivio, senza addebito', async () => {
+  const c = mondo({ voci: ['el-mia'] });
+  const res = await leggi({ testo: TESTO, voce: 'el-di-un-altro' });
+  assert.equal(res.status, 400);
+  assert.equal((await res.json()).errore, 'voce-sconosciuta');
+  assert.ok(!tocca(c, '/rpc/addebita'));
+  assert.ok(!tocca(c, 'elevenlabs'));
+});
+
+test('una voce del conto (6b) legge come una pronta', async () => {
+  const c = mondo({ voci: ['el-mia'] });
+  const res = await leggi({ testo: TESTO, voce: 'el-mia' });
+  assert.equal(res.status, 200);
+  assert.ok(c.some((x) => x.url.includes('/v1/text-to-speech/el-mia')));
+});
+
+test('archivio muto sulle voci: 500 prima dell’addebito, non «sconosciuta»', async () => {
+  const c = mondo({ archivioVoci: false });
+  const res = await leggi({ testo: TESTO, voce: 'el-mia' });
+  assert.equal(res.status, 500);
+  assert.ok(!tocca(c, '/rpc/addebita'));
+});
+
+test('una voce pronta non chiede niente all’archivio', async () => {
+  const c = mondo({ archivioVoci: false });
+  const res = await leggi({ testo: TESTO, voce: VOCE });
+  assert.equal(res.status, 200);
+  assert.ok(!tocca(c, '/rest/v1/voci'));
 });

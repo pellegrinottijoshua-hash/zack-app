@@ -29,8 +29,7 @@ import { LISTINO, prezzoDi, limitiDi } from '../src/engine/listino.js';
 import { addebita, rimborsa, rimborsoRiuscito, apriLavoro, chiudiLavoro } from './conto.js';
 import { generaConGoogle, immagineValida } from './fornitori/google.js';
 import { generaVideo, statoLavoro, sbloccaVideo, scaricaVideo } from './video.js';
-import { generaVoce } from './voce.js';
-import { VOCE_LEGGI } from '../src/engine/listinoVoce.js';
+import { GENERA_VOCE, tieniVoce, cancellaVoce } from './voce.js';
 import { VOCE_VIDEO } from '../src/engine/listinoVideo.js';
 
 const GIORNO = 86400000;
@@ -366,8 +365,10 @@ async function genera(req, env) {
   const corpo = await req.json().catch(() => ({}));
   // Il video ha la sua forma (a secondi, e con l'attesa): va per la sua strada.
   if (corpo.servizio === VOCE_VIDEO) return generaVideo(corpo, chi, env);
-  // La lettura a voce (fetta 6a): a carattere, con la sua misura.
-  if (corpo.servizio === VOCE_LEGGI) return generaVoce(corpo, chi, env);
+  // La voce (fase 6): leggere, disegnare, clonare, cambiare — ognuna col suo listino.
+  if (typeof corpo.servizio === 'string' && Object.hasOwn(GENERA_VOCE, corpo.servizio)) {
+    return GENERA_VOCE[corpo.servizio](corpo, chi, env);
+  }
   const { servizio, prompt, riferimenti = [], misura = 'grande', formato = '1:1' } = corpo;
 
   const voce = LISTINO[servizio];
@@ -669,6 +670,13 @@ export default {
     if (url.pathname === '/checkout' && req.method === 'POST') return checkout(req, env);
     if (url.pathname === '/ricarica' && req.method === 'POST') return ricarica(req, env);
     if (url.pathname === '/genera' && req.method === 'POST') return genera(req, env);
+    // Le voci senza soldi (6b): tenere un'anteprima già pagata, cancellare.
+    if ((url.pathname === '/voce/tieni' || url.pathname === '/voce/cancella') && req.method === 'POST') {
+      const chi = await chiEsegue(req, env);
+      if (!chi) return json({ errore: 'non-collegato' }, 401);
+      const corpo = await req.json().catch(() => ({}));
+      return (url.pathname === '/voce/tieni' ? tieniVoce : cancellaVoce)(corpo, chi, env);
+    }
     if (url.pathname === '/lavoro' && req.method === 'GET') {
       const chi = await chiEsegue(req, env);
       if (!chi) return json({ errore: 'non-collegato' }, 401);
