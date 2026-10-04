@@ -787,6 +787,16 @@
       "quanti": "{n} inside",
       "strada": "Folders",
       "nome": "Folder name"
+    },
+    "lineette": {
+      "label": "Arrow, group, colour, tidy",
+      "title": "Tidy up",
+      "tinta": "Colour or icon",
+      "colore": "Colour {c}",
+      "cast": "{nome}'s face",
+      "facciaSua": "Its own face",
+      "toccaColore": "Tap the things to colour · Esc to finish",
+      "toccaIcona": "Tap files and folders · Esc to finish"
     }
   },
   "effetti": {

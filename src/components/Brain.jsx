@@ -356,6 +356,10 @@ function Brain({
    */
   dentro = null,
   onDentro = () => {},
+  /* Il colore o la faccia delle tre lineette (5c): finché è aperto, toccare
+     un oggetto glielo dà. Arriva da fuori come `collega`. */
+  tinta = null,
+  onTinta = () => {},
 }, ref) {
   const [scelto, setScelto] = useState(null);
   /* La scheda aperta col tocco (5b): l'id dell'OGGETTO, non dell'asset —
@@ -599,6 +603,7 @@ function Brain({
     const tasti = (e) => {
       if (e.key === 'Escape') {
         onCollega(null);
+        onTinta(null);
         setScelto(null);
         setScheda(null);
       }
@@ -614,7 +619,7 @@ function Brain({
     };
     document.addEventListener('keydown', tasti);
     return () => document.removeEventListener('keydown', tasti);
-  }, [items, scelto, onChange, onCollega]);
+  }, [items, scelto, onChange, onCollega, onTinta]);
 
   /*
    * «Centra tutto» arriva da fuori: il comando ora e' un cerchio
@@ -665,6 +670,7 @@ function Brain({
               setScelto(null);
               setScheda(null);
               onCollega(null);
+              onTinta(null);
             }
           }}
         >
@@ -696,6 +702,11 @@ function Brain({
           {collega && (
             <p className="brain-istruzione">
               {collega.da ? t('brain.arrowTo') : t('brain.arrowFrom')}
+            </p>
+          )}
+          {tinta && (
+            <p className="brain-istruzione">
+              {t(tinta.colore ? 'brain.lineette.toccaColore' : 'brain.lineette.toccaIcona')}
             </p>
           )}
 
@@ -743,6 +754,7 @@ function Brain({
                   data-scelto={o.id === scelto || undefined}
                   data-collega={collega?.da === o.id || undefined}
                   data-sopra-icona={o.id === sopraIcona || undefined}
+                  data-tinta={(o.t !== 'cerchio' && o.colore) || undefined}
                   style={{
                     left: o.x,
                     top: o.y,
@@ -754,7 +766,9 @@ function Brain({
                     // Il tocco APRE (B-b): la scheda col nome, la nota e il file
                     // da guardare. Un trascinamento finito sull'oggetto non è un
                     // tocco, e non apre niente.
-                    if (mosso.current) return;
+                    // Con un gesto aperto (freccia, tinta) il tocco è di quel
+                    // gesto: non apre né la scheda né la cartella.
+                    if (mosso.current || collega || tinta) return;
                     // Una cartella si apre entrandoci (B-f).
                     if (o.t === 'cartella') return onDentro(o.id);
                     if (o.t !== 'asset') return;
@@ -768,6 +782,14 @@ function Brain({
                   onPointerDown={(e) => {
                     // Un secondo dito non disegna frecce e non prende oggetti.
                     if (dueDita(gesto.current)) return;
+                    if (tinta) {
+                      // Il colore va a tutto ciò che ha un bordo; la faccia
+                      // solo alle icone — un gruppo non ha una faccia. Resta
+                      // aperto: chi colora, colora più cose.
+                      e.stopPropagation();
+                      if (tinta.colore || o.t !== 'cerchio') onChange(aggiorna(items, o.id, tinta));
+                      return;
+                    }
                     if (collega) {
                       // Due clic: il primo sceglie da dove, il secondo dove.
                       // Dopo il secondo la modalità RESTA accesa: chi disegna

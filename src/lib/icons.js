@@ -163,6 +163,8 @@ export const ICONS = {
   nota: ['M4.5 4.5h15v10.5l-4.5 4.5h-10.5z', 'M19.5 15h-4.5v4.5'],
   freccia: ['M3.5 20C7.5 10.5 13.5 5.5 20.5 4.5', 'M20.5 4.5l-5.3 1', 'M20.5 4.5l-1 5.3'],
   gruppo: [cerchio(12, 12, 8.3), punto(9, 11), punto(13.5, 9.8), punto(11.8, 14.5)],
+  // Le tre lineette (5c, B3): freccia, gruppo, colore o icona, riordino.
+  lineette: ['M4.5 7h15', 'M4.5 12h15', 'M4.5 17h15'],
 
   // ---- i cinque bollini -------------------------------------------------
   stella: ['M12 3.4l2.7 5.5 6 .9-4.3 4.2 1 6-5.4-2.8-5.4 2.8 1-6L3.3 9.8l6-.9z'],

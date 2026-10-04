@@ -70,7 +70,8 @@ import { prezzoVideo, LIMITI_IMMAGINI, RUOLI_VIDEO, immaginiVideoStorte } from '
 import Muro from './components/Muro.jsx';
 import { nuovoAsset, nuovoCerchio, daNota, noteInFile } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
-import { aggiungi, livelloValido } from './engine/cartelle.js';
+import { aggiungi, livello, livelloValido, suLivello } from './engine/cartelle.js';
+import Lineette from './components/Lineette.jsx';
 import { leggiDescrizione } from './engine/dizionarioVoce.js';
 import { NEUTRA, fondiRicetta, getRecipe } from './engine/sound.js';
 import { famiglia, genera, suRitmo, SR } from './engine/synth.js';
@@ -385,6 +386,12 @@ export default function App() {
    * rimette fuori invece di lasciarti dentro il nulla.
    */
   const [cartellaBrain, setCartellaBrain] = useState(null);
+  /**
+   * Il colore o la faccia scelti nelle tre lineette (5c), da dare agli
+   * oggetti che si toccano: `{ colore }`, `{ icona }` o `null`. Come la
+   * freccia, è un gesto aperto — e i due non stanno accesi insieme.
+   */
+  const [tintaBrain, setTintaBrain] = useState(null);
 
   /** La frase scritta in basso nel Vocale: da lì il tasto ricava i filtri. */
   const [descrizioneVoce, setDescrizioneVoce] = useState('');
@@ -2429,24 +2436,6 @@ export default function App() {
    */
   const avanzatiBrain = (
     <Advanced id="brain">
-      {/* Il riordino (fase 5b): era il tasto Zack di Brain, che è uscito
-          (B1). Le regole sono quelle del descrittore — una lista sola — e
-          deterministiche: ripremere non muove più niente. */}
-      <div className="field brain-riordino">
-        <span>{t('brain.riordina.title')}</span>
-        <div>
-          {getDescrittore('brain').tasto.gruppi[0].opzioni.map((r) => (
-            <button
-              key={r.id}
-              className="btn ghost"
-              disabled={tela.filter((o) => o.t !== 'freccia').length < 2}
-              onClick={() => cambiaTela(riordina(tela, r.id))}
-            >
-              {t(r.label)}
-            </button>
-          ))}
-        </div>
-      </div>
       <div className="field">
         <button className="btn ghost" disabled={tela.length === 0} onClick={faiPacco}>
           {t('brain.pacco')}
@@ -2627,6 +2616,8 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               onCollega={setCollegaBrain}
               dentro={livelloValido(tela, cartellaBrain)}
               onDentro={setCartellaBrain}
+              tinta={tintaBrain}
+              onTinta={setTintaBrain}
             />
           ) : tool === 'vocale' ? (
             <VoceLab
@@ -3169,6 +3160,33 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                     onScegli={metiSullaTela}
                     onChiudi={() => setSopraLaTela(null)}
                   />
+                ) : sopraLaTela === 'lineette' ? (
+                  <Lineette
+                    tinta={tintaBrain}
+                    quanti={livello(tela, livelloValido(tela, cartellaBrain)).filter((o) => o.t !== 'freccia').length}
+                    onFreccia={() => {
+                      setSopraLaTela(null);
+                      setTintaBrain(null);
+                      setCollegaBrain({ da: null });
+                    }}
+                    onGruppo={() => {
+                      setSopraLaTela(null);
+                      cambiaTela(aggiungi(tela, nuovoCerchio({}), livelloValido(tela, cartellaBrain)));
+                    }}
+                    onTinta={(scelta) => {
+                      setSopraLaTela(null);
+                      setCollegaBrain(null);
+                      setTintaBrain(scelta);
+                    }}
+                    regole={getDescrittore('brain').tasto.gruppi[0].opzioni}
+                    onRiordina={(regola) => {
+                      setSopraLaTela(null);
+                      // Solo il livello che si guarda: una cartella aperta non
+                      // rimescola la tela di fuori.
+                      cambiaTela(suLivello(tela, livelloValido(tela, cartellaBrain), (qui) => riordina(qui, regola)));
+                    }}
+                    onChiudi={() => setSopraLaTela(null)}
+                  />
                 ) : sopraLaTela === 'cestino' ? (
                   <Cestino
                     cestino={library.cestino}
@@ -3350,6 +3368,16 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   indietro: undoResult,
                   avanti: redoResult,
                   freccia: () => setCollegaBrain((v) => (v ? null : { da: null })),
+                  /* Le tre lineette: con un gesto aperto (freccia o tinta) il
+                     cerchio lo chiude, come ripremere la freccia lo chiudeva. */
+                  lineette: () => {
+                    if (collegaBrain || tintaBrain) {
+                      setCollegaBrain(null);
+                      setTintaBrain(null);
+                      return;
+                    }
+                    setSopraLaTela((v) => (v === 'lineette' ? null : 'lineette'));
+                  },
                   riascolta: voce.riascolta,
                   unAltro: () => setEffetto((e) => ({ ...e, seme: e.seme + 1 })),
                   ritmo: () => (effettiAudio.recording ? effettiAudio.stop() : effettiAudio.start()),
@@ -3389,6 +3417,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   erase: brushOpen && modoPennello === 'erase',
                   penna: brushOpen && modoPennello !== 'righello',
                   freccia: Boolean(collegaBrain),
+                  lineette: sopraLaTela === 'lineette' || Boolean(collegaBrain) || Boolean(tintaBrain),
                   ritmo: effettiAudio.recording,
                   tutorial: sopraLaTela === 'tutorial',
                   [modoDisegno]: isEditor,

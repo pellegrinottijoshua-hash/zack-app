@@ -787,6 +787,16 @@
       "quanti": "{n} dentro",
       "strada": "Le cartelle",
       "nome": "Nome della cartella"
+    },
+    "lineette": {
+      "label": "Freccia, gruppo, colore, riordino",
+      "title": "Metti in ordine",
+      "tinta": "Colore o icona",
+      "colore": "Colore {c}",
+      "cast": "La faccia di {nome}",
+      "facciaSua": "La sua faccia",
+      "toccaColore": "Tocca le cose da colorare · Esc per finire",
+      "toccaIcona": "Tocca i file e le cartelle · Esc per finire"
     }
   },
   "effetti": {
