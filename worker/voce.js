@@ -319,7 +319,8 @@ export async function cancellaVoce(corpo, chi, env) {
 export async function cambiaVoce(corpo, chi, env, { misura = MISURA_CAMBIO } = {}) {
   const { voce, audio } = corpo;
   if (typeof voce !== 'string' || !voce) return json({ errore: 'voce-sconosciuta' }, 400);
-  if (typeof audio !== 'string' || audio.length > 4 * 1024 * 1024) return json({ errore: 'audio-troppo-lungo' }, 413);
+  if (typeof audio !== 'string') return json({ errore: 'audio' }, 400);
+  if (audio.length > 4 * 1024 * 1024) return json({ errore: 'audio-troppo-lungo' }, 413);
   const byte = byteDa(audio);
   const secondi = byte && durataWav(byte);
   if (!secondi) return json({ errore: 'audio' }, 400);

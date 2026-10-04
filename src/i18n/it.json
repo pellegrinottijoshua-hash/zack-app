@@ -949,10 +949,11 @@
     "gesto": {
       "title": "Cosa fa il tasto",
       "trasforma": "Trasforma",
-      "leggi": "Leggi"
+      "leggi": "Leggi",
+      "cambia": "Cambia voce"
     },
     "pronta": {
-      "title": "Chi legge",
+      "title": "La voce",
       "george": "George",
       "sarah": "Sarah",
       "adam": "Adam",
@@ -998,6 +999,17 @@
       "saldoCorto": "Il saldo non basta."
     },
     "scelta": "Legge «{nome}».",
-    "trattenute": "{n} voci restano nel cestino: ElevenLabs non le ha cancellate. Riprova fra poco."
+    "trattenute": "{n} voci restano nel cestino: ElevenLabs non le ha cancellate. Riprova fra poco.",
+    "cambia": {
+      "claim": "La tua registrazione, detta da un'altra voce. Anche dentro un video.",
+      "durata": "{n} di {max} secondi",
+      "troppoLungo": "È troppo lunga: al massimo {max} secondi.",
+      "nonMisurato": "Cambiare voce arriva presto: prima misuriamo quanto costa, poi il prezzo compare qui.",
+      "attendi": "Sto cambiando la voce…",
+      "rimonta": "Sto rimettendo la voce nel video: ci mette quanto dura il video.",
+      "videoNota": "È un video: la voce cambiata torna dentro il video. A ElevenLabs va solo l'audio.",
+      "soloAudio": "Questo browser non sa rimontare il video: ecco la voce cambiata, da rimettere nel video in CapCut.",
+      "ascolta": "La voce cambiata"
+    }
   }
 }

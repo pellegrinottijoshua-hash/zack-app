@@ -67,16 +67,19 @@ import {
   tieniVoce,
   clonaVoce,
   cancellaVoce,
+  cambiaVoce,
   chiediLavoro,
   scaricaVideo,
   riduciPerVideo,
 } from './lib/conto.js';
 import { prezzoVideo, LIMITI_IMMAGINI, RUOLI_VIDEO, immaginiVideoStorte } from './engine/listinoVideo.js';
 import {
-  MAX_CARATTERI, CAMPIONE_MAX_BYTE, caratteriDi, letturaNonValida, prezzoLettura, prezzoDisegno, prezzoClonazione,
+  MAX_CARATTERI, CAMPIONE_MAX_BYTE, MAX_SECONDI_CAMBIO, caratteriDi, letturaNonValida, prezzoLettura, prezzoDisegno,
+  prezzoClonazione, prezzoCambio,
 } from './engine/listinoVoce.js';
 import { fileVoce, leggiVoce, nomeVoce, vociDellaLibreria } from './engine/voci.js';
-import { wavDelCampione, base64Di } from './engine/audioVoce.js';
+import { wavDelCampione, wavDaCambiare, base64Di } from './engine/audioVoce.js';
+import { rimontaVideo } from './engine/rimonta.js';
 import NuovaVoce from './components/NuovaVoce.jsx';
 import Muro from './components/Muro.jsx';
 import { nuovoAsset, nuovoCerchio, daNota, noteInFile } from './engine/brain.js';
@@ -421,6 +424,8 @@ export default function App() {
   const [gestoVoce, setGestoVoce] = useState(predefinitaDi('vocale', 'gesto'));
   const [voceLettura, setVoceLettura] = useState(predefinitaDi('vocale', 'voce'));
   const [testoLettura, setTestoLettura] = useState('');
+  /** Il video da cui viene la registrazione sul piano, se è un video (6c). */
+  const [videoVoce, setVideoVoce] = useState(null);
   /**
    * I filtri impostati dal tasto, come scostamento dalla ricetta scelta.
    *
@@ -1673,17 +1678,23 @@ export default function App() {
     setMenuPiu(false);
     // «Scrivi» (6a): il tasto passa a «leggi», e il piano mostra il testo.
     if (quale === 'scrivi') return setGestoVoce('leggi');
+    // Registrare o aggiungere lascia il gesto com'è («cambia» vuole proprio
+    // una registrazione, 6c); solo «leggi» torna ai filtri, perché il suo
+    // piano è il testo e la registrazione non si vedrebbe.
+    if (gestoVoce === 'leggi') setGestoVoce('trasforma');
     if (quale === 'registra') {
-      setGestoVoce('trasforma');
+      setVideoVoce(null);
       return voce.start();
     }
-    setGestoVoce('trasforma');
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'audio/*';
+    // Anche un video (6c): se ne prende l'audio, e la voce cambiata ci torna dentro.
+    input.accept = 'audio/*,video/*';
     input.onchange = () => {
       const f = input.files?.[0];
-      if (f) voce.apriFile(f);
+      if (!f) return;
+      setVideoVoce(f.type.startsWith('video/') ? f : null);
+      voce.apriFile(f);
     };
     return input.click();
   }
@@ -1901,7 +1912,12 @@ export default function App() {
    * `null` finché la misura non c'è (6a): allora il tasto è spento.
    */
   const prezzoLetturaQui = prezzoLettura(testoLettura)?.total ?? null;
-  const letturaSpenta = tool === 'vocale' && gestoVoce === 'leggi' && prezzoLetturaQui === null;
+  /** Il cambio di voce di ADESSO (6c): la durata della registrazione, e il suo prezzo. */
+  const secondiCambio = voce.clip?.buffer?.duration ?? 0;
+  const prezzoCambioQui = prezzoCambio(secondiCambio)?.total ?? null;
+  const letturaSpenta =
+    tool === 'vocale' &&
+    ((gestoVoce === 'leggi' && prezzoLetturaQui === null) || (gestoVoce === 'cambia' && prezzoCambioQui === null));
 
   /**
    * Il tasto Zack del Vocale su «leggi» (6a): spende denaro vero, quindi la
@@ -1948,6 +1964,44 @@ export default function App() {
               ? t(e.rimborsato === true ? 'voce.leggi.rimborsato' : 'voce.leggi.rimborsoInCorso')
               : t('voce.leggi.errore'),
       );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /**
+   * Il tasto su «cambia voce» (6c): la registrazione va a ElevenLabs come WAV
+   * a 16 kHz (il Worker ne misura la durata), torna un MP3; se la
+   * registrazione veniva da un video, la voce ci viene rimessa dentro qui.
+   */
+  async function runCambia() {
+    setError(null);
+    setNotice(null);
+    if (!voce.clip?.buffer) return setNotice(t('voce.nuova.campioneNo'));
+    if (secondiCambio > MAX_SECONDI_CAMBIO) return setNotice(t('voce.cambia.troppoLungo', { max: MAX_SECONDI_CAMBIO }));
+    if (prezzoCambioQui === null) return setNotice(t('voce.cambia.nonMisurato'));
+    if (crediti < prezzoCambioQui) return setNotice(t('voce.nuova.saldoCorto'));
+    setBusy(t('voce.cambia.attendi'));
+    try {
+      const wav = await wavDaCambiare(voce.clip.buffer);
+      const d = await cambiaVoce({ voce: voceLettura, audio: base64Di(wav) });
+      aggiornaSaldo(d.saldo);
+      const mp3 = new Blob([Uint8Array.from(atob(d.dati), (c) => c.charCodeAt(0))], { type: d.mime || 'audio/mpeg' });
+      if (videoVoce) {
+        setBusy(t('voce.cambia.rimonta'));
+        try {
+          const webm = await rimontaVideo(videoVoce, mp3);
+          pushResult({ url: own(webm), blob: webm, kind: 'webm', meta: { strategy: 'cambiaVoce', voce: voceLettura } });
+          return;
+        } catch (e) {
+          // Pagato e riuscito: la voce si consegna comunque, e si dice perché da sola.
+          console.error(e);
+          setNotice(t('voce.cambia.soloAudio'));
+        }
+      }
+      pushResult({ url: own(mp3), blob: mp3, kind: 'mp3', meta: { strategy: 'cambiaVoce', voce: voceLettura } });
+    } catch (e) {
+      erroreVoce(e);
     } finally {
       setBusy(null);
     }
@@ -2895,6 +2949,32 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 <audio className="voce-risultato" src={result.url} controls aria-label={t('voce.leggi.ascolta')} />
               )}
             </div>
+          ) : tool === 'vocale' && gestoVoce === 'cambia' && voce.clip ? (
+            /* «Cambia voce» (6c): la registrazione (o il video) da cui si
+               parte, quanto dura, il prezzo prima del tasto, e il risultato. */
+            <div className="immagine-lab voce-cambio">
+              <p className="sc-claim">{t('voce.cambia.claim')}</p>
+              {videoVoce ? (
+                <video className="immagine-risultato" src={voce.clip.url} controls playsInline />
+              ) : (
+                <audio className="voce-risultato" src={voce.clip.url} controls aria-label={t('sound.ascolta')} />
+              )}
+              <p className="voce-caratteri">
+                {t('voce.cambia.durata', { n: Math.ceil(secondiCambio), max: MAX_SECONDI_CAMBIO })}
+              </p>
+              {videoVoce && <p className="nuova-voce-nota">{t('voce.cambia.videoNota')}</p>}
+              {prezzoCambioQui === null ? (
+                <p className="preventivo">{t('voce.cambia.nonMisurato')}</p>
+              ) : (
+                <Preventivo totale={prezzoCambioQui} saldo={crediti} onRicarica={() => setSopraLaTela('ricarica')} />
+              )}
+              {result?.meta?.strategy === 'cambiaVoce' &&
+                (result.kind === 'webm' ? (
+                  <video className="immagine-risultato" src={result.url} controls playsInline />
+                ) : (
+                  <audio className="voce-risultato" src={result.url} controls aria-label={t('voce.cambia.ascolta')} />
+                ))}
+            </div>
           ) : tool === 'vocale' ? (
             <VoceLab
               sound={voce}
@@ -3186,7 +3266,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
         {/* L'icona output (fase 4a, §T2): il risultato, da prendere in mano.
             Sta sotto il pocket e non a fianco della tela: lì c'è la colonna
             degli strumenti, e l'uscita va verso la tasca. */}
-        {result?.blob && USCITE.has(tool) && !brushOpen && (tool !== 'vocale' || result.kind === 'mp3') && (
+        {result?.blob && USCITE.has(tool) && !brushOpen && (tool !== 'vocale' || result.kind === 'mp3' || result.kind === 'webm') && (
           <IconaOutput
             url={result.url}
             kind={result.kind}
@@ -3596,7 +3676,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   : tool === 'vocale'
                       ? gestoVoce === 'leggi'
                         ? () => setGestoVoce('trasforma')
-                        : voce.reset
+                        : () => {
+                            voce.reset();
+                            setVideoVoce(null);
+                          }
                       : tool === 'effetti'
                         ? () => {
                             effettiAudio.reset();
@@ -3633,6 +3716,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 }
                 if (tool === 'vocale' && gestoVoce === 'leggi') {
                   runLettura();
+                  return;
+                }
+                if (tool === 'vocale' && gestoVoce === 'cambia') {
+                  runCambia();
                   return;
                 }
                 if (tool === 'vocale') {

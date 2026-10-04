@@ -52,7 +52,8 @@ export default {
       /*
        * Cosa fa il tasto (fetta 6a, spec voce §2.5): «trasforma» sono i filtri
        * locali, gratis; «leggi» è ElevenLabs, a crediti, col prezzo accanto.
-       * La 6c e la 6d aggiungono «cambia voce» e «trascrivi» qui.
+       * «cambia» (6c) è ElevenLabs sulla registrazione; la 6d aggiungerà
+       * «trascrivi».
        */
       {
         id: 'gesto',
@@ -61,6 +62,8 @@ export default {
         opzioni: [
           { id: 'trasforma', label: 'voce.gesto.trasforma' },
           { id: 'leggi', label: 'voce.gesto.leggi' },
+          // 6c: la registrazione sul piano, detta dalla voce scelta.
+          { id: 'cambia', label: 'voce.gesto.cambia' },
         ],
       },
       /*

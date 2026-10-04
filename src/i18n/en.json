@@ -949,10 +949,11 @@
     "gesto": {
       "title": "What the button does",
       "trasforma": "Transform",
-      "leggi": "Read"
+      "leggi": "Read",
+      "cambia": "Change voice"
     },
     "pronta": {
-      "title": "Who reads",
+      "title": "The voice",
       "george": "George",
       "sarah": "Sarah",
       "adam": "Adam",
@@ -998,6 +999,17 @@
       "saldoCorto": "Your balance isn't enough."
     },
     "scelta": "“{nome}” is reading.",
-    "trattenute": "{n} voices stay in the trash: ElevenLabs didn't delete them. Try again shortly."
+    "trattenute": "{n} voices stay in the trash: ElevenLabs didn't delete them. Try again shortly.",
+    "cambia": {
+      "claim": "Your recording, spoken by another voice. Even inside a video.",
+      "durata": "{n} of {max} seconds",
+      "troppoLungo": "It's too long: {max} seconds at most.",
+      "nonMisurato": "Change voice is coming soon: first we measure what it costs, then the price shows up here.",
+      "attendi": "Changing the voice…",
+      "rimonta": "Putting the voice back into the video: it takes as long as the video.",
+      "videoNota": "It's a video: the changed voice goes back into the video. Only the audio goes to ElevenLabs.",
+      "soloAudio": "This browser can't rebuild the video: here's the changed voice, to put back into the video in CapCut.",
+      "ascolta": "The changed voice"
+    }
   }
 }

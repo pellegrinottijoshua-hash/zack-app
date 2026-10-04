@@ -21,7 +21,7 @@ test('il `+` del Vocale ha «scrivi», dopo i due gesti di sempre', () => {
 test('il punto oro: il gesto parte da «trasforma», gratis', () => {
   const g = gruppo('gesto');
   assert.equal(g.predefinita, 'trasforma');
-  assert.deepEqual(g.opzioni.map((o) => o.id), ['trasforma', 'leggi']);
+  assert.deepEqual(g.opzioni.map((o) => o.id), ['trasforma', 'leggi', 'cambia']);
 });
 
 test('⚠️ le voci del punto oro sono ESATTAMENTE quelle che il Worker accetta', () => {
