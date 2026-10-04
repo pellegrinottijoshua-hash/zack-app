@@ -77,7 +77,8 @@
     "stile": "Style",
     "primo": "First frame",
     "ultimo": "Last frame",
-    "riferimento": "Reference"
+    "riferimento": "Reference",
+    "scrivi": "Write"
   },
   "drop": {
     "title": "Drop an image here",
@@ -943,5 +944,33 @@
     "numero": "Prompt {n}: {nome}",
     "breve": "Prompt {n}",
     "salva": "Save the prompt"
+  },
+  "voce": {
+    "gesto": {
+      "title": "What the button does",
+      "trasforma": "Transform",
+      "leggi": "Read"
+    },
+    "pronta": {
+      "title": "Who reads",
+      "george": "George",
+      "sarah": "Sarah",
+      "adam": "Adam",
+      "charlotte": "Charlotte"
+    },
+    "leggi": {
+      "claim": "Write a text: a voice reads it for you.",
+      "placeholder": "The text to read",
+      "caratteri": "{n} of {max} characters",
+      "nonMisurato": "Read aloud is coming soon: first we measure what it costs, then the price shows up here.",
+      "attendi": "Reading…",
+      "vuoto": "Write the text to read first.",
+      "troppoLungo": "The text is too long: {max} characters at most.",
+      "saldoCorto": "Your balance isn't enough for this reading.",
+      "rimborsato": "The reading didn't come out. The credit is back on your balance: you paid nothing.",
+      "rimborsoInCorso": "The reading didn't come out. Your credit comes back within a couple of hours — we check, you don't need to do anything.",
+      "errore": "The reading didn't come out. Try again shortly.",
+      "ascolta": "The reading"
+    }
   }
 }

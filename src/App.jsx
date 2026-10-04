@@ -62,11 +62,13 @@ import {
   vaiAlPagamento,
   generaImmagine,
   generaVideo,
+  generaLettura,
   chiediLavoro,
   scaricaVideo,
   riduciPerVideo,
 } from './lib/conto.js';
 import { prezzoVideo, LIMITI_IMMAGINI, RUOLI_VIDEO, immaginiVideoStorte } from './engine/listinoVideo.js';
+import { MAX_CARATTERI, caratteriDi, letturaNonValida, prezzoLettura } from './engine/listinoVoce.js';
 import Muro from './components/Muro.jsx';
 import { nuovoAsset, nuovoCerchio, daNota, noteInFile } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
@@ -181,7 +183,7 @@ const predefinitaDi = (id, gruppo) =>
   getDescrittore(id).tasto.gruppi.find((g) => g.id === gruppo).predefinita;
 
 /** I servizi la cui uscita si prende in mano con l'icona output (4a). */
-const USCITE = new Set(['scontorna', 'vettorializza', 'immagine', 'video']);
+const USCITE = new Set(['scontorna', 'vettorializza', 'immagine', 'video', 'vocale']);
 
 export default function App() {
   const [apiState, setApiState] = useState('offline');
@@ -403,6 +405,13 @@ export default function App() {
    * Brain: la scelta si fa nel punto oro, che è dell'impianto.
    */
   const [baseVoce, setBaseVoce] = useState(predefinitaDi('vocale', 'base'));
+  /**
+   * Cosa fa il tasto del Vocale (fetta 6a): «trasforma» (i filtri locali) o
+   * «leggi» (ElevenLabs, a crediti). E chi legge, e cosa.
+   */
+  const [gestoVoce, setGestoVoce] = useState(predefinitaDi('vocale', 'gesto'));
+  const [voceLettura, setVoceLettura] = useState(predefinitaDi('vocale', 'voce'));
+  const [testoLettura, setTestoLettura] = useState('');
   /**
    * I filtri impostati dal tasto, come scostamento dalla ricetta scelta.
    *
@@ -1653,7 +1662,13 @@ export default function App() {
    */
   function menuVocale(quale) {
     setMenuPiu(false);
-    if (quale === 'registra') return voce.start();
+    // «Scrivi» (6a): il tasto passa a «leggi», e il piano mostra il testo.
+    if (quale === 'scrivi') return setGestoVoce('leggi');
+    if (quale === 'registra') {
+      setGestoVoce('trasforma');
+      return voce.start();
+    }
+    setGestoVoce('trasforma');
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'audio/*';
@@ -1872,6 +1887,63 @@ export default function App() {
     }
   }
 
+  /**
+   * Il prezzo della lettura di ADESSO, dallo stesso modulo che addebita —
+   * `null` finché la misura non c'è (6a): allora il tasto è spento.
+   */
+  const prezzoLetturaQui = prezzoLettura(testoLettura)?.total ?? null;
+  const letturaSpenta = tool === 'vocale' && gestoVoce === 'leggi' && prezzoLetturaQui === null;
+
+  /**
+   * Il tasto Zack del Vocale su «leggi» (6a): spende denaro vero, quindi la
+   * stessa forma di `runImmagine` — si spegne SUBITO, e il rimborso si dice.
+   */
+  async function runLettura() {
+    setError(null);
+    setNotice(null);
+    const storta = letturaNonValida({ testo: testoLettura, voce: voceLettura });
+    if (storta === 'senza-testo') {
+      setNotice(t('voce.leggi.vuoto'));
+      return;
+    }
+    if (storta === 'testo-troppo-lungo') {
+      setNotice(t('voce.leggi.troppoLungo', { max: MAX_CARATTERI }));
+      return;
+    }
+    if (prezzoLetturaQui === null) {
+      setNotice(t('voce.leggi.nonMisurato'));
+      return;
+    }
+    if (crediti < prezzoLetturaQui) {
+      setNotice(t('voce.leggi.saldoCorto'));
+      return;
+    }
+    setBusy(t('voce.leggi.attendi'));
+    try {
+      const corpo = await generaLettura({ testo: testoLettura, voce: voceLettura });
+      const byte = Uint8Array.from(atob(corpo.dati), (c) => c.charCodeAt(0));
+      const blob = new Blob([byte], { type: corpo.mime || 'audio/mpeg' });
+      pushResult({ url: own(blob), blob, kind: 'mp3', meta: { strategy: 'lettura', voce: voceLettura } });
+      aggiornaSaldo(corpo.saldo);
+    } catch (e) {
+      console.error(e);
+      aggiornaSaldo(e.saldo);
+      // Il ramo PRUDENTE prima, come per Immagine: «ti è tornato» solo se il
+      // Worker ha detto `rimborsato: true`.
+      setError(
+        e.code === 'saldo'
+          ? t('voce.leggi.saldoCorto')
+          : e.code === 'non-misurato' || e.code === 'non-configurato'
+            ? t('voce.leggi.nonMisurato')
+            : e.code === 'fornitore'
+              ? t(e.rimborsato === true ? 'voce.leggi.rimborsato' : 'voce.leggi.rimborsoInCorso')
+              : t('voce.leggi.errore'),
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
   /*
    * L'attesa del video. Chiede ogni sei secondi finché il lavoro non è finito
    * o rimborsato. «Non lo so» (rete giù) è «in corso»: non si conclude mai
@@ -1970,7 +2042,11 @@ export default function App() {
    */
   const SCELTE = {
     brain: { riordino: { valore: regolaRiordino, cambia: setRegolaRiordino } },
-    vocale: { base: { valore: baseVoce, cambia: setBaseVoce } },
+    vocale: {
+      gesto: { valore: gestoVoce, cambia: setGestoVoce },
+      voce: { valore: voceLettura, cambia: setVoceLettura },
+      base: { valore: baseVoce, cambia: setBaseVoce },
+    },
     vettorializza: { preset: { valore: s.tracePreset, cambia: (id) => set({ tracePreset: id }) } },
     effetti: {
       famiglia: {
@@ -2006,6 +2082,7 @@ export default function App() {
   const statoPiano = {
     tela: tela.length,
     clipVoce: voce.clip,
+    letturaVoce: gestoVoce === 'leggi',
     registrandoVoce: voce.recording,
     effettoAperto,
     ritmo: effettiAudio.rhythm,
@@ -2659,6 +2736,35 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               tinta={tintaBrain}
               onTinta={setTintaBrain}
             />
+          ) : tool === 'vocale' && gestoVoce === 'leggi' ? (
+            /* «Leggi questo» (6a): il gemello di Immagine. Il prezzo si legge
+               qui PRIMA del tasto; finché non è misurato lo si dice. */
+            <div className="immagine-lab voce-lettura">
+              <p className="sc-claim">{t('voce.leggi.claim')}</p>
+              <textarea
+                className="immagine-prompt"
+                value={testoLettura}
+                onChange={(e) => setTestoLettura(e.target.value)}
+                placeholder={t('voce.leggi.placeholder')}
+                aria-label={t('voce.leggi.placeholder')}
+                disabled={Boolean(busy)}
+              />
+              <p className="voce-caratteri">
+                {t('voce.leggi.caratteri', { n: caratteriDi(testoLettura), max: MAX_CARATTERI })}
+              </p>
+              {prezzoLetturaQui === null ? (
+                <p className="preventivo">{t('voce.leggi.nonMisurato')}</p>
+              ) : (
+                <Preventivo
+                  totale={prezzoLetturaQui}
+                  saldo={crediti}
+                  onRicarica={() => setSopraLaTela('ricarica')}
+                />
+              )}
+              {result?.kind === 'mp3' && (
+                <audio className="voce-risultato" src={result.url} controls aria-label={t('voce.leggi.ascolta')} />
+              )}
+            </div>
           ) : tool === 'vocale' ? (
             <VoceLab
               sound={voce}
@@ -2950,7 +3056,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
         {/* L'icona output (fase 4a, §T2): il risultato, da prendere in mano.
             Sta sotto il pocket e non a fianco della tela: lì c'è la colonna
             degli strumenti, e l'uscita va verso la tasca. */}
-        {result?.blob && USCITE.has(tool) && !brushOpen && (
+        {result?.blob && USCITE.has(tool) && !brushOpen && (tool !== 'vocale' || result.kind === 'mp3') && (
           <IconaOutput
             url={result.url}
             kind={result.kind}
@@ -3134,7 +3240,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                      * contiene `t('immagine.attendi')` (vedi `runImmagine`):
                      * lo si mostra qui, non un nuovo stato da tenere sincrono.
                      */
-                    tool === 'immagine' && busy
+                    (tool === 'immagine' || tool === 'vocale') && busy
                     ? { testo: busy }
                     : tool === 'video' && (busy || lavoroVideo)
                       ? { testo: busy || t('video.attendi') }
@@ -3142,7 +3248,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               }
               /* Su Video il tasto resta spento anche mentre si aspetta un
                  lavoro già pagato: premere di nuovo sarebbe un secondo video. */
-              busy={Boolean(busy) || (tool === 'video' && Boolean(lavoroVideo))}
+              busy={Boolean(busy) || (tool === 'video' && Boolean(lavoroVideo)) || letturaSpenta}
               models={engine.models}
               modello={s.model}
               onModello={(id) => set({ model: id })}
@@ -3328,7 +3434,9 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 tool === 'brain'
                   ? null
                   : tool === 'vocale'
-                      ? voce.reset
+                      ? gestoVoce === 'leggi'
+                        ? () => setGestoVoce('trasforma')
+                        : voce.reset
                       : tool === 'effetti'
                         ? () => {
                             effettiAudio.reset();
@@ -3361,6 +3469,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   // premerlo di nuovo lo risuona senza cambiarlo — lo stesso
                   // seme da' sempre lo stesso suono.
                   effettiAudio.suona(costruisciEffetto(), SR);
+                  return;
+                }
+                if (tool === 'vocale' && gestoVoce === 'leggi') {
+                  runLettura();
                   return;
                 }
                 if (tool === 'vocale') {
@@ -3519,8 +3631,14 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                          * Mentre il microfono e' acceso il piano non e' vuoto —
                          * o il tasto Ferma non si disegnerebbe — ma non c'e'
                          * ancora niente su cui premere «Ascolta».
+                         *
+                         * Sul Vocale, il testo da leggere (6a) rende il piano
+                         * non vuoto ma non è una voce: «Ascolta» e «Salva
+                         * questa voce» lavorano sulla registrazione.
                          */
-                        statoDelPiano(tool, statoPiano).contenuto;
+                      tool === 'vocale'
+                      ? Boolean(voce.clip)
+                      : statoDelPiano(tool, statoPiano).contenuto;
                 /*
                  * «C'e' un risultato» vuol dire cose diverse: per lo
                  * scontorno un PNG — i pennelli non hanno su cosa lavorare

@@ -7,6 +7,7 @@
  */
 
 import { SUPABASE_URL, SUPABASE_CHIAVE_PUBBLICA } from './supabase.js';
+import { VOCE_LEGGI } from '../engine/listinoVoce.js';
 
 /**
  * Dove sta il Worker: **qui**, alla stessa origine del sito.
@@ -228,6 +229,33 @@ export async function generaImmagine({
   if (!res.ok) {
     // Il saldo torna comunque: dopo un fallimento il Worker ha gia' rimborsato,
     // e lo studio deve mostrare il numero giusto senza ricaricare la pagina.
+    throw Object.assign(new Error(corpo.errore || 'genera'), {
+      code: corpo.errore || 'genera',
+      saldo: corpo.saldo,
+      prezzo: corpo.prezzo,
+      rimborsato: corpo.rimborsato,
+    });
+  }
+  return corpo; // { dati, mime, prezzo, saldo, lavoro }
+}
+
+/**
+ * «Leggi questo» (fetta 6a): un testo e una voce pronta, l'MP3 indietro.
+ * Stessa forma di `generaImmagine`: il Worker addebita, e se fallisce
+ * rimborsa e lo dice (`rimborsato`).
+ */
+export async function generaLettura({ testo, voce, otteniSessione = sessione }) {
+  const token = await otteniSessione();
+  if (!token) throw Object.assign(new Error('non-collegato'), { code: 'non-collegato' });
+
+  const res = await fetch(`${BASE}/genera`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ servizio: VOCE_LEGGI, testo, voce }),
+  });
+
+  const corpo = await res.json().catch(() => ({}));
+  if (!res.ok) {
     throw Object.assign(new Error(corpo.errore || 'genera'), {
       code: corpo.errore || 'genera',
       saldo: corpo.saldo,
