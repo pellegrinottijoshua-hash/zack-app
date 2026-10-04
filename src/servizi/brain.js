@@ -88,6 +88,9 @@ export default {
      * è l'ultimo: «in basso a destra, l'ultima icona».
      */
     { id: 'pool', icon: 'pool', label: 'brain.pool.label', quando: 'sempre' },
+    /* I prompt salvati (5d, E1): un'icona apposta, «prompts». Sempre, come
+       la pool: è a tela vuota che si cerca da dove partire. */
+    { id: 'prompts', icon: 'nota', label: 'prompt.titolo', quando: 'sempre' },
     { id: 'cestino', icon: 'cestino', label: 'brain.cestino.label', quando: 'sempre' },
   ],
 };

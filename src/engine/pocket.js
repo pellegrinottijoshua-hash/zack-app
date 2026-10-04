@@ -91,6 +91,9 @@ export const DESTINAZIONI = Object.freeze({
   svg: ['pocket', 'vettorializza', 'brain'],
   mp4: ['pocket', 'brain'],
   wav: ['pocket', 'brain'],
+  // Un `.md` posato su Immagine o Video ne riempie il prompt (5d, D-d): un
+  // prompt salvato è un file di testo, non un secondo tipo di oggetto.
+  md: ['pocket', 'immagine-prompt', 'video-prompt', 'brain'],
 });
 
 export function destinazioniDi(kind) {
@@ -108,8 +111,8 @@ export const BERSAGLI = Object.freeze({
   brain: ['brain'],
   scontorna: ['scontorna'],
   vettorializza: ['vettorializza'],
-  immagine: ['immagine'],
-  video: ['video-primo', 'video-riferimento'],
+  immagine: ['immagine', 'immagine-prompt'],
+  video: ['video-primo', 'video-riferimento', 'video-prompt'],
 });
 
 /** Le destinazioni di un bersaglio possibili per quel tipo: vuoto = spento. */

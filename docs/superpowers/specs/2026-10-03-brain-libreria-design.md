@@ -115,6 +115,21 @@ sfratto, §5 di RIPRENDI-QUI).
     aperta si scrive lì.
 15. **Una cartella non si scioglie da sola**, nemmeno vuota: la si toglie.
 
+### Prese in 5d (2026-10-04)
+
+16. **Un prompt salvato è un `.md` con `meta.op = 'prompt'`**; ma qualunque
+    `.md` posato su Immagine o Video ne riempie il prompt — conta il gesto.
+    Il testo **sostituisce** quello che c'era, e il titolo markdown della
+    prima riga non entra (è il nome).
+17. **Nel punto oro** di Immagine e Video: «Prompt 1–4» (i più recenti) e
+    «Salva il prompt». Il nome del file sono le prime sei parole.
+18. **L'icona «prompts»** in Brain è la pool filtrata sui prompt salvati: la
+    stessa lente, non un pannello nuovo.
+19. **La striscia della libreria** perde cartelle, moodboard, raccolte e
+    chip dei tag di prima: ordine e ricerca della pool, filtri «tutto»,
+    «prompts» e le cartelle della tela di Brain. I dati vecchi (cartelle e
+    moodboard della libreria) restano nell'archivio, non si vedono più.
+
 ## 4. Le fette
 
 **5a — l'archivio e il cestino** (questa sessione, 4 compiti):

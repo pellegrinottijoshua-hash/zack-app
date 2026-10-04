@@ -11,7 +11,7 @@ import { pool, livelloSpazio, pesoLeggibile, POOL_VISIBILI } from '../engine/arc
  * si chiude — ma ordinato per data e con la ricerca, perché con quaranta file
  * si scorre e con quattrocento si cerca.
  */
-export default function Pool({ assets, tuttiSulPiano, usage, onScegli, onChiudi }) {
+export default function Pool({ assets, tuttiSulPiano, usage, onScegli, onChiudi, titolo, vuoto }) {
   const [cerca, setCerca] = useState('');
   const [quanti, setQuanti] = useState(POOL_VISIBILI);
   const { mostrati, restano } = pool(assets, { cerca, quanti });
@@ -20,7 +20,7 @@ export default function Pool({ assets, tuttiSulPiano, usage, onScegli, onChiudi 
   return (
     <div className="scegli-asset pool">
       <div className="scegli-testa">
-        <h3>{t('brain.pool.title')}</h3>
+        <h3>{titolo ?? t('brain.pool.title')}</h3>
         <button className="btn ghost small" onClick={onChiudi} aria-label={t('bar.clear')}>
           ×
         </button>
@@ -47,7 +47,7 @@ export default function Pool({ assets, tuttiSulPiano, usage, onScegli, onChiudi 
       )}
 
       {assets.length === 0 ? (
-        <p className="brain-vuoto">{tuttiSulPiano ? t('brain.drawerEmpty') : t('brain.libraryEmpty')}</p>
+        <p className="brain-vuoto">{tuttiSulPiano ? t('brain.drawerEmpty') : (vuoto ?? t('brain.libraryEmpty'))}</p>
       ) : mostrati.length === 0 ? (
         <p className="brain-vuoto">{t('brain.pool.niente')}</p>
       ) : (

@@ -23,7 +23,9 @@
       "immagine": "Immagine, come riferimento",
       "video-primo": "Video, primo fotogramma",
       "video-riferimento": "Video, come riferimento",
-      "brain": "Brain"
+      "brain": "Brain",
+      "immagine-prompt": "Immagine, come prompt",
+      "video-prompt": "Video, come prompt"
     },
     "videoNo": "Video non lo accetta: primo fotogramma e riferimenti non si mescolano, o sono già troppi."
   },
@@ -932,5 +934,14 @@
     "riferimenti": "Immagini",
     "immaginiNota": "Con un primo fotogramma la forma la decide l’immagine.",
     "immagineIllegibile": "Un’immagine scelta non si legge più. Toglila e riprova."
+  },
+  "prompt": {
+    "titolo": "Prompts",
+    "messo": "Prompt messo: {nome}",
+    "salvato": "Prompt salvato in Brain: {nome}",
+    "nessuno": "Nessun prompt salvato. In Immagine e Video, il punto oro ha «Salva il prompt».",
+    "numero": "Prompt {n}: {nome}",
+    "breve": "Prompt {n}",
+    "salva": "Salva il prompt"
   }
 }

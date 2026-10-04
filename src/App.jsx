@@ -72,6 +72,7 @@ import { nuovoAsset, nuovoCerchio, daNota, noteInFile } from './engine/brain.js'
 import { riordina } from './engine/riordina.js';
 import { aggiungi, livello, livelloValido, suLivello } from './engine/cartelle.js';
 import Lineette from './components/Lineette.jsx';
+import { testoPrompt, nomePrompt, promptSalvati, ePrompt, PROMPT_NEL_PUNTO } from './engine/prompt.js';
 import { leggiDescrizione } from './engine/dizionarioVoce.js';
 import { NEUTRA, fondiRicetta, getRecipe } from './engine/sound.js';
 import { famiglia, genera, suRitmo, SR } from './engine/synth.js';
@@ -2139,6 +2140,26 @@ export default function App() {
     brainRef.current?.apri(asset);
   }
 
+  /**
+   * Salva il prompt di adesso come file (5d, D-d): un `.md` in Brain, che
+   * torna nel punto oro come «prompt 1» e si posa su Immagine o Video.
+   */
+  async function salvaPrompt(testo) {
+    const pulito = testoPrompt(testo);
+    if (!pulito) return;
+    const asset = await library.save(new Blob([pulito], { type: 'text/markdown' }), {
+      name: nomePrompt(pulito),
+      kind: 'md',
+      meta: { op: 'prompt' },
+    });
+    setNotice(t('prompt.salvato', { nome: asset.name }));
+  }
+
+  /** Un prompt del punto oro, nel campo del servizio aperto. */
+  async function usaPrompt(asset) {
+    await vaiA(tool === 'video' ? 'video-prompt' : 'immagine-prompt', asset);
+  }
+
   /** Torna alla tela di prima. Una mossa sola: vedi `telaDiPrima`. */
   async function annullaTela() {
     if (!telaDiPrima) return;
@@ -2199,6 +2220,22 @@ export default function App() {
       );
       apriServizio('immagine');
       setNotice(`${t('actions.added')}: ${asset.name}`);
+      return;
+    }
+    // Un `.md` posato su Immagine o Video ne riempie il prompt (5d, D-d).
+    // Sostituisce quello che c'era: annullare è riscriverlo, e un prompt
+    // appeso in coda a un altro non è quello che uno ha scelto.
+    if (dest === 'immagine-prompt' || dest === 'video-prompt') {
+      const { file: f } = await library.read(asset.id);
+      const testo = testoPrompt(await f.text());
+      if (dest === 'immagine-prompt') {
+        setPromptImmagine(testo);
+        apriServizio('immagine');
+      } else {
+        setPromptVideo(testo);
+        apriServizio('video');
+      }
+      setNotice(t('prompt.messo', { nome: asset.name }));
       return;
     }
     if (dest === 'video-primo' || dest === 'video-riferimento') {
@@ -3163,6 +3200,18 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                     onScegli={metiSullaTela}
                     onChiudi={() => setSopraLaTela(null)}
                   />
+                ) : sopraLaTela === 'prompts' ? (
+                  /* L'icona «prompts» di Brain (E1): la pool, ma solo dei
+                     prompt salvati. La stessa lente, lo stesso gesto. */
+                  <Pool
+                    titolo={t('prompt.titolo')}
+                    assets={library.assets.filter((a) => ePrompt(a) && !tela.some((o) => o.assetId === a.id))}
+                    tuttiSulPiano={library.assets.some(ePrompt)}
+                    vuoto={t('prompt.nessuno')}
+                    usage={library.usage}
+                    onScegli={metiSullaTela}
+                    onChiudi={() => setSopraLaTela(null)}
+                  />
                 ) : sopraLaTela === 'lineette' ? (
                   <Lineette
                     tinta={tintaBrain}
@@ -3252,6 +3301,22 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 Object.entries(SCELTE[tool] || {}).map(([g, v]) => [g, v.valore]),
               )}
               onScelta={(gruppo, id) => SCELTE[tool]?.[gruppo]?.cambia(id)}
+              /* I prompt salvati nel punto oro (E1: «prompt 1, 2, 3, 4»), su
+                 Immagine e Video: i quattro più recenti, e il tasto per
+                 salvare quello che c'è scritto adesso. */
+              prompt={
+                tool === 'immagine' || tool === 'video'
+                  ? {
+                      salvati: promptSalvati(library.assets).slice(0, PROMPT_NEL_PUNTO),
+                      puoSalvare: Boolean((tool === 'video' ? promptVideo : promptImmagine).trim()),
+                      onScegli: (a) => usaPrompt(a).catch(() => setError(t('engine.error.body'))),
+                      onSalva: () =>
+                        salvaPrompt(tool === 'video' ? promptVideo : promptImmagine).catch(() =>
+                          setError(t('engine.error.body')),
+                        ),
+                    }
+                  : null
+              }
               /* Togliere il file singolo: senza conferma, perche' e' un
                  gesto piccolo e reversibile — il file sta ancora sul disco
                  dell'utente, e il `+` e' li' accanto. */
@@ -3392,6 +3457,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   salva: tool === 'video' ? salvaVideoGenerato : salvaImmagineGenerata,
                   centra: () => brainRef.current?.centra(),
                   pool: () => setSopraLaTela((v) => (v === 'pool' ? null : 'pool')),
+                  prompts: () => setSopraLaTela((v) => (v === 'prompts' ? null : 'prompts')),
                   cestino: () => setSopraLaTela((v) => (v === 'cestino' ? null : 'cestino')),
                   tutorial: () => setSopraLaTela((v) => (v === 'tutorial' ? null : 'tutorial')),
                   /*
@@ -3428,6 +3494,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   avanzati: sopraLaTela === 'avanzati',
                   riferimenti: sopraLaTela === 'riferimenti',
                   pool: sopraLaTela === 'pool',
+                  prompts: sopraLaTela === 'prompts',
                   cestino: sopraLaTela === 'cestino',
                 };
                 /*
@@ -3605,6 +3672,8 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
        */}
       <Library
         store={library}
+        /* La tela di Brain: le sue cartelle sono i filtri della striscia (5d). */
+        tela={tela}
         open={libOpen}
         onToggle={() =>
           setLibOpen((v) => {
