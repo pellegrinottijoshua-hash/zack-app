@@ -1571,7 +1571,10 @@ export default function App() {
     setBusy('foto');
     try {
       const nome = library.moodboards.find((m) => m.id === telaId)?.name || 'Brain';
-      const scatto = await fotografaTela(tela, library.assets, nome);
+      // Si fotografa il livello che si guarda (5c): tutti i livelli insieme
+      // sarebbero file uno sopra l'altro, ognuno alle coordinate della sua
+      // cartella.
+      const scatto = await fotografaTela(livello(tela, livelloValido(tela, cartellaBrain)), library.assets, nome);
       if (!scatto) {
         setNotice(t('brain.fotoVuota'));
         return;

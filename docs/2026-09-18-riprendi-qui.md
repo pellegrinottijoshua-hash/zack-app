@@ -590,3 +590,37 @@ di Brain non è in alto a sinistra a tela vuota (B1).
 ```
 Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 5c.
 ```
+
+## ▶️ 2026-10-04 — 5c FATTA: cartelle e riordino
+
+- `55c3f47` 5c/1 — puro: `engine/cartelle.js` (`posaSu`, `livello`,
+  `percorso`, `mettiIn`, `togliTutto`, `suLivello`, `iconaSotto`); le
+  facce del cast (`FACCE_CAST`); `normalizzaTela` rimette fuori chi sta in
+  una cartella persa o in un giro.
+- `939a055` 5c/2 — icona su icona fa una cartella (faccia e nome della
+  madre, bordo doppio, «N dentro»); tocco = entra; la strada riporta su e
+  ci si posa un file per farlo salire. Il posto libero guarda dove stanno
+  le cose. `davanti` solo quando si muove: il primo tocco apre davvero.
+- `eec9233` 5c/3 — le tre lineette sostituiscono il cerchio della freccia:
+  freccia, gruppo, colore o icona (le facce del cast), riordino sul livello
+  aperto (via dagli avanzati). Con un gesto aperto il tocco non apre la
+  scheda.
+- 5c/4 — lo script apre le lineette e una cartella. 888 prove verdi, build
+  ok. Script: `--rapido` a 390×844 **verde** (90 pagine, 881 comandi); il
+  giro completo è stato fermato dal tetto di tempo della sessione dopo ~520
+  pagine, **nessun difetto** fino lì. Va rifatto intero una volta.
+
+Decisioni prese da me: §3 della spec, punti 11–15.
+
+«Immagine della tela» fotografa il livello aperto. Le cartelle nella foto
+sono ancora assenti (`fotografaTela` non le disegna).
+
+Minori: il tasto Zack di Brain (nascosto) riordinerebbe
+tutta la tela; dentro una cartella l'inquadratura si rifà a ogni ingresso
+(anche se avevi zoomato a mano).
+
+**Prossima sessione: la 5d** (i prompt e la vista libreria).
+
+```
+Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 5d.
+```
