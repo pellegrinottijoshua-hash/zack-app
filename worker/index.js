@@ -29,6 +29,8 @@ import { LISTINO, prezzoDi, limitiDi } from '../src/engine/listino.js';
 import { addebita, rimborsa, rimborsoRiuscito, apriLavoro, chiudiLavoro } from './conto.js';
 import { generaConGoogle, immagineValida } from './fornitori/google.js';
 import { generaVideo, statoLavoro, sbloccaVideo, scaricaVideo } from './video.js';
+import { generaVoce } from './voce.js';
+import { VOCE_LEGGI } from '../src/engine/listinoVoce.js';
 import { VOCE_VIDEO } from '../src/engine/listinoVideo.js';
 
 const GIORNO = 86400000;
@@ -364,6 +366,8 @@ async function genera(req, env) {
   const corpo = await req.json().catch(() => ({}));
   // Il video ha la sua forma (a secondi, e con l'attesa): va per la sua strada.
   if (corpo.servizio === VOCE_VIDEO) return generaVideo(corpo, chi, env);
+  // La lettura a voce (fetta 6a): a carattere, con la sua misura.
+  if (corpo.servizio === VOCE_LEGGI) return generaVoce(corpo, chi, env);
   const { servizio, prompt, riferimenti = [], misura = 'grande', formato = '1:1' } = corpo;
 
   const voce = LISTINO[servizio];
