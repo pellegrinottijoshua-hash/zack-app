@@ -62,12 +62,22 @@ export function caratteriDi(testo) {
   return typeof testo === 'string' ? testo.trim().length : 0;
 }
 
+/**
+ * La voce si può usare? Le pronte sì; una voce propria (6b) solo se sta in
+ * `proprie` — gli id che il Worker ha trovato in `voci` per QUESTO conto. Una
+ * voce di un altro cliente non si usa, nemmeno conoscendone l'id.
+ */
+export function voceAmmessa(voce, proprie = []) {
+  if (typeof voce !== 'string' || !voce) return false;
+  return VOCI_PRONTE.some((v) => v.id === voce) || proprie.includes(voce);
+}
+
 /** Controlla la richiesta; `null` se va bene, o il codice dell'errore. */
-export function letturaNonValida({ testo, voce }) {
+export function letturaNonValida({ testo, voce, proprie = [] }) {
   const n = caratteriDi(testo);
   if (!n) return 'senza-testo';
   if (n > MAX_CARATTERI) return 'testo-troppo-lungo';
-  if (!VOCI_PRONTE.some((v) => v.id === voce)) return 'voce-sconosciuta';
+  if (!voceAmmessa(voce, proprie)) return 'voce-sconosciuta';
   return null;
 }
 
@@ -86,4 +96,112 @@ export function costoLettura(caratteri, misura = MISURA_VOCE) {
 export function prezzoLettura(testo, misura = MISURA_VOCE) {
   const costo = costoLettura(Math.max(1, caratteriDi(testo)), misura);
   return costo === null ? null : priceFor(costo);
+}
+
+/* ------------------------------------------------------------------------ *
+ * Fetta 6b — disegnare e clonare una voce. Stessa regola: senza misura,
+ * niente prezzo e il Worker risponde 503 prima di addebitare.
+ * ------------------------------------------------------------------------ */
+
+export const VOCE_DISEGNA = 'voce-disegna';
+export const VOCE_CLONA = 'voce-clona';
+
+/**
+ * Millesimi per UN disegno (ElevenLabs genera tre anteprime da una
+ * descrizione, e le addebita in crediti) e per UNA clonazione istantanea.
+ * Da misurare col piano scelto. ⚠️ Il piano gratuito non clona.
+ */
+export const MISURA_DISEGNO = null;
+export const MISURA_CLONAZIONE = null;
+
+/** La descrizione di una voce da disegnare: ElevenLabs ne vuole fra 20 e 1000 caratteri. */
+export const DESCRIZIONE_MIN = 20;
+export const DESCRIZIONE_MAX = 1000;
+/** Il campione da clonare: abbastanza per una voce, non tanto da sfondare la richiesta. */
+export const CAMPIONE_MAX_BYTE = 10 * 1024 * 1024;
+const NOME_MAX = 60;
+
+const fisso = (misura) => (Number.isFinite(misura) && misura > 0 ? priceFor(Math.ceil(misura)) : null);
+
+export function prezzoDisegno(misura = MISURA_DISEGNO) {
+  return fisso(misura);
+}
+
+export function prezzoClonazione(misura = MISURA_CLONAZIONE) {
+  return fisso(misura);
+}
+
+export function descrizioneNonValida(descrizione) {
+  const n = caratteriDi(descrizione);
+  if (n < DESCRIZIONE_MIN) return 'descrizione-corta';
+  if (n > DESCRIZIONE_MAX) return 'descrizione-lunga';
+  return null;
+}
+
+export function nomeVoceNonValido(nome) {
+  const n = caratteriDi(nome);
+  if (!n) return 'senza-nome';
+  if (n > NOME_MAX) return 'nome-lungo';
+  return null;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Fetta 6c — cambiare la voce di una registrazione (speech-to-speech).
+ * ------------------------------------------------------------------------ */
+
+export const VOCE_CAMBIA = 'voce-cambia';
+
+/**
+ * Millesimi per SECONDO di audio cambiato. Da misurare: ElevenLabs addebita
+ * lo speech-to-speech a tempo.
+ */
+export const MISURA_CAMBIO = null;
+
+/** Il tetto di un cambio: un minuto. Basta per un vocale e per una clip. */
+export const MAX_SECONDI_CAMBIO = 60;
+
+/**
+ * Il formato in cui il browser manda l'audio da cambiare: WAV PCM a 16 bit,
+ * mono, 16 kHz. Fisso apposta: così il Worker legge la DURATA dall'intestazione
+ * e la conta lui — un browser che dichiarasse «un secondo» per un minuto
+ * pagherebbe un secondo, e il resto lo pagheremmo noi.
+ */
+export const WAV_CAMBIO = { frequenza: 16000, canali: 1, bit: 16 };
+
+export function prezzoCambio(secondi, misura = MISURA_CAMBIO) {
+  if (!Number.isFinite(misura) || misura <= 0) return null;
+  return priceFor(Math.ceil(Math.max(1, Math.ceil(secondi || 0)) * misura));
+}
+
+/**
+ * La durata di un WAV, dai byte: `null` se non è il WAV che ci aspettiamo.
+ * Si cerca il blocco `data` invece di supporre 44 byte di intestazione: alcuni
+ * scrittori ci mettono blocchi in più.
+ */
+export function durataWav(byte) {
+  const b = byte instanceof Uint8Array ? byte : new Uint8Array(byte);
+  if (b.length < 44) return null;
+  const v = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  const quattro = (o) => String.fromCharCode(b[o], b[o + 1], b[o + 2], b[o + 3]);
+  if (quattro(0) !== 'RIFF' || quattro(8) !== 'WAVE') return null;
+  let o = 12;
+  let fmt = null;
+  while (o + 8 <= b.length) {
+    const id = quattro(o);
+    const lung = v.getUint32(o + 4, true);
+    if (id === 'fmt ') {
+      fmt = { formato: v.getUint16(o + 8, true), canali: v.getUint16(o + 10, true), frequenza: v.getUint32(o + 12, true), bit: v.getUint16(o + 22, true) };
+    } else if (id === 'data') {
+      if (!fmt || fmt.formato !== 1) return null;
+      const { frequenza, canali, bit } = WAV_CAMBIO;
+      if (fmt.frequenza !== frequenza || fmt.canali !== canali || fmt.bit !== bit) return null;
+      // I byte veri, non quelli dichiarati: un `data` che dice più di quanto c'è mente.
+      const dati = Math.min(lung, b.length - (o + 8));
+      // E dopo `data` non c'è niente: altro audio in coda non sarebbe contato.
+      if (b.length - (o + 8) - dati > 1) return null;
+      return dati / (frequenza * canali * (bit / 8));
+    }
+    o += 8 + lung + (lung % 2);
+  }
+  return null;
 }
