@@ -934,5 +934,14 @@
     "riferimenti": "Immagini",
     "immaginiNota": "Con un primo fotogramma la forma la decide l’immagine.",
     "immagineIllegibile": "Un’immagine scelta non si legge più. Toglila e riprova."
+  },
+  "prompt": {
+    "titolo": "Prompts",
+    "messo": "Prompt messo: {nome}",
+    "salvato": "Prompt salvato in Brain: {nome}",
+    "nessuno": "Nessun prompt salvato. In Immagine e Video, il punto oro ha «Salva il prompt».",
+    "numero": "Prompt {n}: {nome}",
+    "breve": "Prompt {n}",
+    "salva": "Salva il prompt"
   }
 }

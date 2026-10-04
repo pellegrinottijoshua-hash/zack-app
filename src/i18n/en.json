@@ -934,5 +934,14 @@
     "riferimenti": "Images",
     "immaginiNota": "With a first frame, the image decides the shape.",
     "immagineIllegibile": "A chosen image can no longer be read. Remove it and try again."
+  },
+  "prompt": {
+    "titolo": "Prompts",
+    "messo": "Prompt set: {nome}",
+    "salvato": "Prompt saved in Brain: {nome}",
+    "nessuno": "No saved prompts. In Image and Video, the gold dot has “Save the prompt”.",
+    "numero": "Prompt {n}: {nome}",
+    "breve": "Prompt {n}",
+    "salva": "Save the prompt"
   }
 }

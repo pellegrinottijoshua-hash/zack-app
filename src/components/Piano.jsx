@@ -65,6 +65,9 @@ export default function Piano({
   /** Le scelte del punto oro, un valore per gruppo: `{ [gruppo]: idScelto }`. */
   scelte,
   onScelta,
+  /* I prompt salvati (5d): `{ salvati, puoSalvare, onScegli, onSalva }`, o
+     null dove il servizio non ha un prompt. */
+  prompt = null,
   /** Il pannello aperto sopra la tela: gli avanzati, quando c'è qualcosa. */
   pannello,
   /** Sta succedendo qualcosa che l'utente deve poter fermare (una registrazione). */
@@ -449,6 +452,29 @@ export default function Piano({
                   ))}
                 </div>
               ))}
+
+              {/* I prompt salvati (5d, E1): «prompt 1, 2, 3, 4», i più
+                  recenti, e il tasto che salva quello scritto adesso. Sono
+                  la personalizzazione del tasto (D-d): stanno dove sta la
+                  risposta a «cosa farà quando lo premo». */}
+              {prompt && (
+                <div className="sc-fattori sc-prompt" role="group" aria-label={t('prompt.titolo')}>
+                  {prompt.salvati.map((a, i) => (
+                    <button
+                      key={a.id}
+                      className="pastiglia"
+                      title={a.name}
+                      aria-label={t('prompt.numero', { n: i + 1, nome: a.name })}
+                      onClick={() => prompt.onScegli(a)}
+                    >
+                      {t('prompt.breve', { n: i + 1 })}
+                    </button>
+                  ))}
+                  <button className="pastiglia" disabled={!prompt.puoSalvare} onClick={prompt.onSalva}>
+                    {t('prompt.salva')}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
