@@ -6147,6 +6147,66 @@ html[data-trascina] [data-bersaglio]:not([data-acceso]) {
   width: 100%;
 }
 
+/* Una voce nuova (6b): lo stesso pannello di pool e cestino, con dentro un
+   modulo — la descrizione, le tre anteprime da ascoltare, o il consenso. */
+.nuova-voce {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.nuova-voce-anteprime {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nuova-voce-anteprime li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.nuova-voce-anteprime audio {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.nuova-voce-nome {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--linea-viva);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--inchiostro);
+  font: inherit;
+}
+.nuova-voce-consenso {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--linea-viva);
+  border-radius: 16px;
+  color: var(--inchiostro);
+}
+.nuova-voce-consenso legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+.nuova-voce-consenso label {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  line-height: 1.4;
+}
+.nuova-voce-nota {
+  margin: 0;
+  font-size: 13px;
+  color: var(--inchiostro-2);
+}
+
 /* Il preventivo: *«ogni generazione ti dice quanto costa prima che tu
    prema»*. Il prezzo si legge PRIMA di tutto il resto della riga, quindi sta
    per primo e in grande — non e' un dettaglio a fianco del tasto. */
@@ -6574,4 +6634,8 @@ html[data-trascina] [data-bersaglio]:not([data-acceso]) {
 /* Un colore dato dalle tre lineette si deve leggere a colpo d'occhio. */
 .brain-oggetto[data-tinta] .brain-faccia {
   border-width: 4px;
+}
+.nuova-voce-modi {
+  display: flex;
+  gap: 8px;
 }

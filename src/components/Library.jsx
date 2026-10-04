@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { t } from '../i18n/index.js';
 import AssetActions from './AssetActions.jsx';
 import Icon from './Icon.jsx';
-import { KIND_TESTO, iconaDocumento } from '../store/model.js';
+import { KIND_TESTO, KIND_SENZA_ANTEPRIMA, iconaDocumento } from '../store/model.js';
 import { vistaLibreria, cartelleDellaTela } from '../engine/prompt.js';
 import { POOL_VISIBILI } from '../engine/archivio.js';
 
@@ -35,7 +35,7 @@ function Thumb({ item, read }) {
   // mostrerebbe l'icona di immagine rotta, cioè un asset che sembra
   // danneggiato quando invece sta benissimo. Al suo posto l'icona scelta,
   // che è anche il modo in cui lo si riconosce sulla tela di Brain.
-  if (KIND_TESTO.includes(item.kind)) {
+  if (KIND_SENZA_ANTEPRIMA.includes(item.kind)) {
     return (
       <div className="thumb" data-doc="true">
         <Icon name={iconaDocumento(item)} />
@@ -354,7 +354,7 @@ export default function Library({
                           una tela per immagini: su un documento aprirebbe in
                           silenzio qualcosa che non si sa disegnare. Un .md si
                           riprende da Brain. */}
-                      {!KIND_TESTO.includes(item.kind) && (
+                      {!KIND_SENZA_ANTEPRIMA.includes(item.kind) && (
                         <button className="primary" onClick={() => onAssetAction('open', item)}>
                           {t('library.resume')}
                         </button>

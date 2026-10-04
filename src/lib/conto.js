@@ -7,7 +7,7 @@
  */
 
 import { SUPABASE_URL, SUPABASE_CHIAVE_PUBBLICA } from './supabase.js';
-import { VOCE_LEGGI } from '../engine/listinoVoce.js';
+import { VOCE_LEGGI, VOCE_DISEGNA, VOCE_CLONA, VOCE_CAMBIA } from '../engine/listinoVoce.js';
 
 /**
  * Dove sta il Worker: **qui**, alla stessa origine del sito.
@@ -265,6 +265,47 @@ export async function generaLettura({ testo, voce, otteniSessione = sessione }) 
   }
   return corpo; // { dati, mime, prezzo, saldo, lavoro }
 }
+
+/**
+ * Una richiesta della voce al Worker (fase 6b/6c), con l'errore nella stessa
+ * forma di `generaImmagine`: `code`, `saldo`, `prezzo`, `rimborsato`.
+ */
+async function chiediVoce(percorso, corpo, otteniSessione = sessione) {
+  const token = await otteniSessione();
+  if (!token) throw Object.assign(new Error('non-collegato'), { code: 'non-collegato' });
+  const res = await fetch(`${BASE}${percorso}`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify(corpo),
+  });
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw Object.assign(new Error(d.errore || 'voce'), {
+      code: d.errore || 'voce',
+      massimo: d.massimo,
+      saldo: d.saldo,
+      prezzo: d.prezzo,
+      rimborsato: d.rimborsato,
+    });
+  }
+  return d;
+}
+
+/** Una descrizione → tre anteprime (`{ anteprime, prezzo, saldo }`). A crediti. */
+export const disegnaVoce = ({ descrizione }) => chiediVoce('/genera', { servizio: VOCE_DISEGNA, descrizione });
+
+/** Tiene un'anteprima già pagata: `{ voce: { id, nome, origine, consenso } }`. */
+export const tieniVoce = ({ anteprima, nome, descrizione }) => chiediVoce('/voce/tieni', { anteprima, nome, descrizione });
+
+/** Clona un campione (WAV in base64) col consenso dato. A crediti. */
+export const clonaVoce = ({ nome, consenso, campione }) =>
+  chiediVoce('/genera', { servizio: VOCE_CLONA, nome, consenso, campione, mime: 'audio/wav' });
+
+/** Cancella una voce presso ElevenLabs: `{ ok: true }`, o solleva. */
+export const cancellaVoce = (voce) => chiediVoce('/voce/cancella', { voce });
+
+/** Cambia la voce di un audio (WAV 16 kHz in base64): `{ dati, mime, prezzo, saldo }`. A crediti. */
+export const cambiaVoce = ({ voce, audio }) => chiediVoce('/genera', { servizio: VOCE_CAMBIA, voce, audio });
 
 /**
  * Porta a Stripe.

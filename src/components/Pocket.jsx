@@ -38,7 +38,7 @@ function Miniatura({ asset, leggi }) {
 function Anteprima({ url, kind }) {
   if (!url) return <span className="pocket-segno" aria-hidden="true">{kind}</span>;
   if (kind === 'mp4') return <video src={url} muted playsInline preload="metadata" aria-hidden="true" />;
-  if (kind === 'wav' || kind === 'mp3') return <span className="pocket-segno" aria-hidden="true">♪</span>;
+  if (kind === 'wav' || kind === 'mp3' || kind === 'voce') return <span className="pocket-segno" aria-hidden="true">♪</span>;
   return <img src={url} alt="" draggable="false" aria-hidden="true" />;
 }
 

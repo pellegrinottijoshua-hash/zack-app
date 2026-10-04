@@ -45,3 +45,10 @@ test('col tasto su «leggi» il piano non è vuoto (il testo è la tela), ma nul
   assert.equal(pianoVuoto('vocale', { letturaVoce: true }), false);
   assert.equal(statoDelPiano('vocale', { letturaVoce: true }).inCorso, false);
 });
+
+test('lo strumento «nuova voce» c’è sempre, con etichetta nelle due lingue (6b)', () => {
+  const s = vocale.strumenti.find((x) => x.id === 'nuovaVoce');
+  assert.equal(s?.quando, 'sempre');
+  assert.ok(chiave(it, s.label) && chiave(en, s.label));
+  for (const k of Object.keys(it.voce.nuova)) assert.ok(en.voce.nuova[k], `manca in en: voce.nuova.${k}`);
+});

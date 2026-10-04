@@ -1,5 +1,5 @@
 import { t } from '../i18n/index.js';
-import { KIND_TESTO } from '../store/model.js';
+import { KIND_SENZA_ANTEPRIMA } from '../store/model.js';
 
 /**
  * Le azioni che si possono fare su un lavoro, mostrate sul lavoro stesso.
@@ -29,7 +29,7 @@ export default function AssetActions({ item, onCutout, onVector, onEdit, onRefer
           modello un'immagine, non una bibbia di serie. Il .md ha i suoi due
           gesti — aprirlo e scaricarlo — e stanno su Brain, dove il documento
           vive. */}
-      {!KIND_TESTO.includes(item.kind) && (
+      {!KIND_SENZA_ANTEPRIMA.includes(item.kind) && (
         <button
           className="primary"
           title={t('actions.referenceHelp')}

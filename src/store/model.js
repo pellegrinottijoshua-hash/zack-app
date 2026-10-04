@@ -43,6 +43,13 @@ export const KIND_IMMAGINE = ['png', 'jpg', 'svg'];
 export const KIND_TESTO = ['md'];
 
 /**
+ * Ciò che non ha un'anteprima da guardare e si riconosce dall'icona: i
+ * documenti e le voci (6b). Un `<img src>` su uno di questi mostrerebbe
+ * l'immagine rotta — un asset che sembra danneggiato e sta benissimo.
+ */
+export const KIND_SENZA_ANTEPRIMA = [...KIND_TESTO, 'voce'];
+
+/**
  * Il ripiego, per tipo di file.
  *
  * Non «cartella» per tutti: su una tela con dieci file diventerebbero dieci

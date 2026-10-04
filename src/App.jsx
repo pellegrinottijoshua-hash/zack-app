@@ -63,12 +63,21 @@ import {
   generaImmagine,
   generaVideo,
   generaLettura,
+  disegnaVoce,
+  tieniVoce,
+  clonaVoce,
+  cancellaVoce,
   chiediLavoro,
   scaricaVideo,
   riduciPerVideo,
 } from './lib/conto.js';
 import { prezzoVideo, LIMITI_IMMAGINI, RUOLI_VIDEO, immaginiVideoStorte } from './engine/listinoVideo.js';
-import { MAX_CARATTERI, caratteriDi, letturaNonValida, prezzoLettura } from './engine/listinoVoce.js';
+import {
+  MAX_CARATTERI, CAMPIONE_MAX_BYTE, caratteriDi, letturaNonValida, prezzoLettura, prezzoDisegno, prezzoClonazione,
+} from './engine/listinoVoce.js';
+import { fileVoce, leggiVoce, nomeVoce, vociDellaLibreria } from './engine/voci.js';
+import { wavDelCampione, base64Di } from './engine/audioVoce.js';
+import NuovaVoce from './components/NuovaVoce.jsx';
 import Muro from './components/Muro.jsx';
 import { nuovoAsset, nuovoCerchio, daNota, noteInFile } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
@@ -1944,6 +1953,116 @@ export default function App() {
     }
   }
 
+  /**
+   * Gli errori dei gesti a crediti della voce (6b), detti come per Immagine:
+   * il ramo PRUDENTE prima — «ti è tornato» solo con `rimborsato: true`.
+   */
+  function erroreVoce(e) {
+    console.error(e);
+    aggiornaSaldo(e.saldo);
+    setError(
+      e.code === 'saldo'
+        ? t('voce.nuova.saldoCorto')
+        : e.code === 'troppe-voci'
+          ? t('voce.nuova.troppe', { n: e.massimo ?? 3 })
+          : e.code === 'non-misurato' || e.code === 'non-configurato'
+            ? t('voce.nuova.nonMisurato')
+            : e.code === 'fornitore'
+              ? t(e.rimborsato === true ? 'voce.nuova.rimborsato' : 'voce.nuova.rimborsoInCorso')
+              : t('voce.nuova.errore'),
+    );
+  }
+
+  /** Una voce nuova diventa un file in Brain, e da subito è lei che legge. */
+  async function salvaVoceNuova(v) {
+    await library.save(new Blob([fileVoce(v)], { type: 'application/json' }), {
+      name: nomeVoce(v.nome),
+      kind: 'voce',
+      meta: { voce: { id: v.id, nome: v.nome, origine: v.origine } },
+    });
+    setVoceLettura(v.id);
+    setGestoVoce('leggi');
+    setSopraLaTela(null);
+    setNotice(t('voce.nuova.tenuta', { nome: v.nome }));
+  }
+
+  /*
+   * Il Vocale con le voci di Brain nel punto oro (6b): le pronte, poi le
+   * proprie dalla più recente. L'etichetta è il nome: `t()` di una chiave che
+   * non esiste torna la chiave stessa.
+   */
+  const descrittoreVocale = (() => {
+    const d = getDescrittore('vocale');
+    const proprie = vociDellaLibreria(library.assets)
+      .filter((a) => a.meta?.voce?.id)
+      .map((a) => ({ id: a.meta.voce.id, label: a.meta.voce.nome || a.name }));
+    if (!proprie.length) return d;
+    return {
+      ...d,
+      tasto: {
+        ...d.tasto,
+        gruppi: d.tasto.gruppi.map((g) => (g.id === 'voce' ? { ...g, opzioni: [...g.opzioni, ...proprie] } : g)),
+      },
+    };
+  })();
+
+  const prezzoDisegnoQui = prezzoDisegno()?.total ?? null;
+  const prezzoClonazioneQui = prezzoClonazione()?.total ?? null;
+
+  async function runDisegna(descrizione) {
+    setError(null);
+    setNotice(null);
+    if (prezzoDisegnoQui === null) return setNotice(t('voce.nuova.nonMisurato'));
+    if (crediti < prezzoDisegnoQui) return setNotice(t('voce.nuova.saldoCorto'));
+    setBusy(t('voce.nuova.attendiDisegno'));
+    try {
+      const d = await disegnaVoce({ descrizione });
+      aggiornaSaldo(d.saldo);
+      return d.anteprime;
+    } catch (e) {
+      erroreVoce(e);
+      return null;
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function runTieni({ anteprima, nome, descrizione }) {
+    setError(null);
+    setBusy(t('voce.nuova.attendiTieni'));
+    try {
+      const { voce: v } = await tieniVoce({ anteprima, nome, descrizione });
+      await salvaVoceNuova(v);
+    } catch (e) {
+      erroreVoce(e);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function runClona({ nome, consenso }) {
+    setError(null);
+    setNotice(null);
+    if (!voce.clip?.buffer) return setNotice(t('voce.nuova.campioneNo'));
+    if (prezzoClonazioneQui === null) return setNotice(t('voce.nuova.nonMisurato'));
+    if (crediti < prezzoClonazioneQui) return setNotice(t('voce.nuova.saldoCorto'));
+    setBusy(t('voce.nuova.attendiClona'));
+    try {
+      const wav = await wavDelCampione(voce.clip.buffer);
+      if (wav.length > CAMPIONE_MAX_BYTE) {
+        setNotice(t('voce.nuova.campioneGrande'));
+        return;
+      }
+      const d = await clonaVoce({ nome, consenso, campione: base64Di(wav) });
+      aggiornaSaldo(d.saldo);
+      await salvaVoceNuova(d.voce);
+    } catch (e) {
+      erroreVoce(e);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   /*
    * L'attesa del video. Chiede ogni sei secondi finché il lavoro non è finito
    * o rimborsato. «Non lo so» (rete giù) è «in corso»: non si conclude mai
@@ -2313,6 +2432,17 @@ export default function App() {
         apriServizio('video');
       }
       setNotice(t('prompt.messo', { nome: asset.name }));
+      return;
+    }
+    // Una voce posata sul Vocale (6b) lo sceglie: «chi legge» diventa lei.
+    if (dest === 'vocale-voce') {
+      const { file: f } = await library.read(asset.id);
+      const v = leggiVoce(await f.text());
+      if (!v) return setError(t('engine.error.body'));
+      setVoceLettura(v.id);
+      setGestoVoce('leggi');
+      apriServizio('vocale');
+      setNotice(t('voce.scelta', { nome: v.nome || asset.name }));
       return;
     }
     if (dest === 'video-primo' || dest === 'video-riferimento') {
@@ -3210,7 +3340,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               </>
           ) : DESCRITTORI[tool] ? (
             <Piano
-              servizio={getDescrittore(tool)}
+              servizio={tool === 'vocale' ? descrittoreVocale : getDescrittore(tool)}
               /* Vuoto vuol dire NIENTE sul piano: ne' un file solo, ne' la
                  colonna dei tre scelti, ne' i risultati. Senza i tre scelti
                  il `+` restava in mezzo e la colonna non si vedeva mai. */
@@ -3352,14 +3482,44 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                     onRimetti={(id) => library.rimetti(id).catch(() => setError(t('engine.error.body')))}
                     onSvuota={async () => {
                       try {
-                        const { andati, byte } = await library.svuotaCestino();
-                        setNotice(t('brain.cestino.svuotato', { n: andati, peso: pesoLeggibile(byte) }));
+                        const { andati, byte, trattenuti } = await library.svuotaCestino({
+                          // Una voce (6b) va cancellata anche presso ElevenLabs;
+                          // se lì non va, resta nel cestino.
+                          prima: async (a) => {
+                            if (a.kind !== 'voce') return true;
+                            try {
+                              const v = leggiVoce(await (await library.read(a.id)).file.text());
+                              if (!v) return true;
+                              await cancellaVoce(v.id);
+                              return true;
+                            } catch {
+                              return false;
+                            }
+                          },
+                        });
+                        setNotice(
+                          [
+                            t('brain.cestino.svuotato', { n: andati, peso: pesoLeggibile(byte) }),
+                            trattenuti ? t('voce.trattenute', { n: trattenuti }) : '',
+                          ].join(' ').trim(),
+                        );
                         // Le tele ripulite dallo svuotamento: quella aperta si rilegge.
                         if (telaId) setTela(await leggiTela(telaId));
                       } catch {
                         setError(t('engine.error.body'));
                       }
                     }}
+                    onChiudi={() => setSopraLaTela(null)}
+                  />
+                ) : sopraLaTela === 'nuovaVoce' ? (
+                  <NuovaVoce
+                    prezzoDisegno={prezzoDisegnoQui}
+                    prezzoClonazione={prezzoClonazioneQui}
+                    haCampione={Boolean(voce.clip?.buffer)}
+                    busy={busy}
+                    onDisegna={runDisegna}
+                    onTieni={runTieni}
+                    onClona={runClona}
                     onChiudi={() => setSopraLaTela(null)}
                   />
                 ) : sopraLaTela === 'tutorial' ? (
@@ -3572,6 +3732,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   prompts: () => setSopraLaTela((v) => (v === 'prompts' ? null : 'prompts')),
                   cestino: () => setSopraLaTela((v) => (v === 'cestino' ? null : 'cestino')),
                   tutorial: () => setSopraLaTela((v) => (v === 'tutorial' ? null : 'tutorial')),
+                  nuovaVoce: () => setSopraLaTela((v) => (v === 'nuovaVoce' ? null : 'nuovaVoce')),
                   /*
                    * Gli otto strumenti di disegno: il cerchio accende il modo,
                    * e l'editor lo esegue. Un `id` solo per tutt'e due — quello
@@ -3608,6 +3769,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   pool: sopraLaTela === 'pool',
                   prompts: sopraLaTela === 'prompts',
                   cestino: sopraLaTela === 'cestino',
+                  nuovaVoce: sopraLaTela === 'nuovaVoce',
                 };
                 /*
                  * Cosa vuol dire «c'e' qualcosa sul piano» cambia col

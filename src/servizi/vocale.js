@@ -103,5 +103,8 @@ export default {
     // l'altro, e sono due cose diverse (§ Task 5 del piano).
     { id: 'salvaVoce', icon: 'stella', label: 'sound.saveVoice', quando: 'con-file' },
     { id: 'annulla', icon: 'undo', label: 'bar.undo', quando: 'con-file' },
+    // Una voce nuova (6b): disegnata da una descrizione, o clonata dalla
+    // registrazione sul piano. Sempre: si può cominciare anche da qui.
+    { id: 'nuovaVoce', icon: 'personaggio', label: 'voce.nuova.titolo', quando: 'sempre' },
   ],
 };
