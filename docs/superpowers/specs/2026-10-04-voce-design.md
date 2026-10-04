@@ -96,6 +96,17 @@ Il prezzo accanto al tasto cambia col gesto scelto.
 4. **Dove finisce la trascrizione**: un `.md` accanto al vocale in Brain
    (proposta), o la nota del vocale stesso?
 
+### Risposte del committente, 2026-10-04
+
+1. **Nessun piano per ora.** La 6a si fa in sviluppo col fornitore finto;
+   `MISURA_VOCE = null`, il tasto «leggi» è spento e il Worker risponde 503
+   `non-misurato` prima di addebitare. Il giorno del piano: chiave con
+   `npx wrangler secret put ELEVENLABS_API_KEY`, una lettura vera, la misura in
+   `src/engine/listinoVoce.js`, e gli id delle voci pronte riconfermati.
+2. **Lo stesso ricarico** di Immagine e Video (`priceFor`).
+3. **Il testo del consenso lo scrivo io** nella 6b, e si usa così.
+4. **La trascrizione è un `.md` accanto al vocale** in Brain.
+
 ## 4. Le fette
 
 **6a — leggi questo** (4 compiti):

@@ -443,6 +443,14 @@ async function main() {
             giri.push({ servizio: 'brain', primo: false, solo: '.brain-strada', apri: ['.brain-oggetto[data-t="cartella"]'], pocket: true, tela: true });
             // L'icona «prompts» di Brain (fetta 5d): la pool dei prompt salvati.
             giri.push({ servizio: 'brain', primo: false, solo: '.pool', apri: ['.sc-strumento[data-strumento="prompts"]'], pocket: true });
+            // «Leggi questo» (fetta 6a): il `+` del Vocale con «scrivi», e lo
+            // studio intero col pannello del testo aperto (tasto spento, nota
+            // «arriva presto» finché la misura non c'è). Solo a muro spento:
+            // il Vocale sta nell'abbonamento, e a muro acceso il `+` apre il muro.
+            if (muro === 'spento') {
+              giri.push({ servizio: 'vocale', primo: false, solo: '.sc-menu', apri: ['.sc-piu'] });
+              giri.push({ servizio: 'vocale', primo: false, solo: '.shell', apri: ['.sc-piu', '.sc-menu [data-menu="scrivi"]'], aspetta: '.voce-lettura' });
+            }
             // Ogni pagina ha un secondo tentativo, ma SOLO per un blocco
             // (tempo scaduto): un difetto o un errore vero non si ritenta.
             const conRitentativo = async (giro) => {

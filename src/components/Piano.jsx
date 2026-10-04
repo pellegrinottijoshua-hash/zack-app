@@ -196,7 +196,7 @@ export default function Piano({
       {menu && servizio.accetta.menu && (
         <div className="sc-menu" role="menu">
           {servizio.accetta.menu.map((voce) => (
-            <button key={voce} role="menuitem" className="pastiglia" onClick={() => onMenu(voce)}>
+            <button key={voce} role="menuitem" className="pastiglia" data-menu={voce} onClick={() => onMenu(voce)}>
               {t(`menu.${voce}`)}
             </button>
           ))}

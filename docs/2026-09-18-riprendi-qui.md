@@ -674,3 +674,38 @@ Frase da incollare in una sessione nuova:
 ```
 Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 6a.
 ```
+
+## ▶️ 2026-10-04 — 6a FATTA: leggi questo (in sviluppo, senza piano)
+
+Le 4 domande del §3 della spec, con le risposte, sono scritte nella spec.
+**Niente piano ElevenLabs per ora**: tutto è costruito e provato col fornitore
+finto, ma il tasto «leggi» è spento finché non c'è la misura.
+
+- `e013b05` 6a/1 — `src/engine/listinoVoce.js` puro (a carattere,
+  `MISURA_VOCE = null`, `VOCI_PRONTE` chiuse, tetto 2500 caratteri);
+  `worker/fornitori/elevenlabs.js` (testo → MP3); `worker/voce.js` con lo
+  stesso giro di soldi di `genera()`. Senza chiave 503 `non-configurato`,
+  senza misura 503 `non-misurato`, tutti e due **prima** dell'addebito.
+- `78c2b5a` 6a/3 — «scrivi» nel `+` del Vocale; nel punto oro il gesto
+  (trasforma · leggi) e le voci pronte; il pannello col testo, il contatore,
+  il prezzo (o «arriva presto»); l'MP3 va all'icona output; il rimborso detto.
+- 6a/4 — lo script apre il `+` del Vocale e il pannello «leggi». 914 prove
+  verdi, build ok; script `--rapido` **verde** a 390×844 e 1280×800 (98
+  pagine, 925 comandi ciascuno).
+
+**Per accendere «leggi»** (quando c'è un piano): `npx wrangler secret put
+ELEVENLABS_API_KEY`; una lettura vera di 1000 caratteri; il costo in millesimi
+per 1000 caratteri in `MISURA_VOCE`; riconfermare gli id delle voci pronte
+(`GET /v1/voices`). La prova `listinoVoce.test.js` si rompe apposta quel giorno.
+
+Minori: a muro acceso il Vocale sta dietro il muro (`serve: 'abbonamento'`),
+quindi chi ha solo crediti non arriva a «leggi» — da decidere prima di
+accenderlo; nel punto oro le ricette dei filtri restano visibili anche su
+«leggi»; i nomi delle voci pronte sono quelli inglesi di ElevenLabs.
+
+**Prossima sessione: la 6b** (le voci, col consenso) — ha senso solo dopo la
+scelta del piano: la clonazione non si prova col fornitore finto e basta.
+
+```
+Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 6b.
+```
