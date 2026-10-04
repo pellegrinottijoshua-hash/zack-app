@@ -68,12 +68,24 @@ export function livelloValido(items, dentro) {
 }
 
 /**
- * Dove mettere un oggetto che arriva in un livello: accanto agli altri, non
- * sopra. Stessa regola di `prossimoPosto`, contata sul livello.
+ * Dove mettere un oggetto che arriva in un livello: nella prima casella
+ * della griglia (cinque per fila) dove non c'è già niente. Contare gli
+ * oggetti non basta — una tela spostata a mano ha i buchi dove capita, e il
+ * file che torna fuori da una cartella finiva sopra un altro.
  */
 function postoLibero(items, dentro, { perFila = 5, passo = 170 } = {}) {
-  const n = items.filter((o) => o.t !== 'freccia' && livelloDi(o) === dentro).length;
-  return { x: (n % perFila) * passo, y: Math.floor(n / perFila) * passo };
+  const qui = items.filter((o) => o.t !== 'freccia' && livelloDi(o) === dentro);
+  const aria = 28;
+  const libero = (x, y) =>
+    qui.every(
+      (o) =>
+        x + ICONA + aria <= o.x || o.x + (o.w ?? ICONA) + aria <= x || y + ICONA + aria <= o.y || o.y + (o.h ?? ICONA) + aria <= y,
+    );
+  for (let k = 0; ; k++) {
+    const x = (k % perFila) * passo;
+    const y = Math.floor(k / perFila) * passo;
+    if (libero(x, y)) return { x, y };
+  }
 }
 
 /** `in` scritto o tolto: un oggetto di fuori non ha il campo, non `in: null`. */
@@ -179,4 +191,13 @@ export function iconaSotto(items, x, y, { escluso = null, dentro = null } = {}) 
     if (dx * dx + dy * dy <= r * r) return o;
   }
   return null;
+}
+
+/**
+ * Un oggetto nuovo entra nel livello che si sta guardando, al primo posto
+ * libero: chi è dentro una cartella e preme «nota» vuole la nota lì, non
+ * sulla tela di fuori dove non la vede nascere.
+ */
+export function aggiungi(items, o, dentro = null) {
+  return [...items, conLivello({ ...o, ...postoLibero(items, dentro) }, dentro)];
 }

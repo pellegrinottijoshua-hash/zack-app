@@ -11,7 +11,9 @@ import {
   riquadro,
   COLORI,
   CATEGORIE,
+  facciaCast,
 } from '../engine/brain.js';
+import { livello, percorso, posaSu, mettiIn, togliTutto, iconaSotto } from '../engine/cartelle.js';
 import { oggettiNascosti } from '../engine/archivio.js';
 import { eTrascinamento, bersagliAccesi } from '../engine/pocket.js';
 import { accendi, spegni, sotto } from '../hooks/useTrascina.js';
@@ -83,10 +85,10 @@ function Contenuto({ item, asset, leggi }) {
  * segno per riconoscerlo fra venti, non una lettura: per guardarlo davvero
  * lo si tocca, e si apre la scheda.
  */
-function Faccia({ asset, leggi }) {
+function Faccia({ asset, leggi, cast = null }) {
   const [url, setUrl] = useState(null);
   const mostraFile =
-    asset && !asset.meta?.icona && !KIND_AUDIO.includes(asset.kind) && !KIND_TESTO.includes(asset.kind);
+    !cast && asset && !asset.meta?.icona && !KIND_AUDIO.includes(asset.kind) && !KIND_TESTO.includes(asset.kind);
 
   useEffect(() => {
     if (!mostraFile) return undefined;
@@ -103,6 +105,8 @@ function Faccia({ asset, leggi }) {
     };
   }, [asset, leggi, mostraFile]);
 
+  // La faccia di un personaggio scelta dalle tre lineette vale su tutto (5c).
+  if (cast) return <img src={facciaCast(cast)} alt="" draggable={false} />;
   if (!asset) return <span className="brain-perso">{t('brain.lost')}</span>;
   if (!mostraFile) {
     return <Icon name={asset.meta?.icona ? iconaDocumento(asset) : KIND_AUDIO.includes(asset.kind) ? 'wave' : iconaDocumento(asset)} />;
@@ -345,6 +349,13 @@ function Brain({
    * «rimetti» deve ritrovarli al loro posto.
    */
   cestinati = NESSUNO,
+  /*
+   * La cartella aperta (5c): `null` è la tela di fuori. Sta fuori da Brain
+   * come `collega`, perché il riordino e il `+` — che sono dell'impianto —
+   * devono sapere in che livello lavorare.
+   */
+  dentro = null,
+  onDentro = () => {},
 }, ref) {
   const [scelto, setScelto] = useState(null);
   /* La scheda aperta col tocco (5b): l'id dell'OGGETTO, non dell'asset —
@@ -373,6 +384,20 @@ function Brain({
 
   const perId = useMemo(() => new Map(assets.map((a) => [a.id, a])), [assets]);
   const nascosti = useMemo(() => oggettiNascosti(items, cestinati), [items, cestinati]);
+  /* Quello che si vede: il livello aperto, senza i file nel cestino. */
+  const visibili = useMemo(
+    () => livello(items, dentro).filter((o) => !nascosti.has(o.id)),
+    [items, dentro, nascosti],
+  );
+  const strada = useMemo(() => percorso(items, dentro), [items, dentro]);
+  // L'icona su cui si sta per posare quella in mano: si illumina, come i cerchi.
+  const [sopraIcona, setSopraIcona] = useState(null);
+
+  /** Il punto dello schermo in coordinate della tela. */
+  const puntoTela = (e) => {
+    const r = piano.current.getBoundingClientRect();
+    return { x: (e.clientX - r.left - vista.x) / vista.z, y: (e.clientY - r.top - vista.y) / vista.z };
+  };
 
   /** Un oggetto nuovo entra dove c'è posto, non sopra gli altri. */
   // Trascinamento. I puntatori si catturano: senza, uscire dalla finestra
@@ -390,7 +415,6 @@ function Brain({
     preso.current = { id, x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, ox: o?.x, oy: o?.y };
     mosso.current = false;
     setScelto(id);
-    onChange(davanti(items, id));
   }
 
   function trascina(e) {
@@ -413,19 +437,34 @@ function Brain({
         /* puntatore già rilasciato: il gesto finisce dentro la tela */
       }
       // Prendere in mano un FILE (B5): si accendono i posti dove può andare
-      // — gli stessi dell'ovale — più la pool, che lo toglie dalla tela.
+      // — gli stessi dell'ovale — più la pool, che lo toglie dalla tela, e
+      // la strada delle cartelle, che lo porta su di un livello (5c). Una
+      // cartella va solo sulla pool o sulla strada: un servizio non sa che
+      // farsene.
       const o = items.find((x) => x.id === id);
       const a = o?.t === 'asset' ? perId.get(o.assetId) : null;
       if (a && onPosa) {
-        accendi([...bersagliAccesi(a.kind, 'brain'), 'pool']);
+        accendi([...bersagliAccesi(a.kind, 'brain'), 'pool', 'livello']);
         preso.current.file = a;
+        preso.current.acceso = true;
+      } else if (o?.t === 'cartella') {
+        accendi(['pool', 'livello']);
+        preso.current.faccia = { asset: perId.get(o.faccia), cast: o.icona };
+        preso.current.acceso = true;
       }
     }
     const dx = (e.clientX - x) / vista.z;
     const dy = (e.clientY - y) / vista.z;
     preso.current = { ...preso.current, x: e.clientX, y: e.clientY };
-    onChange(muovi(items, id, dx, dy));
-    if (preso.current.file) {
+    // Davanti a tutti solo quando si muove davvero: al tocco React ne
+    // sposterebbe il nodo, e il `click` che apre la scheda (o la cartella)
+    // non arriverebbe più a nessuno.
+    const inCima = items.at(-1)?.id === id ? items : davanti(items, id);
+    onChange(muovi(inCima, id, dx, dy));
+    // Icona su icona (5c): quella sotto il dito si illumina.
+    const su = iconaSotto(items, ...Object.values(puntoTela(e)), { escluso: id, dentro });
+    setSopraIcona(su?.id ?? null);
+    if (preso.current.acceso) {
       const b = sotto(e.clientX, e.clientY);
       if (b !== preso.current.sopra) {
         preso.current.sopra?.removeAttribute('data-sopra');
@@ -436,32 +475,53 @@ function Brain({
       // segue il suo fantasma, come l'icona output.
       const r = piano.current?.getBoundingClientRect();
       const fuori = r && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom);
-      setFantasma(fuori ? { x: e.clientX, y: e.clientY, file: preso.current.file } : null);
+      const { file, faccia } = preso.current;
+      setFantasma(fuori ? { x: e.clientX, y: e.clientY, file: file ?? faccia?.asset, cast: faccia?.cast } : null);
     }
   }
 
   // Brain che sparisce a metà gesto (cambio servizio) non lascia accesi i
   // cerchi del resto dell'app.
-  useEffect(() => () => preso.current?.file && spegni(), []);
+  useEffect(() => () => preso.current?.acceso && spegni(), []);
 
   const molla = (e) => {
     const p = preso.current;
     preso.current = null;
-    if (!p?.file) return;
-    const b = e ? sotto(e.clientX, e.clientY) : null;
-    spegni();
-    setFantasma(null);
-    if (!b) return;
-    // Posato fuori: l'oggetto torna dov'era, e il file va dove l'hai posato.
+    setSopraIcona(null);
+    if (!p || !mosso.current) return;
+    const b = p.acceso && e ? sotto(e.clientX, e.clientY) : null;
+    if (p.acceso) {
+      spegni();
+      setFantasma(null);
+    }
     const o = items.find((x) => x.id === p.id);
     const tornato = o ? muovi(items, p.id, p.ox - o.x, p.oy - o.y) : items;
-    if (b.dataset.bersaglio === 'pool') {
-      onChange(togli(tornato, p.id));
-      setScelto(null);
+    if (b) {
+      // Posato fuori: l'oggetto torna dov'era, e il file va dove l'hai posato.
+      if (b.dataset.bersaglio === 'pool') {
+        onChange(togliTutto(tornato, p.id));
+        setScelto(null);
+        return;
+      }
+      if (b.dataset.bersaglio === 'livello') {
+        onChange(mettiIn(tornato, p.id, b.dataset.livello || null));
+        setScelto(null);
+        return;
+      }
+      onChange(tornato);
+      if (p.file) onPosa(b.dataset.bersaglio, p.file);
       return;
     }
-    onChange(tornato);
-    onPosa(b.dataset.bersaglio, p.file);
+    // Icona su icona (B5): una cartella nasce, o il file ci entra.
+    if (!e || !piano.current) return;
+    const { x, y } = puntoTela(e);
+    const su = iconaSotto(items, x, y, { escluso: p.id, dentro });
+    if (!su) return;
+    const madre = su.t === 'asset' ? perId.get(su.assetId) : null;
+    const { items: dopo, cartella } = posaSu(tornato, p.id, su.id, { nome: madre?.name ?? '' });
+    if (!cartella) return;
+    onChange(dopo);
+    setScelto(null);
   };
 
   /**
@@ -496,7 +556,7 @@ function Brain({
     const p = pizzico.current;
     if (!p) return;
     const { left: l, top: t } = p;
-    const cont = riquadro(items.filter((o) => !nascosti.has(o.id)));
+    const cont = riquadro(visibili);
     const el = piano.current;
     setVista(
       ancora(
@@ -528,7 +588,7 @@ function Brain({
 
   /** Rimette tutto in vista: è il gesto che salva chi si è perso. */
   function centra() {
-    const r = riquadro(items.filter((o) => !nascosti.has(o.id)));
+    const r = riquadro(visibili);
     if (!r || !piano.current) return;
     const { clientWidth: w, clientHeight: h } = piano.current;
     const z = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.min(w / (r.w + 120), h / (r.h + 120))));
@@ -546,7 +606,9 @@ function Brain({
         // Mentre si scrive — sulla tela o nella scheda — Backspace cancella
         // lettere, non oggetti.
         if (document.activeElement?.closest('input, textarea, [contenteditable]')) return;
-        onChange(togli(items, scelto));
+        // Una cartella esce dalla tela con quello che tiene (B-c: dalla
+        // tela, non dall'archivio).
+        onChange(togliTutto(items, scelto));
         setScelto(null);
       }
     };
@@ -560,7 +622,21 @@ function Brain({
    * qui. Stessa forma che l'editor SVG usa gia' con `editorRef`.
    */
   // `apri`: «nota» nel `+` crea un `.md` e lo apre subito per scriverci (5b).
-  useImperativeHandle(ref, () => ({ centra, apri: setAperto }), [items]);
+  useImperativeHandle(ref, () => ({ centra, apri: setAperto }), [visibili]);
+
+  // Entrando in una cartella (o uscendone) si inquadra quello che c'è: la
+  // vista di fuori, dentro, guarderebbe un punto dove non c'è niente.
+  const primoLivello = useRef(true);
+  useEffect(() => {
+    if (primoLivello.current) {
+      primoLivello.current = false;
+      return;
+    }
+    setScelto(null);
+    setScheda(null);
+    centra();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dentro]);
 
   const oggetto = items.find((o) => o.id === scelto) || null;
   const oggettoScheda = items.find((o) => o.id === scheda && !nascosti.has(o.id)) || null;
@@ -592,6 +668,31 @@ function Brain({
             }
           }}
         >
+          {/* La strada delle cartelle (5c): ogni tappa riporta lì col tocco,
+              e ci si posa un file per portarlo su. L'ultima è la cartella
+              aperta, e il suo nome si scrive qui. */}
+          {strada.length > 0 && (
+            <nav className="brain-strada" aria-label={t('brain.cartella.strada')}>
+              {[null, ...strada.slice(0, -1)].map((c) => (
+                <button
+                  key={c?.id ?? 'fuori'}
+                  className="btn ghost small"
+                  data-bersaglio="livello"
+                  data-livello={c?.id ?? ''}
+                  onClick={() => onDentro(c?.id ?? null)}
+                >
+                  {c ? c.titolo || perId.get(c.faccia)?.name || t('brain.cartella.senzaNome') : t('tool.brain.label')}
+                </button>
+              ))}
+              <input
+                aria-label={t('brain.cartella.nome')}
+                value={strada.at(-1).titolo}
+                placeholder={perId.get(strada.at(-1).faccia)?.name || t('brain.cartella.senzaNome')}
+                onChange={(e) => onChange(aggiorna(items, dentro, { titolo: e.target.value }))}
+              />
+            </nav>
+          )}
+
           {collega && (
             <p className="brain-istruzione">
               {collega.da ? t('brain.arrowTo') : t('brain.arrowFrom')}
@@ -603,8 +704,8 @@ function Brain({
             style={{ transform: `translate(${vista.x}px, ${vista.y}px) scale(${vista.z})` }}
           >
             <svg className="brain-frecce">
-              {items
-                .filter((o) => o.t === 'freccia' && !nascosti.has(o.id))
+              {visibili
+                .filter((o) => o.t === 'freccia')
                 .map((f) => {
                   const a = items.find((o) => o.id === f.da);
                   const b = items.find((o) => o.id === f.a);
@@ -632,8 +733,8 @@ function Brain({
               </defs>
             </svg>
 
-            {items
-              .filter((o) => o.t !== 'freccia' && !nascosti.has(o.id))
+            {visibili
+              .filter((o) => o.t !== 'freccia')
               .map((o) => (
                 <div
                   key={o.id}
@@ -641,6 +742,7 @@ function Brain({
                   data-t={o.t}
                   data-scelto={o.id === scelto || undefined}
                   data-collega={collega?.da === o.id || undefined}
+                  data-sopra-icona={o.id === sopraIcona || undefined}
                   style={{
                     left: o.x,
                     top: o.y,
@@ -652,7 +754,10 @@ function Brain({
                     // Il tocco APRE (B-b): la scheda col nome, la nota e il file
                     // da guardare. Un trascinamento finito sull'oggetto non è un
                     // tocco, e non apre niente.
-                    if (o.t !== 'asset' || mosso.current) return;
+                    if (mosso.current) return;
+                    // Una cartella si apre entrandoci (B-f).
+                    if (o.t === 'cartella') return onDentro(o.id);
+                    if (o.t !== 'asset') return;
                     setScheda(o.id);
                   }}
                   onDoubleClick={() => {
@@ -683,7 +788,7 @@ function Brain({
                   {o.t === 'asset' && (
                     <>
                       <span className="brain-faccia">
-                        <Faccia asset={perId.get(o.assetId)} leggi={leggi} />
+                        <Faccia asset={perId.get(o.assetId)} leggi={leggi} cast={o.icona} />
                       </span>
                       {/* Titolo e nota SULL'icona (B4): sono del file, e
                           viaggiano con lui — non con la tela. */}
@@ -691,6 +796,22 @@ function Brain({
                       {perId.get(o.assetId)?.note && (
                         <span className="brain-nota-icona">{perId.get(o.assetId).note}</span>
                       )}
+                    </>
+                  )}
+
+                  {o.t === 'cartella' && (
+                    <>
+                      {/* La faccia della madre (B5), dentro un cerchio con il
+                          bordo doppio: il segno che dentro c'è dell'altro. */}
+                      <span className="brain-faccia">
+                        <Faccia asset={perId.get(o.faccia)} leggi={leggi} cast={o.icona} />
+                      </span>
+                      <span className="brain-titolo">
+                        {o.titolo || perId.get(o.faccia)?.name || t('brain.cartella.senzaNome')}
+                      </span>
+                      <span className="brain-nota-icona">
+                        {t('brain.cartella.quanti', { n: livello(items, o.id).filter((x) => x.t !== 'freccia').length })}
+                      </span>
                     </>
                   )}
 
@@ -768,7 +889,7 @@ function Brain({
       {fantasma &&
         createPortal(
           <div className="fantasma" aria-hidden="true" style={{ left: fantasma.x, top: fantasma.y }}>
-            <Faccia asset={fantasma.file} leggi={leggi} />
+            <Faccia asset={fantasma.file} leggi={leggi} cast={fantasma.cast} />
           </div>,
           document.body,
         )}

@@ -68,8 +68,9 @@ import {
 } from './lib/conto.js';
 import { prezzoVideo, LIMITI_IMMAGINI, RUOLI_VIDEO, immaginiVideoStorte } from './engine/listinoVideo.js';
 import Muro from './components/Muro.jsx';
-import { nuovoAsset, nuovoCerchio, prossimoPosto, daNota, noteInFile } from './engine/brain.js';
+import { nuovoAsset, nuovoCerchio, daNota, noteInFile } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
+import { aggiungi, livelloValido } from './engine/cartelle.js';
 import { leggiDescrizione } from './engine/dizionarioVoce.js';
 import { NEUTRA, fondiRicetta, getRecipe } from './engine/sound.js';
 import { famiglia, genera, suRitmo, SR } from './engine/synth.js';
@@ -376,6 +377,14 @@ export default function App() {
    * sono un comando di troppo.
    */
   const [collegaBrain, setCollegaBrain] = useState(null);
+  /**
+   * La cartella aperta in Brain (5c), `null` = la tela di fuori. Sta qui per
+   * la stessa ragione di `collegaBrain`: il `+` e il riordino sono
+   * dell'impianto, e devono sapere in che livello mettere le cose. Letta
+   * sempre attraverso `livelloValido`: una cartella tolta (o annullata) ti
+   * rimette fuori invece di lasciarti dentro il nulla.
+   */
+  const [cartellaBrain, setCartellaBrain] = useState(null);
 
   /** La frase scritta in basso nel Vocale: da lì il tasto ricava i filtri. */
   const [descrizioneVoce, setDescrizioneVoce] = useState('');
@@ -2069,10 +2078,14 @@ export default function App() {
     return input.click();
   }
 
-  /** Un asset già in libreria, messo sulla tela dove c'è posto. */
-  async function metiSullaTela(asset) {
+  /**
+   * Un asset già in libreria, messo sulla tela dove c'è posto — nella
+   * cartella aperta, se ce n'è una (5c). Chi arriva da un altro servizio
+   * passa `null`: il file deve vedersi sulla tela di fuori.
+   */
+  async function metiSullaTela(asset, dove = livelloValido(tela, cartellaBrain)) {
     setSopraLaTela(null);
-    await cambiaTela([...tela, nuovoAsset({ assetId: asset.id, ...prossimoPosto(tela) })]);
+    await cambiaTela(aggiungi(tela, nuovoAsset({ assetId: asset.id }), dove));
   }
 
   /**
@@ -2112,7 +2125,7 @@ export default function App() {
     const due = (n) => String(n).padStart(2, '0');
     const nome = `${t('brain.notaFile')} ${due(ora.getHours())}.${due(ora.getMinutes())}.${due(ora.getSeconds())}`;
     const asset = await library.save(new Blob([''], { type: 'text/markdown' }), { name: nome, kind: 'md' });
-    await cambiaTela([...tela, nuovoAsset({ assetId: asset.id, ...prossimoPosto(tela) })]);
+    await cambiaTela(aggiungi(tela, nuovoAsset({ assetId: asset.id }), livelloValido(tela, cartellaBrain)));
     brainRef.current?.apri(asset);
   }
 
@@ -2193,7 +2206,8 @@ export default function App() {
     if (dest === 'brain') {
       if (telaId) {
         apriServizio('brain');
-        if (!tela.some((o) => o.assetId === asset.id)) await metiSullaTela(asset);
+        if (!tela.some((o) => o.assetId === asset.id)) await metiSullaTela(asset, null);
+        setCartellaBrain(null);
         return;
       }
       // La tela non è ancora aperta: la si apre QUI, con il file già dentro.
@@ -2203,7 +2217,7 @@ export default function App() {
       const letta = await leggiTela(prima.id);
       const conFile = letta.some((o) => o.assetId === asset.id)
         ? letta
-        : [...letta, nuovoAsset({ assetId: asset.id, ...prossimoPosto(letta) })];
+        : aggiungi(letta, nuovoAsset({ assetId: asset.id }), null);
       await library.saveBrain(prima.id, conFile);
       setTelaId(prima.id);
       setTela(conFile);
@@ -2611,6 +2625,8 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                  nell'impianto, e il suo stato con lui. */
               collega={collegaBrain}
               onCollega={setCollegaBrain}
+              dentro={livelloValido(tela, cartellaBrain)}
+              onDentro={setCartellaBrain}
             />
           ) : tool === 'vocale' ? (
             <VoceLab
@@ -3138,9 +3154,9 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 if (quale === 'nota') {
                   return nuovaNotaFile().catch(() => setError(t('engine.error.body')));
                 }
-                // `prossimoPosto` sa dove c'è spazio: due gruppi nati insieme
+                // `aggiungi` sa dove c'è spazio: due gruppi nati insieme
                 // non devono nascere uno sopra l'altro.
-                return cambiaTela([...tela, nuovoCerchio({ ...prossimoPosto(tela) })]);
+                return cambiaTela(aggiungi(tela, nuovoCerchio({}), livelloValido(tela, cartellaBrain)));
               }}
               /* Gli avanzati, quando il cerchio li apre. Lo stesso contenuto
                  della colonna: non una seconda copia, la stessa. */

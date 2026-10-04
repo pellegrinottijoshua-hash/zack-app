@@ -6450,3 +6450,67 @@ html[data-trascina] [data-bersaglio]:not([data-acceso]) {
 .sc[data-senza-tasto] {
   padding-bottom: 12px;
 }
+
+/* ══ Brain, le cartelle (fase 5c) ═══════════════════════════════════════
+   Una cartella è un'icona come le altre, col bordo DOPPIO: il segno che
+   dentro c'è dell'altro. Il colore scelto dalle tre lineette tinge il
+   bordo, mai la faccia. */
+.brain-oggetto[data-t='cartella'] {
+  display: block;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  resize: none;
+}
+.brain-oggetto[data-t='cartella'][data-scelto],
+.brain-oggetto[data-t='cartella'][data-collega] {
+  box-shadow: none;
+}
+.brain-oggetto[data-t='cartella'] .brain-faccia {
+  border: 2px solid var(--tinta, var(--linea-viva));
+  outline: 2px solid var(--tinta, var(--linea-viva));
+  outline-offset: 3px;
+}
+.brain-oggetto[data-t='asset'] .brain-faccia {
+  border-color: var(--tinta, var(--linea-viva));
+}
+.brain-oggetto[data-sopra-icona] .brain-faccia {
+  border-color: var(--oro);
+  box-shadow: 0 0 0 6px var(--oro);
+}
+/* La strada: in alto a sinistra, sopra la tela, come l'istruzione. */
+.brain-strada {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 21;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 24px);
+}
+.brain-strada .btn {
+  background: var(--fondo);
+}
+.brain-strada .btn::after {
+  content: '›';
+  margin-left: 8px;
+  color: var(--inchiostro-2, currentColor);
+}
+.brain-strada input {
+  min-width: 0;
+  width: 18ch;
+  padding: 6px 10px;
+  background: var(--fondo);
+  border: 1px solid var(--oro);
+  color: var(--inchiostro);
+  font: inherit;
+}
+/* Un trascinamento che passa sopra i titoli non li seleziona. */
+.brain-oggetto[data-t='asset'],
+.brain-oggetto[data-t='cartella'] {
+  user-select: none;
+  -webkit-user-select: none;
+}

@@ -158,3 +158,30 @@ test('la faccia del cast si sceglie da una lista chiusa', () => {
   assert.equal(aggiorna([a], a.id, { icona: 'drago' })[0].icona, undefined);
   assert.equal(aggiorna([{ ...a, icona: 'cat' }], a.id, { icona: null })[0].icona, null);
 });
+
+test('un oggetto nuovo nasce nel livello aperto, accanto agli altri', async () => {
+  const { aggiungi } = await import('../src/engine/cartelle.js');
+  const items = tela();
+  const [a, b] = items;
+  const { items: dopo, cartella } = posaSu(items, a.id, b.id, { rand });
+  const nuovo = nuovoAsset({ assetId: 'N', rand });
+  const con = aggiungi(dopo, nuovo, cartella);
+  const n = con.find((o) => o.id === nuovo.id);
+  assert.equal(n.in, cartella);
+  const posti = livello(con, cartella).map((o) => `${o.x},${o.y}`);
+  assert.equal(new Set(posti).size, posti.length);
+  assert.equal(aggiungi(items, nuovo).at(-1).in, undefined);
+});
+
+test('il posto libero guarda dove stanno le cose, non quante sono', async () => {
+  const { aggiungi } = await import('../src/engine/cartelle.js');
+  // Due file nelle caselle 0 e 2: il terzo va nella 1, non nella 2.
+  const a = nuovoAsset({ assetId: 'A', x: 0, y: 0, rand });
+  const b = nuovoAsset({ assetId: 'B', x: 340, y: 0, rand });
+  const n = aggiungi([a, b], nuovoAsset({ assetId: 'N', rand })).at(-1);
+  assert.deepEqual([n.x, n.y], [170, 0]);
+  // Uno spostato a mano a metà strada occupa anche la casella 1.
+  const c = nuovoAsset({ assetId: 'C', x: 250, y: 10, rand });
+  const m = aggiungi([a, b, c], nuovoAsset({ assetId: 'M', rand })).at(-1);
+  assert.deepEqual([m.x, m.y], [510, 0]);
+});
