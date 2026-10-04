@@ -21,7 +21,7 @@ test('il `+` del Vocale ha «scrivi», dopo i due gesti di sempre', () => {
 test('il punto oro: il gesto parte da «trasforma», gratis', () => {
   const g = gruppo('gesto');
   assert.equal(g.predefinita, 'trasforma');
-  assert.deepEqual(g.opzioni.map((o) => o.id), ['trasforma', 'leggi']);
+  assert.deepEqual(g.opzioni.map((o) => o.id), ['trasforma', 'leggi', 'cambia']);
 });
 
 test('⚠️ le voci del punto oro sono ESATTAMENTE quelle che il Worker accetta', () => {
@@ -44,4 +44,11 @@ test('col tasto su «leggi» il piano non è vuoto (il testo è la tela), ma nul
   assert.equal(pianoVuoto('vocale', {}), true);
   assert.equal(pianoVuoto('vocale', { letturaVoce: true }), false);
   assert.equal(statoDelPiano('vocale', { letturaVoce: true }).inCorso, false);
+});
+
+test('lo strumento «nuova voce» c’è sempre, con etichetta nelle due lingue (6b)', () => {
+  const s = vocale.strumenti.find((x) => x.id === 'nuovaVoce');
+  assert.equal(s?.quando, 'sempre');
+  assert.ok(chiave(it, s.label) && chiave(en, s.label));
+  for (const k of Object.keys(it.voce.nuova)) assert.ok(en.voce.nuova[k], `manca in en: voce.nuova.${k}`);
 });

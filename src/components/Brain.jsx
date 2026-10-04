@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { t } from '../i18n/index.js';
-import { KIND_AUDIO, KIND_VIDEO, KIND_TESTO, ICONE_DOCUMENTO, iconaDocumento, anteprimaTesto, kindFromFile } from '../store/model.js';
+import { KIND_AUDIO, KIND_VIDEO, KIND_TESTO, KIND_SENZA_ANTEPRIMA, ICONE_DOCUMENTO, iconaDocumento, anteprimaTesto, kindFromFile } from '../store/model.js';
 import {
   nuovaFreccia,
   muovi,
@@ -75,6 +75,8 @@ function Contenuto({ item, asset, leggi }) {
   }
   if (KIND_VIDEO.includes(asset.kind)) return <video src={url} controls preload="metadata" />;
   if (KIND_TESTO.includes(asset.kind)) return <SchedaDocumento asset={asset} leggi={leggi} />;
+  // Una voce (6b) si riconosce dall'onda; per sentirla la si posa sul Vocale.
+  if (asset.kind === 'voce') return <Icon name="wave" />;
   return <img src={url} alt={asset.name} draggable={false} />;
 }
 
@@ -88,7 +90,7 @@ function Contenuto({ item, asset, leggi }) {
 function Faccia({ asset, leggi, cast = null }) {
   const [url, setUrl] = useState(null);
   const mostraFile =
-    !cast && asset && !asset.meta?.icona && !KIND_AUDIO.includes(asset.kind) && !KIND_TESTO.includes(asset.kind);
+    !cast && asset && !asset.meta?.icona && !KIND_AUDIO.includes(asset.kind) && !KIND_SENZA_ANTEPRIMA.includes(asset.kind);
 
   useEffect(() => {
     if (!mostraFile) return undefined;

@@ -94,6 +94,8 @@ export const DESTINAZIONI = Object.freeze({
   // Un `.md` posato su Immagine o Video ne riempie il prompt (5d, D-d): un
   // prompt salvato è un file di testo, non un secondo tipo di oggetto.
   md: ['pocket', 'immagine-prompt', 'video-prompt', 'brain'],
+  // Una voce (6b) posata sul Vocale lo sceglie: «chi legge» diventa lei.
+  voce: ['pocket', 'vocale-voce', 'brain'],
 });
 
 export function destinazioniDi(kind) {
@@ -113,6 +115,7 @@ export const BERSAGLI = Object.freeze({
   vettorializza: ['vettorializza'],
   immagine: ['immagine', 'immagine-prompt'],
   video: ['video-primo', 'video-riferimento', 'video-prompt'],
+  vocale: ['vocale-voce'],
 });
 
 /** Le destinazioni di un bersaglio possibili per quel tipo: vuoto = spento. */

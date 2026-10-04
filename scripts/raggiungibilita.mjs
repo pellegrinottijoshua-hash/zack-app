@@ -450,6 +450,9 @@ async function main() {
             if (muro === 'spento') {
               giri.push({ servizio: 'vocale', primo: false, solo: '.sc-menu', apri: ['.sc-piu'] });
               giri.push({ servizio: 'vocale', primo: false, solo: '.shell', apri: ['.sc-piu', '.sc-menu [data-menu="scrivi"]'], aspetta: '.voce-lettura' });
+              // «Una voce nuova» (6b): descrivila, e la scheda del consenso.
+              giri.push({ servizio: 'vocale', primo: false, solo: '.nuova-voce', apri: ['.sc-strumento[data-strumento="nuovaVoce"]'] });
+              giri.push({ servizio: 'vocale', primo: false, solo: '.nuova-voce', apri: ['.sc-strumento[data-strumento="nuovaVoce"]', '.nuova-voce-modi .chip:nth-child(2)'] });
             }
             // Ogni pagina ha un secondo tentativo, ma SOLO per un blocco
             // (tempo scaduto): un difetto o un errore vero non si ritenta.

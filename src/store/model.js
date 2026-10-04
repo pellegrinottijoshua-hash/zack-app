@@ -8,7 +8,7 @@
  */
 
 /** Un asset non è un file: è l'originale più tutto ciò che ne è derivato. */
-export const KINDS = ['png', 'jpg', 'svg', 'wav', 'mp3', 'mp4', 'webm', 'md'];
+export const KINDS = ['png', 'jpg', 'svg', 'wav', 'mp3', 'mp4', 'webm', 'md', 'voce'];
 
 /**
  * Che cosa si può ascoltare o guardare, invece che soltanto vedere.
@@ -43,6 +43,13 @@ export const KIND_IMMAGINE = ['png', 'jpg', 'svg'];
 export const KIND_TESTO = ['md'];
 
 /**
+ * Ciò che non ha un'anteprima da guardare e si riconosce dall'icona: i
+ * documenti e le voci (6b). Un `<img src>` su uno di questi mostrerebbe
+ * l'immagine rotta — un asset che sembra danneggiato e sta benissimo.
+ */
+export const KIND_SENZA_ANTEPRIMA = [...KIND_TESTO, 'voce'];
+
+/**
  * Il ripiego, per tipo di file.
  *
  * Non «cartella» per tutti: su una tela con dieci file diventerebbero dieci
@@ -51,7 +58,8 @@ export const KIND_TESTO = ['md'];
  * vuole altro lo sceglie, che è il punto.
  */
 function iconaDelTipo(kind) {
-  if (KIND_AUDIO.includes(kind)) return 'wave';
+  // Una voce (6b) è un'onda come un audio: è la voce che parla, non un file da leggere.
+  if (KIND_AUDIO.includes(kind) || kind === 'voce') return 'wave';
   if (KIND_VIDEO.includes(kind)) return 'film';
   if (KIND_IMMAGINE.includes(kind)) return 'image';
   // Un documento è una nota (fase 5b): con le cartelle sulla tela (5c) la
@@ -120,7 +128,7 @@ export function titoloDocumento(testo) {
  */
 export function kindFromFile(name = '', type = '') {
   const est = String(name).toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] || '';
-  const perEstensione = { jpeg: 'jpg', jpg: 'jpg', png: 'png', svg: 'svg', wav: 'wav', mp3: 'mp3', mp4: 'mp4', webm: 'webm', md: 'md', markdown: 'md' };
+  const perEstensione = { jpeg: 'jpg', jpg: 'jpg', png: 'png', svg: 'svg', wav: 'wav', mp3: 'mp3', mp4: 'mp4', webm: 'webm', md: 'md', markdown: 'md', voce: 'voce' };
   if (perEstensione[est]) return perEstensione[est];
 
   const perTipo = {

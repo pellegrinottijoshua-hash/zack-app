@@ -949,10 +949,11 @@
     "gesto": {
       "title": "Cosa fa il tasto",
       "trasforma": "Trasforma",
-      "leggi": "Leggi"
+      "leggi": "Leggi",
+      "cambia": "Cambia voce"
     },
     "pronta": {
-      "title": "Chi legge",
+      "title": "La voce",
       "george": "George",
       "sarah": "Sarah",
       "adam": "Adam",
@@ -971,6 +972,44 @@
       "rimborsoInCorso": "La lettura non è venuta. Il credito ti torna entro un paio d'ore — controlliamo noi, non devi fare niente.",
       "errore": "La lettura non è venuta. Riprova fra poco.",
       "ascolta": "La lettura"
+    },
+    "nuova": {
+      "titolo": "Una voce nuova",
+      "descrivi": "Descrivila",
+      "clona": "Clonala",
+      "descrizione": "Com'è la voce? Per esempio: una donna anziana, calda, con un accento toscano leggero.",
+      "fammiSentire": "Fammela sentire",
+      "anteprima": "Voce {n}",
+      "nome": "Il nome della voce",
+      "tieni": "Tieni questa",
+      "consenso": "Di chi è questa voce?",
+      "chiParla": "Il nome di chi parla",
+      "campioneSi": "Si clona la registrazione che c'è sul piano. Più è lunga e pulita, meglio viene.",
+      "campioneNo": "Registra prima la voce da clonare (il + del Vocale), poi torna qui.",
+      "nonMisurato": "Arriva presto: prima misuriamo quanto costa, poi il prezzo compare qui.",
+      "attendiDisegno": "Sto disegnando tre voci…",
+      "attendiClona": "Sto clonando la voce…",
+      "attendiTieni": "Sto tenendo la voce…",
+      "tenuta": "La voce «{nome}» è in Brain, ed è lei che legge adesso.",
+      "troppe": "Hai già {n} voci: buttane una (e svuota il cestino) per farne un'altra.",
+      "campioneGrande": "La registrazione è troppo lunga per clonarla: tienila sotto i due minuti.",
+      "rimborsato": "Non è venuta. Il credito è tornato sul tuo saldo: non hai pagato niente.",
+      "rimborsoInCorso": "Non è venuta. Il credito ti torna entro un paio d'ore — controlliamo noi, non devi fare niente.",
+      "errore": "Non è venuta. Riprova fra poco.",
+      "saldoCorto": "Il saldo non basta."
+    },
+    "scelta": "Legge «{nome}».",
+    "trattenute": "{n} voci restano nel cestino: ElevenLabs non le ha cancellate. Riprova fra poco.",
+    "cambia": {
+      "claim": "La tua registrazione, detta da un'altra voce. Anche dentro un video.",
+      "durata": "{n} di {max} secondi",
+      "troppoLungo": "È troppo lunga: al massimo {max} secondi.",
+      "nonMisurato": "Cambiare voce arriva presto: prima misuriamo quanto costa, poi il prezzo compare qui.",
+      "attendi": "Sto cambiando la voce…",
+      "rimonta": "Sto rimettendo la voce nel video: ci mette quanto dura il video.",
+      "videoNota": "È un video: la voce cambiata torna dentro il video. A ElevenLabs va solo l'audio.",
+      "soloAudio": "Questo browser non sa rimontare il video: ecco la voce cambiata, da rimettere nel video in CapCut.",
+      "ascolta": "La voce cambiata"
     }
   }
 }

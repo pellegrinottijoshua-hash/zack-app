@@ -949,10 +949,11 @@
     "gesto": {
       "title": "What the button does",
       "trasforma": "Transform",
-      "leggi": "Read"
+      "leggi": "Read",
+      "cambia": "Change voice"
     },
     "pronta": {
-      "title": "Who reads",
+      "title": "The voice",
       "george": "George",
       "sarah": "Sarah",
       "adam": "Adam",
@@ -971,6 +972,44 @@
       "rimborsoInCorso": "The reading didn't come out. Your credit comes back within a couple of hours — we check, you don't need to do anything.",
       "errore": "The reading didn't come out. Try again shortly.",
       "ascolta": "The reading"
+    },
+    "nuova": {
+      "titolo": "A new voice",
+      "descrivi": "Describe it",
+      "clona": "Clone it",
+      "descrizione": "What does the voice sound like? For example: an elderly woman, warm, with a light Tuscan accent.",
+      "fammiSentire": "Let me hear it",
+      "anteprima": "Voice {n}",
+      "nome": "The voice's name",
+      "tieni": "Keep this one",
+      "consenso": "Whose voice is this?",
+      "chiParla": "The speaker's name",
+      "campioneSi": "The recording on the board gets cloned. The longer and cleaner, the better.",
+      "campioneNo": "Record the voice to clone first (the + of Voice), then come back here.",
+      "nonMisurato": "Coming soon: first we measure what it costs, then the price shows up here.",
+      "attendiDisegno": "Designing three voices…",
+      "attendiClona": "Cloning the voice…",
+      "attendiTieni": "Keeping the voice…",
+      "tenuta": "The voice “{nome}” is in Brain, and it's the one reading now.",
+      "troppe": "You already have {n} voices: throw one away (and empty the trash) to make another.",
+      "campioneGrande": "The recording is too long to clone: keep it under two minutes.",
+      "rimborsato": "It didn't come out. The credit is back on your balance: you paid nothing.",
+      "rimborsoInCorso": "It didn't come out. Your credit comes back within a couple of hours — we check, you don't need to do anything.",
+      "errore": "It didn't come out. Try again shortly.",
+      "saldoCorto": "Your balance isn't enough."
+    },
+    "scelta": "“{nome}” is reading.",
+    "trattenute": "{n} voices stay in the trash: ElevenLabs didn't delete them. Try again shortly.",
+    "cambia": {
+      "claim": "Your recording, spoken by another voice. Even inside a video.",
+      "durata": "{n} of {max} seconds",
+      "troppoLungo": "It's too long: {max} seconds at most.",
+      "nonMisurato": "Change voice is coming soon: first we measure what it costs, then the price shows up here.",
+      "attendi": "Changing the voice…",
+      "rimonta": "Putting the voice back into the video: it takes as long as the video.",
+      "videoNota": "It's a video: the changed voice goes back into the video. Only the audio goes to ElevenLabs.",
+      "soloAudio": "This browser can't rebuild the video: here's the changed voice, to put back into the video in CapCut.",
+      "ascolta": "The changed voice"
     }
   }
 }

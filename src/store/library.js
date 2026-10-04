@@ -151,13 +151,24 @@ export async function rimettiAsset(id) {
  * con le frecce che li toccavano. Un file che non si cancella non ferma gli
  * altri. Restituisce quanti sono andati e quanti byte si sono liberati.
  */
-export async function svuotaCestino() {
+export async function svuotaCestino({ prima } = {}) {
   const tutti = await db.all('assets');
   const via = tutti.filter(inCestino);
   const andati = new Set();
   let byte = 0;
+  let trattenuti = 0;
   for (const a of via) {
     try {
+      /*
+       * `prima` (fase 6b): l'ultima parola su un file, prima di cancellarlo.
+       * Una voce va cancellata ANCHE presso ElevenLabs: se lì non va, il file
+       * resta nel cestino — cancellarlo solo qui lascerebbe una voce viva
+       * che nessuno può più trovare né togliere.
+       */
+      if (prima && !(await prima(a))) {
+        trattenuti += 1;
+        continue;
+      }
       await deleteAsset(a.id);
       andati.add(a.id);
       byte += Number(a.bytes) || 0;
@@ -172,7 +183,7 @@ export async function svuotaCestino() {
       if (next !== items) await saveBrain(m.id, next);
     }
   }
-  return { andati: andati.size, byte };
+  return { andati: andati.size, byte, trattenuti };
 }
 
 /**
