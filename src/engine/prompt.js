@@ -1,5 +1,6 @@
 import { KIND_TESTO } from '../store/model.js';
 import { discendenti } from './cartelle.js';
+import { pool } from './archivio.js';
 
 /**
  * I prompt salvati (fase 5d, D-d).
@@ -72,4 +73,19 @@ export function cartelleDellaTela(items) {
       );
       return { id: c.id, titolo: c.titolo, faccia: c.faccia, assetIds };
     });
+}
+
+/**
+ * La striscia della libreria come vista di Brain (5d, T6): la stessa lente
+ * della pool — dal più recente, cerca in nome, nota e tag, a pagine — con un
+ * filtro in più: `tutto`, `prompts`, o l'id di una cartella della tela.
+ */
+export function vistaLibreria(assets, { filtro = 'tutto', cartelle = [], cerca = '', quanti } = {}) {
+  let dentro = assets;
+  if (filtro === 'prompts') dentro = assets.filter(ePrompt);
+  else if (filtro !== 'tutto') {
+    const c = cartelle.find((x) => x.id === filtro);
+    dentro = c ? assets.filter((a) => c.assetIds.has(a.id)) : assets;
+  }
+  return pool(dentro, { cerca, quanti });
 }

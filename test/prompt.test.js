@@ -63,3 +63,18 @@ test('le cartelle della tela, viste dalla libreria, contano anche i file annidat
   assert.equal(vista.titolo, 'Fuori');
   assert.deepEqual([...vista.assetIds].sort(), ['A', 'B', 'C']);
 });
+
+test('la libreria vede Brain: tutto, i prompt, o una cartella della tela', async () => {
+  const { vistaLibreria } = await import('../src/engine/prompt.js');
+  const a = { id: 'A', kind: 'png', name: 'a', meta: {}, createdAt: '2026-10-01' };
+  const b = { id: 'B', kind: 'md', name: 'b', meta: { op: 'prompt' }, createdAt: '2026-10-02' };
+  const c = { id: 'C', kind: 'png', name: 'c', meta: {}, createdAt: '2026-10-03', cestinatoIl: '2026-10-04' };
+  const cartelle = [{ id: 'k', assetIds: new Set(['A', 'C']) }];
+  const ids = (v) => v.mostrati.map((x) => x.id);
+  assert.deepEqual(ids(vistaLibreria([a, b, c])), ['B', 'A'], 'il cestino non si vede');
+  assert.deepEqual(ids(vistaLibreria([a, b, c], { filtro: 'prompts' })), ['B']);
+  assert.deepEqual(ids(vistaLibreria([a, b, c], { filtro: 'k', cartelle })), ['A']);
+  // Una cartella che non c'è più (tela cambiata) mostra tutto, non niente.
+  assert.deepEqual(ids(vistaLibreria([a, b], { filtro: 'via', cartelle })), ['B', 'A']);
+  assert.equal(vistaLibreria([a, b], { quanti: 1 }).restano, 1);
+});

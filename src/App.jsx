@@ -3672,6 +3672,8 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
        */}
       <Library
         store={library}
+        /* La tela di Brain: le sue cartelle sono i filtri della striscia (5d). */
+        tela={tela}
         open={libOpen}
         onToggle={() =>
           setLibOpen((v) => {

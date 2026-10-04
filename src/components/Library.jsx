@@ -2,11 +2,9 @@ import { useEffect, useState } from 'react';
 import { t } from '../i18n/index.js';
 import AssetActions from './AssetActions.jsx';
 import Icon from './Icon.jsx';
-import { FOLDER_ICONS, KIND_TESTO, iconaDocumento } from '../store/model.js';
-
-function FolderIcon({ name }) {
-  return <Icon name={name} className="folder-icon" />;
-}
+import { KIND_TESTO, iconaDocumento } from '../store/model.js';
+import { vistaLibreria, cartelleDellaTela } from '../engine/prompt.js';
+import { POOL_VISIBILI } from '../engine/archivio.js';
 
 const size = (n) => {
   if (n >= 1048576) return `${(n / 1048576).toFixed(1)} MB`;
@@ -53,15 +51,33 @@ function Thumb({ item, read }) {
 }
 
 /**
- * La striscia dei lavori, con cartelle, moodboard, tag e ricerca.
+ * La striscia dei lavori: una vista di Brain (fase 5d, T6).
+ *
+ * Le cartelle e le moodboard di prima se ne sono andate: le cartelle sono
+ * quelle di Brain (5c), e qui si vedono come filtri accanto a «tutto» e ai
+ * prompt salvati. L'ordine e la ricerca sono quelli della pool — dal più
+ * recente, nome, nota e tag, venti per volta — perché è lo stesso archivio
+ * guardato da un'altra porta, e due porte che ordinano in modo diverso
+ * sembrano due archivi.
  *
  * Tutto vive nel browser: nessun server, nessun account. Il rovescio è che
  * svuotare i dati del sito cancella l'archivio, e per questo l'avviso e il
  * pulsante di export completo sono in vista, non nascosti in un menu.
  */
-export default function Library({ store, open, big, onToggleBig, onToggle, onOpenInEditor, onDownloadAll, onAssetAction }) {
-  const [newFolder, setNewFolder] = useState('');
-  const [newBoard, setNewBoard] = useState('');
+export default function Library({
+  store,
+  tela = [],
+  open,
+  big,
+  onToggleBig,
+  onToggle,
+  onOpenInEditor,
+  onDownloadAll,
+  onAssetAction,
+}) {
+  const [cerca, setCerca] = useState('');
+  const [filtro, setFiltro] = useState('tutto');
+  const [quanti, setQuanti] = useState(POOL_VISIBILI);
   const [tagFor, setTagFor] = useState(null);
   const [tagDraft, setTagDraft] = useState('');
 
@@ -98,8 +114,12 @@ export default function Library({ store, open, big, onToggleBig, onToggle, onOpe
     setScelti(new Set(ids));
   };
 
-  const f = store.filter;
-  const set = (patch) => store.setFilter({ ...f, ...patch });
+  const cartelle = cartelleDellaTela(tela);
+  const { mostrati, restano } = vistaLibreria(store.assets, { filtro, cartelle, cerca, quanti });
+  const scegliFiltro = (id) => {
+    setFiltro(id);
+    setQuanti(POOL_VISIBILI);
+  };
 
   const download = async (item) => {
     const { file } = await store.read(item.id);
@@ -120,7 +140,7 @@ export default function Library({ store, open, big, onToggleBig, onToggle, onOpe
         <span className="label" style={{ letterSpacing: '0.24em' }}>
           {t('library.title')}
         </span>
-        <span className="count">{store.visible.length}</span>
+        <span className="count">{store.assets.length}</span>
         <span className="hint">{open ? '▾' : '▸'}</span>
         <span className="spacer" />
         {/* Ottantasei lavori in una striscia alta 260 px sono irraggiungibili:
@@ -175,101 +195,33 @@ export default function Library({ store, open, big, onToggleBig, onToggle, onOpe
                 className="search"
                 type="search"
                 placeholder={t('library.search')}
-                value={f.search}
-                onChange={(e) => set({ search: e.target.value })}
+                value={cerca}
+                onChange={(e) => {
+                  setCerca(e.target.value);
+                  setQuanti(POOL_VISIBILI);
+                }}
               />
 
-              <button
-                className="chip"
-                aria-pressed={f.folderId === undefined && f.moodboardId === undefined && !f.tag}
-                onClick={() => store.setFilter({ folderId: undefined, moodboardId: undefined, tag: null, search: f.search })}
-              >
+              <button className="chip" aria-pressed={filtro === 'tutto'} onClick={() => scegliFiltro('tutto')}>
                 {t('library.all')}
               </button>
-
-              {store.collections
-                .filter((c) => c.count > 0)
-                .map((c) => (
-                  <button
-                    key={c.id}
-                    className="chip smart"
-                    aria-pressed={f.collection === c.id}
-                    onClick={() =>
-                      set({ collection: f.collection === c.id ? null : c.id })
-                    }
-                  >
-                    {t(c.labelKey)} <b>{c.count}</b>
-                  </button>
-                ))}
-
-              {store.folders.map((folder) => (
+              <button className="chip" aria-pressed={filtro === 'prompts'} onClick={() => scegliFiltro('prompts')}>
+                {t('prompt.titolo')}
+              </button>
+              {/* Le cartelle di Brain (5c), viste di lato: un filtro, non un
+                  secondo posto dove mettere le cose. */}
+              {cartelle.map((c) => (
                 <button
-                  key={folder.id}
+                  key={c.id}
                   className="chip"
-                  aria-pressed={f.folderId === folder.id}
-                  onDoubleClick={() => store.deleteFolder(folder.id)}
-                  title={t('library.folder.help')}
-                  onClick={() => set({ folderId: f.folderId === folder.id ? undefined : folder.id, moodboardId: undefined })}
-                  style={{ '--tinta': folder.color }}
+                  aria-pressed={filtro === c.id}
+                  onClick={() => scegliFiltro(filtro === c.id ? 'tutto' : c.id)}
                 >
-                  <FolderIcon name={folder.icon} />
-                  {folder.name}
+                  <Icon name="cartella" className="folder-icon" />
+                  {c.titolo || store.assets.find((a) => a.id === c.faccia)?.name || t('brain.cartella.senzaNome')}{' '}
+                  <b>{c.assetIds.size}</b>
                 </button>
               ))}
-
-              {store.moodboards.map((board) => (
-                <button
-                  key={board.id}
-                  className="chip board"
-                  aria-pressed={f.moodboardId === board.id}
-                  onDoubleClick={() => store.deleteMoodboard(board.id)}
-                  title={t('library.moodboard.help')}
-                  onClick={() => set({ moodboardId: f.moodboardId === board.id ? undefined : board.id, folderId: undefined })}
-                >
-                  ◈ {board.name}
-                </button>
-              ))}
-
-              {store.tags.map(({ tag, count }) => (
-                <button
-                  key={tag}
-                  className="chip tag"
-                  aria-pressed={f.tag === tag}
-                  onClick={() => set({ tag: f.tag === tag ? null : tag })}
-                >
-                  {tag} <b>{count}</b>
-                </button>
-              ))}
-
-              <form
-                className="chip-form"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (newFolder.trim()) store.createFolder(newFolder);
-                  setNewFolder('');
-                }}
-              >
-                <input
-                  placeholder={t('library.newFolder')}
-                  value={newFolder}
-                  onChange={(e) => setNewFolder(e.target.value)}
-                />
-              </form>
-
-              <form
-                className="chip-form"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (newBoard.trim()) store.createMoodboard(newBoard);
-                  setNewBoard('');
-                }}
-              >
-                <input
-                  placeholder={t('library.newMoodboard')}
-                  value={newBoard}
-                  onChange={(e) => setNewBoard(e.target.value)}
-                />
-              </form>
             </div>
 
             <p className="lib-note">
@@ -312,11 +264,11 @@ export default function Library({ store, open, big, onToggleBig, onToggle, onOpe
               </div>
             )}
 
-            {store.visible.length === 0 ? (
+            {mostrati.length === 0 ? (
               <p className="empty-strip">{t('library.empty')}</p>
             ) : (
               <div className="strip" onClick={(e) => e.stopPropagation()}>
-                {store.visible.map((item) => (
+                {mostrati.map((item) => (
                   <figure
                     className="work"
                     key={item.id}
@@ -417,24 +369,13 @@ export default function Library({ store, open, big, onToggleBig, onToggle, onOpe
                       </button>
                     </div>
 
-                    {store.moodboards.length > 0 && (
-                      <div className="boards">
-                        {store.moodboards.map((b) => (
-                          <button
-                            key={b.id}
-                            aria-pressed={(item.moodboardIds || []).includes(b.id)}
-                            title={b.name}
-                            onClick={() =>
-                              store.setInMoodboard(item.id, b.id, !(item.moodboardIds || []).includes(b.id))
-                            }
-                          >
-                            ◈
-                          </button>
-                        ))}
-                      </div>
-                    )}
                   </figure>
                 ))}
+                {restano > 0 && (
+                  <button className="btn ghost small lib-altri" onClick={() => setQuanti((n) => n + POOL_VISIBILI)}>
+                    {t('brain.pool.altri', { n: Math.min(restano, POOL_VISIBILI) })}
+                  </button>
+                )}
               </div>
             )}
           </>
