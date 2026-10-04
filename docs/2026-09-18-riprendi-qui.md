@@ -624,3 +624,28 @@ tutta la tela; dentro una cartella l'inquadratura si rifà a ogni ingresso
 ```
 Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 5d.
 ```
+
+## ▶️ 2026-10-04 — 5d FATTA: i prompt e la vista libreria (fase 5 chiusa)
+
+- `294fe07` 5d/1 — puro: `engine/prompt.js` (`testoPrompt`, `nomePrompt`,
+  `promptSalvati`, `cartelleDellaTela`); un `.md` si posa su Immagine e
+  Video come prompt (`immagine-prompt`, `video-prompt` in `DESTINAZIONI`).
+- `1e254fc` 5d/2 — il `.md` posato riempie il prompt; nel punto oro
+  «Prompt 1–4» e «Salva il prompt»; l'icona «prompts» in Brain.
+- `5fdd9c0` 5d/3 — la striscia della libreria è una vista di Brain
+  (`vistaLibreria`): ordine e ricerca della pool, «altri 20», filtri tutto ·
+  prompts · cartelle della tela.
+- 5d/4 — lo script apre l'icona «prompts». 895 prove verdi, build ok;
+  script `--rapido` **verde** a 390×844 e a 1280×800 (94 pagine, 893
+  comandi ciascuno). Il giro completo — anche quello della 5c — va rifatto
+  una volta fuori da una sessione (non ci sta nel tetto di tempo).
+
+Decisioni prese da me: §3 della spec, punti 16–19.
+
+Minori: le cartelle compaiono nella striscia solo dopo che Brain è stato
+aperto una volta (la tela si legge entrando in Brain); il nome del prompt
+salvato passa da `safeName` e diventa «un-gabbiano-al-neon…»; le cartelle e
+le moodboard della libreria vecchia restano nei dati senza una porta.
+
+**La fase 5 è chiusa.** Prossima: la 6 (Voce) della
+[scaletta](2026-09-15-scaletta.md), da tagliare in fette come la 5.

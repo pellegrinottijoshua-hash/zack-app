@@ -441,6 +441,8 @@ async function main() {
             // sono (servono due oggetti) e la strada delle cartelle anche.
             giri.push({ servizio: 'brain', primo: false, solo: '.lineette', apri: ['.sc-strumento[data-strumento="lineette"]'], pocket: true, tela: true });
             giri.push({ servizio: 'brain', primo: false, solo: '.brain-strada', apri: ['.brain-oggetto[data-t="cartella"]'], pocket: true, tela: true });
+            // L'icona «prompts» di Brain (fetta 5d): la pool dei prompt salvati.
+            giri.push({ servizio: 'brain', primo: false, solo: '.pool', apri: ['.sc-strumento[data-strumento="prompts"]'], pocket: true });
             // Ogni pagina ha un secondo tentativo, ma SOLO per un blocco
             // (tempo scaduto): un difetto o un errore vero non si ritenta.
             const conRitentativo = async (giro) => {
