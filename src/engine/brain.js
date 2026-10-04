@@ -20,7 +20,15 @@
 import { newId, cleanNote, FOLDER_COLORS } from '../store/model.js';
 
 /** Cosa può stare su una tela. Lista chiusa: sei oggetti, non venti. */
-export const TIPI = ['asset', 'nota', 'cerchio', 'freccia'];
+export const TIPI = ['asset', 'nota', 'cerchio', 'freccia', 'cartella'];
+
+/**
+ * Le facce del cast come icone pronte (fase 5c): un file o una cartella può
+ * portare la faccia di un personaggio al posto della sua. Sono i ritratti da
+ * 96 px che il sito usa già, e la lista è chiusa come quella dei colori.
+ */
+export const FACCE_CAST = ['zack', 'ant', 'cat', 'moth', 'pigeon', 'seagull'];
+export const facciaCast = (id) => (FACCE_CAST.includes(id) ? `/zack/cast/i${id}-96.webp` : null);
 
 /**
  * I colori delle note.
@@ -137,13 +145,39 @@ export function normalizzaTela(items) {
   );
   const esiste = new Set(puliti.map((o) => o.id));
 
-  return puliti
+  const tenuti = puliti
     .filter((o) => {
       if (o.t === 'freccia') return esiste.has(o.da) && esiste.has(o.a);
       if (o.t === 'asset') return Boolean(o.assetId);
       return true;
     })
     .map(aIcona);
+  return fuoriDaCartellePerse(tenuti);
+}
+
+/**
+ * Un oggetto dentro una cartella che non c'è più — o in un giro di cartelle
+ * l'una dentro l'altra, che nessun gesto fa ma un archivio rotto sì — torna
+ * sulla tela di fuori. Restare in `in` verso il nulla vorrebbe dire sparire.
+ */
+function fuoriDaCartellePerse(items) {
+  const cartelle = new Map(items.filter((o) => o.t === 'cartella').map((o) => [o.id, o]));
+  const arrivaFuori = (o) => {
+    const visti = new Set();
+    let id = o.in;
+    while (id) {
+      if (visti.has(id) || !cartelle.has(id)) return false;
+      visti.add(id);
+      id = cartelle.get(id).in;
+    }
+    return true;
+  };
+  return items.map((o) => {
+    if (o.in === undefined) return o;
+    if (o.t !== 'freccia' && typeof o.in === 'string' && arrivaFuori(o)) return o;
+    const { in: _via, ...resto } = o;
+    return resto;
+  });
 }
 
 /**
@@ -198,6 +232,7 @@ export function aggiorna(items, id, patch) {
     if (o.id !== id) return o;
     const next = { ...o, ...patch };
     if ('colore' in patch && !COLORI.includes(patch.colore)) next.colore = o.colore;
+    if ('icona' in patch && patch.icona !== null && !FACCE_CAST.includes(patch.icona)) next.icona = o.icona;
     // Cambiare categoria cambia il colore: sono la stessa scelta vista da due
     // lati, e lasciarli scollegati produce una nota "Da fare" color idea.
     if ('cat' in patch) {
