@@ -20,7 +20,7 @@ export const REGOLE = ['gruppi', 'tipo', 'compatta', 'frecce'];
 const PASSO = 28;
 
 /** L'ordine dei tipi in «per tipo»: dal più denso di senso al più accessorio. */
-const ORDINE_TIPI = ['nota', 'asset', 'cerchio'];
+const ORDINE_TIPI = ['nota', 'cartella', 'asset', 'cerchio'];
 
 const posizionabili = (items) => items.filter((o) => o.t !== 'freccia');
 const larghezza = (o) => o.w ?? MISURE[o.t]?.w ?? 200;

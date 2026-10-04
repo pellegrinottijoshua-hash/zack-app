@@ -781,7 +781,23 @@
     },
     "foto": "Immagine della tela",
     "fotoFatta": "Immagine scaricata: {nome}",
-    "fotoVuota": "La tela è vuota: non c'è niente da fotografare."
+    "fotoVuota": "La tela è vuota: non c'è niente da fotografare.",
+    "cartella": {
+      "senzaNome": "Cartella",
+      "quanti": "{n} dentro",
+      "strada": "Le cartelle",
+      "nome": "Nome della cartella"
+    },
+    "lineette": {
+      "label": "Freccia, gruppo, colore, riordino",
+      "title": "Metti in ordine",
+      "tinta": "Colore o icona",
+      "colore": "Colore {c}",
+      "cast": "La faccia di {nome}",
+      "facciaSua": "La sua faccia",
+      "toccaColore": "Tocca le cose da colorare · Esc per finire",
+      "toccaIcona": "Tocca i file e le cartelle · Esc per finire"
+    }
   },
   "effetti": {
     "claim": "Costruisci un effetto sonoro da zero. Batti un ritmo con la voce e l’effetto lo segue."
@@ -862,7 +878,11 @@
     "rimborsoInCorso": "Non è venuta. Il credito ti torna entro un paio d'ore — controlliamo noi, non devi fare niente.",
     "assetMancante": "Un asset scelto come riferimento non è più nella libreria. Toglilo e riprova.",
     "chiudi": "Va bene così",
-    "ruolo": { "personaggio": "Personaggio", "oggetto": "Oggetto", "stile": "Stile" }
+    "ruolo": {
+      "personaggio": "Personaggio",
+      "oggetto": "Oggetto",
+      "stile": "Stile"
+    }
   },
   "ricarica": {
     "titolo": "Crediti",

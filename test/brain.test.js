@@ -136,7 +136,7 @@ test('i nuovi oggetti non finiscono impilati nello stesso punto', () => {
 
 test('la lista dei tipi resta chiusa', () => {
   // Sei oggetti, non venti: è una decisione, non un limite tecnico.
-  assert.deepEqual(TIPI, ['asset', 'nota', 'cerchio', 'freccia']);
+  assert.deepEqual(TIPI, ['asset', 'nota', 'cerchio', 'freccia', 'cartella']);
 });
 
 test('ogni categoria ha un colore valido e distinto', () => {

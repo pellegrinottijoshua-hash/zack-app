@@ -32,8 +32,8 @@ export default {
   tasto: {
     /*
      * Il tasto Zack esce da Brain (B1, fase 5b): in Brain si organizza, non si
-     * genera. Le quattro regole del riordino restano, negli avanzati, finché
-     * la 5c non le mette nelle tre lineette (decisione 7 della spec).
+     * genera. Le quattro regole del riordino stanno nelle tre lineette (5c,
+     * decisione 7 della spec); qui resta la loro lista, che è una sola.
      */
     nascosto: true,
     azione: 'riordina',
@@ -72,7 +72,12 @@ export default {
    * gesti che si fanno a lavoro finito, non mentre si pensa.
    */
   strumenti: [
-    { id: 'freccia', icon: 'freccia', label: 'brain.add.arrow', quando: 'con-file' },
+    /*
+     * Le tre lineette (5c, B3): freccia, gruppo, colore o icona e il riordino
+     * in un cerchio solo. La freccia era un cerchio a sé; il riordino stava
+     * negli avanzati da quando il tasto Zack è uscito (decisione 7).
+     */
+    { id: 'lineette', icon: 'lineette', label: 'brain.lineette.label', quando: 'con-file' },
     { id: 'annulla', icon: 'undo', label: 'bar.undo', quando: 'con-file' },
     { id: 'centra', icon: 'centra', label: 'brain.center', quando: 'con-file', lato: 'sinistra' },
     { id: 'avanzati', icon: 'tag', label: 'advanced.title', quando: 'con-file' },

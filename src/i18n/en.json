@@ -781,7 +781,23 @@
     },
     "foto": "Canvas image",
     "fotoFatta": "Image downloaded: {nome}",
-    "fotoVuota": "The canvas is empty: there is nothing to photograph."
+    "fotoVuota": "The canvas is empty: there is nothing to photograph.",
+    "cartella": {
+      "senzaNome": "Folder",
+      "quanti": "{n} inside",
+      "strada": "Folders",
+      "nome": "Folder name"
+    },
+    "lineette": {
+      "label": "Arrow, group, colour, tidy",
+      "title": "Tidy up",
+      "tinta": "Colour or icon",
+      "colore": "Colour {c}",
+      "cast": "{nome}'s face",
+      "facciaSua": "Its own face",
+      "toccaColore": "Tap the things to colour · Esc to finish",
+      "toccaIcona": "Tap files and folders · Esc to finish"
+    }
   },
   "effetti": {
     "claim": "Build a sound effect from scratch. Tap a rhythm with your voice and the effect follows it."
@@ -862,7 +878,11 @@
     "rimborsoInCorso": "It didn't come out. Your credit comes back within a couple of hours — we check it ourselves, you don't have to do anything.",
     "assetMancante": "One of the assets you picked as a reference is no longer in the library. Remove it and try again.",
     "chiudi": "Done",
-    "ruolo": { "personaggio": "Character", "oggetto": "Object", "stile": "Style" }
+    "ruolo": {
+      "personaggio": "Character",
+      "oggetto": "Object",
+      "stile": "Style"
+    }
   },
   "ricarica": {
     "titolo": "Credits",

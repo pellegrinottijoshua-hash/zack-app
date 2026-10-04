@@ -436,6 +436,11 @@ async function main() {
             // La scheda di un file sulla tela (fetta 5b): il file arriva su
             // Brain dal pocket (`dest: 'brain'`), e il tocco la apre.
             giri.push({ servizio: 'brain', primo: false, solo: '.brain-scheda', apri: ['.brain-oggetto[data-t="asset"]'], pocket: true, dest: 'brain', aspetta: '.brain-oggetto[data-t="asset"]' });
+            // Le tre lineette e una cartella aperta (fetta 5c): la tela ha
+            // una cartella con due file e un file fuori, così le lineette ci
+            // sono (servono due oggetti) e la strada delle cartelle anche.
+            giri.push({ servizio: 'brain', primo: false, solo: '.lineette', apri: ['.sc-strumento[data-strumento="lineette"]'], pocket: true, tela: true });
+            giri.push({ servizio: 'brain', primo: false, solo: '.brain-strada', apri: ['.brain-oggetto[data-t="cartella"]'], pocket: true, tela: true });
             // Ogni pagina ha un secondo tentativo, ma SOLO per un blocco
             // (tempo scaduto): un difetto o un errore vero non si ritenta.
             const conRitentativo = async (giro) => {
@@ -457,7 +462,7 @@ async function main() {
                 await unaPagina(giro);
               }
             };
-            const unaPagina = async ({ servizio, primo, solo, apri: apriUno, pocket, dest, aspetta, cestino }) => {
+            const unaPagina = async ({ servizio, primo, solo, apri: apriUno, pocket, dest, aspetta, cestino, tela }) => {
               const apri = apriUno && [].concat(apriUno);
               let indirizzo = servizio === 'home' ? `${base}/` : `${base}/app/?servizio=${servizio}`;
               // Stato dichiarato: memoria vuota, poi solo ciò che la matrice dice.
@@ -484,6 +489,14 @@ async function main() {
                   // Alla pagina dopo torna vivo da solo: risalvare un file
                   // identico a uno cestinato lo rimette (fase 5a).
                   if (${Boolean(cestino)}) await lib.cestinaAsset(ids[4]);
+                  // La tela con una cartella (i primi due) e un file fuori.
+                  if (${Boolean(tela)}) {
+                    const br = await import('/src/engine/brain.js');
+                    const ca = await import('/src/engine/cartelle.js');
+                    const tavola = (await lib.listMoodboards())[0] || (await lib.createMoodboard('Brain'));
+                    const fuori = ids.slice(0, 3).map((id, i) => br.nuovoAsset({ assetId: id, x: i * 170, y: 0 }));
+                    await lib.saveBrain(tavola.id, ca.posaSu(fuori, fuori[0].id, fuori[1].id, { nome: 'Cartella di prova' }).items);
+                  }
                   return ids;
                 })()`);
                 if (dest) indirizzo = `${base}/app/?asset=${ids[0]}&dest=${dest}`;

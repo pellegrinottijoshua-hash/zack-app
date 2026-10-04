@@ -98,6 +98,23 @@ sfratto, §5 di RIPRENDI-QUI).
 10. **Il ripiego di un `.md` è il segno della nota**, non la cartella: dalla
     5c la cartella vorrà dire cartella.
 
+### Prese in 5c (2026-10-04)
+
+11. **La cartella è un campo, come il cestino**: ogni oggetto può avere
+    `in` (l'id della cartella); la tela resta una lista piatta, quindi
+    salvataggio, annulla e pacco non cambiano. Un livello è un filtro.
+12. **Togliere una cartella dalla tela** (sulla pool, o Backspace) toglie
+    anche quello che tiene — dalla tela, non dall'archivio: i file tornano
+    nella pool.
+13. **Colore e faccia si danno toccando**, come la freccia: si sceglie nelle
+    lineette, poi si toccano gli oggetti; Esc finisce. La faccia del cast è
+    dell'oggetto sulla tela (`o.icona`), non del file: le icone documento
+    della scheda restano sul file.
+14. **Si esce dalla strada** in alto a sinistra: il tocco su una tappa ci
+    torna, un file posato su una tappa ci sale. Il nome della cartella
+    aperta si scrive lì.
+15. **Una cartella non si scioglie da sola**, nemmeno vuota: la si toglie.
+
 ## 4. Le fette
 
 **5a — l'archivio e il cestino** (questa sessione, 4 compiti):

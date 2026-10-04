@@ -68,8 +68,10 @@ import {
 } from './lib/conto.js';
 import { prezzoVideo, LIMITI_IMMAGINI, RUOLI_VIDEO, immaginiVideoStorte } from './engine/listinoVideo.js';
 import Muro from './components/Muro.jsx';
-import { nuovoAsset, nuovoCerchio, prossimoPosto, daNota, noteInFile } from './engine/brain.js';
+import { nuovoAsset, nuovoCerchio, daNota, noteInFile } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
+import { aggiungi, livello, livelloValido, suLivello } from './engine/cartelle.js';
+import Lineette from './components/Lineette.jsx';
 import { leggiDescrizione } from './engine/dizionarioVoce.js';
 import { NEUTRA, fondiRicetta, getRecipe } from './engine/sound.js';
 import { famiglia, genera, suRitmo, SR } from './engine/synth.js';
@@ -376,6 +378,20 @@ export default function App() {
    * sono un comando di troppo.
    */
   const [collegaBrain, setCollegaBrain] = useState(null);
+  /**
+   * La cartella aperta in Brain (5c), `null` = la tela di fuori. Sta qui per
+   * la stessa ragione di `collegaBrain`: il `+` e il riordino sono
+   * dell'impianto, e devono sapere in che livello mettere le cose. Letta
+   * sempre attraverso `livelloValido`: una cartella tolta (o annullata) ti
+   * rimette fuori invece di lasciarti dentro il nulla.
+   */
+  const [cartellaBrain, setCartellaBrain] = useState(null);
+  /**
+   * Il colore o la faccia scelti nelle tre lineette (5c), da dare agli
+   * oggetti che si toccano: `{ colore }`, `{ icona }` o `null`. Come la
+   * freccia, è un gesto aperto — e i due non stanno accesi insieme.
+   */
+  const [tintaBrain, setTintaBrain] = useState(null);
 
   /** La frase scritta in basso nel Vocale: da lì il tasto ricava i filtri. */
   const [descrizioneVoce, setDescrizioneVoce] = useState('');
@@ -1555,7 +1571,10 @@ export default function App() {
     setBusy('foto');
     try {
       const nome = library.moodboards.find((m) => m.id === telaId)?.name || 'Brain';
-      const scatto = await fotografaTela(tela, library.assets, nome);
+      // Si fotografa il livello che si guarda (5c): tutti i livelli insieme
+      // sarebbero file uno sopra l'altro, ognuno alle coordinate della sua
+      // cartella.
+      const scatto = await fotografaTela(livello(tela, livelloValido(tela, cartellaBrain)), library.assets, nome);
       if (!scatto) {
         setNotice(t('brain.fotoVuota'));
         return;
@@ -2069,10 +2088,14 @@ export default function App() {
     return input.click();
   }
 
-  /** Un asset già in libreria, messo sulla tela dove c'è posto. */
-  async function metiSullaTela(asset) {
+  /**
+   * Un asset già in libreria, messo sulla tela dove c'è posto — nella
+   * cartella aperta, se ce n'è una (5c). Chi arriva da un altro servizio
+   * passa `null`: il file deve vedersi sulla tela di fuori.
+   */
+  async function metiSullaTela(asset, dove = livelloValido(tela, cartellaBrain)) {
     setSopraLaTela(null);
-    await cambiaTela([...tela, nuovoAsset({ assetId: asset.id, ...prossimoPosto(tela) })]);
+    await cambiaTela(aggiungi(tela, nuovoAsset({ assetId: asset.id }), dove));
   }
 
   /**
@@ -2112,7 +2135,7 @@ export default function App() {
     const due = (n) => String(n).padStart(2, '0');
     const nome = `${t('brain.notaFile')} ${due(ora.getHours())}.${due(ora.getMinutes())}.${due(ora.getSeconds())}`;
     const asset = await library.save(new Blob([''], { type: 'text/markdown' }), { name: nome, kind: 'md' });
-    await cambiaTela([...tela, nuovoAsset({ assetId: asset.id, ...prossimoPosto(tela) })]);
+    await cambiaTela(aggiungi(tela, nuovoAsset({ assetId: asset.id }), livelloValido(tela, cartellaBrain)));
     brainRef.current?.apri(asset);
   }
 
@@ -2193,7 +2216,8 @@ export default function App() {
     if (dest === 'brain') {
       if (telaId) {
         apriServizio('brain');
-        if (!tela.some((o) => o.assetId === asset.id)) await metiSullaTela(asset);
+        if (!tela.some((o) => o.assetId === asset.id)) await metiSullaTela(asset, null);
+        setCartellaBrain(null);
         return;
       }
       // La tela non è ancora aperta: la si apre QUI, con il file già dentro.
@@ -2203,7 +2227,7 @@ export default function App() {
       const letta = await leggiTela(prima.id);
       const conFile = letta.some((o) => o.assetId === asset.id)
         ? letta
-        : [...letta, nuovoAsset({ assetId: asset.id, ...prossimoPosto(letta) })];
+        : aggiungi(letta, nuovoAsset({ assetId: asset.id }), null);
       await library.saveBrain(prima.id, conFile);
       setTelaId(prima.id);
       setTela(conFile);
@@ -2415,24 +2439,6 @@ export default function App() {
    */
   const avanzatiBrain = (
     <Advanced id="brain">
-      {/* Il riordino (fase 5b): era il tasto Zack di Brain, che è uscito
-          (B1). Le regole sono quelle del descrittore — una lista sola — e
-          deterministiche: ripremere non muove più niente. */}
-      <div className="field brain-riordino">
-        <span>{t('brain.riordina.title')}</span>
-        <div>
-          {getDescrittore('brain').tasto.gruppi[0].opzioni.map((r) => (
-            <button
-              key={r.id}
-              className="btn ghost"
-              disabled={tela.filter((o) => o.t !== 'freccia').length < 2}
-              onClick={() => cambiaTela(riordina(tela, r.id))}
-            >
-              {t(r.label)}
-            </button>
-          ))}
-        </div>
-      </div>
       <div className="field">
         <button className="btn ghost" disabled={tela.length === 0} onClick={faiPacco}>
           {t('brain.pacco')}
@@ -2611,6 +2617,10 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                  nell'impianto, e il suo stato con lui. */
               collega={collegaBrain}
               onCollega={setCollegaBrain}
+              dentro={livelloValido(tela, cartellaBrain)}
+              onDentro={setCartellaBrain}
+              tinta={tintaBrain}
+              onTinta={setTintaBrain}
             />
           ) : tool === 'vocale' ? (
             <VoceLab
@@ -3138,9 +3148,9 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                 if (quale === 'nota') {
                   return nuovaNotaFile().catch(() => setError(t('engine.error.body')));
                 }
-                // `prossimoPosto` sa dove c'è spazio: due gruppi nati insieme
+                // `aggiungi` sa dove c'è spazio: due gruppi nati insieme
                 // non devono nascere uno sopra l'altro.
-                return cambiaTela([...tela, nuovoCerchio({ ...prossimoPosto(tela) })]);
+                return cambiaTela(aggiungi(tela, nuovoCerchio({}), livelloValido(tela, cartellaBrain)));
               }}
               /* Gli avanzati, quando il cerchio li apre. Lo stesso contenuto
                  della colonna: non una seconda copia, la stessa. */
@@ -3151,6 +3161,33 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                     tuttiSulPiano={library.assets.length > 0}
                     usage={library.usage}
                     onScegli={metiSullaTela}
+                    onChiudi={() => setSopraLaTela(null)}
+                  />
+                ) : sopraLaTela === 'lineette' ? (
+                  <Lineette
+                    tinta={tintaBrain}
+                    quanti={livello(tela, livelloValido(tela, cartellaBrain)).filter((o) => o.t !== 'freccia').length}
+                    onFreccia={() => {
+                      setSopraLaTela(null);
+                      setTintaBrain(null);
+                      setCollegaBrain({ da: null });
+                    }}
+                    onGruppo={() => {
+                      setSopraLaTela(null);
+                      cambiaTela(aggiungi(tela, nuovoCerchio({}), livelloValido(tela, cartellaBrain)));
+                    }}
+                    onTinta={(scelta) => {
+                      setSopraLaTela(null);
+                      setCollegaBrain(null);
+                      setTintaBrain(scelta);
+                    }}
+                    regole={getDescrittore('brain').tasto.gruppi[0].opzioni}
+                    onRiordina={(regola) => {
+                      setSopraLaTela(null);
+                      // Solo il livello che si guarda: una cartella aperta non
+                      // rimescola la tela di fuori.
+                      cambiaTela(suLivello(tela, livelloValido(tela, cartellaBrain), (qui) => riordina(qui, regola)));
+                    }}
                     onChiudi={() => setSopraLaTela(null)}
                   />
                 ) : sopraLaTela === 'cestino' ? (
@@ -3334,6 +3371,16 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   indietro: undoResult,
                   avanti: redoResult,
                   freccia: () => setCollegaBrain((v) => (v ? null : { da: null })),
+                  /* Le tre lineette: con un gesto aperto (freccia o tinta) il
+                     cerchio lo chiude, come ripremere la freccia lo chiudeva. */
+                  lineette: () => {
+                    if (collegaBrain || tintaBrain) {
+                      setCollegaBrain(null);
+                      setTintaBrain(null);
+                      return;
+                    }
+                    setSopraLaTela((v) => (v === 'lineette' ? null : 'lineette'));
+                  },
                   riascolta: voce.riascolta,
                   unAltro: () => setEffetto((e) => ({ ...e, seme: e.seme + 1 })),
                   ritmo: () => (effettiAudio.recording ? effettiAudio.stop() : effettiAudio.start()),
@@ -3373,6 +3420,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   erase: brushOpen && modoPennello === 'erase',
                   penna: brushOpen && modoPennello !== 'righello',
                   freccia: Boolean(collegaBrain),
+                  lineette: sopraLaTela === 'lineette' || Boolean(collegaBrain) || Boolean(tintaBrain),
                   ritmo: effettiAudio.recording,
                   tutorial: sopraLaTela === 'tutorial',
                   [modoDisegno]: isEditor,
