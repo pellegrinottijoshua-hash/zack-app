@@ -649,3 +649,28 @@ le moodboard della libreria vecchia restano nei dati senza una porta.
 
 **La fase 5 è chiusa.** Prossima: la 6 (Voce) della
 [scaletta](2026-09-15-scaletta.md), da tagliare in fette come la 5.
+
+## ▶️ PROSSIMA SESSIONE — fase 6, la Voce (ElevenLabs)
+
+Stato al 2026-10-04: `main` = tutto pubblicato fino alla 5d (`2912579`). La
+fase 5 (Brain, la libreria) è chiusa.
+
+Spec pronta: [`superpowers/specs/2026-10-04-voce-design.md`](superpowers/specs/2026-10-04-voce-design.md).
+Quattro fette: **6a** leggi questo · **6b** le voci (con il consenso
+registrato) · **6c** voce su voce, e dentro un video · **6d** doppiaggio e
+trascrivi.
+
+**Si comincia chiedendo le 4 domande del §3 della spec** — la prima è il
+piano ElevenLabs, una spesa fissa nuova che decide il committente. Poi la
+fetta **6a**. Nessuna chiamata vera a ElevenLabs senza il suo ok (costa).
+
+Lasciato indietro dalla fase 5, da fare quando c'è tempo: lo script di
+raggiungibilità **completo** (in sessione è stato fatto solo `--rapido` a
+390×844 e 1280×800; il giro intero supera il tetto di tempo — va lanciato a
+mano, coi due server accesi, vedi l'intestazione dello script).
+
+Frase da incollare in una sessione nuova:
+
+```
+Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 6a.
+```
