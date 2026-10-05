@@ -2512,7 +2512,9 @@ export default function App() {
       return;
     }
     if (dest === 'scontorna') return assetAction('cutout', asset);
-    if (dest === 'vettorializza') return assetAction('vector', asset);
+    // Un SVG posato sul Vettoriale si apre nell'editor: tracciarlo di nuovo
+    // non ha senso, e la tela restava vuota (trovato nella 8c).
+    if (dest === 'vettorializza') return asset.kind === 'svg' ? openWorkInEditor(asset) : assetAction('vector', asset);
     if (dest === 'immagine') {
       setReferences((prev) =>
         prev.some((r) => r.assetId === asset.id)

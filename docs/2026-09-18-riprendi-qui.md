@@ -885,3 +885,27 @@ Minori:
 ```
 Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 8c.
 ```
+
+## ▶️ 2026-10-05 — 8c FATTA: il telefono e la chiusura. FASE 8 CHIUSA
+
+- **Telefono (misurato a 375 px):**
+  - tocca un punto, trascinalo, «Togli» lo toglie;
+  - niente maniglie e niente «Liscio» sotto i 768 px.
+- **Trovati provando e corretti:**
+  - il livello dei nodi ora sta esattamente sopra la tela (`ospite`) e taglia ciò che ne esce. Prima la linea finiva sopra i cerchi accanto;
+  - coi nodi aperti il riquadro di svgedit si nasconde (`.con-nodi #selectorParentGroup`). Le sue maniglie, che ridimensionano la forma intera, stavano sotto il dito, e sul desktop non seguiva il trascinamento: un minore della 8b chiuso;
+  - un SVG mandato al Vettoriale dal pocket si apre nell'editor. Prima la tela restava vuota.
+- **Tutorial:** cinque passi, il quarto sono i nodi (dito e tastiera).
+- **Script di raggiungibilità:**
+  - giro dei nodi: un SVG di prova, un clic vero via CDP (`tocca`), il cerchio dei nodi, misura della striscia;
+  - giro del tutorial;
+  - entrambi solo a muro spento, perché a muro acceso, senza entrare, il Vettoriale non c'è;
+  - due blocchi di fila ora dicono quale pagina.
+- **Misure:** `--rapido` verde a 390×844 (112 pagine, 1617 comandi) e a 1280×800 (112 pagine, 1622 comandi). 1000 prove verdi, build ok.
+
+Minori:
+- Sul telefono la tela (1200 px) si vede in parte e va scorsa col dito fuori dai punti. Lo zoom resta quello dell'editor (spec §2.4).
+- Il cerchio «annulla» del vettoriale disfa il tracciamento, non i disegni: da decidere (vedi 8b).
+- Entrando nei nodi la tela scende (la striscia): ~60 px sul desktop, ~150 sul telefono.
+
+**Prossima:** la fase 6 resta da completare (6d e l'accensione col piano a pagamento), oppure la fase 9 della scaletta.

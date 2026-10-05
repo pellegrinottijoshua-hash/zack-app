@@ -394,7 +394,7 @@ const SvgEditor = forwardRef(function SvgEditor(
   }));
 
   return (
-    <div className="editor-wrap">
+    <div className={nodi ? 'editor-wrap con-nodi' : 'editor-wrap'}>
       {/* La barra degli strumenti non e' piu' qui.
           Erano otto PAROLE sopra la tela; il 2026-09-09 sono diventate gli
           otto cerchi a sinistra dell'impianto — «il canva vuoto e a fianco una
@@ -414,6 +414,7 @@ const SvgEditor = forwardRef(function SvgEditor(
           key={nodi.id || 'nodi'}
           elemento={nodi}
           canvas={canvasRef.current}
+          ospite={hostRef.current}
           striscia={striscia}
           onAvviso={onAvviso}
           piccolo={typeof window !== 'undefined' && window.innerWidth < 768}

@@ -6700,12 +6700,19 @@ html[data-trascina] [data-bersaglio]:not([data-acceso]) {
 .editor-nodi {
   position: absolute;
   inset: 0;
+  overflow: hidden;
   pointer-events: none;
 }
 .editor-nodi-tela {
   position: absolute;
   inset: 0;
-  overflow: visible;
+  overflow: hidden;
+}
+/* Coi nodi aperti il riquadro di selezione di svgedit si nasconde: non segue
+   i punti mentre si trascinano, e sul telefono le sue maniglie (che
+   ridimensionano la forma intera) stavano sotto il dito accanto ai nodi. */
+.editor-wrap.con-nodi #selectorParentGroup {
+  display: none;
 }
 .editor-nodi-linea {
   fill: none;

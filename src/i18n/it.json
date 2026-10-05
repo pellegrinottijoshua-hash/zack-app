@@ -838,7 +838,7 @@
   },
   "tutorial": {
     "apri": "Come si usa",
-    "titolo": "Il vettoriale in quattro mosse",
+    "titolo": "Il vettoriale in cinque mosse",
     "chiudi": "Ho capito",
     "avanti": "Avanti",
     "indietro": "Indietro",
@@ -846,7 +846,8 @@
     "p1": "La tela è un foglio da disegno, e comincia vuota. Gli strumenti sono i cerchi a sinistra: scegli, penna, matita, linea, rettangolo, ellisse, testo.",
     "p2": "Hai già un'immagine? Premi il `+` in alto a sinistra e portala dentro. Poi il tasto ZACK la trasforma in forme che puoi ingrandire quanto vuoi.",
     "p3": "Nel punto oro — la pallina accanto a ZACK — scegli COME tracciare: colori piatti per i loghi, sfumature per le foto, bianco e nero per i disegni al tratto.",
-    "p4": "Scelto un elemento, il cerchio dei nodi si accende: da lì sposti i punti e le curve. Sotto Avanzati ci sono colori, allineamento e formato di uscita."
+    "p4": "Scelto un tracciato, premi il cerchio dei nodi: trascina i punti e le maniglie. Doppio clic sulla linea aggiunge un punto, Canc lo toglie, Esc finisce. Sul telefono tocchi un punto e lo trascini, e «Togli» lo toglie.",
+    "p5": "Sotto Avanzati ci sono colori, allineamento e formato di uscita. Sbagliato? Cmd+Z annulla, anche dentro i nodi."
   },
   "muro": {
     "abbonati": "Abbonati — 2,99 €/mese",

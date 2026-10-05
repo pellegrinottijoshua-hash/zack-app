@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { t } from '../i18n/index.js';
 
 /**
- * Come si usa il vettoriale, in quattro schermate.
+ * Come si usa il vettoriale, in cinque schermate (i nodi hanno la loro dalla fase 8c).
  *
  * Richiesta del committente il 2026-09-09: *«facciamo in modo che ci sia un
  * tutorial ben visibile in alto a destra che indirizzi chiunque non sa usare
@@ -10,11 +10,11 @@ import { t } from '../i18n/index.js';
  *
  * **Non un video.** Un video va scaricato, non si cerca dentro, e invecchia
  * male: il giorno che un comando si sposta il video mente e nessuno se ne
- * accorge. Quattro frasi che nominano i comandi restano vere finché i comandi
+ * accorge. Cinque frasi che nominano i comandi restano vere finché i comandi
  * si chiamano così — e le loro etichette vengono dallo stesso dizionario dei
  * cerchi, quindi si spostano insieme a loro.
  */
-const PASSI = ['p1', 'p2', 'p3', 'p4'];
+const PASSI = ['p1', 'p2', 'p3', 'p4', 'p5'];
 
 export default function Tutorial({ onChiudi }) {
   const [i, setI] = useState(0);

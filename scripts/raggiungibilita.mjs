@@ -461,6 +461,15 @@ async function main() {
               giri.push({ servizio: 'vocale', primo: false, solo: '.nuova-voce', apri: ['.sc-strumento[data-strumento="nuovaVoce"]'] });
               giri.push({ servizio: 'vocale', primo: false, solo: '.nuova-voce', apri: ['.sc-strumento[data-strumento="nuovaVoce"]', '.nuova-voce-modi .chip:nth-child(2)'] });
             }
+            // I nodi (fase 8c): un SVG con due tracciati aperto nell'editor, il
+            // primo scelto con un clic VERO del mouse (svgedit ascolta il
+            // `mousedown`, un `.click()` non lo sceglie), poi il cerchio dei
+            // nodi. Si misura la striscia con la barra. E il tutorial. Solo a
+            // muro spento: a muro acceso, senza entrare, il Vettoriale non c'è.
+            if (muro === 'spento') {
+              giri.push({ servizio: 'vettorializza', primo: false, solo: '.editor-nodi-posto', svg: true, tocca: '#svgcontent path', apri: ['.sc-strumento[data-strumento="pathedit"]'], aspetta: '.editor-nodi-nodo' });
+              giri.push({ servizio: 'vettorializza', primo: false, solo: '.tutorial', apri: ['.sc-strumento[data-strumento="tutorial"]'] });
+            }
             // Ogni pagina ha un secondo tentativo, ma SOLO per un blocco
             // (tempo scaduto): un difetto o un errore vero non si ritenta.
             const conRitentativo = async (giro) => {
@@ -479,10 +488,16 @@ async function main() {
                   width: w, height: h, deviceScaleFactor: 1, mobile: w < 768,
                 });
                 await cdp('Emulation.setTouchEmulationEnabled', { enabled: w < 768 });
-                await unaPagina(giro);
+                try {
+                  await unaPagina(giro);
+                } catch (e2) {
+                  // Due blocchi di fila: si dice DOVE, non solo «tempo scaduto».
+                  e2.message = `${e2.message} — ${muro} · ${saldo} · ${w}×${h} · ${giro.servizio}${giro.solo ? ` · ${giro.solo}` : ''}`;
+                  throw e2;
+                }
               }
             };
-            const unaPagina = async ({ servizio, primo, solo, apri: apriUno, pocket, dest, aspetta, cestino, tela }) => {
+            const unaPagina = async ({ servizio, primo, solo, apri: apriUno, pocket, dest, aspetta, cestino, tela, svg, tocca }) => {
               const apri = apriUno && [].concat(apriUno);
               let indirizzo = servizio === 'home' ? `${base}/` : `${base}/app/?servizio=${servizio}`;
               // Stato dichiarato: memoria vuota, poi solo ciò che la matrice dice.
@@ -521,8 +536,38 @@ async function main() {
                 })()`);
                 if (dest) indirizzo = `${base}/app/?asset=${ids[0]}&dest=${dest}`;
               }
+              if (svg) {
+                const id = await valuta(cdp, `(async () => {
+                  const lib = await import('/src/store/library.js');
+                  const testo = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400">'
+                    + '<path d="M60 60 L340 60 L340 340 C200 380 100 300 60 340 Z" fill="#c4a35a"/>'
+                    + '<path d="M150 150 L250 150 L250 250 L150 250 Z" fill="#111111"/></svg>';
+                  const blob = new Blob([testo], { type: 'image/svg+xml' });
+                  return (await lib.saveAsset(blob, { name: 'prova-nodi', kind: 'svg' })).id;
+                })()`);
+                indirizzo = `${base}/app/?asset=${id}&dest=vettorializza`;
+              }
               await carica(cdp, eventi, indirizzo);
               await assesta(cdp);
+              if (tocca) {
+                // Un clic vero, nella parte VISIBILE dell'elemento (sul telefono
+                // la tela si vede solo in parte), vicino al suo angolo.
+                const p = await valuta(cdp, `(async () => {
+                  for (let i = 0; i < 40 && !document.querySelector(${JSON.stringify(tocca)}); i++)
+                    await new Promise((r) => setTimeout(r, 250));
+                  const el = document.querySelector(${JSON.stringify(tocca)});
+                  if (!el) return null;
+                  const r = el.getBoundingClientRect();
+                  const x0 = Math.max(r.left, 0), y0 = Math.max(r.top, 0);
+                  return { x: x0 + Math.min(30, (Math.min(r.right, innerWidth) - x0) / 2),
+                    y: y0 + Math.min(30, (Math.min(r.bottom, innerHeight) - y0) / 2) };
+                })()`);
+                if (!p) throw new Error(`Manca ${tocca} da toccare: ${indirizzo}`);
+                for (const type of ['mousePressed', 'mouseReleased']) {
+                  await cdp('Input.dispatchMouseEvent', { type, x: p.x, y: p.y, button: 'left', clickCount: 1 });
+                }
+                await assesta(cdp);
+              }
               for (const sel of apri || []) {
                 const aperto = await valuta(cdp, `(async () => {
                   for (let i = 0; i < 40 && !document.querySelector(${JSON.stringify(sel)}); i++)

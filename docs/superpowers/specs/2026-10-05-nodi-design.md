@@ -65,6 +65,17 @@ apri/chiudi, angolo/liscio) è quella che il pannello avanzato ha già.
 Il minimo che serve: tocca un nodo per sceglierlo, trascinalo, toglilo. Niente
 maniglie sotto i 768 px (non si prendono). Lo zoom resta quello dell'editor.
 
+Fatto il 2026-10-05, misurato a 375 px: tocca, trascina, «Togli»; niente
+maniglie né «Liscio». In più, trovati provando:
+- il livello dei nodi sta **esattamente sopra la tela** e taglia ciò che ne
+  esce: sul telefono la tela si vede in parte, e la linea finiva sopra i
+  cerchi accanto;
+- coi nodi aperti **il riquadro di svgedit si nasconde**: le sue maniglie
+  (che ridimensionano la forma intera) stavano sotto il dito accanto ai nodi,
+  e sul desktop non seguiva il trascinamento;
+- un SVG mandato al Vettoriale dal pocket ora **si apre nell'editor** (prima
+  veniva preso come immagine da tracciare, e la tela restava vuota).
+
 ## 3. Decisioni prese da me
 
 1. **Un editor dei nodi nostro**, non quello di svgedit: si rompe sulle

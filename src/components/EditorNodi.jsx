@@ -33,8 +33,12 @@ function leggi(el) {
   }
 }
 
-export default function EditorNodi({ elemento, canvas, onEsci, onAvviso, piccolo = false, striscia = null }) {
+export default function EditorNodi({ elemento, canvas, ospite = null, onEsci, onAvviso, piccolo = false, striscia = null }) {
   const [modello, setModello] = useState(() => leggi(elemento));
+  // Il livello sta ESATTAMENTE sopra la tela (`ospite`), e taglia ciò che
+  // ne esce: sul telefono la tela si vede solo in parte, e la linea dei nodi
+  // finiva sopra i cerchi accanto (misurato a 375 px, 8c).
+  const [posto, setPosto] = useState(null);
   const [scelto, setScelto] = useState(null);
   const [, ridisegna] = useState(0);
   const contenitore = useRef(null);
@@ -52,9 +56,12 @@ export default function EditorNodi({ elemento, canvas, onEsci, onAvviso, piccolo
       if (!vivo) return;
       const m = elemento.getScreenCTM?.();
       const r = contenitore.current?.getBoundingClientRect();
-      const firma = m && r ? `${m.a},${m.b},${m.c},${m.d},${m.e},${m.f},${r.left},${r.top}` : '';
+      const o = ospite?.getBoundingClientRect();
+      const w = contenitore.current?.parentElement?.getBoundingClientRect();
+      const firma = m && r ? `${m.a},${m.b},${m.c},${m.d},${m.e},${m.f},${r.left},${r.top},${o?.width},${o?.height}` : '';
       if (firma !== ultimo) {
         ultimo = firma;
+        if (o && w) setPosto({ left: o.left - w.left, top: o.top - w.top, width: o.width, height: o.height });
         ridisegna((x) => x + 1);
       }
       const d = elemento.getAttribute('d');
@@ -71,7 +78,7 @@ export default function EditorNodi({ elemento, canvas, onEsci, onAvviso, piccolo
     return () => {
       vivo = false;
     };
-  }, [elemento]);
+  }, [elemento, ospite]);
 
   /** Scrive il modello nel tracciato, dal vivo (senza cronologia). */
   function scrivi(m) {
@@ -222,7 +229,7 @@ export default function EditorNodi({ elemento, canvas, onEsci, onAvviso, piccolo
   };
 
   return (
-    <div className="editor-nodi" ref={contenitore}>
+    <div className="editor-nodi" ref={contenitore} style={posto ? { ...posto, right: 'auto', bottom: 'auto' } : undefined}>
       {pronto && (
         <svg className="editor-nodi-tela" width="100%" height="100%" onDoubleClick={aggiungiQui}>
           {/* La linea, larga da prendere: doppio clic aggiunge un nodo. */}

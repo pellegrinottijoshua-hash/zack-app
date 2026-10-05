@@ -838,7 +838,7 @@
   },
   "tutorial": {
     "apri": "How to use it",
-    "titolo": "Vector in four moves",
+    "titolo": "Vector in five moves",
     "chiudi": "Got it",
     "avanti": "Next",
     "indietro": "Back",
@@ -846,7 +846,8 @@
     "p1": "The canvas is a drawing sheet, and it starts empty. The tools are the circles on the left: select, pen, pencil, line, rectangle, ellipse, text.",
     "p2": "Already have an image? Press the `+` at the top left and bring it in. Then the ZACK button turns it into shapes you can scale as much as you like.",
     "p3": "In the gold dot — the bead next to ZACK — you choose HOW to trace: flat colours for logos, gradients for photos, black and white for line art.",
-    "p4": "With an element selected, the nodes circle lights up: from there you move points and curves. Under Advanced you get colours, alignment and output format."
+    "p4": "With a path selected, press the nodes circle: drag the points and the handles. Double-click the line to add a point, Delete removes it, Esc finishes. On a phone you tap a point and drag it, and «Remove» removes it.",
+    "p5": "Under Advanced you get colours, alignment and output format. Made a mistake? Cmd+Z undoes, inside the nodes too."
   },
   "muro": {
     "abbonati": "Subscribe — €2.99/month",
