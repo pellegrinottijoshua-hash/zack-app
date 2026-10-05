@@ -4,7 +4,9 @@ import {
   TracerConfig,
   ColorMode,
   PathSimplifyMode,
+  Hierarchical,
 } from 'wasm_vtracer';
+import { pulisciTracciato, coloreChiave, haTrasparenza, rgbDi } from './tracciato.js';
 
 /**
  * Vettorializzazione nel browser: da pixel a forme, senza server.
@@ -36,8 +38,12 @@ export const TRACE_PRESETS = [
  * Meno decimali nei path e più tolleranza sui puntini producono un file
  * sensibilmente più leggero, a parità di aspetto.
  */
-function configFor(preset, clean) {
+function configFor(preset, clean, { ritaglia = false } = {}) {
   const cfg = new TracerConfig();
+  // Col colore chiave (fase 8a) le sagome NON devono sovrapporsi: impilate, il
+  // vuoto è una toppa sopra una base che copre tutto, e togliendo la toppa
+  // ricompare la base intera (misurato: 65.000 pixel dipinti su 65.000).
+  if (ritaglia) cfg.setHierarchical(Hierarchical.Cutout);
   cfg.setPathPrecision(clean ? 2 : 4);
   if (preset === 'bw') {
     cfg.setColorMode(ColorMode.Binary);
@@ -108,22 +114,59 @@ export async function traceToSvg(source, { preset = 'poster', clean = true } = {
   work.width = W;
   work.height = H;
   const wctx = work.getContext('2d', { willReadFrequently: true });
-  // Fondo bianco: VTracer legge l'alfa come colore, e senza questo la
-  // trasparenza verrebbe tracciata come una macchia nera.
-  wctx.fillStyle = '#ffffff';
-  wctx.fillRect(0, 0, W, H);
   wctx.drawImage(full, box.x, box.y, box.w, box.h, 0, 0, W, H);
   bitmap.close?.();
 
-  const rgba = new Uint8Array(wctx.getImageData(0, 0, W, H).data.buffer);
+  /*
+   * La trasparenza. VTracer legge l'alfa come colore: senza un fondo, il
+   * vuoto diventa una macchia nera. Fino alla fase 8 il fondo era bianco, e
+   * il bianco usciva come una sagoma che copriva la tela — dove cliccavi
+   * nell'editor, prendevi lui (spec nodi §1).
+   *
+   * Ora, per i preset a colori, il vuoto si dipinge con un colore CHIAVE che
+   * nel disegno non c'è, e dopo si tolgono i tracciati di quel colore
+   * (`pulisciTracciato({ fondo })`). I bordi semitrasparenti si decidono a
+   * metà (alfa 128): mescolati col colore chiave lascerebbero frange colorate
+   * attorno al logo. Il «bianco e nero» resta sul bianco: binarizzato, il
+   * colore chiave diventerebbe nero.
+   */
+  const immagine = wctx.getImageData(0, 0, W, H);
+  const px = immagine.data;
+  const binario = preset === 'bw';
+  const fondo = binario || !haTrasparenza(px) ? null : coloreChiave(px);
+  const [fr, fg, fb] = fondo ? rgbDi(fondo) : [255, 255, 255];
+  for (let i = 0; i < px.length; i += 4) {
+    const a = px[i + 3];
+    if (fondo) {
+      if (a < 128) {
+        px[i] = fr;
+        px[i + 1] = fg;
+        px[i + 2] = fb;
+      }
+    } else if (a < 255) {
+      // Sul bianco, come prima: si mescola.
+      const k = a / 255;
+      px[i] = Math.round(px[i] * k + 255 * (1 - k));
+      px[i + 1] = Math.round(px[i + 1] * k + 255 * (1 - k));
+      px[i + 2] = Math.round(px[i + 2] * k + 255 * (1 - k));
+    }
+    px[i + 3] = 255;
+  }
+
+  const rgba = new Uint8Array(px.buffer);
 
   let svg;
-  const cfg = configFor(preset, clean);
+  const cfg = configFor(preset, clean, { ritaglia: Boolean(fondo) });
   try {
     svg = convertImageToSvg(rgba, W, H, cfg);
   } finally {
     cfg.free?.();
   }
+
+  // Il tracciato si pulisce per l'editor dei nodi (fase 8a): niente
+  // `translate`, niente fondo bianco cliccabile, lati dritti di nuovo dritti.
+  // Prima di contare: un disegno che era SOLO fondo è un tracciato vuoto.
+  svg = pulisciTracciato(svg, { fondo }).svg;
 
   const paths = (svg.match(/<path/g) || []).length;
   if (paths === 0) {
