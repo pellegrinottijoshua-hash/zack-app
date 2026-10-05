@@ -1042,5 +1042,18 @@
       "soloAudio": "This browser can't rebuild the video: here's the changed voice, to put back into the video in CapCut.",
       "ascolta": "The changed voice"
     }
+  },
+  "nodi": {
+    "barra": "Nodes",
+    "aggiungi": "Add",
+    "togli": "Remove",
+    "curvaDritto": "Curve or straight",
+    "liscio": "Smooth",
+    "apriChiudi": "Open or close",
+    "fine": "Done",
+    "aiuto": "Drag a point or a handle. Double-click the line to add a point. Arrows to move (Shift: by 10), Delete to remove, Esc to finish.",
+    "aiutoDito": "Tap a point and drag it. “Remove” removes it.",
+    "ultimo": "This is the shape's last point: to remove it, leave nodes and throw it away.",
+    "archi": "This shape has arcs, and its nodes can't be edited yet. Convert it to a path or redraw it with the pen."
   }
 }

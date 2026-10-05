@@ -6689,3 +6689,88 @@ html[data-trascina] [data-bersaglio]:not([data-acceso]) {
   font-size: 12px;
   color: var(--inchiostro-2);
 }
+
+/* ─── L'editor dei nodi (fase 8b) ───────────────────────────────────────
+   Un livello sopra la tela di svgedit, con la sua stessa trasformazione:
+   lascia passare i clic (per scegliere un altro tracciato) tranne su punti,
+   maniglie e linea. Punti di 12 px, bersagli di 24. */
+.editor-wrap {
+  position: relative;
+}
+.editor-nodi {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.editor-nodi-tela {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+.editor-nodi-linea {
+  fill: none;
+  stroke: var(--oro);
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+.editor-nodi-presa {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: stroke;
+  cursor: copy;
+}
+.editor-nodi-braccio {
+  stroke: var(--oro);
+  stroke-width: 1;
+  pointer-events: none;
+}
+.editor-nodi-nodo {
+  fill: #ffffff;
+  stroke: #111111;
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+.editor-nodi-nodo[data-liscio='si'] {
+  stroke: var(--oro);
+}
+.editor-nodi-nodo[data-scelto='si'] {
+  fill: var(--oro);
+  stroke: #111111;
+  stroke-width: 2;
+}
+.editor-nodi-maniglia {
+  fill: var(--oro);
+  stroke: #111111;
+  stroke-width: 1;
+  pointer-events: none;
+}
+.editor-nodi-bersaglio {
+  fill: transparent;
+  pointer-events: all;
+  cursor: grab;
+  touch-action: none;
+}
+.editor-nodi-bersaglio:active {
+  cursor: grabbing;
+}
+.editor-nodi-striscia {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 12px;
+}
+.editor-nodi-barra {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+.editor-nodi-aiuto {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--inchiostro-2);
+  font-size: 12px;
+  text-align: center;
+}

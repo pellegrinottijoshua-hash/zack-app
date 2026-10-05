@@ -847,3 +847,41 @@ Misure nel browser:
 ```
 Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 8b.
 ```
+
+## ▶️ 2026-10-05 — 8b FATTA: l'editor dei nodi sul desktop
+
+- `components/EditorNodi.jsx`: un livello nostro sopra la tela di svgedit, con la stessa `getScreenCTM`.
+  - **Al dito e al mouse:** punti di 12 px con bersagli di 24; maniglie solo sul nodo scelto e sui vicini.
+  - **Trascinare:** riscrive `d` dal vivo.
+  - **Annulla:** il rilascio entra nella cronologia di svgedit (`changeSelectedAttribute('d')`, con il `d` vecchio rimesso prima).
+  - **Tastiera e doppio clic:**
+    - il doppio clic ovunque sul livello aggiunge un nodo (sul pallino di un nodo no);
+    - frecce (Maiusc di 10) e Canc lavorano sul nodo, Esc esce;
+    - questi tasti sono presi in cattura, altrimenti le scorciatoie dell'editor spostavano o cancellavano la forma INTERA.
+- La barra (aggiungi, togli, curva/dritto, liscio, apri/chiudi, fine) e l'aiuto stanno in una **striscia sopra la tela**: sopra la tela coprivano i nodi in alto (misurato: il primo nodo del logo stava sotto «Aggiungi»).
+- `SvgEditor`:
+  - il modo `pathedit` apre il nostro livello, non quello di svgedit;
+  - un altro tracciato cliccato lo prende, un clic nel vuoto chiude;
+  - un tracciato con archi lo dice.
+- **Corretto un difetto vecchio:** Cmd+Z dell'editor chiamava `canvas.undo()`, che non esiste (la cronologia è in `undoMgr`). L'annulla da tastiera del vettoriale non aveva mai funzionato. Ora annulla e rifai tengono aperti i nodi sul tracciato.
+- **Provato nel browser sul marchio JAYL tracciato:**
+  - trascina → `d` cambia;
+  - Cmd+Z → torna identico, nodi allineati;
+  - Maiusc+Cmd+Z → rifatto;
+  - Maiusc+→ sposta solo quel nodo di 10;
+  - Canc → un nodo in meno, la forma resta;
+  - doppio clic → un nodo in più;
+  - i sei bottoni della barra, Esc.
+
+1000 prove verdi, build ok.
+
+Minori:
+- Il cerchio «annulla» del vettoriale disfa il **risultato** (il tracciamento), non i disegni: col disegno aperto svuota la tela. C'era già; da decidere se il cerchio debba chiamare l'annulla dell'editor.
+- Entrando nei nodi la tela scende di ~60 px (la striscia).
+- Il riquadro di selezione di svgedit non segue la forma mentre si trascinano i nodi.
+
+**Prossima: la 8c** (il telefono e la chiusura: il minimo al dito, lo script di raggiungibilità, il tutorial).
+
+```
+Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 8c.
+```

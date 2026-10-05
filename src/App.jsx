@@ -3130,6 +3130,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
               onModo={setModoDisegno}
               onSelection={setSelCount}
               onRefuseNodes={() => setNotice(t('nodes.needPath'))}
+              onAvviso={setNotice}
             />
           ) : brushOpen && result?.kind === 'png' ? (
             <MaskBrush

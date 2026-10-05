@@ -1,5 +1,7 @@
 import { useEffect, useImperativeHandle, useRef, useState, forwardRef } from 'react';
 import { t } from '../i18n/index.js';
+import EditorNodi from './EditorNodi.jsx';
+import { leggiPercorso } from '../engine/nodi.js';
 
 /** Misura della tavola da disegno, in pixel del documento. */
 const CANVAS_W = 1200;
@@ -31,13 +33,23 @@ const TOOLS = [
  * in errore il modulo interno della libreria ("reading 'elem' of null") e da
  * lì l'editor resta bloccato: nessun cambio di strumento funziona più.
  */
+/** Un tracciato che il modello dei nodi sa leggere (gli archi no). */
+function modificabile(el) {
+  try {
+    leggiPercorso(el?.getAttribute?.('d'));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function canEditNodes(canvas) {
   const els = canvas?.getSelectedElements?.().filter(Boolean) || [];
   return els.length === 1 && els[0].tagName.toLowerCase() === 'path';
 }
 
 const SvgEditor = forwardRef(function SvgEditor(
-  { onReady, onSelection, onRefuseNodes, modo, onModo },
+  { onReady, onSelection, onRefuseNodes, onAvviso, modo, onModo },
   ref,
 ) {
   const hostRef = useRef(null);
@@ -45,6 +57,30 @@ const SvgEditor = forwardRef(function SvgEditor(
   const [mode, setMode] = useState('select');
   const [error, setError] = useState(null);
   const [nodesReady, setNodesReady] = useState(false);
+  /** Il tracciato aperto nell'editor dei nodi nostro (8b), o `null`. */
+  const [nodi, setNodi] = useState(null);
+  const nodiRef = useRef(null);
+  nodiRef.current = nodi;
+  // Vero mentre si annulla o si rifà: svgedit svuota la selezione, e coi nodi
+  // aperti non è un «clic nel vuoto» — i nodi restano sul loro tracciato.
+  const inStoria = useRef(false);
+
+  /** Annulla o rifai, tenendo aperti i nodi sul tracciato se c'è ancora. */
+  function storia(verso) {
+    const c = canvasRef.current;
+    if (!c?.undoMgr) return;
+    const aperto = nodiRef.current;
+    inStoria.current = true;
+    try {
+      c.undoMgr[verso]();
+      if (aperto?.isConnected) c.selectOnly?.([aperto]);
+    } finally {
+      inStoria.current = false;
+    }
+  }
+
+  // La striscia sopra la tela dove l'editor dei nodi mette la sua barra.
+  const [striscia, setStriscia] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,6 +125,22 @@ const SvgEditor = forwardRef(function SvgEditor(
           const list = (elems || []).filter(Boolean);
           onSelection?.(list.length);
           setNodesReady(canEditNodes(canvas));
+          /*
+           * Con l'editor dei nodi aperto (8b): un altro tracciato scelto con un
+           * clic lo prende al posto del primo; un clic nel vuoto o su una forma
+           * che non è un tracciato chiude i nodi, invece di lasciarli sospesi
+           * su qualcosa che non è più scelto.
+           */
+          const aperto = nodiRef.current;
+          if (!aperto || inStoria.current) return;
+          if (list.length === 1 && list[0] === aperto) return;
+          if (list.length === 1 && list[0].tagName.toLowerCase() === 'path' && modificabile(list[0])) {
+            setNodi(list[0]);
+            return;
+          }
+          setNodi(null);
+          setMode('select');
+          onModo?.('select');
         });
 
         onReady?.(canvas);
@@ -113,26 +165,34 @@ const SvgEditor = forwardRef(function SvgEditor(
   const applyMode = (m) => {
     const c = canvasRef.current;
     if (!c) return false;
+    /*
+     * I nodi (fase 8b) sono NOSTRI: svgedit resta in «seleziona», e sopra la
+     * tela si apre `EditorNodi`. La modalità nodi della libreria metteva le
+     * maniglie fuori posto sui tracciati con `transform` e mostrava un
+     * sottopercorso alla volta (spec nodi §1).
+     */
     if (m === 'pathedit') {
       if (!canEditNodes(c)) {
         onRefuseNodes?.();
         return false;
       }
-      // `toEditMode` è ciò che consegna davvero il tracciato all'editor di
-      // nodi e ne disegna le maniglie. Esiste nel core ma NON è dichiarato nei
-      // tipi: lo chiamiamo solo se c'è, e se un domani sparisce il pulsante si
-      // disabilita invece di entrare in una modalità che non mostra nulla.
-      const toEdit = c.pathActions?.toEditMode;
-      if (typeof toEdit !== 'function') {
-        onRefuseNodes?.();
+      const el = c.getSelectedElements().filter(Boolean)[0];
+      if (!modificabile(el)) {
+        onAvviso?.(t('nodi.archi'));
         return false;
       }
+      try {
+        c.setMode('select');
+      } catch {
+        /* resta com'era */
+      }
+      setNodi(el);
+      setMode('pathedit');
+      return true;
     }
     try {
+      setNodi(null);
       c.setMode(m);
-      if (m === 'pathedit') {
-        c.pathActions.toEditMode(c.getSelectedElements().filter(Boolean)[0]);
-      }
       setMode(m);
       return true;
     } catch (err) {
@@ -176,8 +236,14 @@ const SvgEditor = forwardRef(function SvgEditor(
       setMode('select');
       return ok !== false;
     },
-    undo: () => canvasRef.current?.undo(),
-    redo: () => canvasRef.current?.redo(),
+    /*
+     * ⚠️ La cronologia di svgcanvas sta in `undoMgr`: `canvas.undo()` NON
+     * esiste, e questa riga sollevava a ogni Cmd+Z — l'annulla da tastiera
+     * dell'editor non ha mai funzionato (trovato nella fase 8b, provando
+     * l'annulla dei nodi).
+     */
+    undo: () => storia('undo'),
+    redo: () => storia('redo'),
     del: () => canvasRef.current?.deleteSelectedElements(),
     group: () => canvasRef.current?.groupSelectedElements(),
     ungroup: () => canvasRef.current?.ungroupSelectedElement(),
@@ -341,7 +407,22 @@ const SvgEditor = forwardRef(function SvgEditor(
         </div>
       )}
 
+      {nodi && <div className="editor-nodi-posto" ref={setStriscia} />}
       <div className="canvas-host" ref={hostRef} />
+      {nodi && (
+        <EditorNodi
+          key={nodi.id || 'nodi'}
+          elemento={nodi}
+          canvas={canvasRef.current}
+          striscia={striscia}
+          onAvviso={onAvviso}
+          piccolo={typeof window !== 'undefined' && window.innerWidth < 768}
+          onEsci={() => {
+            applyMode('select');
+            onModo?.('select');
+          }}
+        />
+      )}
     </div>
   );
 });
