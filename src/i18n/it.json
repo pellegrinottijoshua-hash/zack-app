@@ -1042,5 +1042,18 @@
       "soloAudio": "Questo browser non sa rimontare il video: ecco la voce cambiata, da rimettere nel video in CapCut.",
       "ascolta": "La voce cambiata"
     }
+  },
+  "nodi": {
+    "barra": "I nodi",
+    "aggiungi": "Aggiungi",
+    "togli": "Togli",
+    "curvaDritto": "Curva o dritto",
+    "liscio": "Liscio",
+    "apriChiudi": "Apri o chiudi",
+    "fine": "Fine",
+    "aiuto": "Trascina un punto o una maniglia. Doppio clic sulla linea aggiunge un punto. Frecce per spostare (Maiusc: di 10), Canc per togliere, Esc per finire.",
+    "aiutoDito": "Tocca un punto e trascinalo. «Togli» lo toglie.",
+    "ultimo": "Questo è l'ultimo punto della forma: per toglierla, esci dai nodi e buttala.",
+    "archi": "Questa forma ha degli archi, e i nodi non si possono ancora modificare. Convertila in tracciato o rifalla con la penna."
   }
 }
