@@ -7,7 +7,7 @@
  */
 
 import { SUPABASE_URL, SUPABASE_CHIAVE_PUBBLICA } from './supabase.js';
-import { VOCE_LEGGI, VOCE_DISEGNA, VOCE_CLONA, VOCE_CAMBIA } from '../engine/listinoVoce.js';
+import { VOCE_LEGGI, VOCE_DISEGNA, VOCE_CLONA, VOCE_CAMBIA, EFFETTO_INVENTA } from '../engine/listinoVoce.js';
 
 /**
  * Dove sta il Worker: **qui**, alla stessa origine del sito.
@@ -303,6 +303,10 @@ export const clonaVoce = ({ nome, consenso, campione }) =>
 
 /** Cancella una voce presso ElevenLabs: `{ ok: true }`, o solleva. */
 export const cancellaVoce = (voce) => chiediVoce('/voce/cancella', { voce });
+
+/** Un effetto sonoro da una descrizione (7c): `{ dati, mime, prezzo, saldo }`. A crediti. */
+export const inventaEffetto = ({ descrizione, durata }) =>
+  chiediVoce('/genera', { servizio: EFFETTO_INVENTA, descrizione, durata });
 
 /** Cambia la voce di un audio (WAV 16 kHz in base64): `{ dati, mime, prezzo, saldo }`. A crediti. */
 export const cambiaVoce = ({ voce, audio }) => chiediVoce('/genera', { servizio: VOCE_CAMBIA, voce, audio });

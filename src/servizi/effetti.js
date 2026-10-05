@@ -26,7 +26,12 @@ export default {
    * stessa forma del menu di Brain — su un piano dove non si porta niente, il
    * `+` chiede cosa mettere, non quale file aprire.
    */
-  accetta: { menu: ['costruisci', 'ritmo'], quanti: 1 },
+  /*
+   * «Dal pacchetto» (fase 7b) per primo: è il modo più rapido di avere un
+   * effetto vero — 153 file CC0, si ascoltano e si prendono. Costruire e
+   * battere un ritmo restano, per quello che il pacchetto non ha.
+   */
+  accetta: { menu: ['pacchetto', 'costruisci', 'ritmo'], quanti: 1 },
 
   tasto: {
     azione: 'suonaEffetto',
@@ -64,5 +69,7 @@ export default {
     { id: 'unAltro', icon: 'fuoco', label: 'sound.altro', quando: 'con-file' },
     { id: 'ritmo', icon: 'wave', label: 'sound.rec', quando: 'con-file' },
     { id: 'salvaEffetto', icon: 'stella', label: 'sound.salva', quando: 'con-file' },
+    // Il pacchetto si riapre da qui anche col piano pieno (7b).
+    { id: 'pacchetto', icon: 'cartella', label: 'effetti.pacchetto.titolo', quando: 'sempre' },
   ],
 };

@@ -68,6 +68,7 @@ import {
   clonaVoce,
   cancellaVoce,
   cambiaVoce,
+  inventaEffetto,
   chiediLavoro,
   scaricaVideo,
   riduciPerVideo,
@@ -75,12 +76,14 @@ import {
 import { prezzoVideo, LIMITI_IMMAGINI, RUOLI_VIDEO, immaginiVideoStorte } from './engine/listinoVideo.js';
 import {
   MAX_CARATTERI, CAMPIONE_MAX_BYTE, MAX_SECONDI_CAMBIO, caratteriDi, letturaNonValida, prezzoLettura, prezzoDisegno,
-  prezzoClonazione, prezzoCambio,
+  prezzoClonazione, prezzoCambio, prezzoEffetto,
 } from './engine/listinoVoce.js';
 import { fileVoce, leggiVoce, nomeVoce, vociDellaLibreria } from './engine/voci.js';
 import { wavDelCampione, wavDaCambiare, base64Di } from './engine/audioVoce.js';
 import { rimontaVideo } from './engine/rimonta.js';
 import NuovaVoce from './components/NuovaVoce.jsx';
+import Pacchetto from './components/Pacchetto.jsx';
+import { nomeEffetto } from './engine/pacchetto.js';
 import Muro from './components/Muro.jsx';
 import { nuovoAsset, nuovoCerchio, daNota, noteInFile } from './engine/brain.js';
 import { riordina } from './engine/riordina.js';
@@ -195,7 +198,7 @@ const predefinitaDi = (id, gruppo) =>
   getDescrittore(id).tasto.gruppi.find((g) => g.id === gruppo).predefinita;
 
 /** I servizi la cui uscita si prende in mano con l'icona output (4a). */
-const USCITE = new Set(['scontorna', 'vettorializza', 'immagine', 'video', 'vocale']);
+const USCITE = new Set(['scontorna', 'vettorializza', 'immagine', 'video', 'vocale', 'effetti']);
 
 export default function App() {
   const [apiState, setApiState] = useState('offline');
@@ -640,7 +643,13 @@ export default function App() {
 
   // Le misure si rifanno a ogni cambio del file o del risultato: un controllo
   // di stampa che descrive il file di prima è peggio di nessun controllo.
-  const measured = result?.blob || file;
+  // Solo le immagini: un risultato audio o video (la voce, il pacchetto di
+  // effetti, un video) non ha pixel da misurare, e `analyze` lo rifiutava
+  // con un errore in console a ogni risultato.
+  // Si escludono solo audio e video DICHIARATI: un file letto dalla libreria
+  // può arrivare col tipo vuoto, e resta da misurare.
+  const misurabile = (b) => (b && !/^(audio|video)\//.test(String(b.type || '')) ? b : null);
+  const measured = misurabile(result?.blob) || misurabile(file);
   useEffect(() => {
     let alive = true;
     setMockup(null);
@@ -1709,6 +1718,7 @@ export default function App() {
    */
   function menuEffetti(quale) {
     setMenuPiu(false);
+    if (quale === 'pacchetto') return setSopraLaTela('pacchetto');
     if (quale === 'ritmo') return effettiAudio.start();
     return setEffettoAperto(true);
   }
@@ -2318,6 +2328,46 @@ export default function App() {
     setNotice(t('sound.save'));
   }
 
+  /**
+   * Un effetto del pacchetto (7b) diventa il risultato: l'icona output lo
+   * porta in Brain o nel pocket, con il nome leggibile.
+   */
+  async function prendiEffetto(e) {
+    setError(null);
+    try {
+      const res = await fetch(`/${e.file}`);
+      if (!res.ok) throw new Error(`effetto ${res.status}`);
+      const blob = await res.blob();
+      pushResult({ url: own(blob), blob, kind: 'mp3', meta: { strategy: 'pacchetto', effetto: e.id, nome: nomeEffetto(e, getLang()) } });
+      setNotice(t('effetti.pacchetto.preso', { nome: nomeEffetto(e, getLang()) }));
+    } catch (err) {
+      console.error(err);
+      setError(t('engine.error.body'));
+    }
+  }
+
+  /** «Inventane uno» (7c): a crediti, con le regole di Immagine. */
+  async function runInventa({ descrizione, durata }) {
+    setError(null);
+    setNotice(null);
+    const prezzo = prezzoEffetto(durata)?.total ?? null;
+    if (prezzo === null) return setNotice(t('effetti.inventa.nonMisurato'));
+    if (crediti < prezzo) return setNotice(t('voce.nuova.saldoCorto'));
+    setBusy(t('effetti.inventa.attendi'));
+    try {
+      const d = await inventaEffetto({ descrizione, durata });
+      aggiornaSaldo(d.saldo);
+      const blob = new Blob([Uint8Array.from(atob(d.dati), (c) => c.charCodeAt(0))], { type: d.mime || 'audio/mpeg' });
+      const nome = descrizione.trim().slice(0, 40);
+      pushResult({ url: own(blob), blob, kind: 'mp3', meta: { strategy: 'inventato', nome } });
+      setNotice(t('effetti.inventa.pronto'));
+    } catch (e) {
+      erroreVoce(e);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   /** Torna ai filtri di prima: il tasto imposta, e si puo' disfare. */
   function annullaFiltriVoce() {
     if (!filtriDiPrima) return;
@@ -2436,7 +2486,8 @@ export default function App() {
     if (gia) return gia;
     const kind = result.kind;
     const asset = await library.save(result.blob, {
-      name: `${kind === 'mp4' ? 'video' : tool}-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}`,
+      // Un effetto del pacchetto (7b) porta il suo nome; gli altri, servizio e ora.
+      name: result.meta?.nome || `${kind === 'mp4' ? 'video' : tool}-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}`,
       kind,
       meta: { fromId: sourceAssetId, op: tool },
     });
@@ -3266,7 +3317,8 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
         {/* L'icona output (fase 4a, §T2): il risultato, da prendere in mano.
             Sta sotto il pocket e non a fianco della tela: lì c'è la colonna
             degli strumenti, e l'uscita va verso la tasca. */}
-        {result?.blob && USCITE.has(tool) && !brushOpen && (tool !== 'vocale' || result.kind === 'mp3' || result.kind === 'webm') && (
+        {result?.blob && USCITE.has(tool) && !brushOpen && (tool !== 'vocale' || result.kind === 'mp3' || result.kind === 'webm') &&
+          (tool !== 'effetti' || ['pacchetto', 'inventato'].includes(result.meta?.strategy)) && (
           <IconaOutput
             url={result.url}
             kind={result.kind}
@@ -3591,6 +3643,14 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                     }}
                     onChiudi={() => setSopraLaTela(null)}
                   />
+                ) : sopraLaTela === 'pacchetto' ? (
+                  <Pacchetto
+                    onPrendi={prendiEffetto}
+                    onChiudi={() => setSopraLaTela(null)}
+                    prezzoInventa={(d) => prezzoEffetto(d)?.total ?? null}
+                    onInventa={runInventa}
+                    busy={busy}
+                  />
                 ) : sopraLaTela === 'nuovaVoce' ? (
                   <NuovaVoce
                     prezzoDisegno={prezzoDisegnoQui}
@@ -3820,6 +3880,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   cestino: () => setSopraLaTela((v) => (v === 'cestino' ? null : 'cestino')),
                   tutorial: () => setSopraLaTela((v) => (v === 'tutorial' ? null : 'tutorial')),
                   nuovaVoce: () => setSopraLaTela((v) => (v === 'nuovaVoce' ? null : 'nuovaVoce')),
+                  pacchetto: () => setSopraLaTela((v) => (v === 'pacchetto' ? null : 'pacchetto')),
                   /*
                    * Gli otto strumenti di disegno: il cerchio accende il modo,
                    * e l'editor lo esegue. Un `id` solo per tutt'e due — quello
@@ -3857,6 +3918,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                   prompts: sopraLaTela === 'prompts',
                   cestino: sopraLaTela === 'cestino',
                   nuovaVoce: sopraLaTela === 'nuovaVoce',
+                  pacchetto: sopraLaTela === 'pacchetto',
                 };
                 /*
                  * Cosa vuol dire «c'e' qualcosa sul piano» cambia col

@@ -761,3 +761,44 @@ Minori e rischi:
 ```
 Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 6d.
 ```
+
+## ✅ 2026-10-05 — FASE 7 (effetti sonori) FATTA: 7a, 7b, 7c
+
+La **fase 6 resta da completare**: la 6d, più l'accensione col piano a
+pagamento (vedi sopra). Il committente è passato alla 7.
+
+Spec: [`superpowers/specs/2026-10-05-effetti-design.md`](superpowers/specs/2026-10-05-effetti-design.md).
+
+Decisioni del committente: raccolte **CC0**, **circa 150** effetti,
+«inventane uno» **costruito ora, spento**; download dei 7 zip Kenney
+autorizzato.
+
+- `7d11d86` 7a — il pacchetto:
+  - **153 effetti CC0** (Kenney) in 8 famiglie;
+  - MP3 mono a 96 kbps, picco a −1,5 dB misurato sull'MP3 vero (due passate, `astats`);
+  - niente varianti sotto i 50 ms;
+  - 1,7 MB in `public/effetti/`, `CREDITI.txt`, catalogo `src/engine/pacchetto.json`;
+  - `scripts/prepara-effetti.mjs` lo rifà da `tmp/kenney/`.
+- `efc90ba` 7b — il pacchetto nello studio:
+  - «dal pacchetto» nel `+` degli Effetti e uno strumento;
+  - famiglie, ricerca in due lingue, ascolta, prendi;
+  - l'icona output porta l'effetto in Brain col suo nome;
+  - corretto: `analyze` girava anche su risultati audio e video (errore in console da 6a e dalla 3).
+- 7c — «inventane uno»:
+  - `effetto-inventa` (ElevenLabs Sound Effects), a durata (1, 2, 5, 10 s);
+  - `MISURA_EFFETTO = null`, 503 prima di addebitare;
+  - la seconda scheda del pannello.
+- Prove e verifiche:
+  - 974 prove verdi, build ok;
+  - script `--rapido` **verde** a 390×844 e 1280×800;
+  - nessun errore in console sui pannelli nuovi.
+
+Minori:
+- Fruscii, vento e natura non sono nel pacchetto: li fa «costruisci».
+- A muro acceso gli Effetti stanno dietro il muro (abbonamento), come il Vocale.
+
+**Prossima: la 8** (vettoriale, i nodi) — oppure la 6d.
+
+```
+Leggi docs/2026-09-18-riprendi-qui.md e fai la fase 8.
+```

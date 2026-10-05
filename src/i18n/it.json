@@ -78,7 +78,8 @@
     "primo": "Primo fotogramma",
     "ultimo": "Ultimo fotogramma",
     "riferimento": "Riferimento",
-    "scrivi": "Scrivi"
+    "scrivi": "Scrivi",
+    "pacchetto": "Dal pacchetto"
   },
   "drop": {
     "title": "Trascina qui un'immagine",
@@ -803,7 +804,37 @@
     }
   },
   "effetti": {
-    "claim": "Costruisci un effetto sonoro da zero. Batti un ritmo con la voce e l’effetto lo segue."
+    "claim": "Costruisci un effetto sonoro da zero. Batti un ritmo con la voce e l’effetto lo segue.",
+    "pacchetto": {
+      "titolo": "Il pacchetto",
+      "tutti": "Tutti",
+      "cerca": "Cerca un effetto (vetro, passi, laser…)",
+      "ascolta": "Ascolta «{nome}»",
+      "prendi": "Prendi",
+      "preso": "«{nome}» è pronto: lo trovi nell'icona in basso, da portare in Brain o nel pocket.",
+      "nessuno": "Nessun effetto con questo nome.",
+      "crediti": "Effetti di Kenney (kenney.nl), licenza CC0: puoi usarli dove vuoi, anche in ciò che vendi.",
+      "famiglia": {
+        "colpi": "Colpi",
+        "passi": "Passi",
+        "interfaccia": "Interfaccia",
+        "oggetti": "Oggetti",
+        "carte": "Carte e dadi",
+        "arcade": "Arcade",
+        "fantascienza": "Fantascienza",
+        "esplosioni": "Esplosioni"
+      }
+    },
+    "inventa": {
+      "titolo": "Inventane uno",
+      "descrizione": "Com'è il suono? Per esempio: un tuono lontano che rotola fra le montagne.",
+      "durata": "Quanto dura",
+      "secondi": "{n} s",
+      "nonMisurato": "Arriva presto: prima misuriamo quanto costa, poi il prezzo compare qui.",
+      "vai": "Inventalo",
+      "attendi": "Sto inventando l'effetto…",
+      "pronto": "L'effetto è pronto: lo trovi nell'icona in basso."
+    }
   },
   "tutorial": {
     "apri": "Come si usa",
