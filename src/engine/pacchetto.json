@@ -1,0 +1,1545 @@
+{
+  "fonte": "Kenney (CC0)",
+  "famiglie": [
+    "colpi",
+    "passi",
+    "interfaccia",
+    "oggetti",
+    "carte",
+    "arcade",
+    "fantascienza",
+    "esplosioni"
+  ],
+  "effetti": [
+    {
+      "id": "colpi-impact-wood-light",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Legno leggero",
+        "en": "Light wood"
+      },
+      "durata": 0.26,
+      "file": "effetti/colpi/colpi-impact-wood-light.mp3"
+    },
+    {
+      "id": "colpi-impact-wood-medium-1",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Legno 1",
+        "en": "Wood 1"
+      },
+      "durata": 0.33,
+      "file": "effetti/colpi/colpi-impact-wood-medium-1.mp3"
+    },
+    {
+      "id": "colpi-impact-wood-medium-2",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Legno 2",
+        "en": "Wood 2"
+      },
+      "durata": 0.33,
+      "file": "effetti/colpi/colpi-impact-wood-medium-2.mp3"
+    },
+    {
+      "id": "colpi-impact-wood-heavy-1",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Legno forte 1",
+        "en": "Heavy wood 1"
+      },
+      "durata": 0.31,
+      "file": "effetti/colpi/colpi-impact-wood-heavy-1.mp3"
+    },
+    {
+      "id": "colpi-impact-wood-heavy-2",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Legno forte 2",
+        "en": "Heavy wood 2"
+      },
+      "durata": 0.31,
+      "file": "effetti/colpi/colpi-impact-wood-heavy-2.mp3"
+    },
+    {
+      "id": "colpi-impact-metal-light",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Metallo leggero",
+        "en": "Light metal"
+      },
+      "durata": 0.37,
+      "file": "effetti/colpi/colpi-impact-metal-light.mp3"
+    },
+    {
+      "id": "colpi-impact-metal-medium-1",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Metallo 1",
+        "en": "Metal 1"
+      },
+      "durata": 0.27,
+      "file": "effetti/colpi/colpi-impact-metal-medium-1.mp3"
+    },
+    {
+      "id": "colpi-impact-metal-medium-2",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Metallo 2",
+        "en": "Metal 2"
+      },
+      "durata": 0.14,
+      "file": "effetti/colpi/colpi-impact-metal-medium-2.mp3"
+    },
+    {
+      "id": "colpi-impact-metal-heavy-1",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Metallo forte 1",
+        "en": "Heavy metal 1"
+      },
+      "durata": 0.16,
+      "file": "effetti/colpi/colpi-impact-metal-heavy-1.mp3"
+    },
+    {
+      "id": "colpi-impact-metal-heavy-2",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Metallo forte 2",
+        "en": "Heavy metal 2"
+      },
+      "durata": 0.36,
+      "file": "effetti/colpi/colpi-impact-metal-heavy-2.mp3"
+    },
+    {
+      "id": "colpi-impact-glass-light",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Vetro leggero",
+        "en": "Light glass"
+      },
+      "durata": 0.23,
+      "file": "effetti/colpi/colpi-impact-glass-light.mp3"
+    },
+    {
+      "id": "colpi-impact-glass-medium-1",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Vetro 1",
+        "en": "Glass 1"
+      },
+      "durata": 0.54,
+      "file": "effetti/colpi/colpi-impact-glass-medium-1.mp3"
+    },
+    {
+      "id": "colpi-impact-glass-medium-2",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Vetro 2",
+        "en": "Glass 2"
+      },
+      "durata": 0.54,
+      "file": "effetti/colpi/colpi-impact-glass-medium-2.mp3"
+    },
+    {
+      "id": "colpi-impact-glass-heavy-1",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Vetro forte 1",
+        "en": "Heavy glass 1"
+      },
+      "durata": 0.24,
+      "file": "effetti/colpi/colpi-impact-glass-heavy-1.mp3"
+    },
+    {
+      "id": "colpi-impact-glass-heavy-2",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Vetro forte 2",
+        "en": "Heavy glass 2"
+      },
+      "durata": 0.43,
+      "file": "effetti/colpi/colpi-impact-glass-heavy-2.mp3"
+    },
+    {
+      "id": "colpi-impact-plate-light",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Piatto leggero",
+        "en": "Light plate"
+      },
+      "durata": 0.54,
+      "file": "effetti/colpi/colpi-impact-plate-light.mp3"
+    },
+    {
+      "id": "colpi-impact-plate-medium",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Piatto",
+        "en": "Plate"
+      },
+      "durata": 0.61,
+      "file": "effetti/colpi/colpi-impact-plate-medium.mp3"
+    },
+    {
+      "id": "colpi-impact-plate-heavy",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Piatto forte",
+        "en": "Heavy plate"
+      },
+      "durata": 0.49,
+      "file": "effetti/colpi/colpi-impact-plate-heavy.mp3"
+    },
+    {
+      "id": "colpi-impact-punch-medium-1",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Pugno 1",
+        "en": "Punch 1"
+      },
+      "durata": 0.43,
+      "file": "effetti/colpi/colpi-impact-punch-medium-1.mp3"
+    },
+    {
+      "id": "colpi-impact-punch-medium-2",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Pugno 2",
+        "en": "Punch 2"
+      },
+      "durata": 0.4,
+      "file": "effetti/colpi/colpi-impact-punch-medium-2.mp3"
+    },
+    {
+      "id": "colpi-impact-punch-heavy-1",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Pugno forte 1",
+        "en": "Heavy punch 1"
+      },
+      "durata": 0.65,
+      "file": "effetti/colpi/colpi-impact-punch-heavy-1.mp3"
+    },
+    {
+      "id": "colpi-impact-punch-heavy-2",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Pugno forte 2",
+        "en": "Heavy punch 2"
+      },
+      "durata": 0.54,
+      "file": "effetti/colpi/colpi-impact-punch-heavy-2.mp3"
+    },
+    {
+      "id": "colpi-impact-soft-medium",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Colpo morbido",
+        "en": "Soft hit"
+      },
+      "durata": 0.12,
+      "file": "effetti/colpi/colpi-impact-soft-medium.mp3"
+    },
+    {
+      "id": "colpi-impact-soft-heavy",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Colpo morbido forte",
+        "en": "Heavy soft hit"
+      },
+      "durata": 0.53,
+      "file": "effetti/colpi/colpi-impact-soft-heavy.mp3"
+    },
+    {
+      "id": "colpi-impact-bell-heavy-1",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Campana 1",
+        "en": "Bell 1"
+      },
+      "durata": 1.48,
+      "file": "effetti/colpi/colpi-impact-bell-heavy-1.mp3"
+    },
+    {
+      "id": "colpi-impact-bell-heavy-2",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Campana 2",
+        "en": "Bell 2"
+      },
+      "durata": 1.74,
+      "file": "effetti/colpi/colpi-impact-bell-heavy-2.mp3"
+    },
+    {
+      "id": "colpi-impact-tin-medium-1",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Latta 1",
+        "en": "Tin 1"
+      },
+      "durata": 0.16,
+      "file": "effetti/colpi/colpi-impact-tin-medium-1.mp3"
+    },
+    {
+      "id": "colpi-impact-tin-medium-2",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Latta 2",
+        "en": "Tin 2"
+      },
+      "durata": 0.17,
+      "file": "effetti/colpi/colpi-impact-tin-medium-2.mp3"
+    },
+    {
+      "id": "colpi-impact-mining-1",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Piccone 1",
+        "en": "Pickaxe 1"
+      },
+      "durata": 0.94,
+      "file": "effetti/colpi/colpi-impact-mining-1.mp3"
+    },
+    {
+      "id": "colpi-impact-mining-2",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Piccone 2",
+        "en": "Pickaxe 2"
+      },
+      "durata": 0.87,
+      "file": "effetti/colpi/colpi-impact-mining-2.mp3"
+    },
+    {
+      "id": "colpi-impact-plank-medium",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Asse",
+        "en": "Plank"
+      },
+      "durata": 0.78,
+      "file": "effetti/colpi/colpi-impact-plank-medium.mp3"
+    },
+    {
+      "id": "colpi-impact-generic-light",
+      "famiglia": "colpi",
+      "nome": {
+        "it": "Colpo secco",
+        "en": "Dry hit"
+      },
+      "durata": 0.16,
+      "file": "effetti/colpi/colpi-impact-generic-light.mp3"
+    },
+    {
+      "id": "passi-footstep-wood-1",
+      "famiglia": "passi",
+      "nome": {
+        "it": "Passi sul legno 1",
+        "en": "Steps on wood 1"
+      },
+      "durata": 0.27,
+      "file": "effetti/passi/passi-footstep-wood-1.mp3"
+    },
+    {
+      "id": "passi-footstep-wood-2",
+      "famiglia": "passi",
+      "nome": {
+        "it": "Passi sul legno 2",
+        "en": "Steps on wood 2"
+      },
+      "durata": 0.25,
+      "file": "effetti/passi/passi-footstep-wood-2.mp3"
+    },
+    {
+      "id": "passi-footstep-concrete-1",
+      "famiglia": "passi",
+      "nome": {
+        "it": "Passi sul cemento 1",
+        "en": "Steps on concrete 1"
+      },
+      "durata": 0.1,
+      "file": "effetti/passi/passi-footstep-concrete-1.mp3"
+    },
+    {
+      "id": "passi-footstep-concrete-2",
+      "famiglia": "passi",
+      "nome": {
+        "it": "Passi sul cemento 2",
+        "en": "Steps on concrete 2"
+      },
+      "durata": 0.11,
+      "file": "effetti/passi/passi-footstep-concrete-2.mp3"
+    },
+    {
+      "id": "passi-footstep-grass-1",
+      "famiglia": "passi",
+      "nome": {
+        "it": "Passi sull'erba 1",
+        "en": "Steps on grass 1"
+      },
+      "durata": 0.77,
+      "file": "effetti/passi/passi-footstep-grass-1.mp3"
+    },
+    {
+      "id": "passi-footstep-grass-2",
+      "famiglia": "passi",
+      "nome": {
+        "it": "Passi sull'erba 2",
+        "en": "Steps on grass 2"
+      },
+      "durata": 0.67,
+      "file": "effetti/passi/passi-footstep-grass-2.mp3"
+    },
+    {
+      "id": "passi-footstep-snow-1",
+      "famiglia": "passi",
+      "nome": {
+        "it": "Passi sulla neve 1",
+        "en": "Steps on snow 1"
+      },
+      "durata": 0.37,
+      "file": "effetti/passi/passi-footstep-snow-1.mp3"
+    },
+    {
+      "id": "passi-footstep-snow-2",
+      "famiglia": "passi",
+      "nome": {
+        "it": "Passi sulla neve 2",
+        "en": "Steps on snow 2"
+      },
+      "durata": 0.37,
+      "file": "effetti/passi/passi-footstep-snow-2.mp3"
+    },
+    {
+      "id": "passi-footstep-carpet-1",
+      "famiglia": "passi",
+      "nome": {
+        "it": "Passi sulla moquette 1",
+        "en": "Steps on carpet 1"
+      },
+      "durata": 0.17,
+      "file": "effetti/passi/passi-footstep-carpet-1.mp3"
+    },
+    {
+      "id": "passi-footstep-carpet-2",
+      "famiglia": "passi",
+      "nome": {
+        "it": "Passi sulla moquette 2",
+        "en": "Steps on carpet 2"
+      },
+      "durata": 0.14,
+      "file": "effetti/passi/passi-footstep-carpet-2.mp3"
+    },
+    {
+      "id": "passi-footstep-1",
+      "famiglia": "passi",
+      "nome": {
+        "it": "Passo 1",
+        "en": "Step 1"
+      },
+      "durata": 0.25,
+      "file": "effetti/passi/passi-footstep-1.mp3"
+    },
+    {
+      "id": "passi-footstep-2",
+      "famiglia": "passi",
+      "nome": {
+        "it": "Passo 2",
+        "en": "Step 2"
+      },
+      "durata": 0.28,
+      "file": "effetti/passi/passi-footstep-2.mp3"
+    },
+    {
+      "id": "passi-footstep-3",
+      "famiglia": "passi",
+      "nome": {
+        "it": "Passo 3",
+        "en": "Step 3"
+      },
+      "durata": 0.24,
+      "file": "effetti/passi/passi-footstep-3.mp3"
+    },
+    {
+      "id": "passi-footstep-4",
+      "famiglia": "passi",
+      "nome": {
+        "it": "Passo 4",
+        "en": "Step 4"
+      },
+      "durata": 0.27,
+      "file": "effetti/passi/passi-footstep-4.mp3"
+    },
+    {
+      "id": "interfaccia-click",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Clic",
+        "en": "Click"
+      },
+      "durata": 0.1,
+      "file": "effetti/interfaccia/interfaccia-click.mp3"
+    },
+    {
+      "id": "interfaccia-click-1",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Clic morbido 1",
+        "en": "Soft click 1"
+      },
+      "durata": 0.09,
+      "file": "effetti/interfaccia/interfaccia-click-1.mp3"
+    },
+    {
+      "id": "interfaccia-click-2",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Clic morbido 2",
+        "en": "Soft click 2"
+      },
+      "durata": 0.05,
+      "file": "effetti/interfaccia/interfaccia-click-2.mp3"
+    },
+    {
+      "id": "interfaccia-select-1",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Seleziona 1",
+        "en": "Select 1"
+      },
+      "durata": 0.38,
+      "file": "effetti/interfaccia/interfaccia-select-1.mp3"
+    },
+    {
+      "id": "interfaccia-select-2",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Seleziona 2",
+        "en": "Select 2"
+      },
+      "durata": 0.38,
+      "file": "effetti/interfaccia/interfaccia-select-2.mp3"
+    },
+    {
+      "id": "interfaccia-confirmation-1",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Conferma 1",
+        "en": "Confirm 1"
+      },
+      "durata": 0.29,
+      "file": "effetti/interfaccia/interfaccia-confirmation-1.mp3"
+    },
+    {
+      "id": "interfaccia-confirmation-2",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Conferma 2",
+        "en": "Confirm 2"
+      },
+      "durata": 0.54,
+      "file": "effetti/interfaccia/interfaccia-confirmation-2.mp3"
+    },
+    {
+      "id": "interfaccia-error-1",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Errore 1",
+        "en": "Error 1"
+      },
+      "durata": 0.16,
+      "file": "effetti/interfaccia/interfaccia-error-1.mp3"
+    },
+    {
+      "id": "interfaccia-error-2",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Errore 2",
+        "en": "Error 2"
+      },
+      "durata": 0.17,
+      "file": "effetti/interfaccia/interfaccia-error-2.mp3"
+    },
+    {
+      "id": "interfaccia-open",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Apri",
+        "en": "Open"
+      },
+      "durata": 0.15,
+      "file": "effetti/interfaccia/interfaccia-open.mp3"
+    },
+    {
+      "id": "interfaccia-close",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Chiudi",
+        "en": "Close"
+      },
+      "durata": 0.15,
+      "file": "effetti/interfaccia/interfaccia-close.mp3"
+    },
+    {
+      "id": "interfaccia-toggle-1",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Interruttore 1",
+        "en": "Toggle 1"
+      },
+      "durata": 0.14,
+      "file": "effetti/interfaccia/interfaccia-toggle-1.mp3"
+    },
+    {
+      "id": "interfaccia-toggle-2",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Interruttore 2",
+        "en": "Toggle 2"
+      },
+      "durata": 0.14,
+      "file": "effetti/interfaccia/interfaccia-toggle-2.mp3"
+    },
+    {
+      "id": "interfaccia-switch",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Scatto",
+        "en": "Switch"
+      },
+      "durata": 0.61,
+      "file": "effetti/interfaccia/interfaccia-switch.mp3"
+    },
+    {
+      "id": "interfaccia-scroll",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Scorri",
+        "en": "Scroll"
+      },
+      "durata": 1,
+      "file": "effetti/interfaccia/interfaccia-scroll.mp3"
+    },
+    {
+      "id": "interfaccia-drop",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Lascia",
+        "en": "Drop"
+      },
+      "durata": 0.13,
+      "file": "effetti/interfaccia/interfaccia-drop.mp3"
+    },
+    {
+      "id": "interfaccia-back",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Indietro",
+        "en": "Back"
+      },
+      "durata": 0.06,
+      "file": "effetti/interfaccia/interfaccia-back.mp3"
+    },
+    {
+      "id": "interfaccia-tick",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Tic",
+        "en": "Tick"
+      },
+      "durata": 0.06,
+      "file": "effetti/interfaccia/interfaccia-tick.mp3"
+    },
+    {
+      "id": "interfaccia-question",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Domanda",
+        "en": "Question"
+      },
+      "durata": 0.49,
+      "file": "effetti/interfaccia/interfaccia-question.mp3"
+    },
+    {
+      "id": "interfaccia-maximize",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Ingrandisci",
+        "en": "Maximize"
+      },
+      "durata": 0.26,
+      "file": "effetti/interfaccia/interfaccia-maximize.mp3"
+    },
+    {
+      "id": "interfaccia-minimize",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Riduci",
+        "en": "Minimize"
+      },
+      "durata": 0.26,
+      "file": "effetti/interfaccia/interfaccia-minimize.mp3"
+    },
+    {
+      "id": "interfaccia-bong",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Bong",
+        "en": "Bong"
+      },
+      "durata": 0.12,
+      "file": "effetti/interfaccia/interfaccia-bong.mp3"
+    },
+    {
+      "id": "interfaccia-pluck",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Pizzico",
+        "en": "Pluck"
+      },
+      "durata": 0.1,
+      "file": "effetti/interfaccia/interfaccia-pluck.mp3"
+    },
+    {
+      "id": "interfaccia-rollover-1",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Sfiora 1",
+        "en": "Rollover 1"
+      },
+      "durata": 0.22,
+      "file": "effetti/interfaccia/interfaccia-rollover-1.mp3"
+    },
+    {
+      "id": "interfaccia-rollover-2",
+      "famiglia": "interfaccia",
+      "nome": {
+        "it": "Sfiora 2",
+        "en": "Rollover 2"
+      },
+      "durata": 0.05,
+      "file": "effetti/interfaccia/interfaccia-rollover-2.mp3"
+    },
+    {
+      "id": "oggetti-door-open-1",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Porta che si apre 1",
+        "en": "Door opening 1"
+      },
+      "durata": 0.92,
+      "file": "effetti/oggetti/oggetti-door-open-1.mp3"
+    },
+    {
+      "id": "oggetti-door-open-2",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Porta che si apre 2",
+        "en": "Door opening 2"
+      },
+      "durata": 1.41,
+      "file": "effetti/oggetti/oggetti-door-open-2.mp3"
+    },
+    {
+      "id": "oggetti-door-close-1",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Porta che si chiude 1",
+        "en": "Door closing 1"
+      },
+      "durata": 0.68,
+      "file": "effetti/oggetti/oggetti-door-close-1.mp3"
+    },
+    {
+      "id": "oggetti-door-close-2",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Porta che si chiude 2",
+        "en": "Door closing 2"
+      },
+      "durata": 0.61,
+      "file": "effetti/oggetti/oggetti-door-close-2.mp3"
+    },
+    {
+      "id": "oggetti-creak-1",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Cigolio 1",
+        "en": "Creak 1"
+      },
+      "durata": 0.66,
+      "file": "effetti/oggetti/oggetti-creak-1.mp3"
+    },
+    {
+      "id": "oggetti-creak-2",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Cigolio 2",
+        "en": "Creak 2"
+      },
+      "durata": 0.83,
+      "file": "effetti/oggetti/oggetti-creak-2.mp3"
+    },
+    {
+      "id": "oggetti-cloth-1",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Stoffa 1",
+        "en": "Cloth 1"
+      },
+      "durata": 0.66,
+      "file": "effetti/oggetti/oggetti-cloth-1.mp3"
+    },
+    {
+      "id": "oggetti-cloth-2",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Stoffa 2",
+        "en": "Cloth 2"
+      },
+      "durata": 0.42,
+      "file": "effetti/oggetti/oggetti-cloth-2.mp3"
+    },
+    {
+      "id": "oggetti-book-flip-1",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Pagine 1",
+        "en": "Page flip 1"
+      },
+      "durata": 0.77,
+      "file": "effetti/oggetti/oggetti-book-flip-1.mp3"
+    },
+    {
+      "id": "oggetti-book-flip-2",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Pagine 2",
+        "en": "Page flip 2"
+      },
+      "durata": 0.43,
+      "file": "effetti/oggetti/oggetti-book-flip-2.mp3"
+    },
+    {
+      "id": "oggetti-book-open",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Libro che si apre",
+        "en": "Book opening"
+      },
+      "durata": 0.15,
+      "file": "effetti/oggetti/oggetti-book-open.mp3"
+    },
+    {
+      "id": "oggetti-book-close",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Libro che si chiude",
+        "en": "Book closing"
+      },
+      "durata": 0.23,
+      "file": "effetti/oggetti/oggetti-book-close.mp3"
+    },
+    {
+      "id": "oggetti-book-place",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Libro posato",
+        "en": "Book placed"
+      },
+      "durata": 0.28,
+      "file": "effetti/oggetti/oggetti-book-place.mp3"
+    },
+    {
+      "id": "oggetti-draw-knife-1",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Coltello sguainato 1",
+        "en": "Knife drawn 1"
+      },
+      "durata": 0.4,
+      "file": "effetti/oggetti/oggetti-draw-knife-1.mp3"
+    },
+    {
+      "id": "oggetti-draw-knife-2",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Coltello sguainato 2",
+        "en": "Knife drawn 2"
+      },
+      "durata": 0.45,
+      "file": "effetti/oggetti/oggetti-draw-knife-2.mp3"
+    },
+    {
+      "id": "oggetti-knife-slice",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Taglio",
+        "en": "Slice"
+      },
+      "durata": 0.6,
+      "file": "effetti/oggetti/oggetti-knife-slice.mp3"
+    },
+    {
+      "id": "oggetti-chop",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Colpo di scure",
+        "en": "Chop"
+      },
+      "durata": 0.24,
+      "file": "effetti/oggetti/oggetti-chop.mp3"
+    },
+    {
+      "id": "oggetti-handle-coins",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Monete",
+        "en": "Coins"
+      },
+      "durata": 0.85,
+      "file": "effetti/oggetti/oggetti-handle-coins.mp3"
+    },
+    {
+      "id": "oggetti-metal-pot-1",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Pentola 1",
+        "en": "Pot 1"
+      },
+      "durata": 1.46,
+      "file": "effetti/oggetti/oggetti-metal-pot-1.mp3"
+    },
+    {
+      "id": "oggetti-metal-pot-2",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Pentola 2",
+        "en": "Pot 2"
+      },
+      "durata": 0.94,
+      "file": "effetti/oggetti/oggetti-metal-pot-2.mp3"
+    },
+    {
+      "id": "oggetti-metal-latch",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Chiavistello",
+        "en": "Latch"
+      },
+      "durata": 0.26,
+      "file": "effetti/oggetti/oggetti-metal-latch.mp3"
+    },
+    {
+      "id": "oggetti-metal-click",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Scatto di metallo",
+        "en": "Metal click"
+      },
+      "durata": 0.45,
+      "file": "effetti/oggetti/oggetti-metal-click.mp3"
+    },
+    {
+      "id": "oggetti-belt-handle",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Cintura",
+        "en": "Belt"
+      },
+      "durata": 0.28,
+      "file": "effetti/oggetti/oggetti-belt-handle.mp3"
+    },
+    {
+      "id": "oggetti-drop-leather",
+      "famiglia": "oggetti",
+      "nome": {
+        "it": "Cuoio che cade",
+        "en": "Leather drop"
+      },
+      "durata": 0.42,
+      "file": "effetti/oggetti/oggetti-drop-leather.mp3"
+    },
+    {
+      "id": "carte-card-slide-1",
+      "famiglia": "carte",
+      "nome": {
+        "it": "Carta che scivola 1",
+        "en": "Card slide 1"
+      },
+      "durata": 0.6,
+      "file": "effetti/carte/carte-card-slide-1.mp3"
+    },
+    {
+      "id": "carte-card-slide-2",
+      "famiglia": "carte",
+      "nome": {
+        "it": "Carta che scivola 2",
+        "en": "Card slide 2"
+      },
+      "durata": 0.58,
+      "file": "effetti/carte/carte-card-slide-2.mp3"
+    },
+    {
+      "id": "carte-card-shuffle",
+      "famiglia": "carte",
+      "nome": {
+        "it": "Mescolare le carte",
+        "en": "Card shuffle"
+      },
+      "durata": 3.06,
+      "file": "effetti/carte/carte-card-shuffle.mp3"
+    },
+    {
+      "id": "carte-card-place-1",
+      "famiglia": "carte",
+      "nome": {
+        "it": "Carta posata 1",
+        "en": "Card placed 1"
+      },
+      "durata": 0.69,
+      "file": "effetti/carte/carte-card-place-1.mp3"
+    },
+    {
+      "id": "carte-card-place-2",
+      "famiglia": "carte",
+      "nome": {
+        "it": "Carta posata 2",
+        "en": "Card placed 2"
+      },
+      "durata": 0.46,
+      "file": "effetti/carte/carte-card-place-2.mp3"
+    },
+    {
+      "id": "carte-card-fan",
+      "famiglia": "carte",
+      "nome": {
+        "it": "Carte a ventaglio",
+        "en": "Card fan"
+      },
+      "durata": 0.72,
+      "file": "effetti/carte/carte-card-fan.mp3"
+    },
+    {
+      "id": "carte-cards-pack-open",
+      "famiglia": "carte",
+      "nome": {
+        "it": "Mazzo aperto",
+        "en": "Deck opened"
+      },
+      "durata": 0.94,
+      "file": "effetti/carte/carte-cards-pack-open.mp3"
+    },
+    {
+      "id": "carte-chips-stack-1",
+      "famiglia": "carte",
+      "nome": {
+        "it": "Fiches impilate 1",
+        "en": "Chips stacked 1"
+      },
+      "durata": 0.28,
+      "file": "effetti/carte/carte-chips-stack-1.mp3"
+    },
+    {
+      "id": "carte-chips-stack-2",
+      "famiglia": "carte",
+      "nome": {
+        "it": "Fiches impilate 2",
+        "en": "Chips stacked 2"
+      },
+      "durata": 0.17,
+      "file": "effetti/carte/carte-chips-stack-2.mp3"
+    },
+    {
+      "id": "carte-chips-collide",
+      "famiglia": "carte",
+      "nome": {
+        "it": "Fiches",
+        "en": "Chips"
+      },
+      "durata": 0.26,
+      "file": "effetti/carte/carte-chips-collide.mp3"
+    },
+    {
+      "id": "carte-dice-throw-1",
+      "famiglia": "carte",
+      "nome": {
+        "it": "Dadi lanciati 1",
+        "en": "Dice thrown 1"
+      },
+      "durata": 0.63,
+      "file": "effetti/carte/carte-dice-throw-1.mp3"
+    },
+    {
+      "id": "carte-dice-throw-2",
+      "famiglia": "carte",
+      "nome": {
+        "it": "Dadi lanciati 2",
+        "en": "Dice thrown 2"
+      },
+      "durata": 0.4,
+      "file": "effetti/carte/carte-dice-throw-2.mp3"
+    },
+    {
+      "id": "carte-dice-shake-1",
+      "famiglia": "carte",
+      "nome": {
+        "it": "Dadi agitati 1",
+        "en": "Dice shaken 1"
+      },
+      "durata": 1.48,
+      "file": "effetti/carte/carte-dice-shake-1.mp3"
+    },
+    {
+      "id": "carte-dice-shake-2",
+      "famiglia": "carte",
+      "nome": {
+        "it": "Dadi agitati 2",
+        "en": "Dice shaken 2"
+      },
+      "durata": 1.38,
+      "file": "effetti/carte/carte-dice-shake-2.mp3"
+    },
+    {
+      "id": "arcade-power-up-1",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Potenziamento 1",
+        "en": "Power-up 1"
+      },
+      "durata": 1.2,
+      "file": "effetti/arcade/arcade-power-up-1.mp3"
+    },
+    {
+      "id": "arcade-power-up-2",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Potenziamento 2",
+        "en": "Power-up 2"
+      },
+      "durata": 0.65,
+      "file": "effetti/arcade/arcade-power-up-2.mp3"
+    },
+    {
+      "id": "arcade-power-up-3",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Potenziamento 3",
+        "en": "Power-up 3"
+      },
+      "durata": 0.68,
+      "file": "effetti/arcade/arcade-power-up-3.mp3"
+    },
+    {
+      "id": "arcade-laser-1",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Laser arcade 1",
+        "en": "Arcade laser 1"
+      },
+      "durata": 1.1,
+      "file": "effetti/arcade/arcade-laser-1.mp3"
+    },
+    {
+      "id": "arcade-laser-2",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Laser arcade 2",
+        "en": "Arcade laser 2"
+      },
+      "durata": 1.09,
+      "file": "effetti/arcade/arcade-laser-2.mp3"
+    },
+    {
+      "id": "arcade-laser-3",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Laser arcade 3",
+        "en": "Arcade laser 3"
+      },
+      "durata": 0.98,
+      "file": "effetti/arcade/arcade-laser-3.mp3"
+    },
+    {
+      "id": "arcade-phaser-up-1",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Fase che sale 1",
+        "en": "Phaser up 1"
+      },
+      "durata": 0.52,
+      "file": "effetti/arcade/arcade-phaser-up-1.mp3"
+    },
+    {
+      "id": "arcade-phaser-up-2",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Fase che sale 2",
+        "en": "Phaser up 2"
+      },
+      "durata": 0.42,
+      "file": "effetti/arcade/arcade-phaser-up-2.mp3"
+    },
+    {
+      "id": "arcade-phaser-down-1",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Fase che scende 1",
+        "en": "Phaser down 1"
+      },
+      "durata": 0.47,
+      "file": "effetti/arcade/arcade-phaser-down-1.mp3"
+    },
+    {
+      "id": "arcade-phaser-down-2",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Fase che scende 2",
+        "en": "Phaser down 2"
+      },
+      "durata": 0.31,
+      "file": "effetti/arcade/arcade-phaser-down-2.mp3"
+    },
+    {
+      "id": "arcade-zap-1",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Zap 1",
+        "en": "Zap 1"
+      },
+      "durata": 1.02,
+      "file": "effetti/arcade/arcade-zap-1.mp3"
+    },
+    {
+      "id": "arcade-zap-2",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Zap 2",
+        "en": "Zap 2"
+      },
+      "durata": 1.23,
+      "file": "effetti/arcade/arcade-zap-2.mp3"
+    },
+    {
+      "id": "arcade-pep-sound-1",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Bip allegro 1",
+        "en": "Pep 1"
+      },
+      "durata": 0.52,
+      "file": "effetti/arcade/arcade-pep-sound-1.mp3"
+    },
+    {
+      "id": "arcade-pep-sound-2",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Bip allegro 2",
+        "en": "Pep 2"
+      },
+      "durata": 0.55,
+      "file": "effetti/arcade/arcade-pep-sound-2.mp3"
+    },
+    {
+      "id": "arcade-phase-jump-1",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Salto 1",
+        "en": "Jump 1"
+      },
+      "durata": 0.47,
+      "file": "effetti/arcade/arcade-phase-jump-1.mp3"
+    },
+    {
+      "id": "arcade-phase-jump-2",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Salto 2",
+        "en": "Jump 2"
+      },
+      "durata": 0.39,
+      "file": "effetti/arcade/arcade-phase-jump-2.mp3"
+    },
+    {
+      "id": "arcade-two-tone",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Due toni",
+        "en": "Two tones"
+      },
+      "durata": 0.72,
+      "file": "effetti/arcade/arcade-two-tone.mp3"
+    },
+    {
+      "id": "arcade-three-tone",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Tre toni",
+        "en": "Three tones"
+      },
+      "durata": 0.85,
+      "file": "effetti/arcade/arcade-three-tone.mp3"
+    },
+    {
+      "id": "arcade-high-up",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Su",
+        "en": "Up"
+      },
+      "durata": 0.55,
+      "file": "effetti/arcade/arcade-high-up.mp3"
+    },
+    {
+      "id": "arcade-high-down",
+      "famiglia": "arcade",
+      "nome": {
+        "it": "Giù",
+        "en": "Down"
+      },
+      "durata": 0.52,
+      "file": "effetti/arcade/arcade-high-down.mp3"
+    },
+    {
+      "id": "fantascienza-laser-small-1",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Laser piccolo 1",
+        "en": "Small laser 1"
+      },
+      "durata": 0.24,
+      "file": "effetti/fantascienza/fantascienza-laser-small-1.mp3"
+    },
+    {
+      "id": "fantascienza-laser-small-2",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Laser piccolo 2",
+        "en": "Small laser 2"
+      },
+      "durata": 0.24,
+      "file": "effetti/fantascienza/fantascienza-laser-small-2.mp3"
+    },
+    {
+      "id": "fantascienza-laser-large-1",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Laser grande 1",
+        "en": "Large laser 1"
+      },
+      "durata": 0.68,
+      "file": "effetti/fantascienza/fantascienza-laser-large-1.mp3"
+    },
+    {
+      "id": "fantascienza-laser-large-2",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Laser grande 2",
+        "en": "Large laser 2"
+      },
+      "durata": 0.72,
+      "file": "effetti/fantascienza/fantascienza-laser-large-2.mp3"
+    },
+    {
+      "id": "fantascienza-laser-retro-1",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Laser rétro 1",
+        "en": "Retro laser 1"
+      },
+      "durata": 0.24,
+      "file": "effetti/fantascienza/fantascienza-laser-retro-1.mp3"
+    },
+    {
+      "id": "fantascienza-laser-retro-2",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Laser rétro 2",
+        "en": "Retro laser 2"
+      },
+      "durata": 0.24,
+      "file": "effetti/fantascienza/fantascienza-laser-retro-2.mp3"
+    },
+    {
+      "id": "fantascienza-force-field-1",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Campo di forza 1",
+        "en": "Force field 1"
+      },
+      "durata": 0.95,
+      "file": "effetti/fantascienza/fantascienza-force-field-1.mp3"
+    },
+    {
+      "id": "fantascienza-force-field-2",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Campo di forza 2",
+        "en": "Force field 2"
+      },
+      "durata": 0.95,
+      "file": "effetti/fantascienza/fantascienza-force-field-2.mp3"
+    },
+    {
+      "id": "fantascienza-thruster-fire-1",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Propulsore 1",
+        "en": "Thruster 1"
+      },
+      "durata": 5,
+      "file": "effetti/fantascienza/fantascienza-thruster-fire-1.mp3"
+    },
+    {
+      "id": "fantascienza-thruster-fire-2",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Propulsore 2",
+        "en": "Thruster 2"
+      },
+      "durata": 5,
+      "file": "effetti/fantascienza/fantascienza-thruster-fire-2.mp3"
+    },
+    {
+      "id": "fantascienza-engine-circular",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Motore che gira",
+        "en": "Circular engine"
+      },
+      "durata": 5,
+      "file": "effetti/fantascienza/fantascienza-engine-circular.mp3"
+    },
+    {
+      "id": "fantascienza-space-engine",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Motore spaziale",
+        "en": "Space engine"
+      },
+      "durata": 5,
+      "file": "effetti/fantascienza/fantascienza-space-engine.mp3"
+    },
+    {
+      "id": "fantascienza-computer-noise-1",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Computer 1",
+        "en": "Computer 1"
+      },
+      "durata": 5,
+      "file": "effetti/fantascienza/fantascienza-computer-noise-1.mp3"
+    },
+    {
+      "id": "fantascienza-computer-noise-2",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Computer 2",
+        "en": "Computer 2"
+      },
+      "durata": 5,
+      "file": "effetti/fantascienza/fantascienza-computer-noise-2.mp3"
+    },
+    {
+      "id": "fantascienza-door-open",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Portellone che si apre",
+        "en": "Hatch opening"
+      },
+      "durata": 0.53,
+      "file": "effetti/fantascienza/fantascienza-door-open.mp3"
+    },
+    {
+      "id": "fantascienza-door-close",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Portellone che si chiude",
+        "en": "Hatch closing"
+      },
+      "durata": 0.53,
+      "file": "effetti/fantascienza/fantascienza-door-close.mp3"
+    },
+    {
+      "id": "fantascienza-slime",
+      "famiglia": "fantascienza",
+      "nome": {
+        "it": "Melma",
+        "en": "Slime"
+      },
+      "durata": 0.5,
+      "file": "effetti/fantascienza/fantascienza-slime.mp3"
+    },
+    {
+      "id": "esplosioni-explosion-crunch-1",
+      "famiglia": "esplosioni",
+      "nome": {
+        "it": "Esplosione 1",
+        "en": "Explosion 1"
+      },
+      "durata": 0.78,
+      "file": "effetti/esplosioni/esplosioni-explosion-crunch-1.mp3"
+    },
+    {
+      "id": "esplosioni-explosion-crunch-2",
+      "famiglia": "esplosioni",
+      "nome": {
+        "it": "Esplosione 2",
+        "en": "Explosion 2"
+      },
+      "durata": 1.36,
+      "file": "effetti/esplosioni/esplosioni-explosion-crunch-2.mp3"
+    },
+    {
+      "id": "esplosioni-explosion-crunch-3",
+      "famiglia": "esplosioni",
+      "nome": {
+        "it": "Esplosione 3",
+        "en": "Explosion 3"
+      },
+      "durata": 1.26,
+      "file": "effetti/esplosioni/esplosioni-explosion-crunch-3.mp3"
+    },
+    {
+      "id": "esplosioni-low-frequency-explosion-1",
+      "famiglia": "esplosioni",
+      "nome": {
+        "it": "Esplosione sorda 1",
+        "en": "Deep explosion 1"
+      },
+      "durata": 2,
+      "file": "effetti/esplosioni/esplosioni-low-frequency-explosion-1.mp3"
+    },
+    {
+      "id": "esplosioni-low-frequency-explosion-2",
+      "famiglia": "esplosioni",
+      "nome": {
+        "it": "Esplosione sorda 2",
+        "en": "Deep explosion 2"
+      },
+      "durata": 1,
+      "file": "effetti/esplosioni/esplosioni-low-frequency-explosion-2.mp3"
+    },
+    {
+      "id": "esplosioni-impact-metal-1",
+      "famiglia": "esplosioni",
+      "nome": {
+        "it": "Schianto di metallo 1",
+        "en": "Metal crash 1"
+      },
+      "durata": 0.63,
+      "file": "effetti/esplosioni/esplosioni-impact-metal-1.mp3"
+    },
+    {
+      "id": "esplosioni-impact-metal-2",
+      "famiglia": "esplosioni",
+      "nome": {
+        "it": "Schianto di metallo 2",
+        "en": "Metal crash 2"
+      },
+      "durata": 0.69,
+      "file": "effetti/esplosioni/esplosioni-impact-metal-2.mp3"
+    }
+  ]
+}
