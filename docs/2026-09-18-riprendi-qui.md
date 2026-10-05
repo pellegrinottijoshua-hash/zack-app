@@ -802,3 +802,48 @@ Minori:
 ```
 Leggi docs/2026-09-18-riprendi-qui.md e fai la fase 8.
 ```
+
+## ▶️ 2026-10-05 — FASE 8 (vettoriale, i nodi): tagliata, 8a FATTA
+
+Spec: [`superpowers/specs/2026-10-05-nodi-design.md`](superpowers/specs/2026-10-05-nodi-design.md).
+Tre fette:
+- **8a**, puro: il tracciato pulito e il modello dei nodi;
+- **8b**, l'editor dei nodi sul desktop;
+- **8c**, il telefono e la chiusura.
+
+Il committente ha detto «inizia 8a»: le decisioni sono nel §3 della spec
+(editor dei nodi nostro, non quello di svgedit; desktop prima; i composti
+restano composti), da ribaltare se non vanno.
+
+Perché i nodi erano impraticabili (misurato, §1 della spec):
+- ogni tracciato con `translate`;
+- il fondo come forma cliccabile;
+- i lati dritti scritti come curve;
+- in più, i punti di 5 px.
+
+8a:
+- `engine/nodi.js`:
+  - il modello `{ x, y, dentro, fuori, liscio }`, legge `M L H V C S Q T Z`, rifiuta gli archi;
+  - muovi nodo e maniglia (simmetrica sul liscio);
+  - aggiungi (de Casteljau, la forma non cambia), togli, curvo↔dritto, apri↔chiudi, angolo↔liscio;
+  - raddrizza, nodo e segmento vicini al tocco.
+- `engine/tracciato.js`, applicato a ogni `traceToSvg`:
+  - le traslazioni entrano nelle coordinate;
+  - si tolgono i fondi;
+  - i lati tornano dritti.
+- Il vuoto nei preset a colori:
+  - si dipinge con un **colore chiave** assente dal disegno, e i tracciati di quel colore si tolgono;
+  - VTracer gira in modo **ritagliato** (impilato, togliere il vuoto scopriva una base che copriva tutto: 65.000 pixel su 65.000).
+- **Corretto un difetto vecchio:** il «bianco e nero» usciva con `fill="none"`, cioè invisibile (0 pixel). Ora è nero.
+
+Misure nel browser:
+- marchio JAYL su fondo trasparente → poster: 1 tracciato, 45 nodi, nessun `transform`, 33.828 pixel contro i 33.239 dell'originale;
+- icona opaca → identica a occhio, nodi da 192 a 176.
+
+1000 prove verdi, build ok. Due prove rotte apposta per vedere che mordono; de Casteljau mordeva solo con `t ≠ 0,5`, aggiunto.
+
+**Prossima: la 8b** (l'editor dei nodi sul desktop).
+
+```
+Leggi docs/2026-09-18-riprendi-qui.md e fai la fetta 8b.
+```
