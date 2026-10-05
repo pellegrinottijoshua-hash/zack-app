@@ -824,6 +824,16 @@
         "fantascienza": "Sci-fi",
         "esplosioni": "Explosions"
       }
+    },
+    "inventa": {
+      "titolo": "Invent one",
+      "descrizione": "What does it sound like? For example: distant thunder rolling through the mountains.",
+      "durata": "How long",
+      "secondi": "{n} s",
+      "nonMisurato": "Coming soon: first we measure what it costs, then the price shows up here.",
+      "vai": "Invent it",
+      "attendi": "Inventing the effect…",
+      "pronto": "The effect is ready: find it in the icon below."
     }
   },
   "tutorial": {

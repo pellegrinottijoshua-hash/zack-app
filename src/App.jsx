@@ -68,6 +68,7 @@ import {
   clonaVoce,
   cancellaVoce,
   cambiaVoce,
+  inventaEffetto,
   chiediLavoro,
   scaricaVideo,
   riduciPerVideo,
@@ -75,7 +76,7 @@ import {
 import { prezzoVideo, LIMITI_IMMAGINI, RUOLI_VIDEO, immaginiVideoStorte } from './engine/listinoVideo.js';
 import {
   MAX_CARATTERI, CAMPIONE_MAX_BYTE, MAX_SECONDI_CAMBIO, caratteriDi, letturaNonValida, prezzoLettura, prezzoDisegno,
-  prezzoClonazione, prezzoCambio,
+  prezzoClonazione, prezzoCambio, prezzoEffetto,
 } from './engine/listinoVoce.js';
 import { fileVoce, leggiVoce, nomeVoce, vociDellaLibreria } from './engine/voci.js';
 import { wavDelCampione, wavDaCambiare, base64Di } from './engine/audioVoce.js';
@@ -2345,6 +2346,28 @@ export default function App() {
     }
   }
 
+  /** «Inventane uno» (7c): a crediti, con le regole di Immagine. */
+  async function runInventa({ descrizione, durata }) {
+    setError(null);
+    setNotice(null);
+    const prezzo = prezzoEffetto(durata)?.total ?? null;
+    if (prezzo === null) return setNotice(t('effetti.inventa.nonMisurato'));
+    if (crediti < prezzo) return setNotice(t('voce.nuova.saldoCorto'));
+    setBusy(t('effetti.inventa.attendi'));
+    try {
+      const d = await inventaEffetto({ descrizione, durata });
+      aggiornaSaldo(d.saldo);
+      const blob = new Blob([Uint8Array.from(atob(d.dati), (c) => c.charCodeAt(0))], { type: d.mime || 'audio/mpeg' });
+      const nome = descrizione.trim().slice(0, 40);
+      pushResult({ url: own(blob), blob, kind: 'mp3', meta: { strategy: 'inventato', nome } });
+      setNotice(t('effetti.inventa.pronto'));
+    } catch (e) {
+      erroreVoce(e);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   /** Torna ai filtri di prima: il tasto imposta, e si puo' disfare. */
   function annullaFiltriVoce() {
     if (!filtriDiPrima) return;
@@ -3295,7 +3318,7 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
             Sta sotto il pocket e non a fianco della tela: lì c'è la colonna
             degli strumenti, e l'uscita va verso la tasca. */}
         {result?.blob && USCITE.has(tool) && !brushOpen && (tool !== 'vocale' || result.kind === 'mp3' || result.kind === 'webm') &&
-          (tool !== 'effetti' || result.meta?.strategy === 'pacchetto') && (
+          (tool !== 'effetti' || ['pacchetto', 'inventato'].includes(result.meta?.strategy)) && (
           <IconaOutput
             url={result.url}
             kind={result.kind}
@@ -3621,7 +3644,13 @@ batchFiles.length > 1 && batch.results.length === 0 ? (
                     onChiudi={() => setSopraLaTela(null)}
                   />
                 ) : sopraLaTela === 'pacchetto' ? (
-                  <Pacchetto onPrendi={prendiEffetto} onChiudi={() => setSopraLaTela(null)} />
+                  <Pacchetto
+                    onPrendi={prendiEffetto}
+                    onChiudi={() => setSopraLaTela(null)}
+                    prezzoInventa={(d) => prezzoEffetto(d)?.total ?? null}
+                    onInventa={runInventa}
+                    busy={busy}
+                  />
                 ) : sopraLaTela === 'nuovaVoce' ? (
                   <NuovaVoce
                     prezzoDisegno={prezzoDisegnoQui}

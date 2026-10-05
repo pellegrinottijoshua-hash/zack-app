@@ -160,3 +160,19 @@ export async function cambiaConElevenLabs({ voce, audio, env }) {
   if (!buffer.byteLength) throw errore('fornitore', { stato: 200 });
   return { dati: base64(buffer), mime: 'audio/mpeg' };
 }
+
+/**
+ * Fase 7c — «inventane uno»: una descrizione e una durata → un effetto MP3.
+ * `{ dati, mime }`, o solleva.
+ */
+export async function inventaConElevenLabs({ descrizione, durata, env }) {
+  const res = await fetch(`${BASE}/sound-generation?output_format=${FORMATO}`, {
+    method: 'POST',
+    headers: conChiave(env, { 'content-type': 'application/json', accept: 'audio/mpeg' }),
+    body: JSON.stringify({ text: descrizione, duration_seconds: durata, prompt_influence: 0.3 }),
+  });
+  if (!res.ok) throw errore('fornitore', { stato: res.status });
+  const buffer = await res.arrayBuffer();
+  if (!buffer.byteLength) throw errore('fornitore', { stato: 200 });
+  return { dati: base64(buffer), mime: 'audio/mpeg' };
+}

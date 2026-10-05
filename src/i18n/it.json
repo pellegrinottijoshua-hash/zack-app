@@ -824,6 +824,16 @@
         "fantascienza": "Fantascienza",
         "esplosioni": "Esplosioni"
       }
+    },
+    "inventa": {
+      "titolo": "Inventane uno",
+      "descrizione": "Com'è il suono? Per esempio: un tuono lontano che rotola fra le montagne.",
+      "durata": "Quanto dura",
+      "secondi": "{n} s",
+      "nonMisurato": "Arriva presto: prima misuriamo quanto costa, poi il prezzo compare qui.",
+      "vai": "Inventalo",
+      "attendi": "Sto inventando l'effetto…",
+      "pronto": "L'effetto è pronto: lo trovi nell'icona in basso."
     }
   },
   "tutorial": {

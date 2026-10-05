@@ -15,13 +15,14 @@ import { SUPABASE_URL } from '../src/lib/supabase.js';
 import { addebita, rimborsa, rimborsoRiuscito, apriLavoro, chiudiLavoro } from './conto.js';
 import {
   leggiConElevenLabs, disegnaConElevenLabs, creaDaAnteprima, clonaConElevenLabs, cancellaConElevenLabs,
-  cambiaConElevenLabs,
+  cambiaConElevenLabs, inventaConElevenLabs,
 } from './fornitori/elevenlabs.js';
 import {
   MISURA_VOCE, MISURA_DISEGNO, MISURA_CLONAZIONE, MISURA_CAMBIO, MAX_SECONDI_CAMBIO, CAMPIONE_MAX_BYTE,
   VOCE_LEGGI, VOCE_DISEGNA, VOCE_CLONA, VOCE_CAMBIA, VOCI_PRONTE,
   caratteriDi, costoLettura, letturaNonValida, prezzoLettura, prezzoDisegno, prezzoClonazione, prezzoCambio,
   descrizioneNonValida, nomeVoceNonValido, voceAmmessa, durataWav,
+  EFFETTO_INVENTA, MISURA_EFFETTO, effettoNonValido, prezzoEffetto,
 } from '../src/engine/listinoVoce.js';
 import { consensoNonValido, testoConsenso } from '../src/engine/voci.js';
 
@@ -340,10 +341,28 @@ export async function cambiaVoce(corpo, chi, env, { misura = MISURA_CAMBIO } = {
   }));
 }
 
-/** I servizi a crediti della voce, per `/genera`. */
+/* ---------------------------- 7c: inventa ------------------------------ */
+
+/** Un effetto sonoro da una descrizione (fase 7c). Si paga a durata. */
+export async function inventaEffetto(corpo, chi, env, { misura = MISURA_EFFETTO } = {}) {
+  const { descrizione, durata } = corpo;
+  const storta = effettoNonValido({ descrizione, durata });
+  if (storta) return json({ errore: storta }, 400);
+  if (!env.ELEVENLABS_API_KEY) return json({ errore: 'non-configurato' }, 503);
+  const conto = prezzoEffetto(durata, misura);
+  if (!conto) return json({ errore: 'non-misurato' }, 503);
+
+  return conAddebito({ chi, prezzo: conto.total, servizio: EFFETTO_INVENTA, env }, async () => ({
+    dati: await inventaConElevenLabs({ descrizione: descrizione.trim(), durata, env }),
+    costoReale: conto.cost,
+  }));
+}
+
+/** I servizi a crediti della voce (e dell'effetto inventato), per `/genera`. */
 export const GENERA_VOCE = {
   [VOCE_LEGGI]: generaVoce,
   [VOCE_DISEGNA]: disegnaVoce,
   [VOCE_CLONA]: clonaVoce,
   [VOCE_CAMBIA]: cambiaVoce,
+  [EFFETTO_INVENTA]: inventaEffetto,
 };

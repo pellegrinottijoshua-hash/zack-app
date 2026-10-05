@@ -453,6 +453,8 @@ async function main() {
               // l'icona output dopo «prendi».
               giri.push({ servizio: 'effetti', primo: false, solo: '.pacchetto', apri: ['.sc-strumento[data-strumento="pacchetto"]'] });
               giri.push({ servizio: 'effetti', primo: false, solo: '.icona-output', apri: ['.sc-strumento[data-strumento="pacchetto"]', '.pacchetto-elenco li .btn'], aspetta: '.icona-output' });
+              // «Inventane uno» (7c): la seconda scheda del pannello.
+              giri.push({ servizio: 'effetti', primo: false, solo: '.pacchetto', apri: ['.sc-strumento[data-strumento="pacchetto"]', '.pacchetto .nuova-voce-modi .chip:nth-child(2)'] });
               giri.push({ servizio: 'vocale', primo: false, solo: '.sc-menu', apri: ['.sc-piu'] });
               giri.push({ servizio: 'vocale', primo: false, solo: '.shell', apri: ['.sc-piu', '.sc-menu [data-menu="scrivi"]'], aspetta: '.voce-lettura' });
               // «Una voce nuova» (6b): descrivila, e la scheda del consenso.

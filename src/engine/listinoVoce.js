@@ -205,3 +205,32 @@ export function durataWav(byte) {
   }
   return null;
 }
+
+/* ------------------------------------------------------------------------ *
+ * Fase 7c — «inventane uno»: un effetto sonoro da una descrizione.
+ * ------------------------------------------------------------------------ */
+
+export const EFFETTO_INVENTA = 'effetto-inventa';
+
+/**
+ * Millesimi per SECONDO di effetto generato. Da misurare col piano scelto
+ * (ElevenLabs Sound Effects addebita a durata). `null` = spento.
+ */
+export const MISURA_EFFETTO = null;
+
+/** Le durate offerte, in secondi: dentro i limiti dell'API (0,5–22). */
+export const DURATE_EFFETTO = [1, 2, 5, 10];
+export const EFFETTO_DESCRIZIONE_MAX = 450;
+
+export function effettoNonValido({ descrizione, durata }) {
+  const n = caratteriDi(descrizione);
+  if (n < 3) return 'descrizione-corta';
+  if (n > EFFETTO_DESCRIZIONE_MAX) return 'descrizione-lunga';
+  if (!DURATE_EFFETTO.includes(durata)) return 'durata';
+  return null;
+}
+
+export function prezzoEffetto(durata, misura = MISURA_EFFETTO) {
+  if (!Number.isFinite(misura) || misura <= 0 || !DURATE_EFFETTO.includes(durata)) return null;
+  return priceFor(Math.ceil(durata * misura));
+}
