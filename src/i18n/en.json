@@ -78,7 +78,8 @@
     "primo": "First frame",
     "ultimo": "Last frame",
     "riferimento": "Reference",
-    "scrivi": "Write"
+    "scrivi": "Write",
+    "pacchetto": "From the pack"
   },
   "drop": {
     "title": "Drop an image here",
@@ -803,7 +804,27 @@
     }
   },
   "effetti": {
-    "claim": "Build a sound effect from scratch. Tap a rhythm with your voice and the effect follows it."
+    "claim": "Build a sound effect from scratch. Tap a rhythm with your voice and the effect follows it.",
+    "pacchetto": {
+      "titolo": "The pack",
+      "tutti": "All",
+      "cerca": "Search an effect (glass, steps, laser…)",
+      "ascolta": "Listen to “{nome}”",
+      "prendi": "Take",
+      "preso": "“{nome}” is ready: find it in the icon below, to bring into Brain or the pocket.",
+      "nessuno": "No effect with this name.",
+      "crediti": "Effects by Kenney (kenney.nl), CC0 license: use them anywhere, even in what you sell.",
+      "famiglia": {
+        "colpi": "Hits",
+        "passi": "Steps",
+        "interfaccia": "Interface",
+        "oggetti": "Objects",
+        "carte": "Cards and dice",
+        "arcade": "Arcade",
+        "fantascienza": "Sci-fi",
+        "esplosioni": "Explosions"
+      }
+    }
   },
   "tutorial": {
     "apri": "How to use it",

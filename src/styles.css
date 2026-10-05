@@ -6639,3 +6639,53 @@ html[data-trascina] [data-bersaglio]:not([data-acceso]) {
   display: flex;
   gap: 8px;
 }
+
+/* Il pacchetto di effetti (7b): famiglie in chip, poi l'elenco — un tocco sul
+   nome lo fa sentire, «prendi» lo consegna all'icona output. */
+.pacchetto {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pacchetto-famiglie {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pacchetto-elenco {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pacchetto-elenco li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pacchetto-ascolta {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--linea);
+  border-radius: 12px;
+  background: var(--fondo);
+  color: var(--inchiostro);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pacchetto-ascolta[aria-pressed='true'] {
+  border-color: var(--oro);
+  box-shadow: inset 0 0 0 1px var(--oro);
+}
+.pacchetto-durata {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--inchiostro-2);
+}
