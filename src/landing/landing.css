@@ -2093,6 +2093,69 @@ body {
   }
 }
 
+/* Correzione 2026-10-12: con un file, nel banco il ritaglio non si vedeva.
+   Le regole «con i file, sul desktop» sono della home di prima, quando
+   Ritaglio aveva la pagina tutta per sé: una griglia con 240-470 px di
+   margine a destra per la mascotte. Nella corsia del banco (~470 px) quel
+   margine si mangiava tutto, e la colonna delle tele restava larga 0 px
+   (misurato a 1024 e a 1440: tela 0×0, il file c'era ma non si vedeva).
+   Nel banco vale la disposizione del telefono a ogni larghezza: tasto,
+   strumenti, tele, e il `+` in fondo, in una colonna sola. */
+@media (min-width: 900px) {
+  .banco .rit[data-file] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-right: 0;
+    min-height: 0;
+  }
+  .banco .rit[data-file] > .rit-tasto {
+    position: relative;
+    left: auto;
+    right: auto;
+    top: auto;
+    transform: none;
+    justify-content: center;
+    width: 100%;
+    order: 0;
+  }
+  .banco .rit[data-file] > .rit-tuo {
+    position: static;
+    transform: none;
+    width: min(400px, 100%);
+    margin: 14px auto 0;
+    order: 1;
+  }
+  .banco .rit[data-file] > .rit-strumenti,
+  .banco .rit[data-file] > .rit-attesa,
+  .banco .rit[data-file] > .rit-avviso {
+    order: 1;
+    justify-content: center;
+  }
+  .banco .rit[data-file] > .rit-tele {
+    order: 2;
+    width: 100%;
+    justify-content: center;
+  }
+  .banco .rit[data-file] > .rit-sotto,
+  .banco .banco-sinistra .rit[data-file] > .rit-sotto {
+    order: 3;
+    padding-top: 0;
+    margin: 22px auto 0;
+  }
+}
+/* Fra 900 e 1100 px la mascotte del ritaglio c'è ancora (al centro non ce
+   n'è un'altra): con un file torna piccola come sul telefono, o le tele le
+   passerebbero sotto. */
+@media (min-width: 900px) and (max-width: 1099px) {
+  .banco .rit[data-file] .rit-zack {
+    height: 190px;
+  }
+  .banco .rit[data-file] > .rit-tele {
+    margin-top: 48px;
+  }
+}
+
 /* ─── una corsia ─────────────────────────────────────────────────────────── */
 .corsia {
   width: 100%;
