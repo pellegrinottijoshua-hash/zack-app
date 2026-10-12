@@ -909,3 +909,10 @@ Minori:
 - Entrando nei nodi la tela scende (la striscia): ~60 px sul desktop, ~150 sul telefono.
 
 **Prossima:** la fase 6 resta da completare (6d e l'accensione col piano a pagamento), oppure la fase 9 della scaletta.
+
+## ▶️ 2026-10-13 — Corretto: il ritaglio della home con un file non si vedeva
+
+- **Il difetto:** nel banco a tre corsie, con un file caricato, valeva ancora la griglia della home di prima, con 240-470 px di margine destro per la mascotte. Nella corsia (~470 px) la colonna delle tele restava larga 0: il file era scontornato ma la tela misurava 0×0, a 1024 e a 1440.
+- **La correzione** (`landing.css`, blocco «Correzione 2026-10-12»): nel banco, da 900 px in su, vale la colonna sola del telefono (tasto, strumenti, tele, `+`). Fra 900 e 1100 la mascotte del ritaglio torna piccola.
+- **Verificato:** a 1440, 1024 e 375 il risultato si vede.
+- Lo script di raggiungibilità non poteva vederlo: misura i comandi, non le tele. Da aggiungere un controllo «la tela ha una misura» in un giro con un file.
